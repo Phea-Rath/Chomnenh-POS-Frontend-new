@@ -1,4 +1,4 @@
-const url = 'http://206.189.155.96/api';
+const url = 'https://206.189.155.96/api';
 const queryData = (path, token) => ({
     url: `${path}`,
     method: 'GET',
