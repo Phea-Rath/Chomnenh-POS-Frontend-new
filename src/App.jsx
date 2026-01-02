@@ -25,7 +25,6 @@ import Register from "./components/logins/Register";
 import Settings from "./components/settings/Settings";
 import CreateExpanses from "./views/expanses/CreateExpanses";
 import UpdateExpanses from "./views/expanses/UpdateExpanses";
-import UpdateStock from "./views/stocks/UpdateStock";
 import UpdateOrders from "./views/orders/UpdateOrders";
 import Size from "./components/sizes/Size";
 import Color from "./components/colors/Color";
