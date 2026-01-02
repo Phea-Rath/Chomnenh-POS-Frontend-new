@@ -1,2 +1,2 @@
-const baseUrl = 'http://localhost:8000';
+const baseUrl = 'https://api.chomnenhapp.com';
 export default baseUrl;
