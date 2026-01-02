@@ -1,5 +1,6 @@
 import Echo from "laravel-echo";
 import Pusher from "pusher-js";
+import baseUrl from "./services/baseUrl";
 
 window.Pusher = Pusher;
 const token = localStorage.getItem('token');
@@ -13,7 +14,7 @@ const echo = new Echo({
     forceTLS: false,
     encrypted: false,
     enabledTransports: ['ws', 'wss'],
-    authEndpoint: 'http://127.0.0.1:8000/broadcasting/auth',
+    authEndpoint: `${baseUrl}/broadcasting/auth`,
 
     auth: {
         headers: {

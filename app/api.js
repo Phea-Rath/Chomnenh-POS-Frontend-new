@@ -1,4 +1,6 @@
-const url = 'http://206.189.155.96/api';
+import baseUrl from "../src/services/baseUrl";
+
+const url = baseUrl + '/api';
 const queryData = (path, token) => ({
     url: `${path}`,
     method: 'GET',

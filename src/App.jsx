@@ -401,10 +401,7 @@ const router = createBrowserRouter([
     path: "/market",
     element: <Main />,
   },
-],
-  {
-    basename: "/Chomnenh-POS-Frontend",
-  }
+]
 );
 
 function App() {

@@ -284,21 +284,21 @@ const ItemForm = () => {
 
       if (response.data.status == 200) {
         // Handle attributes
-        const attributeRes = await api.post("/attributes", formData, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'multipart/form-data'
-          },
-        });
+        // const attributeRes = await api.post("/attributes", formData, {
+        //   headers: {
+        //     Authorization: `Bearer ${token}`,
+        //     'Content-Type': 'multipart/form-data'
+        //   },
+        // });
 
-        if (attributeRes.data.status == 200) {
-          refetch();
-          if (isEditMode) refetchItem();
-          saleContext.refetch();
-          toast.success(response.data.message || `Item ${isEditMode ? 'updated' : 'created'} successfully`);
-          setLoading(false);
-          navigator("/dashboard/list");
-        }
+        // if (attributeRes.data.status == 200) {
+        refetch();
+        if (isEditMode) refetchItem();
+        saleContext.refetch();
+        toast.success(response.data.message || `Item ${isEditMode ? 'updated' : 'created'} successfully`);
+        setLoading(false);
+        navigator("/dashboard/list");
+        // }
       }
     } catch (error) {
       console.error("Error:", error);
