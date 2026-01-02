@@ -340,7 +340,7 @@ const CreatePurchase = () => {
 
     const taxAmount = subTotal * (formData.tax_rate / 100);
     const totalAmount = subTotal + taxAmount + parseFloat(formData.shipping_fee || 0);
-    const balance = totalAmount - formData.total_paid ?? 0;
+    const balance = totalAmount - (formData.total_paid || 0);
 
     setFormData((prev) => ({
       ...prev,

@@ -4,6 +4,7 @@ import { useOutletsContext } from '../../layouts/Management';
 import { useCreateMenuMutation, useGetAllMenuQuery } from '../../../app/Features/menusSlice';
 import { toast } from 'react-toastify';
 import { useGetAllPermissionQuery, useGetPermissionByIdQuery } from '../../../app/Features/permissionSlice';
+import api from '../../services/api';
 
 const CreateMenus
   = ({ onAdd }) => {
@@ -11,24 +12,30 @@ const CreateMenus
     const [alertBox, setAlertBox] = useState(false);
     const [menus, setMenus] = useState({ menu_name: "", menu_type: "", menu_icon: "", menu_path: '' });
     const token = localStorage.getItem('token');
-    const { refetch } = useGetAllMenuQuery(token);
+    const { data, refetch, isLoading } = useGetAllMenuQuery(token);
     const userId = localStorage.getItem('userId');
     const { refetch: permRefetch } = useGetPermissionByIdQuery({ id: userId, token });
     // const { refetch: permRefetch } = useGetAllPermissionQuery(token);
-    const [createMenu, { data, isLoading, error }] = useCreateMenuMutation();
 
 
     async function handleConfirm() {
       try {
         setLoading(true);
-        await createMenu({ itemData: menus, token });
+        // await createMenu({ itemData: menus, token });
+        const res = await api.post('/menus', menus, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+        });
         refetch();
         permRefetch();
-        if (!error && !isLoading) {
+        if (res.status == 200) {
           setLoading(false);
           toast.success('Menu created successfully');
-          onAdd();
+          // onAdd();
           setAlertBox(false);
+          if (!isLoading) localStorage.setItem('menus', JSON.stringify(data));
         } else {
           toast.error('Failed to create menu');
         }
@@ -95,6 +102,7 @@ const CreateMenus
                 type="text"
                 className="input text-xs bg-transparent border-gray-400"
                 placeholder="Enter here. . ." >
+                <option value="">Select type...</option>
                 <option value={1}>SideBar</option>
                 <option value={2}>Home</option>
                 <option value={3}>Setting</option>

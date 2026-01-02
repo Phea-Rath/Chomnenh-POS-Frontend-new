@@ -44,7 +44,6 @@ import OrderOnline from "./components/notifications/orderOnline";
 import SaleOnline from "./components/orders/SaleOnline";
 import OrderDetails from "./components/notifications/orderDetails";
 import WasteItemDetail from "./components/notifications/WasteItemDetail";
-import UpdateItems from "./views/items/UpdateItems";
 import Permission from "./components/settings/Permission";
 import ImportItems from "./components/items/ImportItems";
 import Menus from "./components/settings/Menus";
@@ -55,7 +54,6 @@ import Purchases from "./components/Purchases/PurchaseList";
 import CreatePurchase from "./views/Purchases/CreatePurchase";
 import SupplierList from "./components/Suppliers/SupplierList";
 import SupplierForm from "./views/Suppliers/SupplierForm";
-import UpdatePurchase from "./views/Purchases/UpdatePurchase";
 import PurchaseReceipt from "./components/Purchases/PurchaseReceipt";
 import PurchaseReport from "./components/Reports/PurchaseReport";
 import CodeScanner from "./components/orders/CodeScanner";
@@ -67,11 +65,11 @@ import CustomerList from "./components/customers/CustomerList";
 import CustomerForm from "./components/customers/CustomerForm";
 import RoleList from "./components/Roles/RoleList";
 import RoleForm from "./components/Roles/RoleForm";
-import Location from "./Location";
 import OrderInvoice from "./components/orders/OrderInvoice";
 import Page from "./markets/Page";
 import Main from "./markets/Main";
 import ErrorPage from "./components/ErrorPage";
+import QuotationForm from "./components/quotations/QuotationForm";
 function ProtectedRoute({ children }) {
   const token = localStorage.getItem("token");
 
@@ -387,8 +385,8 @@ const router = createBrowserRouter([
         element: <RoleForm />,
       },
       {
-        path: "location",
-        element: <Location />,
+        path: "quotation/create",
+        element: <QuotationForm />,
       },
     ],
   },
@@ -404,11 +402,15 @@ const router = createBrowserRouter([
     path: "/market",
     element: <Main />,
   },
-]);
+],
+  {
+    basename: "/Chomnenh-POS-Frontend",
+  }
+);
 
 function App() {
   return (
-    <Provider store={store}>
+    <Provider store={store} >
       <RouterProvider router={router}></RouterProvider>
     </Provider>
   );

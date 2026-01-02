@@ -281,7 +281,7 @@ const ErrorPage = ({ errorType = '404' }) => {
                 </div>
             </div>
 
-            <style jsx>{`
+            {/* <style jsx>{`
         .modern-error-card {
           border-radius: 24px;
           overflow: hidden;
@@ -295,7 +295,7 @@ const ErrorPage = ({ errorType = '404' }) => {
         .animation-delay-4000 {
           animation-delay: 4s;
         }
-      `}</style>
+      `}</style> */}
         </div>
     );
 };

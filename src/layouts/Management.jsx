@@ -8,7 +8,7 @@ import Sidebar from './Sidebar';
 import { useGetAllOrderOnlineQuery, useGetAllWasteQuery } from '../../app/Features/notificationSlice';
 import { toast, ToastContainer } from 'react-toastify';
 import echo from '../echo';
-import { useGetUserLoginQuery } from '../../app/Features/usersSlice';
+import { useGetAllUserQuery, useGetUserLoginQuery } from '../../app/Features/usersSlice';
 import { useGetAllSaleQuery } from '../../app/Features/salesSlice';
 import { useGetAllItemInStockQuery, useGetAllItemsQuery } from '../../app/Features/itemsSlice';
 import { useGetAllPermissionQuery } from '../../app/Features/permissionSlice';
@@ -36,6 +36,7 @@ const Management = () => {
   const { refetch: refetchSale } = useGetAllSaleQuery(token);
   const { refetch: refetchItem } = useGetAllItemsQuery(token);
   const { refetch: refetchItemInStock } = useGetAllItemInStockQuery(token);
+  const { refetch: userRefetch } = useGetAllUserQuery(token);
   const { isLoading: perLoading } = useGetAllPermissionQuery(token);
 
   useEffect(() => {
@@ -68,6 +69,9 @@ const Management = () => {
     setNotification(dataWaste?.data?.length + dataOrderOnline?.data?.length);
   }, [dataOrderOnline, dataWaste, data])
 
+  useEffect(() => {
+    userRefetch();
+  }, []);
 
   useEffect(() => {
     setTimeout(() => {

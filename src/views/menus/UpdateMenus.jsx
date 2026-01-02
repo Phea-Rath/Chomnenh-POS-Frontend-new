@@ -15,7 +15,7 @@ const UpdateMenus
     const token = localStorage.getItem('token');
     const userId = localStorage.getItem('userId');
     const { refetch: permRefetch } = useGetPermissionByIdQuery({ id: userId, token });
-    const { refetch } = useGetAllMenuQuery(token);
+    const { data: allMenus, refetch, isLoading: isLoadMenus } = useGetAllMenuQuery(token);
     // const { refetch: permRefetch } = useGetAllPermissionQuery(token);
     const [updateMenu, { data, isLoading, error, message }] = useUpdateMenuMutation();
     useEffect(() => {
@@ -34,6 +34,9 @@ const UpdateMenus
           toast.success('Menu updated successfully');
           onAdd();
           setAlertBox(false);
+          if (!isLoadMenus) {
+            localStorage.setItem('menus', JSON.stringify(allMenus));
+          }
         } else {
           toast.error('Failed to update menu');
         }

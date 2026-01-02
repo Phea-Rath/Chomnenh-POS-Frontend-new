@@ -5,6 +5,7 @@ import { Link, useNavigate } from "react-router";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import logo from "../../assets/shopping-cart.png";
+import { useGetUserLoginQuery } from "../../../app/Features/usersSlice";
 
 // Placeholder logo (you can replace this with your actual logo URL)
 const LOGO_URL = "https://via.placeholder.com/150x50.png?text=E-STORE";
@@ -13,6 +14,7 @@ const LoginForm = () => {
   const [showOtpInput, setShowOtpInput] = useState(false);
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const { refetch, isLoading } = useGetUserLoginQuery(localStorage.getItem('token'));
   const [alert, setAlert] = useState({ message: "", show: false });
   const [login, setLogin] = useState({ phone_number: "", password: "" });
 
@@ -39,9 +41,12 @@ const LoginForm = () => {
       localStorage.setItem("profileId", profile_id);
       localStorage.setItem("userId", id);
       localStorage.setItem("token", token);
+      refetch();
+      if (!isLoading) {
 
-      toast.success("Login successful");
-      setShowOtpInput(true);
+        toast.success("Login successful");
+        setShowOtpInput(true);
+      }
     } catch (err) {
       toast.error(
         err?.response?.data?.message ||

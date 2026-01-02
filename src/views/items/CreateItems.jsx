@@ -710,7 +710,7 @@ const ItemForm = () => {
                         )}
                       </div>
 
-                      <div>
+                      {/* <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                           Item Code
                         </label>
@@ -722,7 +722,7 @@ const ItemForm = () => {
                           placeholder="PRD-00001"
                           data-field="code"
                         />
-                      </div>
+                      </div> */}
 
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">

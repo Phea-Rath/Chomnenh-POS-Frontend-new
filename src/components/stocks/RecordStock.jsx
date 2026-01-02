@@ -194,30 +194,30 @@ const StockTransactions = () => {
         </div>
       ),
     },
-    {
-      title: "TRANSACTION INFO",
-      width: "200px",
-      render: (_, record) => (
-        <div className="space-y-1">
-          <div className="flex justify-between text-sm">
-            <span className="text-gray-500">Transaction Date:</span>
-            <span className="font-medium text-gray-700">
-              {dayjs(record.created_at).format('MMM DD, YYYY')}
-            </span>
-          </div>
-          <div className="flex justify-between text-sm">
-            <span className="text-gray-500">Expiry:</span>
-            <Tag color={dayjs().isAfter(dayjs(record.expire_date)) ? "red" : "green"} className="text-xs">
-              {dayjs(record.expire_date).format('MMM DD, YYYY')}
-            </Tag>
-          </div>
-          <div className="flex justify-between text-sm">
-            <span className="text-gray-500">Quantity:</span>
-            <span className="font-bold text-blue-600">{record.quantity}</span>
-          </div>
-        </div>
-      ),
-    },
+    // {
+    //   title: "TRANSACTION INFO",
+    //   width: "200px",
+    //   render: (_, record) => (
+    //     <div className="space-y-1">
+    //       <div className="flex justify-between text-sm">
+    //         <span className="text-gray-500">Transaction Date:</span>
+    //         <span className="font-medium text-gray-700">
+    //           {dayjs(record.created_at).format('MMM DD, YYYY')}
+    //         </span>
+    //       </div>
+    //       <div className="flex justify-between text-sm">
+    //         <span className="text-gray-500">Expiry:</span>
+    //         <Tag color={dayjs().isAfter(dayjs(record.expire_date)) ? "red" : "green"} className="text-xs">
+    //           {dayjs(record.expire_date).format('MMM DD, YYYY')}
+    //         </Tag>
+    //       </div>
+    //       <div className="flex justify-between text-sm">
+    //         <span className="text-gray-500">Quantity:</span>
+    //         <span className="font-bold text-blue-600">{record.quantity}</span>
+    //       </div>
+    //     </div>
+    //   ),
+    // },
     {
       title: "STOCK IN",
       dataIndex: "stock_in",
@@ -333,7 +333,7 @@ const StockTransactions = () => {
   const fetchData = () => {
     setLoading(true);
     fetch(
-      `http://127.0.0.1:8000/api/stock_transection?${params.toString()}`,
+      `http://127.0.0.1:8000/api/stock_tracking?${params.toString()}`,
       {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -919,7 +919,7 @@ const StockTransactions = () => {
                   return (
                     <Table.Summary fixed>
                       <Table.Summary.Row className="bg-gradient-to-r from-gray-50 to-blue-50 border-t border-gray-200">
-                        <Table.Summary.Cell index={0} colSpan={4} align="right">
+                        <Table.Summary.Cell index={0} colSpan={3} align="right">
                           <strong className="text-gray-700 text-sm">Transaction Summary</strong>
                         </Table.Summary.Cell>
                         <Table.Summary.Cell index={1}>

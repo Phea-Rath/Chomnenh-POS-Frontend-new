@@ -338,7 +338,7 @@ const Dashboard = () => {
         saleLastYear - expanseLastYear - purchaseLastYear
       ),
     });
-  }, [purchaseByMonth, saleByMonth]);
+  }, [purchaseByMonth, saleByMonth, profitByMonth, expanseByMonth]);
 
   useEffect(() => {
     setRevenueChart(saleByWeek?.data || []);
@@ -568,7 +568,6 @@ const Dashboard = () => {
       }
     }
   };
-  console.log("profitByMonth", profitByMonth);
 
   return (
     <div className="p-6 bg-blue-50 min-h-screen">
@@ -581,7 +580,7 @@ const Dashboard = () => {
               <RiShoppingCartFill className="text-5xl text-purple-500" />
             </div>
             <p className="text-xl flex items-end">
-              ${sales.thisYear}
+              ${(sales.thisYear || 0).toFixed(2)}
               {sales.thisYear < sales.lastYear ? (
                 <span className="text-red-500 text-base flex items-center ml-2">
                   {sales.persent}% <BsArrowDownRight />
@@ -622,7 +621,7 @@ const Dashboard = () => {
               <FaWarehouse className="text-5xl text-yellow-500" />
             </div>
             <p className="text-xl flex items-end">
-              ${purchases.thisYear}
+              ${(purchases.thisYear || 0).toFixed(2)}
               {purchases.thisYear < purchases.lastYear ? (
                 <span className="text-red-500 text-base flex items-center ml-2">
                   {purchases.persent}% <BsArrowDownRight />
@@ -664,7 +663,7 @@ const Dashboard = () => {
               <RiMoneyDollarCircleFill className="text-5xl text-red-500" />
             </div>
             <p className="text-xl flex items-end">
-              ${expanses.thisYear}
+              ${(expanses.thisYear || 0).toFixed(2)}
               {expanses.thisYear < expanses.lastYear ? (
                 <span className="text-red-500 text-base flex items-center ml-2">
                   {expanses.persent}% <BsArrowDownRight />
@@ -706,7 +705,7 @@ const Dashboard = () => {
               <FaMoneyBillTrendUp className="text-5xl text-green-500" />
             </div>
             <p className="text-xl flex items-end">
-              ${profit.thisYear}
+              ${(profit.thisYear || 0).toFixed(2)}
               {profit.thisYear < profit.lastYear ? (
                 <span className="text-red-500 text-base flex items-center ml-2">
                   {profit.persent}% <BsArrowDownRight />
@@ -826,7 +825,7 @@ const Dashboard = () => {
             {popularSales?.data?.map((s) => (
               <div className="flex justify-between items-center h-10">
                 <div className="flex gap-2">
-                  <img className="w-10" src={s.item_image} alt="" />
+                  <img className="w-10" src={s.image} alt="" />
                   <div>
                     <h1 className="text-[15px] font-extrabold text-gray-600">
                       {s.item_name}

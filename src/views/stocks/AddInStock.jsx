@@ -399,7 +399,6 @@ const AddInStock = () => {
                       size="large"
                       filterOption={(input, option) =>
                         option.name.toLowerCase().indexOf(input.toLowerCase()) >= 0
-                        // console.log(option, input)
 
                       }
                       optionLabelProp="name"

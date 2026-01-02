@@ -140,6 +140,8 @@ const UpdateOrders = () => {
     refetch();
     if (!orderLoading && orderData?.data) {
       const order = orderData.data;
+      console.log('order:', order);
+
       const customer = customers?.data?.find(
         (c) => c.customer_id == order.order_customer_id
       );
@@ -164,14 +166,11 @@ const UpdateOrders = () => {
 
       // Process items with attributes
       const newItems = order?.items?.map((i) => {
-        const stock = allItemInStock?.data?.data?.find(
-          (item) => item.item_id == i.item_id
-        )?.stock;
+
         return {
           ...i,
           item_id: i.item_id,
-          in_stock: Number(stock || 0),
-          displayAttributes: parseAttributesForDisplay(i.attributes),
+          in_stock: i.in_stock,
           price_per_unit: i.item_price,
           item_name: i.item_name,
           item_code: i.item_code,
@@ -193,30 +192,31 @@ const UpdateOrders = () => {
     customers,
   ]);
 
-  // Helper function to get all available items with parsed attributes
-  const getAvailableItems = () => {
-    return items?.map(item => ({
-      ...item,
-      displayAttributes: parseAttributesForDisplay(item.attributes)
-    })) || [];
-  };
 
   // Handle item selection
   const handleSelectItem = (value) => {
-    const item = getAvailableItems().find((i) => i.id === value);
+    const item = items.find(i => i.id === value);
+    console.log(item, selectedItems);
+
     if (!item) return;
+
+    if (item?.in_stock <= 0) {
+      toast.info('Not enough stock available');
+      return;
+    }
 
     // Check if item already exists in order
     const exist = selectedItems.find((i) => i.item_id === item.id);
-    // console.log(item, selectedItems);
 
     if (exist) {
       // Update quantity if item exists
       setSelectedItems((prev) => {
         const update = prev.map((i) => {
-          if (i.id === item.id) {
-            const maxQuantity = i.in_stock + (orderData?.data?.items?.find((o) => o.item_id === item.id)?.quantity || 0);
+          // console.log(exist);
+          if (i.id === exist.id) {
+            const maxQuantity = i.stock.in_stock + (orderData?.data?.items?.find((o) => o.item_id === item.id)?.quantity || 0);
             const newQuantity = Math.min(i.quantity + 1, maxQuantity);
+
 
             if (newQuantity > maxQuantity) {
               messageApi.warning(`Maximum available quantity is ${maxQuantity}`);
@@ -235,24 +235,26 @@ const UpdateOrders = () => {
         return update;
       });
     } else {
-      // Add new item
-      const maxQuantity = Math.min(1, item.stock || 0);
+      console.log('selectItem:', item);
+
       const newItem = {
         id: item.id,
         item_id: item.id,
         item_name: item.name,
         item_code: item.code,
         item_image: item.image,
-        price_per_unit: getItemPrice(item, form.sale_type),
+        price: getItemPrice(item, form.sale_type),
         quantity: 1,
         discount: item.discount,
         item_wholesale_price: item.wholesale_price,
+        item_price: item.price,
         item_cost: item.cost,
-        in_stock: item.in_stock || 0,
-        displayAttributes: item.displayAttributes,
+        in_stock: item?.in_stock || 0,
         // Store original attributes for API submission
-        attributes: item.attributes
+        attributes: item.attributes,
       };
+
+
 
       setSelectedItems((prev) => {
         const update = [...prev, newItem];
@@ -264,23 +266,26 @@ const UpdateOrders = () => {
 
   // Helper function to update totals
   const updateTotals = (items) => {
+    console.log('updateTotal:', items);
+
     const orderSubtotal = items.reduce((init, curr) => {
       const price = form.sale_type === "sale"
         ? curr.price_per_unit || curr.item_price
         : curr.item_wholesale_price || curr.price_per_unit;
       return init + curr.quantity * parseFloat(price);
     }, 0);
+    const discountAmount = (selectedItems.reduce((a, b) => (a + (orderSubtotal * (b.discount / 100))), 0) || 0).toFixed(2);
+    console.log("discount:", discountAmount);
 
-    const discountAmount = orderSubtotal * (form.order_discount / 100);
+
     const taxAmount = orderSubtotal * (form.order_tax / 100);
     const orderTotal = orderSubtotal - discountAmount + (form.delivery_fee || 0) + taxAmount;
     const balance = orderTotal - (form.payment || 0);
-    const dis = items?.map((i) => ((form.sale_type === "sale" ? i.price_per_unit : i.item_wholesale_price) * i.quantity) * (i.discount / 100));
 
     setForm((prev) => ({
       ...prev,
-      order_discount: dis.reduce((a, b) => a + b, 0),
-      order_subtotal: orderSubtotal,
+      order_discount: discountAmount,
+      order_subtotal: orderSubtotal - discountAmount,
       order_total: orderTotal,
       balance,
     }));
@@ -295,7 +300,7 @@ const UpdateOrders = () => {
 
     if (field === "quantity") {
       // Check stock availability
-      const maxQuantity = item.stock.in_stock + (orderData?.data?.items[index]?.quantity || 0);
+      const maxQuantity = item.in_stock + (orderData?.data?.items[index]?.quantity || 0);
       if (quantityValue > maxQuantity) {
         messageApi.warning(`Maximum available quantity is ${maxQuantity}`);
         return;
@@ -344,6 +349,8 @@ const UpdateOrders = () => {
       }
     }
 
+    console.log(updatedItems);
+
     // Update totals
     updateTotals(updatedItems);
     setSelectedItems(updatedItems);
@@ -389,14 +396,16 @@ const UpdateOrders = () => {
           return init + curr.quantity * parseFloat(price);
         }, 0);
 
-        const discountAmount = orderSubtotal * (updated.order_discount / 100);
+        const discountAmount = (selectedItems.reduce((a, b) => (a + (orderSubtotal * (b.discount / 100))), 0) || 0).toFixed(2);
+
         const taxAmount = orderSubtotal * (updated.order_tax / 100);
         const orderTotal = orderSubtotal - discountAmount + (updated.delivery_fee || 0) + taxAmount;
         const balance = orderTotal - (updated.payment || 0);
 
         return {
           ...updated,
-          order_subtotal: orderSubtotal,
+          order_discount: discountAmount,
+          order_subtotal: orderSubtotal - parseFloat(discountAmount),
           order_total: orderTotal,
           balance,
         };
@@ -428,14 +437,14 @@ const UpdateOrders = () => {
       order_payment_status: form.balance != 0 ? "cod" : "paid",
       items: selectedItems.map((item) => {
         const baseItem = {
-          item_id: item.id,
+          item_id: item.item_id,
           item_name: item.item_name,
           quantity: item.quantity,
           discount: item.discount || 0,
           item_wholesale_price: parseFloat(item.item_wholesale_price || 0),
           item_cost: parseFloat(item.item_cost || 0),
           unit_price: parseFloat(item.price_per_unit || item.item_price),
-          price: parseFloat(item.price_per_unit || item.item_price) * Number(item.quantity),
+          price: parseFloat(item.price),
         };
 
         // Preserve existing attributes
@@ -448,6 +457,8 @@ const UpdateOrders = () => {
     };
 
     const toDay = new Date();
+    console.log(payload);
+
 
     try {
       setLoading(true);
@@ -521,51 +532,10 @@ const UpdateOrders = () => {
 
 
 
-  // Render attribute display
-  const renderAttributesDisplay = (item) => {
-    if (!item.displayAttributes || item.displayAttributes.length === 0) return null;
 
-    return (
-      <div className="mt-2 space-y-1">
-        {item.displayAttributes.map((attr, idx) => {
-          // Generate unique key using item.id and attribute index
-          const uniqueKey = `${item.id}-${attr.name}-${idx}`;
 
-          let colors = [];
-          if (attr.isColor) {
-            colors = formatColorDisplay(attr.value);
-          }
-
-          return (
-            <div key={uniqueKey} className="flex items-center gap-2">
-              {attr.icon}
-              <span className="text-xs text-gray-500 capitalize">{attr.name}:</span>
-              {attr.isColor ? (
-                colors.length > 0 ? (
-                  <div className="flex gap-1">
-                    {colors.map((color, colorIdx) => (
-                      <div
-                        key={`${uniqueKey}-${colorIdx}`}
-                        className="w-3 h-3 rounded-full border border-gray-300"
-                        style={{ backgroundColor: color }}
-                        title={color}
-                      />
-                    ))}
-                  </div>
-                ) : (
-                  <span className="text-xs font-medium text-gray-700">No color</span>
-                )
-              ) : (
-                <span className="text-xs font-medium text-gray-700">{attr.value}</span>
-              )}
-            </div>
-          );
-        })}
-      </div>
-    );
-  };
-
-  console.log(selectedItems);
+  console.log('Items:', items);
+  console.log('selectItems:', selectedItems);
 
   return (
     <motion.div
@@ -610,7 +580,7 @@ const UpdateOrders = () => {
                   <div className="mb-4">
                     <h3 className="text-lg font-semibold text-gray-700 mb-2">Add Items to Order</h3>
                     <Select
-                      onChange={handleSelectItem}
+                      onSelect={handleSelectItem}
                       showSearch
                       style={{ width: "100%" }}
                       placeholder="Search and select items to add..."
@@ -622,7 +592,7 @@ const UpdateOrders = () => {
                           .toLowerCase()
                           .localeCompare((optionB?.name ?? "").toLowerCase())
                       }
-                      options={getAvailableItems().map((item) => ({
+                      options={items.map((item) => ({
                         value: item.id,
                         name: item.name,
                         label: (
@@ -660,15 +630,6 @@ const UpdateOrders = () => {
                                   <span className="text-xs text-red-600">Out of stock</span>
                                 )}
                               </div>
-                              {/* Show attribute indicators */}
-                              {item.displayAttributes && item.displayAttributes.length > 0 && (
-                                <div className="flex items-center gap-1 mt-1">
-                                  <FaTag className="w-3 h-3 text-gray-400" />
-                                  <span className="text-xs text-gray-500">
-                                    Has attributes
-                                  </span>
-                                </div>
-                              )}
                             </div>
                           </div>
                         ),
@@ -739,13 +700,13 @@ const UpdateOrders = () => {
                                   <input
                                     type="number"
                                     min={1}
-                                    max={item.stock.in_stock + (orderData?.data?.items[index]?.quantity || 0)}
+                                    max={item?.in_stock + (orderData?.data?.items[index]?.quantity || 0)}
                                     value={item.quantity}
                                     onChange={(e) => handleItemChange(index, "quantity", e.target.value, item.id)}
                                     className="w-20 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-center"
                                   />
                                   <div className="ml-2 text-xs text-gray-500">
-                                    Max: {item.stock.in_stock + (orderData?.data?.items[index]?.quantity || 0)}
+                                    Max: {item?.in_stock + (orderData?.data?.items[index]?.quantity || 0)}
                                   </div>
                                 </div>
                               </td>

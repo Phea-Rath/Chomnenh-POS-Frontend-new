@@ -19,7 +19,7 @@ const CustomerForm = () => {
   const [districts, setDistricts] = useState([]);
   const [communes, setCommunes] = useState([]);
   const [villages, setVillages] = useState([]);
-  const isUpdate = id == 0 ? 0 : 1;
+  const isUpdate = id ?? 0;
   const initialData = JSON.parse(localStorage.getItem("itemEdit")) || null;
   const [dataForm, setFormData] = useState({
     image: null,
@@ -36,6 +36,8 @@ const CustomerForm = () => {
     communes: null,
     villages: null,
   });
+  console.log(id, isUpdate);
+
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
   const [fieldErrors, setFieldErrors] = useState({});
@@ -388,7 +390,7 @@ const CustomerForm = () => {
         village_id: null,
       });
       localStorage.setItem("isUpdate", 0);
-      navigate(-1);
+      navigate('/dashboard/customers');
       localStorage.setItem("itemEdit", null);
     } catch (err) {
       const errorMessage = err?.data?.message || err?.message || "Operation failed";

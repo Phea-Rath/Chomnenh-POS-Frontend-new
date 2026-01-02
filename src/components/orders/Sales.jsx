@@ -589,6 +589,8 @@ const Sales = () => {
 
     // Prepare items with attribute selections
     const itemsWithAttributes = orders.items.map(item => {
+      console.log(item);
+
       const attributeData = [];
       if (item.attribute_selections) {
         Object.values(item.attribute_selections).forEach(selection => {
@@ -608,7 +610,7 @@ const Sales = () => {
         discount: item.discount || 0,
         item_name: item.name,
         item_cost: item.cost || 0,
-        item_price: getItemPrice(item, orders.sale_type),
+        item_price: item.original_price,
         item_wholesale_price: item.wholesale_price || 0,
         expire_date: toDay.toISOString().split("T")[0],
         attributes: attributeData
