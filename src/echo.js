@@ -13,7 +13,7 @@ const echo = new Echo({
     forceTLS: false,
     encrypted: false,
     enabledTransports: ['ws', 'wss'],
-    authEndpoint: 'http://206.189.155.96/broadcasting/auth',
+    authEndpoint: 'https://api.chomnenhapp.com/broadcasting/auth',
 
     auth: {
         headers: {
