@@ -1,10 +1,5 @@
-<<<<<<< HEAD
 import baseUrl from "../src/services/baseUrl";
-
 const url = baseUrl + '/api';
-=======
-const url = 'https://api.chomnenhapp.com/api';
->>>>>>> 9505cd1e90c9eee4c6916e19339f8d4e66d0f090
 const queryData = (path, token) => ({
     url: `${path}`,
     method: 'GET',

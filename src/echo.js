@@ -14,11 +14,7 @@ const echo = new Echo({
     forceTLS: false,
     encrypted: false,
     enabledTransports: ['ws', 'wss'],
-<<<<<<< HEAD
     authEndpoint: `${baseUrl}/broadcasting/auth`,
-=======
-    authEndpoint: 'https://api.chomnenhapp.com/broadcasting/auth',
->>>>>>> 9505cd1e90c9eee4c6916e19339f8d4e66d0f090
 
     auth: {
         headers: {
