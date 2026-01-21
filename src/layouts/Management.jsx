@@ -14,6 +14,7 @@ import { useGetAllItemInStockQuery, useGetAllItemsQuery } from '../../app/Featur
 import { useGetAllPermissionQuery } from '../../app/Features/permissionSlice';
 import { Atom, BlinkBlur, Slab } from 'react-loading-indicators';
 import ScrollToTop from '../services/ScrollToTop';
+import { useGetAllOrderQuery } from '../../app/Features/ordersSlice';
 const outletContext = createContext();
 export const useOutletsContext = () => useContext(outletContext);
 
@@ -33,6 +34,7 @@ const Management = () => {
   const [orderCount, setOrderCount] = useState(0)
   const [sidebar, setSidebar] = useState(false);
   const { data } = useGetUserLoginQuery(token);
+  const { refetch: refetchOrder } = useGetAllOrderQuery(token);
   const { refetch: refetchSale } = useGetAllSaleQuery(token);
   const { refetch: refetchItem } = useGetAllItemsQuery(token);
   const { refetch: refetchItemInStock } = useGetAllItemInStockQuery(token);
@@ -53,8 +55,10 @@ const Management = () => {
       refetchItemInStock();
     });
     echo.private(`check-online.user.${profileId}`).listen("OnlineEvent", (data) => {
-      refetch();
+      // refetch();
+      refetchSale();
       refetchOnline();
+      refetchOrder();
     });
     echo.channel("my-public-channel").listen("PublicChannelEvent", (data) => {
       const audio = new Audio("../../public/sounds/notification.mp3");
@@ -118,11 +122,11 @@ const Management = () => {
         </div> */}
         {/* <button className='btn btn-ghost' onClick={playNotification}>sound</button> */}
         <ScrollToTop />
-        <Sidebar />
+        {data?.data?.role_id !== 1 && <Sidebar />}
         <div>
           <Header />
           <AlertMessage show={alert} message={renderAlertMessage(message)} status={alertStatus} className="z-1000" />
-          <main className='h-[calc(100vh)] pt-[86px] overflow-auto m-0 !text-black w-[100vw] p-4 lg:w-[calc(100vw-346px)]'>
+          <main className={`h-[calc(100vh)] ${data?.data?.role_id !== 1 && "lg:w-[calc(100vw-346px)]"} pt-[86px] overflow-auto m-0 !text-black w-[100vw] p-4 bg-gray-200`}>
             <Outlet />
           </main>
         </div>

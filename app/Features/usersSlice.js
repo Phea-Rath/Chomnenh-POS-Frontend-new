@@ -13,6 +13,9 @@ export const usersApi = createApi({
         getUserById: builder.query({
             query: ({ id, token }) => queryDataById(id, '/users', token),
         }),
+        getUserByProId: builder.query({
+            query: ({ id, token }) => queryDataById(id, '/user_by_profile', token),
+        }),
         getUserLogin: builder.query({
             query: (token) => queryData('/user_login', token),
         }),
@@ -34,6 +37,7 @@ export const usersApi = createApi({
 export const {
     useGetAllUserQuery,
     useGetUserByIdQuery,
+    useGetUserByProIdQuery,
     useCreateUserMutation,
     useUpdateUserMutation,
     useDeleteUserMutation,

@@ -28,6 +28,8 @@ import { rolesApi } from "./Features/rolesSlice";
 import { exchangeRatesApi } from "./Features/exchangeRatesSlice";
 import { attributesApi } from "./Features/attributesSlice";
 import { quanApi } from "./Features/quantitySlice";
+import { quotesApi } from "./Features/quoteSlice";
+import { deliversApi } from "./Features/deliversSlice";
 export const store = configureStore({
   reducer: {
     [brandsApi.reducerPath]: brandsApi.reducer,
@@ -58,6 +60,8 @@ export const store = configureStore({
     [exchangeRatesApi.reducerPath]: exchangeRatesApi.reducer,
     [attributesApi.reducerPath]: attributesApi.reducer,
     [quanApi.reducerPath]: quanApi.reducer,
+    [quotesApi.reducerPath]: quotesApi.reducer,
+    [deliversApi.reducerPath]: deliversApi.reducer,
   },
 
   middleware: (getDefaultMiddleware) =>
@@ -90,6 +94,8 @@ export const store = configureStore({
       exchangeRatesApi.middleware,
       attributesApi.middleware,
       quanApi.middleware,
+      quotesApi.middleware,
+      deliversApi.middleware,
     ),
 });
 setupListeners(store.dispatch);

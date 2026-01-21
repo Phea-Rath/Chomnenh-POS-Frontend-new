@@ -68,7 +68,7 @@ const Notification = () => {
     }
 
     return (
-        <div className="min-h-screen bg-gray-50">
+        <div className="min-h-screen bg-transparent">
             <div className="px-4 lg:px-8 py-6 max-w-7xl mx-auto">
                 {/* Header Section */}
                 <div className="mb-6">

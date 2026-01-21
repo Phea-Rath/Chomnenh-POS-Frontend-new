@@ -33,6 +33,7 @@ import {
   FaTimesCircle,
   FaClock
 } from "react-icons/fa";
+import dayjs from 'dayjs';
 
 import { LuRefreshCw } from "react-icons/lu";
 const { RangePicker } = DatePicker;
@@ -337,7 +338,7 @@ const Purchases = () => {
           transition={{ delay: 0.1 }}
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8"
         >
-          <Card className="border-0 shadow-lg bg-gradient-to-br from-blue-500 to-blue-600 text-white">
+          <Card className="border-0 shadow-sm bg-gradient-to-br from-blue-500 to-blue-600 text-white">
             <div className="p-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -353,7 +354,7 @@ const Purchases = () => {
             </div>
           </Card>
 
-          <Card className="border-0 shadow-lg bg-gradient-to-br from-green-500 to-green-600 text-white">
+          <Card className="border-0 shadow-sm bg-gradient-to-br from-green-500 to-green-600 text-white">
             <div className="p-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -369,7 +370,7 @@ const Purchases = () => {
             </div>
           </Card>
 
-          <Card className="border-0 shadow-lg bg-gradient-to-br from-purple-500 to-purple-600 text-white">
+          <Card className="border-0 shadow-sm bg-gradient-to-br from-purple-500 to-purple-600 text-white">
             <div className="p-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -385,7 +386,7 @@ const Purchases = () => {
             </div>
           </Card>
 
-          <Card className="border-0 shadow-lg bg-gradient-to-br from-orange-500 to-orange-600 text-white">
+          <Card className="border-0 shadow-sm bg-gradient-to-br from-orange-500 to-orange-600 text-white">
             <div className="p-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -407,7 +408,7 @@ const Purchases = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="bg-white rounded-2xl shadow-xl border border-gray-100 p-6 mb-8"
+          className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-8"
         >
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             {/* View Toggle and Search */}
@@ -417,7 +418,7 @@ const Purchases = () => {
                 <button
                   onClick={() => setViewMode("list")}
                   className={`px-4 py-2 rounded-lg transition-all duration-300 flex items-center space-x-2 ${viewMode === "list"
-                    ? "bg-white shadow-md text-blue-600 font-semibold"
+                    ? "bg-white shadow-sm text-blue-600 font-semibold"
                     : "text-gray-600 hover:text-gray-800"
                     }`}
                 >
@@ -427,7 +428,7 @@ const Purchases = () => {
                 <button
                   onClick={() => setViewMode("grid")}
                   className={`px-4 py-2 rounded-lg transition-all duration-300 flex items-center space-x-2 ${viewMode === "grid"
-                    ? "bg-white shadow-md text-blue-600 font-semibold"
+                    ? "bg-white shadow-sm text-blue-600 font-semibold"
                     : "text-gray-600 hover:text-gray-800"
                     }`}
                 >
@@ -521,7 +522,7 @@ const Purchases = () => {
           transition={{ delay: 0.3 }}
         >
           {viewMode === "list" ? (
-            <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead className="bg-gray-50 border-b border-gray-200">
@@ -627,7 +628,7 @@ const Purchases = () => {
                   key={index}
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  className={`bg-white rounded-xl shadow-sm border-2 hover:shadow-md transition-all duration-300 overflow-hidden ${getStatusColor(item.status)}`}
+                  className={`bg-white rounded-xl shadow-sm border-2 hover:shadow-sm transition-all duration-300 overflow-hidden ${getStatusColor(item.status)}`}
                 >
                   <div className="p-6">
                     {/* Header */}

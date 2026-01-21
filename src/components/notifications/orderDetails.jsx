@@ -1,35 +1,71 @@
 import React, { useEffect, useState } from 'react';
-import { FaChevronLeft, FaChevronRight, FaShoppingBag, FaUser, FaPhone, FaMapMarkerAlt, FaCalendarAlt, FaMoneyBill, FaTag, FaDollarSign, FaCheckCircle, FaTimesCircle } from 'react-icons/fa';
+import {
+    FaArrowLeft,
+    FaShoppingBag,
+    FaUser,
+    FaPhone,
+    FaMapMarkerAlt,
+    FaCalendarAlt,
+    FaMoneyBill,
+    FaTag,
+    FaDollarSign,
+    FaCheckCircle,
+    FaBox,
+    FaCreditCard,
+    FaTruck,
+    FaReceipt,
+    FaChevronLeft,
+    FaChevronRight,
+    FaList
+} from 'react-icons/fa';
+import {
+    IoCashSharp,
+    IoCheckmarkCircle,
+    IoEllipsisHorizontal
+} from 'react-icons/io5';
 import { Link, useNavigate, useParams } from 'react-router';
 import { useGetAllOrderOnlineQuery } from '../../../app/Features/notificationSlice';
-import { IoCashSharp } from 'react-icons/io5';
 import { useReceiveOrderMutation } from '../../../app/Features/ordersSlice';
-import { Button, message, Popconfirm } from 'antd';
+import { Button, message, Popconfirm, Badge, Progress, Card, Statistic } from 'antd';
 import { toast } from 'react-toastify';
 import { Atom } from 'react-loading-indicators';
-import { IoMdSkipBackward } from 'react-icons/io';
-import { TfiBackLeft } from 'react-icons/tfi';
 
 const OrderDetails = () => {
     const token = localStorage.getItem('token');
     const { id } = useParams();
     const navigator = useNavigate();
-    const [orderData, setOrderData] = useState([]);
+    const [orderData, setOrderData] = useState(null);
     const { data, refetch, isLoading } = useGetAllOrderOnlineQuery(token);
     const [receiveOrder, { isLoading: isReceiveLoading }] = useReceiveOrderMutation();
-    // Sample data (you would typically get this from props or API)
-    useEffect(() => {
-        setOrderData(data?.data?.find(order => order.order_id === parseInt(id)) || []);
-    }, [data]);
-
+    const [activeTab, setActiveTab] = useState('overview');
     const [currentItemIndex, setCurrentItemIndex] = useState(0);
 
-    if (isLoading || orderData.length === 0) {
-        return <div className='h-full flex justify-center items-center'>
-            <Atom color={["#32cd32", "#327fcd", "#cd32cd", "#cd8032"]} size="medium" text="Loading data" textColor="#327fcd" />
-        </div>
+    useEffect(() => {
+        if (data?.data) {
+            const foundOrder = data.data.find(order => order.order_id === parseInt(id));
+            setOrderData(foundOrder);
+        }
+    }, [data, id]);
+
+    if (isLoading || !orderData) {
+        return (
+            <div className='min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-gray-50 to-blue-50'>
+                <div className="text-center">
+                    <div className="relative inline-block mb-6">
+                        <div className="w-20 h-20 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+                        <div className="absolute inset-0 flex items-center justify-center">
+                            <div className="w-10 h-10 bg-blue-50 rounded-full"></div>
+                        </div>
+                    </div>
+                    <h2 className="text-xl font-semibold text-gray-700 mb-2">Loading Order Details</h2>
+                    <p className="text-gray-500">Fetching order information...</p>
+                </div>
+            </div>
+        );
     }
+
     const currentItem = orderData?.items[currentItemIndex];
+
     const nextItem = () => {
         setCurrentItemIndex((prevIndex) =>
             prevIndex === orderData?.items.length - 1 ? 0 : prevIndex + 1
@@ -43,8 +79,25 @@ const OrderDetails = () => {
     };
 
     const formatDate = (dateString) => {
-        const options = { year: 'numeric', month: 'long', day: 'numeric' };
+        const options = { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' };
         return new Date(dateString).toLocaleDateString(undefined, options);
+    };
+
+    const getStatusBadge = (status) => {
+        const statusConfig = {
+            1: { color: 'bg-green-100 text-green-800 border-green-200', label: 'Completed', icon: <IoCheckmarkCircle /> },
+            0: { color: 'bg-yellow-100 text-yellow-800 border-yellow-200', label: 'Processing', icon: <IoEllipsisHorizontal /> },
+            2: { color: 'bg-blue-100 text-blue-800 border-blue-200', label: 'Shipped', icon: <FaTruck /> },
+            3: { color: 'bg-purple-100 text-purple-800 border-purple-200', label: 'Delivered', icon: <FaBox /> }
+        };
+
+        const config = statusConfig[status] || statusConfig[0];
+        return (
+            <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border ${config.color}`}>
+                {config.icon}
+                {config.label}
+            </span>
+        );
     };
 
     const confirm = async () => {
@@ -52,273 +105,441 @@ const OrderDetails = () => {
         try {
             if (res?.data.status === 200) {
                 refetch();
-                toast.success('Order received successfully!');
+                toast.success('🎉 Order received successfully!');
                 navigator('/dashboard/notification');
             }
         } catch (error) {
             toast.error(error?.message || 'Failed to receive order.');
         }
+    };
 
-    };
     const cancel = () => {
-        // console.log(e);
-        message.error('Click on No');
+        message.error('Action cancelled');
     };
+
+    const tabs = [
+        { key: 'overview', label: 'Overview', icon: <FaReceipt /> },
+        { key: 'items', label: 'Items', icon: <FaList /> },
+        { key: 'customer', label: 'Customer', icon: <FaUser /> },
+        { key: 'payment', label: 'Payment', icon: <FaCreditCard /> }
+    ];
 
     return (
-        <div className="min-h-screen relative bg-gray-50 py-2 px-4 sm:px-6 lg:px-8">
-            <Link to={"/dashboard/notification"}><Button type='primary' danger className='flex items-center gap-2 mb-1'> <TfiBackLeft /> Back</Button></Link>
-            <div className="max-w-7xl mx-auto bg-white rounded-lg shadow-md overflow-hidden">
-                {/* Header */}
-                <div className="bg-indigo-600 px-6 py-4 text-white">
-                    <h1 className="text-2xl font-bold flex items-center">
-                        <FaShoppingBag className="mr-2" />
-                        Order Details: {orderData?.order_no}
-                    </h1>
-                    <p className="text-indigo-100 mt-1">
-                        Placed on {formatDate(orderData?.order_date)}
-                    </p>
-                </div>
-
-                <div className="p-6">
-                    {/* Order Status */}
-                    {/* <div className="mb-8 p-4 bg-green-50 rounded-lg border border-green-200">
-                        <div className="flex items-center">
-                            <FaCheckCircle className="text-green-500 text-xl mr-2" />
-                            <span className="font-semibold text-green-700">
-                                {orderData?.status === 1 ? 'Order Completed' : 'Order Processing'}
-                            </span>
-                        </div>
-                    </div> */}
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        {/* Left Column - Customer Info */}
-                        <div>
-                            <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                                <FaUser className="mr-2 text-indigo-500" />
-                                Customer Information
-                            </h2>
-
-                            <div className="bg-gray-50 p-4 rounded-lg mb-6">
-                                <div className="flex items-center mb-3">
-                                    <FaUser className="text-gray-500 mr-2" />
-                                    <span className="font-medium">{orderData?.profile_name}</span>
-                                </div>
-
-                                <div className="flex items-center mb-3">
-                                    <FaPhone className="text-gray-500 mr-2" />
-                                    <span>{orderData?.order_tel}</span>
-                                </div>
-
-                                <div className="flex items-start">
-                                    <FaMapMarkerAlt className="text-gray-500 mr-2 mt-1" />
-                                    <span>{orderData?.order_address}</span>
-                                </div>
-                            </div>
-
-                            <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                                <FaCalendarAlt className="mr-2 text-indigo-500" />
-                                Order Timeline
-                            </h2>
-
-                            <div className="bg-gray-50 p-4 rounded-lg">
-                                <div className="mb-2">
-                                    <span className="font-medium">Order Placed:</span>
-                                    <span className="ml-2">{formatDate(orderData?.created_at)}</span>
-                                </div>
-                                <div>
-                                    <span className="font-medium">Last Updated:</span>
-                                    <span className="ml-2">{formatDate(orderData?.updated_at)}</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Right Column - Order Summary */}
-                        <div>
-                            <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                                <FaDollarSign className="mr-2 text-indigo-500" />
-                                Order Summary
-                            </h2>
-
-                            <div className="bg-gray-50 p-4 rounded-lg mb-6">
-                                <div className="flex justify-between mb-2">
-                                    <span>Subtotal:</span>
-                                    <span>${orderData?.order_subtotal.toFixed(2)}</span>
-                                </div>
-
-                                <div className="flex justify-between mb-2">
-                                    <span>Discount:</span>
-                                    <span className="text-red-500">-${orderData?.order_discount.toFixed(2)}</span>
-                                </div>
-
-                                <div className="flex justify-between mb-2">
-                                    <span>Delivery Fee:</span>
-                                    <span>${orderData?.delivery_fee.toFixed(2)}</span>
-                                </div>
-
-                                <hr className="my-3" />
-
-                                <div className="flex justify-between font-bold text-lg">
-                                    <span>Total:</span>
-                                    <span>${orderData?.order_total.toFixed(2)}</span>
-                                </div>
-                            </div>
-
-                            <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                                <FaTag className="mr-2 text-indigo-500" />
-                                Payment Information
-                            </h2>
-
-                            <div className="bg-gray-50 p-4 rounded-lg">
-                                <div className="mb-2">
-                                    <span className="font-medium">Payment Status:</span>
-                                    <span className="ml-2 text-yellow-600">Processing</span>
-                                </div>
-                                <div>
-                                    <span className="font-medium">Payment Method:</span>
-                                    <span className="ml-2">Bank</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Item Display with Navigation */}
-                    <div className="mt-8">
-                        <h2 className="text-lg font-semibold text-gray-800 mb-4">Items in Order</h2>
-
-                        <div className="bg-white border rounded-lg p-6 shadow-sm">
-                            <div className="flex flex-col md:flex-row items-center md:items-start">
-                                {/* Image with Navigation */}
-                                <div className="relative mb-4 md:mb-0 md:mr-6">
-                                    <img
-                                        src={currentItem.item_image}
-                                        alt={currentItem.item_name}
-                                        className="w-64 h-64 object-contain rounded-lg border"
-                                    />
-
-                                    {orderData?.items.length > 1 && (
-                                        <>
-                                            <button
-                                                onClick={prevItem}
-                                                className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-white rounded-full p-2 shadow-md hover:bg-gray-100 transition-colors"
-                                            >
-                                                <FaChevronLeft className="text-gray-700" />
-                                            </button>
-                                            <button
-                                                onClick={nextItem}
-                                                className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-white rounded-full p-2 shadow-md hover:bg-gray-100 transition-colors"
-                                            >
-                                                <FaChevronRight className="text-gray-700" />
-                                            </button>
-                                        </>
-                                    )}
-
-                                    <div className="text-center mt-2 text-sm text-gray-500">
-                                        {currentItemIndex + 1} of {orderData?.items.length}
+        <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
+            {/* Header */}
+            <div className="sticky top-0 z-10 bg-white/80 backdrop-blur-sm border-b border-gray-200">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="flex items-center justify-between py-4">
+                        <div className="flex items-center gap-4">
+                            <Link to="/dashboard/notification">
+                                <button className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">
+                                    <FaArrowLeft className="w-4 h-4" />
+                                    <span className="font-medium">Back</span>
+                                </button>
+                            </Link>
+                            <div className="hidden md:block">
+                                <div className="flex items-center gap-3">
+                                    <div className="p-2 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-lg">
+                                        <FaShoppingBag className="w-6 h-6 text-white" />
                                     </div>
-                                </div>
-
-                                {/* Item Details */}
-                                <div className="flex-1">
-                                    <h3 className="text-xl font-semibold text-gray-800">{currentItem.item_name}</h3>
-                                    <p className="text-gray-600 mb-2">Code: {currentItem.item_code}</p>
-
-                                    <div className="grid grid-cols-2 gap-4 mt-4">
-                                        <div>
-                                            <p className="text-sm text-gray-500">Category</p>
-                                            <p className="font-medium">{currentItem.category_name}</p>
-                                        </div>
-
-                                        <div>
-                                            <p className="text-sm text-gray-500">Size</p>
-                                            <p className="font-medium">{currentItem.size_name}</p>
-                                        </div>
-
-                                        <div>
-                                            <p className="text-sm text-gray-500">Color</p>
-                                            <div className="flex items-center">
-                                                <div
-                                                    className="w-5 h-5 rounded-full mr-2 border border-gray-300"
-                                                    style={{ backgroundColor: currentItem.color_pick }}
-                                                ></div>
-                                                <span className="font-medium">Color #{currentItem.color_id}</span>
-                                            </div>
-                                        </div>
-
-                                        <div>
-                                            <p className="text-sm text-gray-500">Quantity</p>
-                                            <p className="font-medium">{currentItem.quantity}</p>
-                                        </div>
-
-                                        <div>
-                                            <p className="text-sm text-gray-500">Unit Price</p>
-                                            <p className="font-medium">${currentItem.item_price.toFixed(2)}</p>
-                                        </div>
-
-                                        <div>
-                                            <p className="text-sm text-gray-500">Total</p>
-                                            <p className="font-medium">${currentItem.price.toFixed(2)}</p>
-                                        </div>
+                                    <div>
+                                        <h1 className="text-2xl font-bold text-gray-900">Order Details</h1>
+                                        <p className="text-gray-600">#{orderData.order_no}</p>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
 
-                    {/* All Items List */}
-                    <div className="mt-8">
-                        <h3 className="text-lg font-semibold text-gray-800 mb-4">All Items in This Order</h3>
-                        <div className="overflow-x-auto">
-                            <table className="min-w-full divide-y divide-gray-200">
-                                <thead className="bg-gray-50">
-                                    <tr>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="bg-white divide-y divide-gray-200">
-                                    {orderData?.items.map((item, index) => (
-                                        <tr
-                                            key={item.id}
-                                            className={index === currentItemIndex ? 'bg-blue-50' : ''}
-                                            onClick={() => setCurrentItemIndex(index)}
-                                            style={{ cursor: 'pointer' }}
-                                        >
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <div className="flex items-center">
-                                                    <div className="flex-shrink-0 h-10 w-10">
-                                                        <img className="h-10 w-10 rounded-full object-contain" src={item.item_image} alt={item.item_name} />
-                                                    </div>
-                                                    <div className="ml-4">
-                                                        <div className="text-sm font-medium text-gray-900">{item.item_name}</div>
-                                                        <div className="text-sm text-gray-500">{item.item_code}</div>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${item.item_price.toFixed(2)}</td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.quantity}</td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${item.price.toFixed(2)}</td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                        <div className="flex items-center gap-4">
+                            {getStatusBadge(orderData?.status)}
+                            <div className="hidden md:block text-right">
+                                <p className="text-sm text-gray-500">Order Date</p>
+                                <p className="font-medium">{formatDate(orderData?.order_date)}</p>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-            <div className=' fixed z-1 bottom-20 rounded-sm cursor-pointer flex justify-center items-center active:scale-90 hover:scale-105 transition-all duration-200 bg-amber-200 right-20 w-12 h-12' >
+
+            {/* Main Content */}
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                {/* Stats Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                    <Card className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+                        <Statistic
+                            title="Total Amount"
+                            value={orderData?.order_total}
+                            precision={2}
+                            prefix="$"
+                            valueStyle={{ color: '#3f51b5' }}
+                        />
+                        <p className="text-sm text-gray-500 mt-2">Final order total</p>
+                    </Card>
+
+                    <Card className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+                        <Statistic
+                            title="Items"
+                            value={orderData?.items?.length || 0}
+                            valueStyle={{ color: '#10b981' }}
+                        />
+                        <p className="text-sm text-gray-500 mt-2">Products ordered</p>
+                    </Card>
+
+                    <Card className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+                        <Statistic
+                            title="Discount"
+                            value={orderData?.order_discount}
+                            precision={2}
+                            prefix="$"
+                            valueStyle={{ color: '#ef4444' }}
+                        />
+                        <p className="text-sm text-gray-500 mt-2">Total savings</p>
+                    </Card>
+
+                    <Card className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+                        <Statistic
+                            title="Delivery"
+                            value={orderData?.delivery_fee}
+                            precision={2}
+                            prefix="$"
+                            valueStyle={{ color: '#f59e0b' }}
+                        />
+                        <p className="text-sm text-gray-500 mt-2">Shipping cost</p>
+                    </Card>
+                </div>
+
+                {/* Tabs */}
+                <div className="mb-8">
+                    <div className="flex space-x-1 border-b border-gray-200">
+                        {tabs.map(tab => (
+                            <button
+                                key={tab.key}
+                                onClick={() => setActiveTab(tab.key)}
+                                className={`flex items-center gap-2 px-6 py-3 font-medium text-sm transition-colors ${activeTab === tab.key
+                                    ? 'text-blue-600 border-b-2 border-blue-600'
+                                    : 'text-gray-600 hover:text-gray-900'
+                                    }`}
+                            >
+                                {tab.icon}
+                                {tab.label}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Tab Content */}
+                <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+                    {activeTab === 'overview' && (
+                        <div className="p-6">
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                                {/* Order Timeline */}
+                                <div>
+                                    <h2 className="text-xl font-bold text-gray-800 mb-6 flex items-center gap-2">
+                                        <FaCalendarAlt className="text-blue-500" />
+                                        Order Timeline
+                                    </h2>
+                                    <div className="space-y-4">
+                                        {[
+                                            { date: orderData?.created_at, title: 'Order Placed', status: 'completed' },
+                                            { date: orderData?.updated_at, title: 'Last Updated', status: 'completed' },
+                                            { date: new Date().toISOString(), title: 'Processing', status: 'current' },
+                                            { title: 'Delivery', status: 'pending' }
+                                        ].map((item, index) => (
+                                            <div key={index} className="flex items-start">
+                                                <div className="flex flex-col items-center mr-4">
+                                                    <div className={`w-3 h-3 rounded-full ${item.status === 'completed' ? 'bg-green-500' :
+                                                        item.status === 'current' ? 'bg-blue-500' :
+                                                            'bg-gray-300'
+                                                        }`}></div>
+                                                    {index < 3 && <div className="w-0.5 h-10 bg-gray-300 mt-2"></div>}
+                                                </div>
+                                                <div className="flex-1">
+                                                    <h3 className="font-medium text-gray-900">{item.title}</h3>
+                                                    {item.date && (
+                                                        <p className="text-sm text-gray-500">{formatDate(item.date)}</p>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Customer Info */}
+                                <div>
+                                    <h2 className="text-xl font-bold text-gray-800 mb-6 flex items-center gap-2">
+                                        <FaUser className="text-blue-500" />
+                                        Customer Information
+                                    </h2>
+                                    <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-5">
+                                        <div className="space-y-4">
+                                            <div className="flex items-center gap-3">
+                                                <div className="p-2 bg-white rounded-lg shadow-sm">
+                                                    <FaUser className="w-5 h-5 text-gray-700" />
+                                                </div>
+                                                <div>
+                                                    <p className="text-sm text-gray-600">Customer Name</p>
+                                                    <p className="font-semibold text-gray-900">{orderData?.profile_name}</p>
+                                                </div>
+                                            </div>
+
+                                            <div className="flex items-center gap-3">
+                                                <div className="p-2 bg-white rounded-lg shadow-sm">
+                                                    <FaPhone className="w-5 h-5 text-gray-700" />
+                                                </div>
+                                                <div>
+                                                    <p className="text-sm text-gray-600">Phone Number</p>
+                                                    <p className="font-semibold text-gray-900">{orderData?.order_tel}</p>
+                                                </div>
+                                            </div>
+
+                                            <div className="flex items-start gap-3">
+                                                <div className="p-2 bg-white rounded-lg shadow-sm mt-1">
+                                                    <FaMapMarkerAlt className="w-5 h-5 text-gray-700" />
+                                                </div>
+                                                <div>
+                                                    <p className="text-sm text-gray-600">Delivery Address</p>
+                                                    <p className="font-semibold text-gray-900">{orderData?.order_address}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {activeTab === 'items' && (
+                        <div className="p-6">
+                            {/* Featured Item Display */}
+                            <div className="mb-8">
+                                <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl p-6">
+                                    <div className="flex flex-col lg:flex-row items-center gap-8">
+                                        <div className="relative">
+                                            <img
+                                                src={currentItem?.item_image || 'https://via.placeholder.com/300'}
+                                                alt={currentItem?.item_name}
+                                                className="w-64 h-64 object-contain rounded-xl border-4 border-white shadow-lg"
+                                            />
+                                            {orderData?.items.length > 1 && (
+                                                <>
+                                                    <button
+                                                        onClick={prevItem}
+                                                        className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white rounded-full p-3 shadow-lg hover:shadow-xl hover:bg-gray-50 transition-all"
+                                                    >
+                                                        <FaChevronLeft className="w-5 h-5 text-gray-700" />
+                                                    </button>
+                                                    <button
+                                                        onClick={nextItem}
+                                                        className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white rounded-full p-3 shadow-lg hover:shadow-xl hover:bg-gray-50 transition-all"
+                                                    >
+                                                        <FaChevronRight className="w-5 h-5 text-gray-700" />
+                                                    </button>
+                                                </>
+                                            )}
+                                            <div className="text-center mt-4">
+                                                <span className="text-sm text-gray-500">
+                                                    {currentItemIndex + 1} of {orderData?.items.length}
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        <div className="flex-1">
+                                            <div className="mb-4">
+                                                <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                                                    {currentItem?.item_name}
+                                                </h3>
+                                                <div className="flex items-center gap-2 text-gray-600">
+                                                    <span>Code: {currentItem?.item_code}</span>
+                                                    <span className="mx-2">•</span>
+                                                    <span>{currentItem?.category_name}</span>
+                                                </div>
+                                            </div>
+
+                                            <div className="grid grid-cols-2 gap-6">
+                                                {[
+                                                    // { label: 'Color', value: currentItem?.color_pick, isColor: true },
+                                                    // { label: 'Size', value: currentItem?.size_name },
+                                                    { label: 'Quantity', value: currentItem?.quantity },
+                                                    { label: 'Unit Price', value: `$${currentItem?.item_price?.toFixed(2)}` },
+                                                    { label: 'Total', value: `$${currentItem?.price?.toFixed(2)}`, highlight: true }
+                                                ].map((item, index) => (
+                                                    <div key={index} className="bg-white rounded-lg p-4 shadow-sm">
+                                                        <p className="text-sm text-gray-500 mb-1">{item.label}</p>
+                                                        {item.isColor ? (
+                                                            <div className="flex items-center gap-2">
+                                                                <div
+                                                                    className="w-6 h-6 rounded-full border border-gray-300"
+                                                                    style={{ backgroundColor: item.value }}
+                                                                ></div>
+                                                                <span className={`font-semibold ${item.highlight ? 'text-blue-600' : 'text-gray-900'}`}>
+                                                                    {item.value}
+                                                                </span>
+                                                            </div>
+                                                        ) : (
+                                                            <p className={`text-lg font-semibold ${item.highlight ? 'text-blue-600' : 'text-gray-900'}`}>
+                                                                {item.value}
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* All Items Table */}
+                            <div>
+                                <h3 className="text-xl font-bold text-gray-800 mb-4">All Order Items</h3>
+                                <div className="overflow-hidden rounded-xl border border-gray-200">
+                                    <table className="min-w-full divide-y divide-gray-200">
+                                        <thead className="bg-gray-50">
+                                            <tr>
+                                                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Product</th>
+                                                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Details</th>
+                                                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Price</th>
+                                                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Total</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="bg-white divide-y divide-gray-200">
+                                            {orderData?.items.map((item, index) => (
+                                                <tr
+                                                    key={item.id}
+                                                    className={`hover:bg-gray-50 cursor-pointer transition-colors ${index === currentItemIndex ? 'bg-blue-50' : ''
+                                                        }`}
+                                                    onClick={() => setCurrentItemIndex(index)}
+                                                >
+                                                    <td className="px-6 py-4">
+                                                        <div className="flex items-center">
+                                                            <img
+                                                                className="w-12 h-12 rounded-lg object-cover border border-gray-200"
+                                                                src={item.item_image}
+                                                                alt={item.item_name}
+                                                            />
+                                                            <div className="ml-4">
+                                                                <div className="text-sm font-medium text-gray-900">
+                                                                    {item.item_name}
+                                                                </div>
+                                                                <div className="text-sm text-gray-500">
+                                                                    {item.item_code}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-6 py-4">
+                                                        <div className="flex items-center gap-4">
+                                                            {/* <div className="flex items-center gap-2">
+                                                                <div
+                                                                    className="w-4 h-4 rounded-full border border-gray-300"
+                                                                    style={{ backgroundColor: item.color_pick }}
+                                                                ></div>
+                                                                <span className="text-sm text-gray-600">{item.size_name}</span>
+                                                            </div> */}
+                                                            <span className="text-sm text-gray-500">Qty: {item.quantity}</span>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-6 py-4">
+                                                        <div className="text-sm font-medium text-gray-900">
+                                                            ${item.item_price.toFixed(2)}
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-6 py-4">
+                                                        <div className="text-sm font-bold text-gray-900">
+                                                            ${item.price.toFixed(2)}
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {activeTab === 'customer' && (
+                        <div className="p-6">
+                            <div className="max-w-2xl">
+                                <h2 className="text-2xl font-bold text-gray-800 mb-8">Customer Details</h2>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    {[
+                                        { icon: <FaUser />, label: 'Full Name', value: orderData?.profile_name },
+                                        { icon: <FaPhone />, label: 'Phone Number', value: orderData?.order_tel },
+                                        { icon: <FaMapMarkerAlt />, label: 'Address', value: orderData?.order_address },
+                                        { icon: <FaCalendarAlt />, label: 'Member Since', value: formatDate(orderData?.created_at) },
+                                    ].map((item, index) => (
+                                        <div key={index} className="bg-gray-50 rounded-xl p-5 hover:bg-gray-100 transition-colors">
+                                            <div className="flex items-center gap-3 mb-2">
+                                                <div className="p-2 bg-white rounded-lg">
+                                                    {item.icon}
+                                                </div>
+                                                <span className="text-sm text-gray-500">{item.label}</span>
+                                            </div>
+                                            <p className="text-lg font-semibold text-gray-900">{item.value}</p>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {activeTab === 'payment' && (
+                        <div className="p-6">
+                            <div className="max-w-2xl">
+                                <h2 className="text-2xl font-bold text-gray-800 mb-8">Payment Information</h2>
+                                <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-2xl p-8">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                                        {[
+                                            { label: 'Subtotal', value: `$${orderData?.order_subtotal.toFixed(2)}` },
+                                            { label: 'Discount', value: `-$${orderData?.order_discount.toFixed(2)}`, color: 'text-red-600' },
+                                            { label: 'Delivery Fee', value: `$${orderData?.delivery_fee.toFixed(2)}` },
+                                            { label: 'Total Amount', value: `$${orderData?.order_total.toFixed(2)}`, bold: true }
+                                        ].map((item, index) => (
+                                            <div key={index} className="flex justify-between items-center py-3 border-b border-green-200">
+                                                <span className="text-gray-600">{item.label}</span>
+                                                <span className={`font-medium ${item.color || 'text-gray-900'} ${item.bold ? 'text-lg' : ''}`}>
+                                                    {item.value}
+                                                </span>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    <div className="space-y-4">
+                                        <div className="flex items-center justify-between bg-white rounded-lg p-4">
+                                            <div className="flex items-center gap-3">
+                                                <FaCreditCard className="w-6 h-6 text-gray-700" />
+                                                <div>
+                                                    <p className="font-medium text-gray-900">Payment Method</p>
+                                                    <p className="text-sm text-gray-500">Bank Transfer</p>
+                                                </div>
+                                            </div>
+                                            <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium">
+                                                Processing
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* Floating Action Button */}
+            <div className="fixed bottom-8 right-8 z-20">
                 <Popconfirm
-                    title="Receive Orders"
-                    description="Are you sure to receive orders?"
+                    title="Confirm Order Receipt"
+                    description="Are you sure you want to mark this order as received?"
                     onConfirm={confirm}
                     onCancel={cancel}
-                    okText="Yes"
-                    cancelText="No"
-                    className='border w-full h-full flex justify-center items-center p-1'
+                    okText="Yes, Receive"
+                    cancelText="Cancel"
+                    okButtonProps={{ loading: isReceiveLoading }}
                 >
-                    <IoCashSharp className=' text-green-500' />
+                    <button className="group flex items-center gap-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white px-6 py-4 rounded-full shadow-xl hover:shadow-2xl transform hover:-translate-y-0.5 transition-all duration-300">
+                        <IoCashSharp className="w-6 h-6 group-hover:rotate-12 transition-transform" />
+                        <span className="font-semibold">Receive Order</span>
+                    </button>
                 </Popconfirm>
             </div>
         </div>

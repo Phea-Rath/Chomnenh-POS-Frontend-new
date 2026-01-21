@@ -6,6 +6,8 @@ import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import logo from "../../assets/shopping-cart.png";
 import { useGetUserLoginQuery } from "../../../app/Features/usersSlice";
+import { useGetAllMenuQuery } from "../../../app/Features/menusSlice";
+import { useGetPermissionByIdQuery } from "../../../app/Features/permissionSlice";
 
 // Placeholder logo (you can replace this with your actual logo URL)
 const LOGO_URL = "https://via.placeholder.com/150x50.png?text=E-STORE";
@@ -15,6 +17,7 @@ const LoginForm = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const { refetch, isLoading } = useGetUserLoginQuery(localStorage.getItem('token'));
+  const { data: menus, refetch: refetchMenu, isLoading: loadMenu } = useGetPermissionByIdQuery({ id: localStorage.getItem('userId'), token: localStorage.getItem('token') });
   const [alert, setAlert] = useState({ message: "", show: false });
   const [login, setLogin] = useState({ phone_number: "", password: "" });
 
@@ -22,6 +25,7 @@ const LoginForm = () => {
     console.log("Login Successful", otp);
     navigate("/dashboard/analystic");
   };
+
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -41,11 +45,13 @@ const LoginForm = () => {
       localStorage.setItem("profileId", profile_id);
       localStorage.setItem("userId", id);
       localStorage.setItem("token", token);
-      refetch();
-      if (!isLoading) {
-
+      if (!isLoading && !loadMenu) {
+        await refetch();
+        await refetchMenu();
         toast.success("Login successful");
         setShowOtpInput(true);
+        localStorage.setItem('menus', JSON.stringify(menus?.data));
+        navigate("/dashboard/analystic");
       }
     } catch (err) {
       toast.error(
@@ -63,7 +69,7 @@ const LoginForm = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gray-200 p-4">
       <ToastContainer
         position="top-right"
         autoClose={3000}
@@ -76,7 +82,7 @@ const LoginForm = () => {
         pauseOnHover
       />
 
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl p-6 sm:p-8 transition-all duration-300 hover:shadow-xl">
+      <div className="w-full max-w-md bg-white rounded-2xl shadow-sm p-6 sm:p-8 transition-all duration-300 hover:shadow-xl">
         {/* Logo and Company Name */}
         <div className="flex flex-col items-center mb-8">
           <div className="bg-white rounded-full p-3 shadow-lg mb-3">
@@ -104,7 +110,7 @@ const LoginForm = () => {
 
         {/* Login or OTP Form */}
         <div className="space-y-6">
-          {showOtpInput ? (
+          {/* {showOtpInput ? (
             <div className="space-y-6 flex flex-col items-center">
               <div className="text-center">
                 <h2 className="text-2xl font-bold text-gray-800 mb-2">
@@ -114,7 +120,7 @@ const LoginForm = () => {
                   Enter OTP sent to <span className="font-semibold text-gray-800">{login.phone_number}</span>
                 </p>
               </div>
-              <OtpInput length={4} onOtpSubmit={onOtpSubmit} />
+              <OtpInput length={4} onOtpSubmit={onOtpSubmit} /> 
               <button
                 onClick={() => setShowOtpInput(false)}
                 className="text-blue-600 hover:text-blue-700 text-sm font-medium transition-colors duration-200"
@@ -122,88 +128,88 @@ const LoginForm = () => {
                 ← Back to login
               </button>
             </div>
-          ) : (
-            <div className="space-y-6">
-              <div className="text-center">
-                <h2 className="text-2xl font-bold text-gray-800 mb-2">
-                  Login to Your Account
-                </h2>
-                <p className="text-gray-500 text-sm">
-                  Enter your credentials to continue
-                </p>
+          ) : ( */}
+          <div className="space-y-6">
+            <div className="text-center">
+              <h2 className="text-2xl font-bold text-gray-800 mb-2">
+                Login to Your Account
+              </h2>
+              <p className="text-gray-500 text-sm">
+                Enter your credentials to continue
+              </p>
+            </div>
+
+            <form onSubmit={handleLogin} className="space-y-5">
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Phone Number
+                  </label>
+                  <input
+                    type="tel"
+                    value={login.phone_number}
+                    onChange={(e) =>
+                      setLogin({ ...login, phone_number: e.target.value })
+                    }
+                    className="w-full px-4 py-3 text-gray-900 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-200 placeholder-gray-400"
+                    placeholder="Enter your phone number"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Password
+                  </label>
+                  <input
+                    type="password"
+                    value={login.password}
+                    onChange={(e) =>
+                      setLogin({ ...login, password: e.target.value })
+                    }
+                    className="w-full px-4 py-3 text-gray-900 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-200 placeholder-gray-400"
+                    placeholder="Enter your password"
+                  />
+                </div>
               </div>
 
-              <form onSubmit={handleLogin} className="space-y-5">
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Phone Number
-                    </label>
-                    <input
-                      type="tel"
-                      value={login.phone_number}
-                      onChange={(e) =>
-                        setLogin({ ...login, phone_number: e.target.value })
-                      }
-                      className="w-full px-4 py-3 text-gray-900 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-200 placeholder-gray-400"
-                      placeholder="Enter your phone number"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Password
-                    </label>
-                    <input
-                      type="password"
-                      value={login.password}
-                      onChange={(e) =>
-                        setLogin({ ...login, password: e.target.value })
-                      }
-                      className="w-full px-4 py-3 text-gray-900 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-200 placeholder-gray-400"
-                      placeholder="Enter your password"
-                    />
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between text-sm">
-                  <Link
-                    to="/forgot-password"
-                    className="text-blue-600 hover:text-blue-700 font-medium transition-colors duration-200"
-                  >
-                    Forgot Password?
-                  </Link>
-                  <Link
-                    to="/signup"
-                    className="text-gray-600 hover:text-gray-800 transition-colors duration-200"
-                  >
-                    Don't have an account?
-                  </Link>
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className={`w-full py-3 px-4 rounded-xl text-white font-semibold transition-all duration-200 ${loading
-                    ? "bg-blue-400 cursor-not-allowed transform scale-95"
-                    : "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
-                    }`}
+              <div className="flex items-center justify-between text-sm">
+                <Link
+                  to="/forgot-password"
+                  className="text-blue-600 hover:text-blue-700 font-medium transition-colors duration-200"
                 >
-                  {loading ? (
-                    <div className="flex items-center justify-center">
-                      <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                      Logging in...
-                    </div>
-                  ) : (
-                    "Login"
-                  )}
-                </button>
-              </form>
-            </div>
-          )}
+                  Forgot Password?
+                </Link>
+                <Link
+                  to="/signup"
+                  className="text-gray-600 hover:text-gray-800 transition-colors duration-200"
+                >
+                  Don't have an account?
+                </Link>
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className={`w-full py-3 px-4 rounded-xl text-white font-semibold transition-all duration-200 ${loading
+                  ? "bg-blue-400 cursor-not-allowed transform scale-95"
+                  : "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                  }`}
+              >
+                {loading ? (
+                  <div className="flex items-center justify-center">
+                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Logging in...
+                  </div>
+                ) : (
+                  "Login"
+                )}
+              </button>
+            </form>
+          </div>
+          {/* )} */}
         </div>
 
         {/* Footer */}

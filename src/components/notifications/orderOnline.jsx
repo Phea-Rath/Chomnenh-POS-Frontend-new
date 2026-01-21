@@ -40,27 +40,29 @@ const OrderOnline = () => {
             dataSource={list}
             renderItem={item => (
                 <List.Item
-                    className={`${item?.status == 2 ? 'bg-gray-300 !text-white' : ''}`}
+                    className={`${item?.status == 1 ? 'bg-gray-300 !text-white' : ''}`}
                     actions={[
-                        // <a key="list-loadmore-edit" >edit</a>, 
-                        // <Tag color={item?.status == 2 ? "warning" : "success"}>{item?.status != 2 ? "checked" : "please check it"}</Tag>,
+                        // <a key="list-loadmore-edit" >edit</a>,
+                        // <Tag color={item?.status == 2 ? "warning" : "success"}>{item?.status == 1 ? "new" : "please check it"}</Tag>,
                         // <a key="list-loadmore-more"
                         //     onClick={async () => {
-                        //         setLoading(true);
+                        //         // setLoading(true);
                         //         await viewOrder({ id: item?.order_id, token });
                         //         refetch();
                         //         navigator('/dashboard/detail-notification/' + item?.order_id);
                         //     }}>receive order</a>,
-                        <Button type="primary" loading={item?.loading} onClick={async () => {
-                            if (item?.status == 2) {
-                                item.loading = true;
-                                setList([...list]);
-                                await viewOrder({ id: item?.order_id, token });
-                                refetch();
-                            }
-                            navigator('/dashboard/detail-notification/' + item?.order_id);
-                        }}>
-                            Receive Order
+                        <Button type="primary" loading={item?.loading}
+                            onClick={async () => {
+                                // if (item?.status == 2) {
+                                //     item.loading = true;
+                                //     setList([...list]);
+                                //     await viewOrder({ id: item?.order_id, token });
+                                //     refetch();
+                                // }
+                                // navigator('/dashboard/detail-notification/' + item?.order_id);
+                                navigator('/dashboard/order-tracking');
+                            }}>
+                            Order Tracking
                         </Button>]}
                 >
                     <Skeleton avatar title={false} loading={item?.items[0].loading} active>
@@ -70,7 +72,7 @@ const OrderOnline = () => {
                             description={<span className='text-xs'>{` Order at
                                 ${timeSince(item?.order_date)}`}</span>}
                         />
-                        <Tag bordered={false} color="magenta">{item?.items?.reduce((init, value) => init + Number(value.quantity || 0), 0)}</Tag>
+                        <Tag variant='solid' color="success">{item?.items?.reduce((init, value) => init + Number(value.quantity || 0), 0)} quantity</Tag>
                     </Skeleton>
                 </List.Item>
             )}

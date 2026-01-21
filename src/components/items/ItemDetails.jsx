@@ -20,6 +20,7 @@ import { useNavigate, useParams } from "react-router";
 import {
   useDeleteItemMutation,
   useGetAllItemsQuery,
+  useGetItemByIdQuery,
 } from "../../../app/Features/itemsSlice";
 import { RiDeleteBin6Line, RiEditLine } from "react-icons/ri";
 import { motion, AnimatePresence } from "framer-motion";
@@ -37,15 +38,16 @@ const ItemDetails = () => {
   const token = localStorage.getItem("token");
   const [alertBox, setAlertBox] = useState(false);
   const { setLoading } = useOutletsContext();
-  const { data, refetch, isLoading } = useGetAllItemsQuery(token);
-  const findItem = data?.data?.find((item) => item.id == id);
+  const { data, refetch, isLoading } = useGetItemByIdQuery({ id, token });
+  // const findItem = data?.data?.find((item) => item.id == id);
 
   const [deleteItem] = useDeleteItemMutation();
-  const [currentItem, setCurrentItem] = useState(findItem || {});
+  const [currentItem, setCurrentItem] = useState({});
   const { refetch: saleRefetch } = useGetAllSaleQuery(token);
 
   useEffect(() => {
-    setCurrentItem(findItem);
+    setCurrentItem(data?.data);
+    setCurrentItem(data?.data);
   }, [data]);
 
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -206,9 +208,9 @@ const ItemDetails = () => {
               <div className="relative bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl overflow-hidden aspect-square border border-gray-200">
                 <AnimatePresence mode="wait">
                   <motion.img
-                    key={currentItem.images?.[currentImageIndex]}
-                    src={currentItem.images?.[currentImageIndex].image || currentItem.image}
-                    alt={currentItem.name}
+                    key={currentItem?.images?.[currentImageIndex]}
+                    src={currentItem?.images?.[currentImageIndex]?.image || currentItem?.image || ''}
+                    alt={currentItem?.name}
                     className="w-full h-full object-contain p-8"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: imageLoading ? 0 : 1 }}
@@ -354,7 +356,7 @@ const ItemDetails = () => {
                     <Divider type="vertical" className="h-6" />
                     <div className="flex items-center gap-1 text-gray-600">
                       <MdShoppingCart className="text-lg" />
-                      <span className="text-sm font-medium">{currentItem.sold || 0} sold</span>
+                      <span className="text-sm font-medium">{currentItem?.stock?.sold || 0} sold</span>
                     </div>
                     <Divider type="vertical" className="h-6" />
                     <div className="flex items-center gap-1 text-gray-600">
@@ -554,14 +556,14 @@ const ItemDetails = () => {
                   <div className="grid grid-cols-2 gap-4">
                     <Statistic
                       title="Units Sold"
-                      value={currentItem.sold || 0}
+                      value={currentItem?.stock?.sold || 0}
                       valueStyle={{ color: '#3f51b5' }}
                       prefix={<MdShoppingCart className="text-lg" />}
                     />
                     <Statistic
                       title="Current Stock"
-                      value={currentItem.stock || 0}
-                      valueStyle={{ color: currentItem.stock > 0 ? '#4caf50' : '#f44336' }}
+                      value={currentItem?.stock?.in_stock || 0}
+                      valueStyle={{ color: currentItem?.stock?.in_stock > 0 ? '#4caf50' : '#f44336' }}
                       prefix={<MdInventory className="text-lg" />}
                     />
                     <Statistic
@@ -583,19 +585,19 @@ const ItemDetails = () => {
                 </Card>
 
                 {/* Stock Status Alert */}
-                <div className={`flex items-center justify-between p-4 rounded-lg border ${currentItem.stock > 0
+                <div className={`flex items-center justify-between p-4 rounded-lg border ${currentItem?.stock?.in_stock > 0
                   ? "bg-green-50 border-green-200"
                   : "bg-red-50 border-red-200"
                   }`}>
                   <div className="flex items-center gap-3">
-                    <div className={`w-4 h-4 rounded-full ${currentItem.stock > 0 ? "bg-green-500" : "bg-red-500"}`}></div>
+                    <div className={`w-4 h-4 rounded-full ${currentItem?.stock?.in_stock > 0 ? "bg-green-500" : "bg-red-500"}`}></div>
                     <div>
-                      <div className={`font-medium ${currentItem.stock > 0 ? "text-green-800" : "text-red-800"}`}>
-                        {currentItem.stock > 0 ? "✓ In Stock" : "✗ Out of Stock"}
+                      <div className={`font-medium ${currentItem?.stock?.in_stock > 0 ? "text-green-800" : "text-red-800"}`}>
+                        {currentItem?.stock?.in_stock > 0 ? "✓ In Stock" : "✗ Out of Stock"}
                       </div>
-                      <div className={`text-sm ${currentItem.stock > 0 ? "text-green-600" : "text-red-600"}`}>
-                        {currentItem.stock > 0
-                          ? `${currentItem.stock} units available for immediate dispatch`
+                      <div className={`text-sm ${currentItem?.stock?.in_stock > 0 ? "text-green-600" : "text-red-600"}`}>
+                        {currentItem?.stock?.in_stock > 0
+                          ? `${currentItem?.stock?.in_stock} units available for immediate dispatch`
                           : "This item is currently unavailable for purchase"
                         }
                       </div>

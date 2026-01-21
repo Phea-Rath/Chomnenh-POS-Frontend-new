@@ -8,6 +8,7 @@ import { Spin } from "antd";
 import { IoArrowBackCircle } from "react-icons/io5";
 import { useGetUserProfileQuery } from "../../../app/Features/usersSlice";
 import handleDownload from "../../services/imageDowload";
+import { convertImageToBase64 } from "../../services/serviceFunction";
 
 const OrderReceipt = () => {
   const { id } = useParams();
@@ -27,20 +28,7 @@ const OrderReceipt = () => {
   // Preload the logo image
   useEffect(() => {
     if (profileData?.data?.image) {
-      const img = new Image();
-      img.onload = () => {
-        setLogoLoaded(true);
-        setLogoError(false);
-        setIsImageReady(true);
-      };
-      img.onerror = () => {
-        setLogoError(true);
-        setLogoLoaded(false);
-        setIsImageReady(true);
-      };
-      img.src = profileData?.data?.image;
-    } else {
-      setIsImageReady(true);
+      convertImageToBase64(profileData?.data?.image).then(setLogoLoaded);
     }
   }, [profileData?.data?.image]);
 
@@ -128,11 +116,9 @@ const OrderReceipt = () => {
           <div className="flex justify-center mb-2">
             {profileData?.data?.image && !logoError ? (
               <img
-                src={profileData.data.image}
+                src={logoLoaded}
                 className="h-16 w-16 object-fit rounded-full"
                 alt=""
-                onLoad={() => setLogoLoaded(true)}
-                onError={() => setLogoError(true)}
               />
             ) : (
               <div className="h-16 w-16 flex items-center justify-center bg-gray-200 rounded">

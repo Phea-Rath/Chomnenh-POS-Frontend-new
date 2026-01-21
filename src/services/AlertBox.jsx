@@ -36,7 +36,7 @@ export default function AlertBox({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.3 }}
-          className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm flex items-center justify-center z-10000 p-4"
+          className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm h-full w-full"
         >
           <motion.div
             initial={{ scale: 0.7, opacity: 0, y: 20 }}

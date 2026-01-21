@@ -10,6 +10,7 @@ import { Badge, Space } from "antd";
 const Header = () => {
   const { setSidebar, notification } = useOutletsContext();
   const token = localStorage.getItem("token");
+  const uId = localStorage.getItem("userId");
   const { data, refetch } = useGetUserLoginQuery(token);
   const [profile, setProfile] = useState();
 
@@ -22,7 +23,7 @@ const Header = () => {
   }
 
   return (
-    <header className="fixed w-full lg:w-[calc(100vw-346px)] top-0 z-50 bg-white border-b border-gray-200">
+    <header className={`fixed shadow-sm w-full ${data?.data?.role_id !== 1 && "lg:w-[calc(100vw-346px)]"} top-0 z-50 bg-white border-b border-gray-200`}>
       <div className="flex justify-between items-center px-4 lg:px-8 py-3">
         {/* Left Section - Logo and Menu */}
         <div className="flex items-center gap-4">
@@ -39,8 +40,9 @@ const Header = () => {
           >
             <h1 className="font-bold text-gray-400 text-sm">
               {" "}
-              <span className="text-info font-extrabold text-4xl">e</span>
-              <span className="text-4xl text-warning">.</span>STORE
+              CHOMNENH
+              <span className="text-4xl text-warning">.</span>
+              <span className="text-info font-extrabold text-3xl">PoS</span>
             </h1>
           </Link>
         </div>
@@ -48,7 +50,7 @@ const Header = () => {
         {/* Right Section - User and Notifications */}
         <div className="flex items-center gap-4">
           {/* Notification Bell */}
-          <Link
+          {uId != 1 && <Link
             to="/dashboard/notification"
             className="relative p-2 hover:bg-gray-100 rounded-lg transition-colors"
           >
@@ -59,7 +61,7 @@ const Header = () => {
             >
               <BiBell className="text-xl text-gray-600 hover:text-blue-600 transition-colors" />
             </Badge>
-          </Link>
+          </Link>}
 
           {/* User Profile Dropdown */}
           <div className="dropdown dropdown-end">

@@ -7,6 +7,7 @@ import { BsMenuButtonWideFill } from "react-icons/bs";
 import { FcCurrencyExchange } from "react-icons/fc";
 import ExchangeRate from "../ExchangeRate";
 import { useGetPermissionByIdQuery } from "../../../app/Features/permissionSlice";
+import { useGetUserLoginQuery } from "../../../app/Features/usersSlice";
 const iconComponents = {
   MdManageAccounts: MdManageAccounts,
   BsPersonRolodex: BsPersonRolodex,
@@ -27,22 +28,24 @@ const Settings = () => {
   const token = localStorage.getItem("token");
   const userId = localStorage.getItem("userId");
   const [menu, setMenu] = useState([]);
+  const { data: userLogin } = useGetUserLoginQuery(token);
   const { data } = useGetPermissionByIdQuery({ id: userId, token });
 
   useEffect(() => {
     if (data?.data.length != 0) {
       const perms = data?.data?.filter((i) => i.menu_type == 3);
       setMenu(perms);
-      console.log(data?.data);
     }
-  }, [data]);
+    console.log(userLogin);
+
+  }, [data, userLogin]);
   const renderIcon = (iconName) => {
     const IconComponent = iconComponents[String(iconName)];
     return IconComponent ? <IconComponent /> : <AiFillProduct />; // Default icon
   };
   return (
     <section className="p-2 md:px-20">
-      <ExchangeRate />
+      {userLogin?.data?.role_id == 2 || userLogin?.data?.role_id == 3 && <ExchangeRate />}
       <article className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-5 mt-5">
         {menu?.map((perm, index) => {
           const color = colors[index % colors.length]; // rotate colors

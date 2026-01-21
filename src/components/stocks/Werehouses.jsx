@@ -99,13 +99,10 @@ const Warehouses = () => {
   // Warehouse Card Component for Grid View
   const WarehouseCard = ({ warehouse, index }) => {
     return (
-      <motion.div
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.3 }}
+      <div
       >
         <Card
-          className="h-full border-0 shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-white to-blue-50/50 hover:scale-[1.02] cursor-pointer"
+          className="h-full border-0 shadow-sm hover:shadow-sm transition-all duration-300 bg-gradient-to-br from-white to-blue-50/50 hover:scale-[1.02] cursor-pointer"
           bodyStyle={{ padding: '20px' }}
         >
           <div className="flex flex-col h-full">
@@ -190,16 +187,12 @@ const Warehouses = () => {
             </div>
           </div>
         </Card>
-      </motion.div>
+      </div>
     );
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
-      transition={{ duration: 0.5 }}
+    <div
     >
       <section className='p-4 md:p-6 lg:p-8'>
         <AlertBox
@@ -221,7 +214,7 @@ const Warehouses = () => {
                 animate={{ opacity: 1, x: 0 }}
                 className="text-3xl font-bold text-gray-900 mb-2 flex items-center gap-3"
               >
-                <div className="p-3 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl shadow-lg">
+                <div className="p-3 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl shadow-sm">
                   <TbBuildingWarehouse className="text-2xl text-white" />
                 </div>
                 Warehouse Management
@@ -235,20 +228,17 @@ const Warehouses = () => {
               type="primary"
               size="large"
               onClick={() => addModalRef.current?.showModal()}
-              className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 border-0 h-12 px-6 shadow-lg"
+              className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 border-0 h-12 px-6 shadow-sm"
             >
               + Add New Warehouse
             </Button>
           </div>
 
           {/* Statistics Cards */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
+          <div
             className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8"
           >
-            <Card className="border-0 shadow-lg bg-gradient-to-br from-blue-50 to-white">
+            <Card className="border-0 shadow-sm bg-gradient-to-br from-blue-50 to-white">
               <div className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
@@ -268,7 +258,7 @@ const Warehouses = () => {
               </div>
             </Card>
 
-            <Card className="border-0 shadow-lg bg-gradient-to-br from-green-50 to-white">
+            <Card className="border-0 shadow-sm bg-gradient-to-br from-green-50 to-white">
               <div className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
@@ -288,7 +278,7 @@ const Warehouses = () => {
               </div>
             </Card>
 
-            <Card className="border-0 shadow-lg bg-gradient-to-br from-yellow-50 to-white">
+            <Card className="border-0 shadow-sm bg-gradient-to-br from-yellow-50 to-white">
               <div className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
@@ -308,7 +298,7 @@ const Warehouses = () => {
               </div>
             </Card>
 
-            <Card className="border-0 shadow-lg bg-gradient-to-br from-purple-50 to-white">
+            <Card className="border-0 shadow-sm bg-gradient-to-br from-purple-50 to-white">
               <div className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
@@ -336,14 +326,11 @@ const Warehouses = () => {
                 </div>
               </div>
             </Card>
-          </motion.div>
+          </div>
 
           {/* Controls Section */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="bg-white rounded-2xl shadow-xl border border-gray-100 p-6 mb-8"
+          <div
+            className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-8"
           >
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
               {/* View Toggle and Search */}
@@ -353,7 +340,7 @@ const Warehouses = () => {
                   <button
                     onClick={() => setViewMode("table")}
                     className={`px-4 py-2 rounded-lg transition-all duration-300 flex items-center space-x-2 ${viewMode === "table"
-                      ? "bg-white shadow-md text-blue-600 font-semibold"
+                      ? "bg-white shadow-sm text-blue-600 font-semibold"
                       : "text-gray-600 hover:text-gray-800"
                       }`}
                   >
@@ -363,7 +350,7 @@ const Warehouses = () => {
                   <button
                     onClick={() => setViewMode("grid")}
                     className={`px-4 py-2 rounded-lg transition-all duration-300 flex items-center space-x-2 ${viewMode === "grid"
-                      ? "bg-white shadow-md text-blue-600 font-semibold"
+                      ? "bg-white shadow-sm text-blue-600 font-semibold"
                       : "text-gray-600 hover:text-gray-800"
                       }`}
                   >
@@ -396,7 +383,7 @@ const Warehouses = () => {
                 Refresh
               </Button>
             </div>
-          </motion.div>
+          </div>
         </div>
 
         {/* Modals */}
@@ -425,13 +412,10 @@ const Warehouses = () => {
         </dialog>
 
         {/* Content Section */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
+        <div
         >
           {viewMode === "table" ? (
-            <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="table w-full">
                   {/* Table Header */}
@@ -608,9 +592,9 @@ const Warehouses = () => {
               )}
             </div>
           )}
-        </motion.div>
+        </div>
       </section>
-    </motion.div>
+    </div>
   )
 }
 

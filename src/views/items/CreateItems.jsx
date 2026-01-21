@@ -26,6 +26,7 @@ const ItemForm = () => {
   const navigator = useNavigate();
   const token = localStorage.getItem("token");
   const { setLoading, loading } = useOutletsContext();
+  const { refetch } = useGetAllItemsQuery({ token, limit: 12, page: 1 });
 
   // State management
   const [viewImages, setViewImages] = useState([]);
@@ -60,7 +61,6 @@ const ItemForm = () => {
   });
 
   // Queries and Mutations
-  const { data: itemsData, refetch } = useGetAllItemsQuery(token);
   const { data: itemData, refetch: refetchItem } = useGetItemByIdQuery({ token, id }, { skip: !isEditMode });
 
   const [createItem] = useCreateItemMutation();
@@ -283,15 +283,6 @@ const ItemForm = () => {
       }
 
       if (response.data.status == 200) {
-        // Handle attributes
-        // const attributeRes = await api.post("/attributes", formData, {
-        //   headers: {
-        //     Authorization: `Bearer ${token}`,
-        //     'Content-Type': 'multipart/form-data'
-        //   },
-        // });
-
-        // if (attributeRes.data.status == 200) {
         refetch();
         if (isEditMode) refetchItem();
         saleContext.refetch();
@@ -516,7 +507,7 @@ const ItemForm = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 py-8">
+    <div className="min-h-screen bg-transparent py-8">
       <div className="mx-auto px-2">
         <AlertBox
           isOpen={alertBox}
@@ -538,28 +529,12 @@ const ItemForm = () => {
           </p>
         </div>
 
-        <div className="bg-white shadow-xl rounded-2xl p-6">
-          {/* Validation Summary */}
-          {Object.keys(errors).length > 0 && (
-            <div className="mb-8 p-6 bg-red-50 border border-red-200 rounded-xl">
-              <div className="flex items-center mb-2">
-                <div className="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center mr-3">
-                  <span className="text-white text-sm font-bold">!</span>
-                </div>
-                <h3 className="text-red-800 font-semibold text-lg">Please fix the following errors:</h3>
-              </div>
-              <ul className="list-disc list-inside text-red-700 text-sm space-y-1">
-                {Object.values(errors).map((error, index) => (
-                  error && <li key={index} className="ml-4">{error}</li>
-                ))}
-              </ul>
-            </div>
-          )}
+        <div className="bg-transparent rounded-2xl p-6">
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Left Column - Image Upload */}
             <div className="lg:col-span-1">
-              <div className="bg-gray-50 rounded-xl p-6 border-2 border-dashed border-gray-300">
+              <div className="bg-gray-50 rounded-xl shadow-sm p-6 border-2 border-dashed border-gray-300">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-lg font-semibold text-gray-800">
                     Product Images <span className="text-red-500">*</span>
@@ -683,7 +658,7 @@ const ItemForm = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Basic Information */}
                 <div className="space-y-4">
-                  <div className="bg-gray-50 rounded-xl p-6 border border-gray-200">
+                  <div className="bg-gray-50 rounded-xl p-6 border border-gray-200 shadow-sm">
                     <div className="flex items-center gap-3 mb-4">
                       <FaTag className="text-blue-500 text-xl" />
                       <h2 className="text-lg font-semibold text-gray-800">Basic Information</h2>
@@ -765,7 +740,7 @@ const ItemForm = () => {
                   </div>
 
                   {/* Pricing & Discount */}
-                  <div className="bg-gray-50 rounded-xl p-6 border border-gray-200">
+                  <div className="bg-gray-50 rounded-xl p-6 border border-gray-200 shadow-sm">
                     <div className="flex items-center gap-3 mb-4">
                       <FaTag className="text-green-500 text-xl" />
                       <h2 className="text-lg font-semibold text-gray-800">Pricing & Discount</h2>
@@ -794,7 +769,7 @@ const ItemForm = () => {
 
                 {/* Specifications */}
                 <div className="space-y-4">
-                  <div className="bg-gray-50 rounded-xl p-6 border border-gray-200">
+                  <div className="bg-gray-50 rounded-xl p-6 border border-gray-200 shadow-sm">
                     <div className="flex items-center gap-3 mb-4">
                       <FaBox className="text-purple-500 text-xl" />
                       <h2 className="text-lg font-semibold text-gray-800">Specifications</h2>
@@ -937,7 +912,7 @@ const ItemForm = () => {
               </div>
 
               {/* Attributes Section (Excluding Colors) */}
-              <div className="mt-6 bg-gray-50 rounded-xl p-6 border border-gray-200">
+              <div className="mt-6 bg-gray-50 rounded-xl p-6 border border-gray-200 shadow-sm">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-3">
                     <FaBox className="text-orange-500 text-xl" />

@@ -8,12 +8,14 @@ import {
 } from "react-icons/fa";
 import { Link } from "react-router";
 import api from "../../services/api";
+import { useGetAllRoleQuery } from "../../../app/Features/rolesSlice";
 
 const RoleList = () => {
   const token = localStorage.getItem("token");
   const [roles, setRoles] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredRoles, setFilteredRoles] = useState([]);
+  const { data } = useGetAllRoleQuery(token);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
   const [isLoading, setIsLoading] = useState(false);
@@ -21,23 +23,10 @@ const RoleList = () => {
 
   // Fetch and set roles
   useEffect(() => {
-    const fetchRoles = async () => {
-      setIsLoading(true);
-      setError(null);
-      try {
-        const res = await api.get("/roles", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setRoles(res.data.data || []);
-        setFilteredRoles(res.data.data || []);
-      } catch (err) {
-        setError(err.response?.data || { message: "Error fetching roles." });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchRoles();
-  }, [token]);
+    setRoles(data?.data || []);
+
+    setFilteredRoles(data?.data || []);
+  }, [data]);
 
   // Filter roles based on search term
   useEffect(() => {
@@ -176,11 +165,10 @@ const RoleList = () => {
                   <button
                     key={number + 1}
                     onClick={() => paginate(number + 1)}
-                    className={`px-3 py-1 border border-gray-300 rounded-md ${
-                      currentPage === number + 1
-                        ? "bg-blue-500 text-white"
-                        : "text-gray-700"
-                    }`}
+                    className={`px-3 py-1 border border-gray-300 rounded-md ${currentPage === number + 1
+                      ? "bg-blue-500 text-white"
+                      : "text-gray-700"
+                      }`}
                   >
                     {number + 1}
                   </button>

@@ -12,6 +12,8 @@ import { FaPeopleCarry } from "react-icons/fa";
 import { IoIosPeople } from "react-icons/io";
 import { useGetPermissionByIdQuery } from "../../app/Features/permissionSlice";
 import { useEffect, useState } from "react";
+import { FaTruckFast } from "react-icons/fa6";
+import { CgTrack } from "react-icons/cg";
 
 const iconComponents = {
   FaListOl: FaListOl,
@@ -26,6 +28,8 @@ const iconComponents = {
   BsHouseGearFill: BsHouseGearFill,
   FaPeopleCarry: FaPeopleCarry,
   IoIosPeople: IoIosPeople,
+  FaTruckFast: FaTruckFast,
+  CgTrack: CgTrack,
 };
 
 const colorSchemes = [
@@ -143,25 +147,8 @@ const Home = () => {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
-      className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 w-full"
+      className="bg-transparent p-4 w-full"
     >
-      {/* Header */}
-      <div className="max-w-7xl mx-auto mb-8">
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="text-center"
-        >
-          <h1 className="text-3xl md:text-4xl font-bold text-gray-800 mb-3">
-            Dashboard
-          </h1>
-          <p className="text-gray-600 text-lg max-w-2xl mx-auto">
-            Welcome to your management dashboard. Access all your tools and features from here.
-          </p>
-        </motion.div>
-      </div>
-
       {/* Menu Grid */}
       <motion.div
         variants={containerVariants}
@@ -278,35 +265,7 @@ const Home = () => {
         )}
       </motion.div>
 
-      {/* Quick Stats Section (Optional) */}
-      {menu?.length > 0 && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.3 }}
-          className="max-w-7xl mx-auto mt-12"
-        >
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-            <h2 className="text-xl font-semibold text-gray-800 mb-4">
-              Quick Overview
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="text-center p-4 bg-blue-50 rounded-lg border border-blue-200">
-                <div className="text-2xl font-bold text-blue-600">{menu.length}</div>
-                <div className="text-sm text-blue-700">Available Features</div>
-              </div>
-              <div className="text-center p-4 bg-green-50 rounded-lg border border-green-200">
-                <div className="text-2xl font-bold text-green-600">24/7</div>
-                <div className="text-sm text-green-700">System Access</div>
-              </div>
-              <div className="text-center p-4 bg-purple-50 rounded-lg border border-purple-200">
-                <div className="text-2xl font-bold text-purple-600">100%</div>
-                <div className="text-sm text-purple-700">Ready to Use</div>
-              </div>
-            </div>
-          </div>
-        </motion.div>
-      )}
+
     </motion.div>
   );
 };

@@ -28,6 +28,7 @@ import { DatePicker, Input, Select, Card, Badge, Tag, Divider } from "antd";
 const { Option } = Select;
 import dayjs from "dayjs";
 import { motion } from "framer-motion";
+import { useGetAllSaleQuery } from "../../../app/Features/salesSlice";
 
 const CreatePurchase = () => {
   const { id: purchaseId } = useParams();
@@ -61,7 +62,7 @@ const CreatePurchase = () => {
   const [attributes, setAttributes] = useState([]);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentAmount, setPaymentAmount] = useState(0);
-  const { data: itemData } = useGetAllItemsQuery(token);
+  const { data: itemData } = useGetAllSaleQuery(token);
   const { data: supplierData } = useGetAllSupplierQuery(token);
   const [paymentDate, setPaymentDate] = useState(
     new Date().toISOString().split("T")[0]

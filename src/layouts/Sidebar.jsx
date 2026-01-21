@@ -52,7 +52,7 @@ import {
 } from "react-icons/fa6";
 import { PiShoppingCartBold } from "react-icons/pi";
 import { useOutletsContext } from "./Management";
-import { useGetUserLoginQuery } from "../../app/Features/usersSlice";
+import { useGetUserLoginQuery, useGetUserProfileQuery } from "../../app/Features/usersSlice";
 import {
   useGetAllPermissionQuery,
   useGetPermissionByIdQuery,
@@ -98,8 +98,10 @@ const Sidebar = () => {
   const location = useLocation();
   const token = localStorage.getItem("token");
   const userId = localStorage.getItem("userId");
+  const proId = localStorage.getItem("profileId");
   const onClose = () => setSidebar(false);
   const { data: userData } = useGetUserLoginQuery(token);
+  const { data: profile } = useGetUserProfileQuery({ id: proId, token });
   const { data: permData } = useGetPermissionByIdQuery({ id: userId, token });
 
   useEffect(() => {
@@ -134,7 +136,7 @@ const Sidebar = () => {
     return currentMenu ? [currentMenu.menu_id.toString()] : [];
   };
 
-  const user = userData?.data;
+  const user = profile?.data;
 
   const handleLogout = async () => {
     // Add logout logic here
@@ -167,7 +169,7 @@ const Sidebar = () => {
         <div className={`
           flex items-center gap-4 p-3 mx-4 rounded-xl transition-all duration-300 cursor-pointer
           ${isActive
-            ? 'bg-gradient-to-r from-blue-600 to-purple-600/50 text-white shadow-lg shadow-blue-500/25 transform translate-x-2'
+            ? 'bg-gray-400 text-white shadow-lg shadow-blue-500/25 transform translate-x-2'
             : 'text-gray-700 hover:bg-gray-200 hover:text-gray-900 hover:translate-x-1'
           }
         `}>
@@ -187,14 +189,14 @@ const Sidebar = () => {
   };
 
   return (
-    <section>
+    <section className=" shadow-sm">
       {/* Header Section */}
       <div className="hidden lg:block h-[100vh] relative !w-[346px]">
-        <div className="bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-6 text-white relative overflow-hidden">
+        <div className="bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 pt-4 px-4 text-white relative overflow-hidden">
           {/* Background Pattern */}
           <div className="absolute inset-0 opacity-10">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-white rounded-full -translate-y-16 translate-x-16"></div>
-            <div className="absolute bottom-0 left-0 w-24 h-24 bg-purple-400 rounded-full -translate-x-12 translate-y-12"></div>
+            <div className="absolute top-0 right-0 w-32 h-32 border bg-white rounded-full -translate-y-16 translate-x-16"></div>
+            <div className="absolute bottom-0 left-0 w-24 h-24 bg-blue-400 rounded-full -translate-x-12 translate-y-12"></div>
           </div>
           <div className="relative z-10">
             {/* User Info */}
@@ -204,9 +206,9 @@ const Sidebar = () => {
                   size={60}
                   src={
                     user?.image || (
-                      <div className="w-full h-full bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
+                      <div className="w-full h-full bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center shadow-lg">
                         <span className="text-white font-bold text-xl">
-                          {user?.username?.charAt(0)?.toUpperCase() || "U"}
+                          {user?.profile_name?.charAt(0)?.toUpperCase() || "U"}
                         </span>
                       </div>
                     )
@@ -222,18 +224,18 @@ const Sidebar = () => {
               </div>
               <div className="flex-1 min-w-0">
                 <Title level={4} className="!text-white !mb-1 font-bold truncate">
-                  {user?.username || "Welcome Back"}
+                  {user?.profile_name || "Welcome Back"}
                 </Title>
                 <div className="flex items-center space-x-2">
                   <FaShieldHalved className="text-blue-300 text-sm" />
                   <Text className="!text-blue-200 text-sm truncate">
-                    {user?.role || "Administrator"}
+                    {user?.role || "Company"}
                   </Text>
                 </div>
               </div>
             </div>
             {/* Quick Stats */}
-            <div className="grid grid-cols-2 gap-3">
+            {/* <div className="grid grid-cols-2 gap-3">
               <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3 border border-white/20">
                 <div className="flex items-center space-x-2 mb-1">
                   <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
@@ -248,37 +250,37 @@ const Sidebar = () => {
                 </div>
                 <Text className="!text-white text-sm font-bold">12</Text>
               </div>
-            </div>
+            </div> */}
           </div>
         </div>
         {/* Brand Section */}
         <div className="bg-white border-b border-gray-200/50 px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
-                <span className="text-white font-bold text-lg">E</span>
+              <div className="w-5 h-5 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+                <span className="text-white font-bold text-lg">C</span>
               </div>
-              <div>
+              <div className=" leading-1">
                 <div className="flex items-baseline space-x-1">
-                  <span className="text-slate-800 font-bold text-lg">ESTORE</span>
+                  <span className="text-slate-800 font-bold text-md">CHOMNENH POS</span>
                   <span className="text-yellow-500 font-bold text-sm">+</span>
                 </div>
-                <Text className="text-gray-500 text-xs">Management System</Text>
+                <h1 className="text-gray-500 text-[10px]">Management System</h1>
               </div>
             </div>
             <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse shadow-lg"></div>
           </div>
         </div>
         {/* Navigation Menu */}
-        <div className="flex-1 py-4 overflow-auto h-[calc(100vh-388px)]">
+        <div className="flex-1 py-4 overflow-auto h-[calc(100vh-160px)]">
           <div className="mb-2">
             <div className="flex items-center justify-between px-6 mb-4">
-              <Text className="text-gray-500 text-xs font-semibold uppercase tracking-wider">
+              {/* <Text className="text-gray-500 text-xs font-semibold uppercase tracking-wider">
                 Main Menu
               </Text>
               <Text className="text-gray-400 text-xs bg-gray-100 px-2 py-1 rounded">
                 {menu.length} items
-              </Text>
+              </Text> */}
             </div>
             <div className="space-y-1">
               {menu.map((item) => (
@@ -310,24 +312,6 @@ const Sidebar = () => {
           </div>
         </div>
         {/* Footer Section */}
-        <div className="border-t border-gray-200/50 bg-white p-4">
-          <div className="space-y-3">
-            <div className="flex items-center justify-between text-xs text-gray-500 px-2">
-              <span>Version 2.1.0</span>
-              <span>•</span>
-              <span>ESTORE</span>
-            </div>
-            <Button
-              type="primary"
-              danger
-              icon={<HiLogout className="text-lg" />}
-              className="w-full h-11 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 border-none bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700"
-              onClick={handleLogout}
-            >
-              Sign Out
-            </Button>
-          </div>
-        </div>
       </div>
       <Drawer
         title={null}
@@ -354,11 +338,11 @@ const Sidebar = () => {
         className="modern-sidebar-drawer lg:hidden"
       >
         {/* Header Section */}
-        <div className="bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-6 text-white relative overflow-hidden">
+        <div className="bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 p-6 text-white relative overflow-hidden">
           {/* Background Pattern */}
           <div className="absolute inset-0 opacity-10">
             <div className="absolute top-0 right-0 w-32 h-32 bg-white rounded-full -translate-y-16 translate-x-16"></div>
-            <div className="absolute bottom-0 left-0 w-24 h-24 bg-purple-400 rounded-full -translate-x-12 translate-y-12"></div>
+            <div className="absolute bottom-0 left-0 w-24 h-24 bg-blue-400 rounded-full -translate-x-12 translate-y-12"></div>
           </div>
           <div className="relative z-10">
             {/* User Info */}
@@ -368,7 +352,7 @@ const Sidebar = () => {
                   size={60}
                   src={
                     user?.image || (
-                      <div className="w-full h-full bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
+                      <div className="w-full h-full bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center shadow-lg">
                         <span className="text-white font-bold text-xl">
                           {user?.username?.charAt(0)?.toUpperCase() || "U"}
                         </span>
@@ -419,7 +403,7 @@ const Sidebar = () => {
         <div className="bg-white border-b border-gray-200/50 px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
                 <span className="text-white font-bold text-lg">E</span>
               </div>
               <div>
@@ -451,7 +435,7 @@ const Sidebar = () => {
             </div>
           </div>
           {/* Quick Actions Section */}
-          <div className="mt-8 px-4">
+          {JSON.parse(localStorage.getItem("menus"))?.filter((i) => i.menu_type == 1 || i.menu_type == 0 && i.menu_id == 4) && <div className="mt-8 px-4">
             <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-4 border border-blue-100">
               <div className="flex items-center space-x-3 mb-3">
                 <div className="p-2 bg-blue-100 rounded-lg">
@@ -471,7 +455,7 @@ const Sidebar = () => {
                 </Button>
               </Link>
             </div>
-          </div>
+          </div>}
         </div>
         {/* Footer Section */}
         <div className="border-t border-gray-200/50 bg-white p-4">

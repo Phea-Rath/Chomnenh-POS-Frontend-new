@@ -341,7 +341,7 @@ const AddInStock = () => {
   };
 
   return (
-    <section className="px-6 py-6 bg-gray-50 min-h-screen">
+    <section className="px-6 py-6 bg-transparent min-h-screen">
       <AlertBox
         isOpen={alertBox}
         title="Confirmation"
@@ -356,6 +356,7 @@ const AddInStock = () => {
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
           <div>
+            <MdLocalShipping className="text-2xl text-blue-600" />
             <h1 className="text-3xl font-bold text-gray-900 mb-2">
               {isEditMode ? 'Edit Stock Record' : 'Create Stock In'}
             </h1>
@@ -363,26 +364,13 @@ const AddInStock = () => {
               {isEditMode ? 'Update existing stock transfer' : 'Add new items to inventory'}
             </p>
           </div>
-          <div className="flex items-center gap-3">
-            <span className="text-sm text-gray-500">
-              Stock No: {isEditMode ? stockData?.data?.stock_no : 'Auto-generated'}
-            </span>
-          </div>
         </div>
 
         <form onSubmit={handleSubmit}>
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+          <div className="bg-transparent border border-gray-200 overflow-hidden">
             {/* Header */}
-            <div className="px-8 py-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-gray-50">
-              <div className="flex items-center gap-3">
-                <MdLocalShipping className="text-2xl text-blue-600" />
-                <h2 className="text-xl font-semibold text-gray-800">
-                  {isEditMode ? 'Edit Stock Information' : 'Stock Information'}
-                </h2>
-              </div>
-            </div>
 
-            <div className="p-8">
+            <div>
               <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
                 {/* Left Column - Form Controls */}
                 <div className="lg:col-span-1 space-y-6">
@@ -430,7 +418,7 @@ const AddInStock = () => {
                   </div>
 
                   {/* Stock Details Card */}
-                  <div className="bg-gradient-to-br from-gray-50 to-blue-50 rounded-xl p-6 border border-gray-200 space-y-4">
+                  <div className="bg-gradient-to-br from-gray-50 to-blue-50 rounded-xl p-6 border shadow-sm border-gray-200 space-y-4">
                     <h3 className="font-medium text-gray-800 flex items-center gap-2">
                       <FaEdit className="text-blue-500" />
                       Stock Details
@@ -551,9 +539,6 @@ const AddInStock = () => {
                             Total Value: ${selectItems.reduce((sum, item) => sum + ((parseInt(item.quantity) || 0) * (parseFloat(item.price) || 0)), 0).toFixed(2)}
                           </p>
                         </div>
-                        <Tag color="blue" className="font-medium text-sm">
-                          Edit Mode: {isEditMode ? 'Update' : 'Create'}
-                        </Tag>
                       </div>
                     </div>
 
@@ -667,14 +652,7 @@ const AddInStock = () => {
                           <FaBox className="text-3xl text-blue-500" />
                         </div>
                         <h3 className="text-xl font-semibold text-gray-700 mb-2">No Items Selected</h3>
-                        <p className="text-gray-500 max-w-md mx-auto mb-6">
-                          Search and select items from the left panel to add them to your stock record.
-                        </p>
-                        <div className="flex justify-center gap-3">
-                          <Tag color="blue" className="text-sm">Step 1: Search items</Tag>
-                          <Tag color="green" className="text-sm">Step 2: Configure attributes</Tag>
-                          <Tag color="purple" className="text-sm">Step 3: Set quantities</Tag>
-                        </div>
+
                       </div>
                     )}
                   </div>

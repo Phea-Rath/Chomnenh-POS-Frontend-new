@@ -125,13 +125,9 @@ const Scales = () => {
   };
 
   const ScaleCard = ({ scale, index }) => (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.9 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.3, delay: index * 0.1 }}
-    >
+    <div>
       <Card
-        className="h-full border-0 shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-white to-orange-50/50 hover:scale-[1.02] cursor-pointer"
+        className="h-full border-0 shadow-sm hover:shadow-sm transition-all duration-300 bg-gradient-to-br from-white to-orange-50/50 hover:scale-[1.02] cursor-pointer"
         bodyStyle={{ padding: '20px' }}
       >
         <div className="flex flex-col h-full">
@@ -150,7 +146,7 @@ const Scales = () => {
           {/* Scale Display */}
           <div className="mb-4 text-center">
             <div className="relative inline-block">
-              {/* <div className="w-20 h-20 rounded-2xl mx-auto mb-3 bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center text-white font-bold text-lg shadow-lg">
+              {/* <div className="w-20 h-20 rounded-2xl mx-auto mb-3 bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center text-white font-bold text-lg shadow-sm">
                 {scale.scale_name}
               </div> */}
               <Badge
@@ -194,17 +190,12 @@ const Scales = () => {
           </div>
         </div>
       </Card>
-    </motion.div>
+    </div>
   );
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
-      transition={{ duration: 0.5 }}
-    >
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-orange-50/30 p-4 md:p-6">
+    <div>
+      <div className="min-h-screen bg-transparent p-4 md:p-6">
         {/* Header Section */}
         <div className="mb-8">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
@@ -244,7 +235,7 @@ const Scales = () => {
           transition={{ delay: 0.1 }}
           className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8"
         >
-          <Card className="border-0 shadow-lg bg-gradient-to-br from-orange-500 to-orange-600 text-white">
+          <Card className="border-0 shadow-sm bg-gradient-to-br from-orange-500 to-orange-600 text-white">
             <div className="p-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -260,7 +251,7 @@ const Scales = () => {
             </div>
           </Card>
 
-          <Card className="border-0 shadow-lg bg-gradient-to-br from-red-500 to-red-600 text-white">
+          <Card className="border-0 shadow-sm bg-gradient-to-br from-red-500 to-red-600 text-white">
             <div className="p-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -276,7 +267,7 @@ const Scales = () => {
             </div>
           </Card>
 
-          <Card className="border-0 shadow-lg bg-gradient-to-br from-blue-500 to-blue-600 text-white">
+          <Card className="border-0 shadow-sm bg-gradient-to-br from-blue-500 to-blue-600 text-white">
             <div className="p-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -294,11 +285,8 @@ const Scales = () => {
         </motion.div> */}
 
         {/* Controls Section */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="bg-white rounded-2xl shadow-xl border border-gray-100 p-6 mb-8"
+        <div
+          className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-8"
         >
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             {/* View Toggle and Search */}
@@ -308,7 +296,7 @@ const Scales = () => {
                 <button
                   onClick={() => setViewMode("list")}
                   className={`px-4 py-2 rounded-lg transition-all duration-300 flex items-center space-x-2 ${viewMode === "list"
-                    ? "bg-white shadow-md text-orange-600 font-semibold"
+                    ? "bg-white shadow-sm text-orange-600 font-semibold"
                     : "text-gray-600 hover:text-gray-800"
                     }`}
                 >
@@ -318,7 +306,7 @@ const Scales = () => {
                 <button
                   onClick={() => setViewMode("grid")}
                   className={`px-4 py-2 rounded-lg transition-all duration-300 flex items-center space-x-2 ${viewMode === "grid"
-                    ? "bg-white shadow-md text-orange-600 font-semibold"
+                    ? "bg-white shadow-sm text-orange-600 font-semibold"
                     : "text-gray-600 hover:text-gray-800"
                     }`}
                 >
@@ -341,7 +329,7 @@ const Scales = () => {
               </div>
             </div>
           </div>
-        </motion.div>
+        </div>
 
         {/* Alert Box */}
         <AlertBox
@@ -355,13 +343,10 @@ const Scales = () => {
         />
 
         {/* Content Section */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
+        <div
         >
           {viewMode === "list" ? (
-            <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead className="bg-gray-50 border-b border-gray-200">
@@ -382,7 +367,7 @@ const Scales = () => {
                         </td>
                         {/* <td className="px-6 py-4">
                           <div className="flex items-center gap-3">
-                            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center text-white font-bold text-lg shadow-md">
+                            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center text-white font-bold text-lg shadow-sm">
                               {scale.scale_name}
                             </div>
                           </div>
@@ -475,7 +460,7 @@ const Scales = () => {
           {viewMode === "grid" && isLoading && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {[1, 2, 3, 4, 5, 6].map((item) => (
-                <Card key={item} className="border-0 shadow-lg">
+                <Card key={item} className="border-0 shadow-sm">
                   <Skeleton active paragraph={{ rows: 3 }} />
                 </Card>
               ))}
@@ -504,7 +489,7 @@ const Scales = () => {
               </Empty>
             </div>
           )}
-        </motion.div>
+        </div>
       </div>
 
       {/* Modals */}
@@ -519,7 +504,7 @@ const Scales = () => {
           <UpdateScales data={edit} onAdd={() => updateModalRef.current?.close()} />
         </div>
       </dialog>
-    </motion.div>
+    </div>
   )
 }
 

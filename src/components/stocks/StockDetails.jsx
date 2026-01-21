@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useGetStockByIdQuery } from '../../../app/Features/stocksSlice';
-import { useParams } from 'react-router';
+import { useNavigate, useParams } from 'react-router';
 import {
   FaWarehouse,
   FaUser,
@@ -28,6 +28,7 @@ import { format } from 'date-fns';
 
 const StockDetail = () => {
   const { id } = useParams();
+  const navigator = useNavigate();
   const token = localStorage.getItem('token');
   const { data, isLoading, refetch } = useGetStockByIdQuery({ id, token });
   const [expandedItems, setExpandedItems] = useState({});
@@ -165,16 +166,11 @@ const StockDetail = () => {
 
           <div className="flex gap-3">
             <Tooltip title="Print stock details">
-              <button className="p-3 border border-gray-300 rounded-xl text-gray-600 hover:bg-gray-50 transition-colors">
+              <button onClick={() => window.print()} className="p-3 border border-gray-300 rounded-xl text-gray-600 hover:bg-gray-50 transition-colors">
                 <FaPrint className="w-5 h-5" />
               </button>
             </Tooltip>
-            <Tooltip title="Export as PDF">
-              <button className="p-3 border border-gray-300 rounded-xl text-gray-600 hover:bg-gray-50 transition-colors">
-                <FaDownload className="w-5 h-5" />
-              </button>
-            </Tooltip>
-            <button className="px-5 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors flex items-center gap-2">
+            <button onClick={() => navigator(`/dashboard/stock-list/update/${id}`)} className="px-5 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors flex items-center gap-2">
               <FaEdit className="w-4 h-4" />
               Edit Stock
             </button>
@@ -234,11 +230,11 @@ const StockDetail = () => {
       </div>
 
       {/* Main Content */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 print-area print:shadow-none">
         {/* Left Column - Stock Information */}
         <div className="lg:col-span-1 space-y-6">
           {/* Stock Information Card */}
-          <Card className="shadow-lg border-0">
+          <Card className="shadow-lg border-0 print:shadow-none">
             <h2 className="text-lg font-bold text-gray-800 mb-4 pb-3 border-b border-gray-100">
               Stock Information
             </h2>
@@ -283,13 +279,13 @@ const StockDetail = () => {
           </Card>
 
           {/* Transfer Information Card */}
-          <Card className="shadow-lg border-0">
+          <Card className="shadow-lg print:shadow-none border-0">
             <h2 className="text-lg font-bold text-gray-800 mb-4 pb-3 border-b border-gray-100 flex items-center gap-2">
               <FaExchangeAlt className="text-blue-500" />
               Transfer Information
             </h2>
 
-            <div className="space-y-5">
+            <div className="space-y-5 print:flex print:justify-around">
               <div className="bg-gradient-to-r from-blue-50 to-blue-100 p-4 rounded-xl">
                 <div className="flex items-center gap-3 mb-2">
                   <FaWarehouse className="text-blue-600" />
@@ -323,7 +319,7 @@ const StockDetail = () => {
           </Card>
 
           {/* Remarks Card */}
-          <Card className="shadow-lg border-0">
+          <Card className="shadow-lg print:shadow-none border-0">
             <h2 className="text-lg font-bold text-gray-800 mb-4 pb-3 border-b border-gray-100">
               Remarks
             </h2>
@@ -335,7 +331,7 @@ const StockDetail = () => {
 
         {/* Right Column - Items List */}
         <div className="lg:col-span-2">
-          <Card className="shadow-lg border-0">
+          <Card className="shadow-lg print:shadow-none border-0">
             <div className="flex items-center justify-between mb-6">
               <div>
                 <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
@@ -450,7 +446,7 @@ const StockDetail = () => {
                             </div>
                             <button
                               onClick={() => toggleItemExpansion(item.detail_id)}
-                              className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                              className="p-2 text-gray-500 hover:text-blue-600 print:hidden hover:bg-blue-50 rounded-lg transition-colors"
                             >
                               {isExpanded ? <FaMinus className="w-4 h-4" /> : <FaEye className="w-4 h-4" />}
                             </button>
@@ -562,7 +558,7 @@ const StockDetail = () => {
           </Card>
 
           {/* Summary Footer */}
-          <div className="mt-6 bg-gradient-to-r from-gray-800 to-gray-900 rounded-xl p-6 text-white">
+          <div className="mt-6 bg-gradient-to-r from-gray-800 to-gray-900 rounded-xl p-6 text-white print:text-black">
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-lg font-bold mb-2">Stock Summary</h3>
@@ -595,7 +591,27 @@ const StockDetail = () => {
           </div>
         </div>
       </div>
+      <style jsx global>{`
+        @media print {
+          body * {
+            visibility: hidden;
+          }
+          .print-area, .print-area * {
+            visibility: visible;
+          }
+          .print-area {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+          }
+          .no-print {
+            display: none !important;
+          }
+        }
+      `}</style>
     </div>
+
   );
 };
 

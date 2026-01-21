@@ -143,20 +143,20 @@ const OrderList = () => {
     }
   }
 
-  const getStatusColor = (status, isCancelled) => {
+  const getStatusColor = (online, isCancelled) => {
     if (isCancelled) return "red";
-    if (status === 2) return "blue";
+    if (online === 1) return "blue";
     return "green";
   };
 
-  const getStatusText = (status, isCancelled) => {
+  const getStatusText = (online, isCancelled) => {
     if (isCancelled) return "Cancelled";
-    if (status === 2) return "Online";
+    if (online === 1) return "Online";
     return "Direct";
   };
 
-  const getPaymentStatusColor = (status) => {
-    return status === "paid" ? "green" : "orange";
+  const getPaymentStatusColor = (online) => {
+    return online === "paid" ? "green" : "orange";
   };
 
   const getSaleTypeColor = (type) => {
@@ -187,7 +187,7 @@ const OrderList = () => {
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
       transition={{ duration: 0.5 }}
-      className="min-h-screen bg-gray-50 p-6"
+      className="min-h-screen bg-transparent p-6"
     >
       {/* Alert Boxes */}
       <AlertBox
@@ -221,7 +221,7 @@ const OrderList = () => {
         confirmColor="info"
       />
 
-      <div className="max-w-7xl mx-auto">
+      <div className=" mx-auto">
         {/* Header Section */}
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-8 gap-4">
           <div>
@@ -317,7 +317,7 @@ const OrderList = () => {
 
         {/* Grid View */}
         {viewMode === "grid" && (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6">
             {orderItems.map((order, index) => {
               const itemsSummary = getItemsSummary(order.items);
               return (
@@ -328,15 +328,15 @@ const OrderList = () => {
                   transition={{ duration: 0.3, delay: index * 0.1 }}
                 >
                   <Card
-                    className={`h-full border rounded-xl shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden ${order.is_cancelled ? "border-red-200 bg-red-50" : "border-gray-200"
+                    className={`h-full border rounded-xl shadow-sm hover:shadow-sm transition-all duration-300 overflow-hidden ${order.is_cancelled ? "border-red-200 bg-red-50" : "border-gray-200"
                       }`}
                   >
                     {/* Header */}
                     <div className="flex justify-between items-start mb-4">
                       <div>
                         <Badge
-                          count={getStatusText(order.status, order.is_cancelled)}
-                          color={getStatusColor(order.status, order.is_cancelled)}
+                          count={getStatusText(order.online, order.is_cancelled)}
+                          color={getStatusColor(order.online, order.is_cancelled)}
                           className="mb-2"
                         />
                         <h3 className="font-bold text-lg text-gray-800">{order.order_no}</h3>
@@ -423,7 +423,7 @@ const OrderList = () => {
                         </button>
                       </Tooltip>
 
-                      {!order.is_cancelled && order.status !== 2 && (
+                      {!order.is_cancelled && order.online !== 1 && (
                         <Tooltip title="Edit Order">
                           <button
                             onClick={() => navigator("edit/" + order.order_id)}
@@ -533,8 +533,8 @@ const OrderList = () => {
                         </td>
                         <td className="px-6 py-4">
                           <Badge
-                            status={order.is_cancelled ? "error" : order.status === 2 ? "processing" : "success"}
-                            text={getStatusText(order.status, order.is_cancelled)}
+                            status={order.is_cancelled ? "error" : order.online === 1 ? "processing" : "success"}
+                            text={getStatusText(order.online, order.is_cancelled)}
                           />
                         </td>
                         <td className="px-6 py-4">
@@ -552,7 +552,7 @@ const OrderList = () => {
                               </button>
                             </Tooltip>
 
-                            {!order.is_cancelled && order.status !== 2 && (
+                            {!order.is_cancelled && order.online !== 1 && (
                               <Tooltip title="Edit Order">
                                 <button
                                   onClick={() => navigator("edit/" + order.order_id)}
@@ -563,7 +563,7 @@ const OrderList = () => {
                               </Tooltip>
                             )}
 
-                            {!order.is_cancelled ? (
+                            {order?.order_payment_status === 'cod' && (!order.is_cancelled ? (
                               <Tooltip title="Cancel Order">
                                 <button
                                   onClick={() => handleOrderCancel(order.order_id)}
@@ -581,7 +581,7 @@ const OrderList = () => {
                                   <FaUndo />
                                 </button>
                               </Tooltip>
-                            )}
+                            ))}
 
                             <Tooltip title="Delete Order">
                               <button

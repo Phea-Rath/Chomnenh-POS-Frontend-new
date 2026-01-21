@@ -3,11 +3,13 @@ import { FaSave, FaTimes } from "react-icons/fa";
 import { Link, useNavigate, useParams } from "react-router";
 import api from "../../services/api";
 import { toast } from "react-toastify";
+import { useGetAllRoleQuery } from "../../../app/Features/rolesSlice";
 
 const RoleForm = () => {
   const { id } = useParams(); // Get role_id from URL for edit mode
   const navigate = useNavigate();
   const token = localStorage.getItem("token");
+  const { refetch } = useGetAllRoleQuery(token);
   const isEditMode = !!id; // Determine if in edit mode
 
   const [formData, setFormData] = useState({
@@ -75,11 +77,12 @@ const RoleForm = () => {
         });
         toast.success("Role created successfully!");
       }
+      refetch();
       navigate("/dashboard/roles"); // Redirect to role list
     } catch (err) {
       setError(
         err.response?.data?.message ||
-          `Error ${isEditMode ? "updating" : "creating"} role.`
+        `Error ${isEditMode ? "updating" : "creating"} role.`
       );
     } finally {
       setLoading(false);
@@ -149,8 +152,8 @@ const RoleForm = () => {
               {loading
                 ? "Saving..."
                 : isEditMode
-                ? "Update Role"
-                : "Create Role"}
+                  ? "Update Role"
+                  : "Create Role"}
             </button>
           </div>
         </form>

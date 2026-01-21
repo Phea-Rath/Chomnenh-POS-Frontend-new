@@ -22,6 +22,8 @@
     "daisyui": "^5.0.43",
     "date-fns": "^4.1.0",
     "dom-to-image-more": "^3.6.3",
+    "downloadjs": "^1.4.7",
+    "file-saver": "^2.0.5",
     "framer-motion": "^12.23.5",
     "google-map-react": "^2.2.5",
     "html-to-image": "^1.11.13",
@@ -45,6 +47,7 @@
     "recharts": "^3.2.1",
     "scanbot-web-sdk": "^7.2.0",
     "tailwindcss": "^4.1.8",
+    "use-debounce": "^10.1.0",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {

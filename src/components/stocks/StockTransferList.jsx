@@ -13,10 +13,13 @@ import {
   LuInfo
 } from "react-icons/lu";
 import { Link } from "react-router";
-import { Table, Tag, Card, Input, Select, Button, DatePicker, Image } from "antd";
+import { Table, Tag, Card, Input, Select, Button, DatePicker, Image, Tooltip } from "antd";
 import { motion } from "framer-motion";
 import { toast } from "react-toastify";
 import dayjs from "dayjs";
+import { saveAs } from "file-saver";
+import * as XLSX from 'xlsx';
+import { FaEdit, FaEye, FaTrash } from "react-icons/fa";
 
 const { RangePicker } = DatePicker;
 const { Option } = Select;
@@ -35,6 +38,9 @@ const StockTransferList = () => {
   const [selectedWarehouse, setSelectedWarehouse] = useState("all");
   const [dateRange, setDateRange] = useState(null);
   const [warehouses, setWarehouses] = useState([]);
+
+  const [exportLoading, setExportLoading] = useState(false);
+
 
   // Calculate statistics based on transfer data only
   const calculateStats = () => {
@@ -241,14 +247,30 @@ const StockTransferList = () => {
       title: "ACTIONS",
       width: "100px",
       align: 'center',
-      render: () => (
-        <div className="flex flex-col gap-2">
-          <Button size="small" className="text-xs bg-blue-50 text-blue-600 hover:bg-blue-100 border-blue-200">
-            View Details
-          </Button>
-          <Button size="small" className="text-xs bg-gray-50 text-gray-600 hover:bg-gray-100 border-gray-200">
-            Print Label
-          </Button>
+      render: (_, record) => (
+        <div className="flex gap-2">
+          <Tooltip title="View Details">
+            <Link to={`detail/${record.stock_id}`}>
+              <button className="p-2 bg-blue-100 text-blue-600 hover:bg-blue-200 rounded-lg transition-colors">
+                <FaEye />
+              </button>
+            </Link>
+          </Tooltip>
+          <Tooltip title="Edit Stock">
+            <Link to={`update/${record.stock_id}`}>
+              <button className="p-2 bg-green-100 text-green-600 hover:bg-green-200 rounded-lg transition-colors">
+                <FaEdit />
+              </button>
+            </Link>
+          </Tooltip>
+          <Tooltip title="Delete Stock">
+            <button
+              onClick={() => handleDelete(record.stock_id)}
+              className="p-2 bg-red-100 text-red-600 hover:bg-red-200 rounded-lg transition-colors"
+            >
+              <FaTrash />
+            </button>
+          </Tooltip>
         </div>
       ),
     },
@@ -299,6 +321,45 @@ const StockTransferList = () => {
     }
 
     setFilteredData(result);
+  };
+
+  const exportToExcel = (apiResponse) => {
+    // Extract data array
+    const data = apiResponse?.map(item => ({
+      ItemCode: item.item_code,
+      Barcode: item.barcode,
+      ItemName: item.item_name,
+      Category: item.category_name,
+      Brand: item.brand_name,
+      Price: item.item_price,
+      WholesalePrice: item.wholesale_price,
+      Quantity: item.quantity,
+      StockOut: item.stock_out,
+      FromWarehouse: item.from_warehouse_name,
+      ToWarehouse: item.to_warehouse_name,
+      ExpireDate: item.expire_date,
+      CreatedAt: item.created_at
+    }));
+
+    // Convert JSON to worksheet
+    const worksheet = XLSX.utils.json_to_sheet(data);
+
+    // Create workbook
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Stock Transfer Summary");
+
+    // Export file
+    const excelBuffer = XLSX.write(workbook, {
+      bookType: "xlsx",
+      type: "array"
+    });
+
+    const fileData = new Blob(
+      [excelBuffer],
+      { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }
+    );
+
+    saveAs(fileData, "stock_transfer.xlsx");
   };
 
   const handleTableChange = (pagination, filters, sorter) => {
@@ -357,9 +418,6 @@ const StockTransferList = () => {
     setSearchTerm(e.target.value);
   };
 
-  const exportToExcel = () => {
-    toast.info("Export feature coming soon!");
-  };
 
   const resetFilters = () => {
     setSearchTerm("");
@@ -374,7 +432,7 @@ const StockTransferList = () => {
       exit={{ opacity: 0, y: -20 }}
       transition={{ duration: 0.5 }}
     >
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50/30 p-4 md:p-6">
+      <div className="min-h-screen bg-transparent p-4 md:p-6">
         {/* Header Section */}
         <div className="mb-8">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
@@ -405,7 +463,7 @@ const StockTransferList = () => {
               </Button>
               <Button
                 icon={<LuDownload />}
-                onClick={exportToExcel}
+                onClick={() => exportToExcel(filteredData)}
                 className="flex items-center space-x-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white border-0"
               >
                 Export Report
@@ -429,8 +487,8 @@ const StockTransferList = () => {
           transition={{ delay: 0.1 }}
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-8"
         >
-          <Card className="border-0 shadow-lg bg-gradient-to-br from-blue-500 to-blue-600">
-            <div className="p-4">
+          <Card className="border-0 shadow-sm bg-gradient-to-br from-blue-500 to-blue-600">
+            <div>
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-blue-500 text-sm font-medium mb-1">Total Transfers</p>
@@ -445,8 +503,8 @@ const StockTransferList = () => {
             </div>
           </Card>
 
-          <Card className="border-0 shadow-lg bg-gradient-to-br from-green-500 to-green-600">
-            <div className="p-4">
+          <Card className="border-0 shadow-sm bg-gradient-to-br from-green-500 to-green-600">
+            <div>
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-green-500 text-sm font-medium mb-1">Total Stock In</p>
@@ -461,8 +519,8 @@ const StockTransferList = () => {
             </div>
           </Card>
 
-          <Card className="border-0 shadow-lg bg-gradient-to-br from-red-500 to-red-600">
-            <div className="p-4">
+          <Card className="border-0 shadow-sm bg-gradient-to-br from-red-500 to-red-600">
+            <div>
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-red-500 text-sm font-medium mb-1">Total Stock Out</p>
@@ -477,8 +535,8 @@ const StockTransferList = () => {
             </div>
           </Card>
 
-          <Card className="border-0 shadow-lg bg-gradient-to-br from-purple-500 to-purple-600">
-            <div className="p-4">
+          <Card className="border-0 shadow-sm bg-gradient-to-br from-purple-500 to-purple-600">
+            <div>
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-purple-500 text-sm font-medium mb-1">Total Quantity</p>
@@ -493,8 +551,8 @@ const StockTransferList = () => {
             </div>
           </Card>
 
-          <Card className="border-0 shadow-lg bg-gradient-to-br from-cyan-500 to-cyan-600">
-            <div className="p-4">
+          <Card className="border-0 shadow-sm bg-gradient-to-br from-cyan-500 to-cyan-600">
+            <div>
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-cyan-500 text-sm font-medium mb-1">Net Transfer</p>
@@ -509,8 +567,8 @@ const StockTransferList = () => {
             </div>
           </Card>
 
-          <Card className="border-0 shadow-lg bg-gradient-to-br from-orange-500 to-orange-600">
-            <div className="p-4">
+          <Card className="border-0 shadow-sm bg-gradient-to-br from-orange-500 to-orange-600">
+            <div>
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-orange-500 text-sm font-medium mb-1">Warehouses</p>
@@ -531,7 +589,7 @@ const StockTransferList = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 mb-8"
+          className="bg-white rounded-lg shadow-sm border border-gray-200 p-1 mb-8"
         >
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             {/* Search Input */}
@@ -589,7 +647,7 @@ const StockTransferList = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
         >
-          <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
             <Table
               columns={columns}
               rowKey={(record) => `${record.item_id}-${record.created_at}-${record.from_warehouse}`}
@@ -649,53 +707,6 @@ const StockTransferList = () => {
               }}
             />
           </div>
-        </motion.div>
-
-        {/* Additional Info Section */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.4 }}
-          className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6"
-        >
-          <Card className="border-0 shadow-lg">
-            <div className="flex items-start gap-4">
-              <div className="p-3 bg-blue-100 rounded-lg">
-                <LuInfo className="text-xl text-blue-600" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-gray-800 mb-2">Stock Transfer Notes</h3>
-                <p className="text-sm text-gray-600">
-                  • All stock transfers are logged for inventory tracking<br />
-                  • Transfers are marked as Stock In (receiving) or Stock Out (sending)<br />
-                  • Net Transfer shows the overall movement between warehouses<br />
-                  • Transfer dates and warehouse information are recorded for each movement
-                </p>
-              </div>
-            </div>
-          </Card>
-
-          <Card className="border-0 shadow-lg">
-            <div className="flex items-start gap-4">
-              <div className="p-3 bg-green-100 rounded-lg">
-                <LuPackage className="text-xl text-green-600" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-gray-800 mb-2">Quick Actions</h3>
-                <div className="flex flex-wrap gap-3">
-                  <Button size="small" className="bg-blue-50 text-blue-600 hover:bg-blue-100 border-blue-200">
-                    View Stock Levels
-                  </Button>
-                  <Button size="small" className="bg-green-50 text-green-600 hover:bg-green-100 border-green-200">
-                    Download Log
-                  </Button>
-                  <Button size="small" className="bg-purple-50 text-purple-600 hover:bg-purple-100 border-purple-200">
-                    Warehouse Report
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </Card>
         </motion.div>
       </div>
     </motion.div>

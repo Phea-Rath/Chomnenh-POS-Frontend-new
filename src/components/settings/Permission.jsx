@@ -18,22 +18,29 @@ const Permission = () => {
     const [isAllperm, setAllperm] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const navigetor = useNavigate();
-    const { data: user } = useGetAllUserQuery(token);
+    const { data: user, refetch: refectUser } = useGetAllUserQuery(token);
     const [selectUser, setSelectUser] = useState(null);
     const { data: menus } = useGetAllMenuQuery(token);
     const [menuPer, setMenuPer] = useState([]);
+    const [newMenus, setNewMenus] = useState([]);
     const { data: permission, refetch } = useGetAllPermissionQuery(token);
     const { refetch: showPermission } = useGetPermissionByIdQuery({ id: userId, token });
 
     useEffect(() => {
+        // refectUser();
+        console.log(user, menus, permission);
+
         if (user?.data?.length !== 0 && menus?.data?.length !== 0 && permission?.data?.length !== 0) {
-            const newUser = user?.data?.filter(i => i.id != userId);
+            const newUser = user?.data?.filter(i => i.id != userId && i.role_id !== 2);
+            const newMenu = menus?.data?.filter(i => i.menu_id != 26);
+            setNewMenus(newMenu);
             setUsers(newUser);
             setFilteredUsers(newUser);
             if (newUser?.length > 0 && !selectUser) {
                 handleUser(newUser[0]?.id);
             }
         }
+
     }, [user, menus, permission]);
 
     useEffect(() => {
@@ -58,7 +65,7 @@ const Permission = () => {
         const userPermission = permission?.data.filter(i => i.user_id == id) || [];
         const PermId = userPermission.map(i => i.menu_id);
 
-        const perms = menus?.data?.map(menu => {
+        const perms = newMenus?.map(menu => {
             if (PermId.includes(menu.menu_id)) {
                 return {
                     ...menu,
@@ -75,7 +82,7 @@ const Permission = () => {
         });
 
         const permSelectUser = permission?.data?.filter(i => i.user_id === Number(id));
-        permSelectUser?.length == menus?.data?.length ? setAllperm(true) : setAllperm(false);
+        permSelectUser?.length == newMenus?.length ? setAllperm(true) : setAllperm(false);
         setMenuPer(perms);
     }
 
@@ -121,7 +128,7 @@ const Permission = () => {
             // All permissions toggle
             if (event.target.checked) {
                 // Enable all permissions
-                const formMenu = menuPer.filter(n => n.user_id === user_id).map(n => ({
+                const formMenu = menuPer?.filter(n => n.user_id === user_id && n.menu_id !== 26).map(n => ({
                     user_id: user_id,
                     menu_id: n.menu_id
                 }));
@@ -165,13 +172,13 @@ const Permission = () => {
     }
 
     const getEnabledPermissionsCount = () => {
-        return menuPer.filter(perm => perm.enabled === 1).length;
+        return menuPer?.filter(perm => perm.enabled === 1).length;
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+        <div className="min-h-screen bgtransparent">
             {/* Header */}
-            <div className="bg-white border-b border-gray-200">
+            <div className="border-b border-gray-200">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex items-center justify-between h-16">
                         <div className="flex items-center space-x-4">
@@ -332,7 +339,7 @@ const Permission = () => {
                                                         User ID: {selectUser.id}
                                                     </span>
                                                     <span className="text-sm text-gray-500">
-                                                        • {getEnabledPermissionsCount()} of {menuPer.length} permissions granted
+                                                        • {getEnabledPermissionsCount()} of {menuPer?.length} permissions granted
                                                     </span>
                                                 </div>
                                             </div>
@@ -366,7 +373,7 @@ const Permission = () => {
                                     </div>
 
                                     <div className="grid gap-2 p-4">
-                                        {menuPer?.map((perm, index) => (
+                                        {menuPer?.map((perm, index) => perm.menu_id != 26 && (
                                             <div
                                                 key={perm.menu_id}
                                                 className="flex items-center justify-between p-4 rounded-xl border border-gray-200 hover:border-blue-300 transition-all duration-200 hover:shadow-sm"

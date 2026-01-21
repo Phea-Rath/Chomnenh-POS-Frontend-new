@@ -1,18 +1,26 @@
 import { useEffect, useState } from 'react';
 import { FiEdit, FiCamera, FiCheck, FiX, FiUser, FiPhone, FiShield, FiClock, FiActivity, FiMail, FiCalendar, FiGlobe } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useGetAllUserQuery, useGetUserByIdQuery, useGetUserLoginQuery } from '../../../app/Features/usersSlice';
-import { useParams } from 'react-router';
+import { useGetAllUserQuery, useGetUserByIdQuery, useGetUserByProIdQuery, useGetUserLoginQuery } from '../../../app/Features/usersSlice';
+import { useNavigate, useParams } from 'react-router';
 import { useUpdateImageMutation, useUpdateNameMutation, useUpdateNumberPhoneMutation } from '../../../app/Features/userProfileSlice';
 import { useOutletsContext } from '../../layouts/Management';
 import { toast } from 'react-toastify';
 import { Avatar, Badge, Card, Divider, Skeleton } from 'antd';
+import { FaUserCircle } from 'react-icons/fa';
+import { IoArrowBack, IoChevronForward } from 'react-icons/io5';
+import api from '../../services/api';
+import { FaCircleArrowLeft } from 'react-icons/fa6';
 
 const UserProfilePage = () => {
     const { id } = useParams();
     const token = localStorage.getItem('token');
+    const proId = localStorage.getItem('profileId');
+    const uId = localStorage.getItem('userId');
+    const navigator = useNavigate();
     const [image, setImage] = useState("");
     const [user, setUser] = useState(null);
+    const [disabled, setDisabled] = useState(false);
     const { setLoading } = useOutletsContext();
     const { data, refetch, isLoading } = useGetUserByIdQuery({ id, token });
     const userLogin = useGetUserLoginQuery(token);
@@ -20,6 +28,7 @@ const UserProfilePage = () => {
     const [updateNumberPhone] = useUpdateNumberPhoneMutation();
     const [updateName] = useUpdateNameMutation();
     const { refetch: userRefetch } = useGetAllUserQuery(token);
+    const { data: filteredUsers } = useGetUserByProIdQuery({ id: data?.data?.profile_id, token });
 
     const [editing, setEditing] = useState({
         username: false,
@@ -37,6 +46,7 @@ const UserProfilePage = () => {
 
     useEffect(() => {
         if (data?.data) {
+            setDisabled(data?.data?.status);
             setUser(data.data);
             setTempValues({
                 username: data.data.username || '',
@@ -160,6 +170,43 @@ const UserProfilePage = () => {
         }
     };
 
+    const statusChange = async () => {
+        try {
+            setLoading(true);
+
+            const isCompany = data?.data?.id === 1;
+            const id = isCompany ? data?.data?.profile_id : data?.data?.id;
+
+            const url = disabled
+                ? (isCompany ? `disabled_company/${id}` : `disabled_user/${id}`)
+                : (isCompany ? `enabled_company/${id}` : `enabled_user/${id}`);
+
+            const response = await api.put(
+                url,
+                {}, // no body
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                }
+            );
+
+            if (response?.data?.status === 200) {
+                await refetch();
+                await userRefetch();
+                setDisabled(!disabled); // toggle AFTER success
+                toast.success(response.data.message);
+            }
+
+        } catch (error) {
+            toast.error(error?.response?.data?.message || 'Update failed');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+
+
     // Loading skeleton
     if (isLoading) {
         return (
@@ -202,12 +249,31 @@ const UserProfilePage = () => {
     }
 
     return (
-        <div className="min-h-screen bg-gray-50 py-8">
+        <div className="min-h-screen bg-transparent py-8">
             <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
                 {/* Header */}
-                <div className="mb-8">
-                    <h1 className="text-3xl font-bold text-gray-800">User Profile</h1>
-                    <p className="text-gray-600 mt-2">Manage user details and permissions</p>
+                <div className='flex items-center justify-between'>
+                    <div className="mb-8 flex items-center gap-5">
+                        <FaCircleArrowLeft onClick={() => navigator(-1)} className='text-xl cursor-pointer text-gray-700' />
+                        <div>
+                            <h1 className="text-3xl font-bold text-gray-800">User Profile</h1>
+                            <p className="text-gray-600 mt-2">Manage user details and permissions</p>
+                        </div>
+                    </div>
+                    {uId != id && <div className="flex items-center space-x-4 bg-gray-50 rounded-xl px-4 py-3">
+                        <span className="text-sm font-medium text-gray-700">
+                            {!disabled ? 'Disable' : 'Enable'}
+                        </span>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                            <input
+                                type="checkbox"
+                                onChange={statusChange}
+                                checked={disabled}
+                                className="sr-only peer"
+                            />
+                            <div className="w-14 h-7 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-green-500"></div>
+                        </label>
+                    </div>}
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -218,7 +284,7 @@ const UserProfilePage = () => {
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ duration: 0.5 }}
                         >
-                            <Card className="shadow-lg border-0 overflow-hidden">
+                            <Card className="shadow-lg border-0 overflow-hidden mb-3">
                                 {/* Profile Image Section */}
                                 <div className="relative bg-gradient-to-br from-blue-50 to-indigo-50 p-6">
                                     <div className="flex flex-col items-center">
@@ -324,6 +390,47 @@ const UserProfilePage = () => {
                                     </div>
                                 </div>
                             </Card>
+                            {filteredUsers?.data?.length > 0 && <Card className="shadow-lg border-0 overflow-hidden">
+                                {/* Profile Stats */}
+                                <div className="px-6">
+                                    {filteredUsers?.data?.map((employee, index) => employee?.id != id && (
+                                        <div
+                                            key={employee.id}
+                                            className={`flex items-center p-4 transition-all duration-200 border-b border-gray-100 last:border-b-0 hover:bg-gray-50`}
+                                        >
+                                            {employee?.image ? (
+                                                <img
+                                                    src={employee.image}
+                                                    alt=""
+                                                    className="w-12 h-12 rounded-xl object-cover flex-shrink-0"
+                                                />
+                                            ) : (
+                                                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center flex-shrink-0">
+                                                    <FaUserCircle className="w-6 h-6 text-blue-600" />
+                                                </div>
+                                            )}
+
+                                            <div className="flex-1 min-w-0 ml-4">
+                                                <h3 className="text-base font-semibold text-gray-900 truncate">
+                                                    {employee.username}
+                                                </h3>
+                                                <p className="text-sm text-gray-600 truncate">{employee.role}</p>
+                                                <div className="flex items-center space-x-2 mt-1">
+                                                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${employee.status === 'active'
+                                                        ? 'bg-green-100 text-green-800'
+                                                        : 'bg-gray-100 text-gray-800'
+                                                        }`}>
+                                                        <Badge
+                                                            status={user?.status ? "success" : "error"}
+                                                            text={user?.status ? "Active" : "Inactive"}
+                                                        />
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </Card>}
                         </motion.div>
                     </div>
 

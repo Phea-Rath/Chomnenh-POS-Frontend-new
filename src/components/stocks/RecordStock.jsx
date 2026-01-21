@@ -194,30 +194,6 @@ const StockTransactions = () => {
         </div>
       ),
     },
-    // {
-    //   title: "TRANSACTION INFO",
-    //   width: "200px",
-    //   render: (_, record) => (
-    //     <div className="space-y-1">
-    //       <div className="flex justify-between text-sm">
-    //         <span className="text-gray-500">Transaction Date:</span>
-    //         <span className="font-medium text-gray-700">
-    //           {dayjs(record.created_at).format('MMM DD, YYYY')}
-    //         </span>
-    //       </div>
-    //       <div className="flex justify-between text-sm">
-    //         <span className="text-gray-500">Expiry:</span>
-    //         <Tag color={dayjs().isAfter(dayjs(record.expire_date)) ? "red" : "green"} className="text-xs">
-    //           {dayjs(record.expire_date).format('MMM DD, YYYY')}
-    //         </Tag>
-    //       </div>
-    //       <div className="flex justify-between text-sm">
-    //         <span className="text-gray-500">Quantity:</span>
-    //         <span className="font-bold text-blue-600">{record.quantity}</span>
-    //       </div>
-    //     </div>
-    //   ),
-    // },
     {
       title: "STOCK IN",
       dataIndex: "stock_in",
@@ -361,9 +337,6 @@ const StockTransactions = () => {
             stock_sale: parseInt(item.stock_sale),
             stock_waste: parseInt(item.stock_waste || "0"),
             stock_return: parseInt(item.stock_return || "0"),
-            quantity: parseInt(item.quantity),
-            created_at: item.created_at,
-            expire_date: item.expire_date
           })));
           setTableParams({
             ...tableParams,
@@ -380,6 +353,8 @@ const StockTransactions = () => {
         setLoading(false);
       });
   };
+
+
 
   useEffect(() => {
     fetchData();
@@ -441,7 +416,7 @@ const StockTransactions = () => {
         transition={{ duration: 0.3 }}
       >
         <Card
-          className="h-full border-0 shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-white to-gray-50/50 hover:scale-[1.02] cursor-pointer"
+          className="h-full border-0 shadow-sm hover:shadow-xl transition-all duration-300 bg-transparent hover:scale-[1.02] cursor-pointer"
           bodyStyle={{ padding: '16px' }}
         >
           <div className="flex flex-col h-full">
@@ -625,7 +600,7 @@ const StockTransactions = () => {
       exit={{ opacity: 0, y: -20 }}
       transition={{ duration: 0.5 }}
     >
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50/30 p-4 md:p-6">
+      <div className="min-h-screen bg-gradient-to-br from-transparent p-4">
         {/* Header Section */}
         <div className="mb-8">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
@@ -654,7 +629,7 @@ const StockTransactions = () => {
               <ExportExel
                 data={itemData}
                 title={"Stock_Transactions_Report"}
-                className="flex items-center space-x-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-6 py-2 rounded-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
+                className="flex items-center space-x-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-6 py-2 rounded-lg font-semibold shadow-sm hover:shadow-xl transition-all duration-300"
               >
                 <LuDownload className="text-lg" />
                 <span>Export Report</span>
@@ -670,8 +645,8 @@ const StockTransactions = () => {
           transition={{ delay: 0.1 }}
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-8"
         >
-          <Card className="border-0 shadow-lg bg-gradient-to-br from-blue-500 to-blue-600">
-            <div className="p-4">
+          <Card className="border-0 shadow-sm bg-gradient-to-br from-blue-500 to-blue-600">
+            <div>
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-blue-500 text-sm font-medium mb-1">Total Transactions</p>
@@ -686,8 +661,8 @@ const StockTransactions = () => {
             </div>
           </Card>
 
-          <Card className="border-0 shadow-lg bg-gradient-to-br from-green-500 to-green-600">
-            <div className="p-4">
+          <Card className="border-0 shadow-sm bg-gradient-to-br from-green-500 to-green-600">
+            <div>
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-green-500 text-sm font-medium mb-1">Total Stock In</p>
@@ -702,8 +677,8 @@ const StockTransactions = () => {
             </div>
           </Card>
 
-          <Card className="border-0 shadow-lg bg-gradient-to-br from-red-500 to-red-600">
-            <div className="p-4">
+          <Card className="border-0 shadow-sm bg-gradient-to-br from-red-500 to-red-600">
+            <div>
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-red-500 text-sm font-medium mb-1">Total Stock Out</p>
@@ -718,8 +693,8 @@ const StockTransactions = () => {
             </div>
           </Card>
 
-          <Card className="border-0 shadow-lg bg-gradient-to-br from-purple-500 to-purple-600">
-            <div className="p-4">
+          <Card className="border-0 shadow-sm bg-gradient-to-br from-purple-500 to-purple-600">
+            <div>
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-purple-500 text-sm font-medium mb-1">Total Sales</p>
@@ -734,8 +709,8 @@ const StockTransactions = () => {
             </div>
           </Card>
 
-          <Card className="border-0 shadow-lg bg-gradient-to-br from-yellow-500 to-yellow-600">
-            <div className="p-4">
+          <Card className="border-0 shadow-sm bg-gradient-to-br from-yellow-500 to-yellow-600">
+            <div>
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-yellow-500 text-sm font-medium mb-1">Total Waste</p>
@@ -750,8 +725,8 @@ const StockTransactions = () => {
             </div>
           </Card>
 
-          <Card className="border-0 shadow-lg bg-gradient-to-br from-cyan-500 to-cyan-600">
-            <div className="p-4">
+          <Card className="border-0 shadow-sm bg-gradient-to-br from-cyan-500 to-cyan-600">
+            <div>
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-cyan-500 text-sm font-medium mb-1">Total Returns</p>
@@ -772,17 +747,17 @@ const StockTransactions = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 mb-8"
+          className="bg-white rounded-lg shadow-sm border border-gray-200 p-1 mb-8"
         >
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             {/* View Toggle and Search */}
             <div className="flex flex-col sm:flex-row sm:items-center gap-4 flex-1">
               {/* View Mode Toggle */}
-              <div className="flex bg-gray-100 rounded-lg p-1 border">
+              <div className="flex bg-gray-100 rounded-lg p-1 border border-gray-300">
                 <button
                   onClick={() => setViewMode("table")}
                   className={`px-4 py-2 rounded-md transition-all duration-300 flex items-center space-x-2 ${viewMode === "table"
-                    ? "bg-white shadow text-blue-600 font-semibold"
+                    ? "bg-white shadow-md text-blue-600 font-semibold"
                     : "text-gray-600 hover:text-gray-800"
                     }`}
                 >
@@ -792,7 +767,7 @@ const StockTransactions = () => {
                 <button
                   onClick={() => setViewMode("grid")}
                   className={`px-4 py-2 rounded-md transition-all duration-300 flex items-center space-x-2 ${viewMode === "grid"
-                    ? "bg-white shadow text-blue-600 font-semibold"
+                    ? "bg-white shadow-md text-blue-600 font-semibold"
                     : "text-gray-600 hover:text-gray-800"
                     }`}
                 >
@@ -802,7 +777,7 @@ const StockTransactions = () => {
                 <button
                   onClick={() => setViewMode("compact")}
                   className={`px-4 py-2 rounded-md transition-all duration-300 flex items-center space-x-2 ${viewMode === "compact"
-                    ? "bg-white shadow text-blue-600 font-semibold"
+                    ? "bg-white shadow-md text-blue-600 font-semibold"
                     : "text-gray-600 hover:text-gray-800"
                     }`}
                 >
@@ -890,7 +865,7 @@ const StockTransactions = () => {
           transition={{ delay: 0.3 }}
         >
           {viewMode === "table" ? (
-            <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
               <Table
                 columns={columns}
                 rowKey={(record) => `${record.item_id}-${record.created_at}`}
@@ -914,7 +889,7 @@ const StockTransactions = () => {
                   const totalSale = filteredData.reduce((s, r) => s + (Number(r.stock_sale) || 0), 0);
                   const totalWaste = filteredData.reduce((s, r) => s + (Number(r.stock_waste) || 0), 0);
                   const totalReturn = filteredData.reduce((s, r) => s + (Number(r.stock_return) || 0), 0);
-                  const totalQuantity = filteredData.reduce((s, r) => s + (Number(r.quantity) || 0), 0);
+                  const totalQuantity = filteredData.reduce((s, r) => s + (calculateAvailableStock(r) || 0), 0);
 
                   return (
                     <Table.Summary fixed>
@@ -981,7 +956,7 @@ const StockTransactions = () => {
             </div>
           ) : (
             // Compact View
-            <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
               <div className="p-6">
                 <div className="space-y-3">
                   {filteredData.map((item, index) => (

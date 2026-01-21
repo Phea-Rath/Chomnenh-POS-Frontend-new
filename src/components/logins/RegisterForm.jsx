@@ -81,7 +81,7 @@ const RegisterForm = () => {
       newErrors.role_id = "Please select a role";
     }
 
-    if (users.role_id == 2 && !users.start_date) {
+    if (users.role_id == 3 && !users.start_date) {
       newErrors.start_date = "Start date is required";
     }
 
@@ -141,6 +141,8 @@ const RegisterForm = () => {
   }
 
   function handleSubmit() {
+    console.log(users);
+
     if (!validateForm()) {
       toast.error("Please fix the errors in the form");
       return;
@@ -166,7 +168,7 @@ const RegisterForm = () => {
     formData.append("status", users?.status);
     formData.append("created_by", users?.created_by);
 
-    if (users?.role_id == 2) {
+    if (users?.role_id == 3) {
       formData.append("start_date", users?.start_date);
       formData.append("end_date", users?.end_date);
       formData.append("term", users?.term);
@@ -211,7 +213,7 @@ const RegisterForm = () => {
       role: role_name,
     };
 
-    if (value != 2) {
+    if (value != 3) {
       updatedUsers.start_date = "";
       updatedUsers.term = "";
     }
@@ -467,7 +469,7 @@ const RegisterForm = () => {
                   </div>
 
                   {/* Contract Period - Only for specific roles */}
-                  {users.role_id == 2 && (
+                  {users.role_id == 3 && (
                     <motion.div
                       initial={{ opacity: 0, height: 0 }}
                       animate={{ opacity: 1, height: 'auto' }}

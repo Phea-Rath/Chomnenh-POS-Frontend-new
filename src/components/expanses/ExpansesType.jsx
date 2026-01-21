@@ -147,12 +147,8 @@ const ExpansesType = () => {
   );
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
-      transition={{ duration: 0.5 }}
-      className="min-h-screen bg-gray-50"
+    <div
+      className="min-h-screen bg-transparent"
     >
       <section className="px-4 md:px-6 lg:px-8 py-6">
         <AlertBox
@@ -181,8 +177,8 @@ const ExpansesType = () => {
                 <button
                   onClick={() => setViewMode('table')}
                   className={`p-2 rounded-md transition-colors duration-200 ${viewMode === 'table'
-                      ? 'bg-blue-100 text-blue-600'
-                      : 'text-gray-500 hover:text-gray-700'
+                    ? 'bg-blue-100 text-blue-600'
+                    : 'text-gray-500 hover:text-gray-700'
                     }`}
                 >
                   <IoIosList className="text-xl" />
@@ -190,8 +186,8 @@ const ExpansesType = () => {
                 <button
                   onClick={() => setViewMode('grid')}
                   className={`p-2 rounded-md transition-colors duration-200 ${viewMode === 'grid'
-                      ? 'bg-blue-100 text-blue-600'
-                      : 'text-gray-500 hover:text-gray-700'
+                    ? 'bg-blue-100 text-blue-600'
+                    : 'text-gray-500 hover:text-gray-700'
                     }`}
                 >
                   <IoIosGrid className="text-xl" />
@@ -394,7 +390,7 @@ const ExpansesType = () => {
           </div>
         </dialog>
       </section>
-    </motion.div>
+    </div>
   )
 }
 

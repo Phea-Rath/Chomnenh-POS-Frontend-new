@@ -18,6 +18,7 @@ import {
 } from "../../../app/Features/expansesSlice";
 import { useGetAllExpanseTypesQuery } from "../../../app/Features/expanseTypesSlice";
 import { toast } from "react-toastify";
+import ExportExel from "../../services/ExportExel";
 
 const ExpContext = createContext();
 export function useExpContext() {
@@ -223,14 +224,10 @@ const Expanses = () => {
   );
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
-      transition={{ duration: 0.5 }}
-      className="min-h-screen bg-gray-50"
+    <div
+      className="min-h-screen bg-transparent"
     >
-      <section className="px-4 md:px-6 lg:px-8 py-6">
+      <section className="px-4 py-6">
         <AlertBox
           isOpen={alertBox}
           title="Confirm Deletion"
@@ -253,12 +250,13 @@ const Expanses = () => {
 
             <div className="flex items-center gap-3">
               {/* View Mode Toggle */}
+              <ExportExel data={expanses} title='Expenses' />
               <div className="flex bg-white rounded-lg border border-gray-200 p-1">
                 <button
                   onClick={() => setViewMode('table')}
                   className={`p-2 rounded-md transition-colors duration-200 ${viewMode === 'table'
-                      ? 'bg-blue-100 text-blue-600'
-                      : 'text-gray-500 hover:text-gray-700'
+                    ? 'bg-blue-100 text-blue-600'
+                    : 'text-gray-500 hover:text-gray-700'
                     }`}
                 >
                   <IoIosList className="text-xl" />
@@ -266,8 +264,8 @@ const Expanses = () => {
                 <button
                   onClick={() => setViewMode('grid')}
                   className={`p-2 rounded-md transition-colors duration-200 ${viewMode === 'grid'
-                      ? 'bg-blue-100 text-blue-600'
-                      : 'text-gray-500 hover:text-gray-700'
+                    ? 'bg-blue-100 text-blue-600'
+                    : 'text-gray-500 hover:text-gray-700'
                     }`}
                 >
                   <IoIosGrid className="text-xl" />
@@ -278,6 +276,7 @@ const Expanses = () => {
                 className="btn btn-primary bg-blue-600 hover:bg-blue-700 text-white border-none px-6 py-3 rounded-lg font-semibold transition-colors duration-200 flex items-center gap-2 shadow-md hover:shadow-lg"
                 onClick={async () => {
                   await navigator("create");
+                  setEdit(null);
                   ModalRef.current?.showModal();
                 }}
               >
@@ -516,7 +515,7 @@ const Expanses = () => {
           </div>
         </dialog>
       </section>
-    </motion.div>
+    </div>
   );
 };
 

@@ -42,7 +42,8 @@ const initialOrder = {
   order_address: null,
   order_total: 0,
   order_customer_id: 1,
-  status: 1,
+  online: 0,
+  status: 6,
   sale_type: "sale",
   order_payment_status: "paid",
   order_payment_method: "cash",
@@ -83,6 +84,8 @@ const Sales = () => {
   const saleItemContext = useGetAllSaleQuery(token);
   const categoryContext = useGetAllCategoriesQuery(token);
   const orderContext = useGetAllOrderQuery(token);
+
+  localStorage.setItem("orderItems", JSON.stringify(initialOrder));
 
   // Helper function to calculate price based on sale type and discount
   const getItemPrice = (item, saleType = "sale") => {
@@ -620,6 +623,8 @@ const Sales = () => {
     const payload = {
       ...orders,
       order_tel: orders.order_tel || "0",
+      online: 0,
+      status: 6,
       order_discount: calculateTotalDiscount() || 0,
       order_address: orders.order_address || "unknown",
       items: itemsWithAttributes
@@ -674,6 +679,7 @@ const Sales = () => {
 
   function onFilterCategory(e) {
     const value = e.target.value;
+
     if (value === "all") {
       setItemsSech(allItems);
     } else if (value) {
@@ -812,7 +818,7 @@ const Sales = () => {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50"
+      className="min-h-screen bg-transparent"
     >
       <section className="px-4 md:px-6 lg:px-8 py-6">
         {contextHolder}
@@ -860,7 +866,7 @@ const Sales = () => {
           </div>
 
           {/* Search and Filter Bar */}
-          <Card className="mb-6 shadow-lg border-0">
+          <Card className="mb-6 shadow-sm border-0">
             <div className="flex flex-col sm:flex-row gap-4">
               <div className="flex-1">
                 <div className="relative">
@@ -912,7 +918,7 @@ const Sales = () => {
                 ))}
               </div>
             ) : (
-              <Card className="text-center shadow-lg border-0">
+              <Card className="text-center shadow-sm border-0">
                 <Empty
                   image={
                     <div className="text-gray-400 mb-4">
@@ -949,7 +955,7 @@ const Sales = () => {
                   whileHover={{ y: -5 }}
                   transition={{ duration: 0.2 }}
                 >
-                  <Card className="shadow-lg hover:shadow-xl border-0 transition-all duration-300 h-full">
+                  <Card className="shadow-sm hover:shadow-sm border-0 transition-all duration-300 h-full">
                     {/* Product Image */}
                     <div className="relative mb-4 overflow-hidden rounded-lg bg-gray-100">
                       <img

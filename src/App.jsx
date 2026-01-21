@@ -24,10 +24,7 @@ import LoginForm from "./components/logins/LoginForm";
 import Register from "./components/logins/Register";
 import Settings from "./components/settings/Settings";
 import CreateExpanses from "./views/expanses/CreateExpanses";
-import UpdateExpanses from "./views/expanses/UpdateExpanses";
 import UpdateOrders from "./views/orders/UpdateOrders";
-import Size from "./components/sizes/Size";
-import Color from "./components/colors/Color";
 import EMenu from "./components/EMenu";
 import { store } from "../app/store";
 import { Provider } from "react-redux";
@@ -69,6 +66,15 @@ import Page from "./markets/Page";
 import Main from "./markets/Main";
 import ErrorPage from "./components/ErrorPage";
 import QuotationForm from "./components/quotations/QuotationForm";
+import QuotationList from "./components/quotations/QuotationList";
+import QuotationDetail from "./components/quotations/QuotationDetail";
+import QuotationReceipt from "./components/quotations/QuotationReceipt";
+import StockTransferDetail from "./components/stocks/StockTransferDetail";
+import GuestOrderTracking from "./components/orders/GuestOrderTracking";
+import DeliverForm from "./components/delivers/DeliverForm";
+import DeliverList from "./components/delivers/DeliverList";
+import OrderTracking from "./components/orders/OrderTracking";
+import ForgotPassword from "./components/logins/ForgotPassword";
 function ProtectedRoute({ children }) {
   const token = localStorage.getItem("token");
 
@@ -83,6 +89,11 @@ const router = createBrowserRouter([
   {
     path: "/",
     element: <LoginForm />,
+    errorElement: <ErrorPage />,
+  },
+  {
+    path: "/forgot-password",
+    element: <ForgotPassword />,
     errorElement: <ErrorPage />,
   },
   {
@@ -170,38 +181,11 @@ const router = createBrowserRouter([
           },
           {
             path: "update",
-            element: <UpdateExpanses />,
-          },
-        ],
-      },
-      {
-        path: "size",
-        element: <Size />,
-        children: [
-          {
-            path: "create",
             element: <CreateExpanses />,
           },
-          {
-            path: "update",
-            element: <UpdateExpanses />,
-          },
         ],
       },
-      {
-        path: "color",
-        element: <Color />,
-        children: [
-          {
-            path: "create",
-            element: <CreateExpanses />,
-          },
-          {
-            path: "update",
-            element: <UpdateExpanses />,
-          },
-        ],
-      },
+
       {
         path: "expanse-type",
         element: <ExpansesType />,
@@ -213,6 +197,10 @@ const router = createBrowserRouter([
       {
         path: "orders",
         element: <Sales />,
+      },
+      {
+        path: "order-tracking",
+        element: <OrderTracking />,
       },
       {
         path: "order-list/edit/:id",
@@ -249,6 +237,10 @@ const router = createBrowserRouter([
       {
         path: "stock-transfer-list",
         element: <StockTransferList />,
+      },
+      {
+        path: "stock-transfer-list/detail/:id",
+        element: <StockTransferDetail />,
       },
       {
         path: "transfer-stock",
@@ -384,8 +376,36 @@ const router = createBrowserRouter([
         element: <RoleForm />,
       },
       {
-        path: "quotation/create",
+        path: "quotations/create",
         element: <QuotationForm />,
+      },
+      {
+        path: "quotations/edit/:id",
+        element: <QuotationForm />,
+      },
+      {
+        path: "quotations",
+        element: <QuotationList />,
+      },
+      {
+        path: "quotations/detail/:id",
+        element: <QuotationDetail />,
+      },
+      {
+        path: "quotations/receipt/:id",
+        element: <QuotationReceipt />,
+      },
+      {
+        path: "deliver/create",
+        element: <DeliverForm />,
+      },
+      {
+        path: "deliver/edit/:id",
+        element: <DeliverForm />,
+      },
+      {
+        path: "delivers",
+        element: <DeliverList />,
       },
     ],
   },
@@ -396,6 +416,10 @@ const router = createBrowserRouter([
   {
     path: "/:token/order-now/:id",
     element: <SaleOnline />,
+  },
+  {
+    path: "/:token/order-now/:id/order-tracking",
+    element: <GuestOrderTracking />,
   },
   {
     path: "/market",

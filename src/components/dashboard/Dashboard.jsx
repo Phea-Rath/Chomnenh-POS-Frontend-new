@@ -50,6 +50,9 @@ import {
   useGetPopularOrderQuery,
 } from "../../../app/Features/ordersSlice";
 import { useGetPopularStockQuery } from "../../../app/Features/stocksSlice";
+import { useGetUserLoginQuery } from "../../../app/Features/usersSlice";
+import { Link } from "react-router";
+import { Button } from "antd";
 const dataRadar = [
   {
     subject: "07:00 AM",
@@ -243,28 +246,11 @@ const popularStockIn = [
 const Dashboard = () => {
   const token = localStorage.getItem("token");
   const [timeRange, setTimeRange] = useState(["month", "week", "day", "hour"]);
-  const { data: purchaseByMonth } = useGetPurchaseByMonthQuery(token);
-  const { data: purchaseByWeek } = useGetPurchaseByWeekQuery(token);
-  const { data: purchaseByDay } = useGetPurchaseByDayQuery(token);
-  const { data: purchaseByHour } = useGetPurchaseByHourQuery(token);
-  const { data: saleByMonth } = useGetSaleByMonthQuery(token);
-  const { data: saleByWeek } = useGetSaleByWeekQuery(token);
-  const { data: saleByDay } = useGetSaleByDayQuery(token);
-  const { data: saleByHour } = useGetSaleByHourQuery(token);
-  const { data: expanseByMonth } = useGetExpanseByMonthQuery(token);
-  const { data: expanseByWeek } = useGetExpanseByWeekQuery(token);
-  const { data: expanseByDay } = useGetExpanseByDayQuery(token);
-  const { data: expanseByHour } = useGetExpanseByHourQuery(token);
-  const { data: popularExpanses } = useGetPopularExpansesQuery(token);
-  const { data: popularSales } = useGetPopularOrderQuery(token); // Reusing expanses query for sales for demonstration
-  const { data: orderPersentMonthly } = useGetPersentOrderMonthlyQuery(token);
-  const { data: popularStock } = useGetPopularStockQuery(token);
   const [revenueChart, setRevenueChart] = useState([]);
   const [purchaseChart, setPurchaseChart] = useState([]);
   const [expanseChart, setExpanseChart] = useState([]);
   const [profitChart, setProfitChart] = useState([]);
   const [profitByMonth, setProfitByMonth] = useState([]);
-
   const [profit, setProfit] = useState({
     thisYear: 0,
     lastYear: 0,
@@ -281,6 +267,24 @@ const Dashboard = () => {
     lastYear: 0,
     persent: 0,
   });
+
+  const { data: purchaseByMonth } = useGetPurchaseByMonthQuery(token);
+  const { data: purchaseByWeek } = useGetPurchaseByWeekQuery(token);
+  const { data: purchaseByDay } = useGetPurchaseByDayQuery(token);
+  const { data: purchaseByHour } = useGetPurchaseByHourQuery(token);
+  const { data: saleByMonth } = useGetSaleByMonthQuery(token);
+  const { data: saleByWeek } = useGetSaleByWeekQuery(token);
+  const { data: saleByDay } = useGetSaleByDayQuery(token);
+  const { data: saleByHour } = useGetSaleByHourQuery(token);
+  const { data: expanseByMonth } = useGetExpanseByMonthQuery(token);
+  const { data: expanseByWeek } = useGetExpanseByWeekQuery(token);
+  const { data: expanseByDay } = useGetExpanseByDayQuery(token);
+  const { data: expanseByHour } = useGetExpanseByHourQuery(token);
+  const { data: popularExpanses } = useGetPopularExpansesQuery(token);
+  const { data: popularSales } = useGetPopularOrderQuery(token);
+  const { data: orderPersentMonthly } = useGetPersentOrderMonthlyQuery(token);
+  const { data: popularStock } = useGetPopularStockQuery(token);
+  const { data: userLogin, isLoading } = useGetUserLoginQuery(token);
 
   useEffect(() => {
     const purchaseThisYear =
@@ -383,6 +387,90 @@ const Dashboard = () => {
     }
     return (((thisYear - lastYear) / lastYear) * 100).toFixed(2);
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="text-center">
+          <div className="inline-flex items-center justify-center space-x-2">
+            <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+            <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+            <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+          </div>
+          <p className="mt-3 text-sm text-gray-600 font-medium">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (userLogin?.data?.role_id === 1 && !isLoading) {
+    return (
+      <div className="max-w-lg mx-auto p-6">
+        {/* Welcome Header */}
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-blue-100 to-indigo-100 mb-4">
+            <svg className="w-8 h-8 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+            </svg>
+          </div>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Welcome Super Administrator</h1>
+          <p className="text-gray-600">You have full access to system settings</p>
+        </div>
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-3 gap-3 mb-6">
+          <div className="bg-white rounded-lg p-3 text-center border border-gray-100 shadow-xs">
+            <div className="text-lg font-bold text-blue-600">Super Admin</div>
+            <div className="text-xs text-gray-500">Role</div>
+          </div>
+          <div className="bg-white rounded-lg p-3 text-center border border-gray-100 shadow-xs">
+            <div className="text-lg font-bold text-green-600">Full</div>
+            <div className="text-xs text-gray-500">Access</div>
+          </div>
+          <div className="bg-white rounded-lg p-3 text-center border border-gray-100 shadow-xs">
+            <div className="text-lg font-bold text-purple-600">All</div>
+            <div className="text-xs text-gray-500">Features</div>
+          </div>
+        </div>
+
+        {/* Settings Button */}
+        <Link to="/dashboard/setting" className="block">
+          <div className="group relative">
+            <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg blur opacity-25 group-hover:opacity-75 transition duration-300"></div>
+            <button className="relative w-full flex items-center justify-between bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg px-6 py-4 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-300">
+              <div className="flex items-center space-x-4">
+                <div className="p-2 bg-white/20 rounded-lg">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+                  </svg>
+                </div>
+                <div className="text-left">
+                  <p className="font-semibold">Open Settings</p>
+                  <p className="text-xs opacity-90">Manage system configuration</p>
+                </div>
+              </div>
+              <svg className="w-5 h-5 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          </div>
+        </Link>
+
+        {/* Quick Tips */}
+        <div className="mt-8 p-4 bg-blue-50 rounded-lg border border-blue-100">
+          <div className="flex items-start space-x-3">
+            <svg className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+            </svg>
+            <div>
+              <p className="text-sm font-medium text-gray-800">Administrator Tips</p>
+              <p className="text-xs text-gray-600 mt-1">Access advanced settings, user management, and system configurations from the settings panel.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const lineData = [
     { name: "January", thisYear: 50, lastYear: 45 },

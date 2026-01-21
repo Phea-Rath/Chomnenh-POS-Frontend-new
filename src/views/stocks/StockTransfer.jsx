@@ -154,7 +154,7 @@ const StockTransfer = () => {
               {fielditems[i].size_name}
             </Tag>
             <span className="text-xs text-gray-500 font-mono">
-              Stock: {Number(fielditems[i].stock_in) - Number(fielditems[i].stock_out) - Number(fielditems[i].stock_waste) - Number(fielditems[i].stock_sale) + Number(fielditems[i].stock_return)}
+              Stock: {Number(fielditems[i].stock.in_stock)}
             </span>
           </div>
         </div>
@@ -185,7 +185,7 @@ const StockTransfer = () => {
   }
 
   return (
-    <section className='px-6 py-6 bg-gray-50 min-h-screen'>
+    <section className='p-6 bg-transparent min-h-screen'>
       <AlertBox
         isOpen={alertBox}
         title="Confirm Stock Transfer"
@@ -196,25 +196,20 @@ const StockTransfer = () => {
         cancelText="Cancel"
       />
 
-      <div className="max-w-7xl mx-auto">
+      <div className=" mx-auto">
         <div className="mb-6">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold text-gray-800 mb-2">Stock Transfer</h1>
               <p className="text-gray-600">Transfer items between warehouses</p>
             </div>
-            <div className="w-20 h-1 bg-blue-600 rounded"></div>
           </div>
         </div>
 
         <form onSubmit={handleSubmit}>
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
-              <h2 className="text-lg font-semibold text-gray-700">Transfer Details</h2>
-              <p className="text-sm text-gray-600 mt-1">Configure your stock transfer settings</p>
-            </div>
+          <div className="bg-transparent rounded-xl border border-gray-200 overflow-hidden">
 
-            <div className="p-6">
+            <div>
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Left Column - Form Controls */}
                 <div className="lg:col-span-1 space-y-4">
@@ -240,7 +235,7 @@ const StockTransfer = () => {
                     />
                   </div>
 
-                  <div className="space-y-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                  <div className="space-y-4 p-4 bg-gray-50 shadow-sm rounded-lg border border-gray-200">
                     <div className="form-group">
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         <span className="flex items-center gap-2">
@@ -408,7 +403,7 @@ const StockTransfer = () => {
                                   {index + 1}
                                 </td>
                                 <td className="px-4 py-3 text-sm font-mono text-gray-600">
-                                  {item.item_code}
+                                  {item.barcode}
                                 </td>
                                 <td className="px-4 py-3">
                                   <div className="flex items-center gap-3">
@@ -433,13 +428,13 @@ const StockTransfer = () => {
                                     <input
                                       type="number"
                                       min="1"
-                                      max={Number(item.stock_in) - Number(item.stock_out) - Number(item.stock_waste) - Number(item.stock_sale) + Number(item.stock_return)}
+                                      max={Number(item.stock.in_stock)}
                                       placeholder="0"
                                       className="w-20 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-center"
                                       name="quantity"
                                       onChange={(e) => {
                                         if (Number(item.in_stock) < e.target.value) {
-                                          toast.warning(`Only ${item.in_stock} items available in stock!`);
+                                          toast.warning(`Only ${item.stock.in_stock} items available in stock!`);
                                           return;
                                         }
                                         handleChange(index, 'quantity', e.target.value)
@@ -448,7 +443,7 @@ const StockTransfer = () => {
                                       required
                                     />
                                     <span className="text-xs text-gray-500">
-                                      / {Number(item.stock_in) - Number(item.stock_out) - Number(item.stock_waste) - Number(item.stock_sale) + Number(item.stock_return)} in stock
+                                      / {Number(item.stock.in_stock)} in stock
                                     </span>
                                   </div>
                                 </td>
