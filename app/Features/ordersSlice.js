@@ -18,6 +18,9 @@ export const ordersApi = createApi({
     getAllOrder: builder.query({
       query: (token) => queryData("/order_masters", token),
     }),
+    getOrderByUser: builder.query({
+      query: (token) => queryData("/order_by_user", token),
+    }),
     getPopularOrder: builder.query({
       query: (token) => queryData("/popular_sales", token),
     }),
@@ -59,6 +62,7 @@ export const ordersApi = createApi({
 export const {
   useGetAllOrderQuery,
   useGetOrderByIdQuery,
+  useGetOrderByUserQuery,
   useCreateOrderMutation,
   useUpdateOrderMutation,
   useDeleteOrderMutation,

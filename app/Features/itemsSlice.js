@@ -8,7 +8,7 @@ export const itemsApi = createApi({
     }),
     endpoints: (builder) => ({
         getAllItems: builder.query({
-            query: ({ token, pageSize = 12, currentPage = 1, search }) => queryData(`/items?limit=${pageSize}&page=${currentPage}&search=${search}`, token),
+            query: ({ token, limit = 12, page = 1, search }) => queryData(`/items?limit=${limit}&page=${page}&search=${search}`, token),
         }),
         getAllItemInStock: builder.query({
             query: (token) => queryData('/item_in_stock', token),

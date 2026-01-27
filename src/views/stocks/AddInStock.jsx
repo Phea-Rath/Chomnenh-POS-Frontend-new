@@ -21,6 +21,7 @@ import { toast } from "react-toastify";
 import { FaTrash, FaEdit, FaSave, FaTimes, FaBox, FaPalette, FaRuler } from "react-icons/fa";
 import { MdLocalShipping } from "react-icons/md";
 import dayjs from 'dayjs'; // Import dayjs instead of moment
+import { useDebounce } from "use-debounce";
 
 const { Option } = Select;
 
@@ -42,8 +43,10 @@ const AddInStock = () => {
   const { refetch } = useGetAllStockQuery(token);
   const stockRes = useGetAllStockTypesQuery(token);
   const navigator = useNavigate();
-  const itemsRes = useGetAllItemsQuery(token);
-  const allItemsRes = useGetAllItemsQuery(token);
+  const [searchItem, setSearchItem] = useState('');
+  const [debouncedSearch] = useDebounce(searchItem, 500);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsRes = useGetAllItemsQuery({ limit: 10, page: currentPage, search: debouncedSearch, token });
   const saleItemContext = useGetAllSaleQuery(token);
   const warehouseRes = useGetAllWarehousesQuery(token);
   const [createStock] = useCreateStockMutation();
@@ -55,6 +58,10 @@ const AddInStock = () => {
     { id, token },
     { skip: !isEditMode }
   );
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedSearch]);
 
   // Initialize form state
   const [form, setForm] = useState({
@@ -69,7 +76,7 @@ const AddInStock = () => {
   useEffect(() => {
     setfielditems(itemsRes.data?.data || []);
     setitems(itemsRes.data?.data || []);
-    setAllItems(allItemsRes?.data?.data || []);
+    setAllItems(itemsRes?.data?.data || []);
     const newWare = warehouseRes.data?.data?.filter(
       (item) =>
         item.warehouse_id !== 2 &&
@@ -382,6 +389,7 @@ const AddInStock = () => {
                     <Select
                       onSelect={onSelectItem}
                       showSearch
+                      onSearch={(value) => setSearchItem(value)}
                       style={{ width: '100%' }}
                       placeholder="Search items by name..."
                       size="large"

@@ -20,10 +20,10 @@ import { MdCancel, MdOutlineDeliveryDining } from 'react-icons/md';
 import { toast } from 'react-toastify';
 import api from '../../services/api';
 import AlertBox from '../../services/AlertBox';
-import { useGetAllOrderQuery } from '../../../app/Features/ordersSlice';
+import { useGetAllOrderQuery, useGetOrderByUserQuery } from '../../../app/Features/ordersSlice';
 
 const GuestOrderTracking = () => {
-    const { data, refetch } = useGetAllOrderQuery(localStorage.getItem('guestToken'), {
+    const { data, refetch } = useGetOrderByUserQuery(localStorage.getItem('guestToken'), {
         refetchOnFocus: true,
         refetchOnReconnect: true,
     });
@@ -148,7 +148,7 @@ const GuestOrderTracking = () => {
     };
 
     return (
-        <div className="p-4 md:p-6 bg-transparent min-h-screen">
+        <div className="p-4 md:p-6 bg-gray-200 min-h-screen">
             <AlertBox
                 isOpen={cancelAlert}
                 title="Cancel Order Confirmation"
@@ -242,7 +242,7 @@ const GuestOrderTracking = () => {
             </div>
 
             {/* Orders Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {orders?.map((order) => {
                     const statusBadge = getStatusBadge(order);
                     const paymentBadge = getPaymentMethodBadge(order.order_payment_method);
@@ -430,13 +430,13 @@ const GuestOrderTracking = () => {
 
                                     {!order?.is_cancelled && order?.status == 1 && (
                                         <>
-                                            <button
+                                            {/* <button
                                                 onClick={() => handleEditOrder(order)}
                                                 className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium text-green-600 bg-green-50 rounded-lg hover:bg-green-100 transition-colors"
                                             >
                                                 <FaEdit className="w-4 h-4" />
                                                 Edit
-                                            </button>
+                                            </button> */}
 
                                             <button
                                                 onClick={() => handleCancelOrder(order)}

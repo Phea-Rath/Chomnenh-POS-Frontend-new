@@ -54,8 +54,8 @@ const ListItem = () => {
   // 2. Pass 'search' to RTK Query (Ensure your itemsSlice query accepts 'search')
   const { data, isLoading, isFetching, refetch } = useGetAllItemsQuery({
     token,
-    pageSize,
-    currentPage,
+    limit: pageSize,
+    page: currentPage,
     search: debouncedSearch
   });
 
@@ -100,7 +100,7 @@ const ListItem = () => {
   };
 
   return (
-    <div className="min-h-screen bg-transparent pb-24">
+    <div className="min-h-screen bg-transparent pb-5">
       <AlertBox
         isOpen={alertBox}
         title="Delete Item"
@@ -110,7 +110,7 @@ const ListItem = () => {
         confirmColor="error"
       />
 
-      <div className=" border-b border-gray-200 px-4 py-6 md:px-8">
+      <div className=" border-b border-gray-200 px-2">
         <div className=" mx-auto flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
             <Title level={2} className="!m-0 !text-gray-900 !font-bold">Items</Title>
@@ -138,17 +138,17 @@ const ListItem = () => {
         </div>
       </div>
 
-      <div className="mx-auto px-4 py-6 md:px-8">
+      <div className="mx-auto px-2">
         <div className="flex flex-col lg:flex-row gap-4 mb-6">
           <div className="flex-1 relative group">
-            <Input
-              prefix={<IoIosSearch className="text-gray-400 group-focus-within:text-blue-500 transition-colors" size={20} />}
+            <input
               placeholder="Search database by name, code or category..."
-              className="h-12 rounded-xl border-gray-200 shadow-sm"
+              className="h-12 rounded-xl pl-10 border-gray-200 bg-white w-full shadow-sm"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               allowClear
             />
+            <IoIosSearch className="text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2 group-focus-within:text-blue-500 transition-colors" size={20} />
           </div>
 
           <div className="flex items-center gap-3 bg-white p-1.5 rounded-xl border border-gray-200 shadow-sm self-end lg:self-auto">
@@ -183,20 +183,18 @@ const ListItem = () => {
           <div className="min-h-[400px]">
             {items.length > 0 ? (
               viewMode === "grid" ? (
-                <Row gutter={[20, 20]}>
+                <div className=" grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-2">
                   {items.map((item) => (
-                    <Col xs={24} sm={12} md={8} lg={6} key={item.id}>
-                      <GridCard
-                        item={item}
-                        onEdit={() => navigator(`update/${item.id}`)}
-                        onDelete={() => handleDelete(item.id)}
-                        onView={() => navigator(`detail/${item.id}`)}
-                        formatCurrency={formatCurrency}
-                        getDiscount={getDiscountPercentage}
-                      />
-                    </Col>
+                    <GridCard
+                      item={item}
+                      onEdit={() => navigator(`update/${item.id}`)}
+                      onDelete={() => handleDelete(item.id)}
+                      onView={() => navigator(`detail/${item.id}`)}
+                      formatCurrency={formatCurrency}
+                      getDiscount={getDiscountPercentage}
+                    />
                   ))}
-                </Row>
+                </div>
               ) : (
                 <ListView
                   items={items}

@@ -33,7 +33,9 @@ import { FaPercent, FaPalette, FaRuler, FaMapMarkerAlt, FaHistory, FaUser, FaPho
 import { GiSugarCane } from "react-icons/gi";
 import { BiCategory } from "react-icons/bi";
 import api from "../../services/api";
-import { useGetUserProfileQuery } from "../../../app/Features/usersSlice";
+import { useGetUserLoginQuery, useGetUserProfileQuery } from "../../../app/Features/usersSlice";
+import { TbShoppingCartOff } from "react-icons/tb";
+import { MdOutlineAddShoppingCart } from "react-icons/md";
 
 // const { Option } = Select;
 
@@ -72,6 +74,7 @@ const Sales = () => {
   const [alertBox, setAlertBox] = useState(false);
   const [showSignInModal, setShowSignInModal] = useState(localStorage.getItem('guestToken') ? false : true);
   const [allItems, setAllItems] = useState([]);
+  const { data: userLogin } = useGetUserLoginQuery(token)
   const [itemsSech, setItemsSech] = useState([]);
   const [messageApi, contextHolder] = message.useMessage();
   const [Category, setCategory] = useState([]);
@@ -91,6 +94,10 @@ const Sales = () => {
     });
   const categoryContext = useGetAllCategoriesQuery(token);
   const orderContext = useGetAllOrderQuery(token);
+
+  console.log(userLogin?.data?.id);
+
+
 
   localStorage.setItem("orderItems", JSON.stringify(initialOrder));
   // Helper function to calculate price based on sale type and discount
@@ -663,6 +670,7 @@ const Sales = () => {
       status: 1,
       online: 1,
       deliver_id: 1,
+      through: userLogin?.data?.id,
       order_payment_status: "cod",
       payment: 0,
       order_discount: calculateTotalDiscount() || 0,
@@ -915,7 +923,7 @@ const Sales = () => {
       transition={{ duration: 0.5 }}
       className="min-h-screen bg-gray-200"
     >
-      <section className="px-4 md:px-6 lg:px-8 py-6">
+      <section className="px-2">
         {contextHolder}
         <AlertBox
           isOpen={alertBox}
@@ -1049,7 +1057,7 @@ const Sales = () => {
               </Card>
             )
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-2">
               {itemsSech?.map((item) => (
                 <motion.div
                   key={item.id}
@@ -1133,8 +1141,8 @@ const Sales = () => {
                       </div>
 
                       {/* Quantity Controls */}
-                      <div className="flex items-center justify-between pt-3 border-t border-gray-100">
-                        <div className="flex items-center gap-2">
+                      <div className="flex items-center justify-end pt-3 border-t border-gray-100">
+                        {/* <div className="flex items-center gap-2">
                           <button
                             disabled={item.quantity <= 1}
                             onClick={() => {
@@ -1166,7 +1174,7 @@ const Sales = () => {
                           >
                             <IoMdAddCircle className="text-xl" />
                           </button>
-                        </div>
+                        </div> */}
 
                         <Button
                           type="primary"
@@ -1178,7 +1186,7 @@ const Sales = () => {
                             : 'bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 border-0'
                             }`}
                         >
-                          {item.stock_in <= 0 ? 'Out of Stock' : 'Add to Cart'}
+                          {item.stock_in <= 0 ? <TbShoppingCartOff /> : <MdOutlineAddShoppingCart />}
                         </Button>
                       </div>
                     </div>

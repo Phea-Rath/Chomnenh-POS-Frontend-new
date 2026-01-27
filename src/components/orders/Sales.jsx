@@ -33,6 +33,8 @@ import { FaPercent, FaPalette, FaRuler } from "react-icons/fa";
 import { GiSugarCane } from "react-icons/gi";
 import { BiCategory } from "react-icons/bi";
 import api from "../../services/api";
+import { MdOutlineAddShoppingCart } from "react-icons/md";
+import { TbShoppingCartOff } from "react-icons/tb";
 
 // const { Option } = Select;
 
@@ -820,7 +822,7 @@ const Sales = () => {
       transition={{ duration: 0.5 }}
       className="min-h-screen bg-transparent"
     >
-      <section className="px-4 md:px-6 lg:px-8 py-6">
+      <section className="px-2">
         {contextHolder}
         <AlertBox
           isOpen={alertBox}
@@ -902,7 +904,7 @@ const Sales = () => {
         <div>
           {itemsSech?.length === 0 ? (
             saleItemContext?.isLoading ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
                 {[...Array(8)].map((_, index) => (
                   <Card key={index} className="shadow-sm border-0">
                     <div className="animate-pulse">
@@ -946,7 +948,7 @@ const Sales = () => {
               </Card>
             )
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-2">
               {itemsSech?.map((item) => (
                 <motion.div
                   key={item.id}
@@ -1005,7 +1007,7 @@ const Sales = () => {
                       </div>
 
                       {/* Attributes Display */}
-                      {renderAttributesDisplay(item)}
+                      {/* {renderAttributesDisplay(item)} */}
 
                       {/* Price Information */}
                       <div className="space-y-2">
@@ -1030,8 +1032,8 @@ const Sales = () => {
                       </div>
 
                       {/* Quantity Controls */}
-                      <div className="flex items-center justify-between pt-3 border-t border-gray-100">
-                        <div className="flex items-center gap-2">
+                      <div className="flex items-center justify-end pt-3 border-t border-gray-100">
+                        {/* <div className="flex items-center gap-2">
                           <button
                             disabled={item.quantity <= 1}
                             onClick={() => {
@@ -1063,7 +1065,7 @@ const Sales = () => {
                           >
                             <IoMdAddCircle className="text-xl" />
                           </button>
-                        </div>
+                        </div> */}
 
                         <Button
                           type="primary"
@@ -1075,7 +1077,7 @@ const Sales = () => {
                             : 'bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 border-0'
                             }`}
                         >
-                          {item.stock_in <= 0 ? 'Out of Stock' : 'Add to Cart'}
+                          {item.stock_in <= 0 ? <TbShoppingCartOff /> : <MdOutlineAddShoppingCart />}
                         </Button>
                       </div>
                     </div>

@@ -3,10 +3,12 @@ import { FiEdit2, FiSave, FiX, FiUser, FiPhone, FiCalendar, FiClock, FiKey, FiUp
 import { motion } from 'framer-motion';
 import { useGetUserProfileQuery } from '../../../app/Features/usersSlice';
 import { useParams } from 'react-router';
-import { useUpdateImageMutation, useUpdateNameMutation, useUpdateNumberPhoneMutation } from '../../../app/Features/userProfileSlice';
+import { useUpdateImageMutation, useUpdateNameMutation, useUpdateNumberPhoneMutation, useUpdateQrCodeMutation, useUpdateTelegramServiceMutation } from '../../../app/Features/userProfileSlice';
 import { useOutletsContext } from '../../layouts/Management';
 import { toast } from 'react-toastify';
 import { Card, Badge, Progress, Tooltip } from 'antd';
+import { PiBuildingsLight } from 'react-icons/pi';
+import { LiaTelegram } from "react-icons/lia";
 
 const UserProfile = () => {
     const { id } = useParams();
@@ -15,11 +17,15 @@ const UserProfile = () => {
 
     const [viewImage, setViewImage] = useState("");
     const [image, setImage] = useState("");
+    const [viewQr, setViewQr] = useState("");
+    const [qrFile, setQrFile] = useState("");
     const [profileName, setProfileName] = useState("");
     const [numberPhone, setNumberPhone] = useState("");
 
     const { data: profileData, refetch } = useGetUserProfileQuery({ id, token });
     const [updateImage] = useUpdateImageMutation();
+    const [updateTelegramService] = useUpdateTelegramServiceMutation();
+    const [updateQrCode] = useUpdateQrCodeMutation();
     const [updateNumberPhone] = useUpdateNumberPhoneMutation();
     const [updateName] = useUpdateNameMutation();
 
@@ -27,12 +33,16 @@ const UserProfile = () => {
     const [editing, setEditing] = useState({
         profile_name: false,
         telephone: false,
-        image: false
+        image: false,
+        telegram_service: false,
+        qr_code: false
     });
 
     const [tempData, setTempData] = useState({
         profile_name: '',
-        telephone: ''
+        telephone: '',
+        bot_token: '',
+        chat_id: ''
     });
 
     const [isSaving, setIsSaving] = useState(false);
@@ -43,8 +53,11 @@ const UserProfile = () => {
             setViewImage(profileData.data.image);
             setTempData({
                 profile_name: profileData.data.profile_name || '',
-                telephone: profileData.data.telephone || ''
+                telephone: profileData.data.telephone || '',
+                bot_token: profileData.data.bot_token || '',
+                chat_id: profileData.data.chat_id || ''
             });
+            setViewQr(profileData.data.qr_code || '');
         }
     }, [profileData]);
 
@@ -89,6 +102,9 @@ const UserProfile = () => {
         if (field === 'image') {
             setViewImage(data?.image || '');
         }
+        if (field === 'qr_code') {
+            setViewQr(data?.qr_code || data?.qr || '');
+        }
     };
 
     const handleSave = async (field) => {
@@ -102,11 +118,22 @@ const UserProfile = () => {
                 const formData = new FormData();
                 formData.append('image', image);
                 response = await updateImage({ id, itemData: formData, path: "/profile/image", token });
+            } else if (field === 'qr_code') {
+                const formData = new FormData();
+                formData.append('qr_code', qrFile);
+                response = await updateQrCode({ id, itemData: formData, path: "/profile/qr_code", token });
             } else if (field === 'profile_name') {
                 response = await updateName({
                     id,
                     itemData: { profile_name: tempData.profile_name },
                     path: "/profile/name",
+                    token
+                });
+            } else if (field === 'telegram_service') {
+                response = await updateTelegramService({
+                    id,
+                    itemData: { bot_token: tempData.bot_token, chat_id: tempData.chat_id },
+                    path: "/profile/telegram_service",
                     token
                 });
             } else if (field === 'telephone') {
@@ -125,6 +152,9 @@ const UserProfile = () => {
                 if (field === 'image') {
                     setImage('');
                 }
+                if (field === 'qr_code') {
+                    setQrFile('');
+                }
             }
         } catch (error) {
             toast.error(error.message || error || `An error occurred while updating ${field}`);
@@ -141,7 +171,7 @@ const UserProfile = () => {
         if (field === 'telephone') setNumberPhone(value);
     };
 
-    const handleImageUpload = (e) => {
+    const handleImageUpload = (e, field = 'image') => {
         const file = e.target.files[0];
         if (!file) return;
 
@@ -157,10 +187,17 @@ const UserProfile = () => {
             return;
         }
 
-        setImage(file);
-        const urlImage = URL.createObjectURL(file);
-        setViewImage(urlImage);
-        setEditing(prev => ({ ...prev, image: true }));
+        if (field === 'image') {
+            setImage(file);
+            const urlImage = URL.createObjectURL(file);
+            setViewImage(urlImage);
+            setEditing(prev => ({ ...prev, image: true }));
+        } else if (field === 'qr_code') {
+            setQrFile(file);
+            const urlImage = URL.createObjectURL(file);
+            setViewQr(urlImage);
+            setEditing(prev => ({ ...prev, qr_code: true }));
+        }
     };
 
     const getSubscriptionStatus = () => {
@@ -175,7 +212,7 @@ const UserProfile = () => {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 py-8 px-4 sm:px-6 lg:px-8">
+        <div className=" bg-transparent py-8 px-4 sm:px-6 lg:px-8">
             <div className="max-w-6xl mx-auto">
                 {/* Header */}
                 <div className="mb-8">
@@ -183,7 +220,7 @@ const UserProfile = () => {
                     <p className="text-gray-600 mt-2">Manage your personal information and account details</p>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                     {/* Left Column - Profile Card */}
                     <div className="lg:col-span-1">
                         <motion.div
@@ -281,13 +318,45 @@ const UserProfile = () => {
                                             count={getSubscriptionStatus().text}
                                         />
                                     </div>
+                                    <div className="mt-4">
+                                        <label className="text-sm font-medium text-gray-700 mb-2 block">Bank QR Code</label>
+                                        <div className="flex items-center gap-4">
+                                            <div className="w-24 h-24 rounded-lg overflow-hidden bg-gray-50 border">
+                                                {viewQr ? (
+                                                    <img src={viewQr} alt="QR Code" className="w-full h-full object-contain" />
+                                                ) : (
+                                                    <div className="w-full h-full flex items-center justify-center text-gray-400">No QR</div>
+                                                )}
+                                            </div>
+
+                                            <div className="flex-1">
+                                                {editing.qr_code && <div className="flex items-center gap-2">
+                                                    <label htmlFor="qr-image-upload" className="px-3 py-2 bg-white border rounded-md cursor-pointer text-blue-600 hover:bg-gray-50">
+                                                        <FiUpload className="inline mr-2" /> Upload QR
+                                                    </label>
+                                                    <input id="qr-image-upload" type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, 'qr_code')} />
+
+                                                </div>}
+                                                {!editing.qr_code && (
+                                                    <button onClick={() => handleEdit('qr_code')} className="text-blue-600 p-2"> <FiEdit2 /> </button>
+                                                )}
+
+                                                {editing.qr_code && (
+                                                    <div className="flex gap-2 mt-2">
+                                                        <button onClick={() => handleSave('qr_code')} disabled={isSaving} className="px-3 py-2 bg-green-500 text-white rounded-md">Save QR</button>
+                                                        <button onClick={() => handleCancel('qr_code')} className="px-3 py-2 bg-gray-200 rounded-md">Cancel</button>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </Card>
                         </motion.div>
                     </div>
 
                     {/* Right Column - Details */}
-                    <div className="lg:col-span-2 space-y-8">
+                    <div className="lg:col-span-2 space-y-4">
                         {/* Personal Information Card */}
                         <motion.div
                             initial={{ opacity: 0, y: 20 }}
@@ -296,12 +365,12 @@ const UserProfile = () => {
                         >
                             <Card className="shadow-xl border-0">
                                 <div className="p-6">
-                                    <h2 className="text-xl font-bold text-gray-800 mb-6 pb-4 border-b border-gray-100 flex items-center gap-2">
-                                        <FiUser className="text-blue-500" />
-                                        Personal Information
+                                    <h2 className="text-xl font-bold text-gray-800 mb-6 border-b border-gray-100 flex items-center gap-2">
+                                        <PiBuildingsLight className="text-blue-500" />
+                                        Company Information
                                     </h2>
 
-                                    <div className="space-y-6">
+                                    <div className="space-y-1">
                                         {/* Profile Name Field */}
                                         <div>
                                             <div className="flex items-center justify-between mb-3">
@@ -402,6 +471,90 @@ const UserProfile = () => {
                                                 </p>
                                             )}
                                         </div>
+                                    </div>
+                                </div>
+                            </Card>
+                        </motion.div>
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.5, delay: 0.1 }}
+                        >
+                            <Card className="shadow-xl border-0">
+                                <div className="p-6">
+                                    <div className='flex justify-between'>
+                                        <h2 className="text-xl font-bold text-gray-800 mb-6 border-b border-gray-100 flex items-center gap-2">
+                                            <LiaTelegram className="text-blue-500" />
+                                            Telegram Service
+                                        </h2>
+                                        <div className="flex items-center gap-2">
+                                            {!editing.telegram_service && (
+                                                <button onClick={() => handleEdit('telegram_service')} className="text-blue-600 p-2"> <FiEdit2 /> </button>
+                                            )}
+                                        </div>
+
+                                        {editing.telegram_service && (
+                                            <div className="flex gap-2 mt-2">
+                                                <button onClick={() => handleSave('telegram_service')} disabled={isSaving} className="px-3 py-2 bg-green-500 text-white rounded-md">Save QR</button>
+                                                <button onClick={() => handleCancel('telegram_service')} className="px-3 py-2 bg-gray-200 rounded-md">Cancel</button>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div className="space-y-1">
+                                        {/* Profile Name Field */}
+                                        <div>
+                                            <div className="flex items-center justify-between mb-3">
+                                                <label className="text-sm font-medium text-gray-700">
+                                                    Bot Token
+                                                </label>
+                                            </div>
+
+                                            {editing.telegram_service ? (
+                                                <div className="flex items-center gap-3">
+                                                    <input
+                                                        type="text"
+                                                        value={tempData.bot_token}
+                                                        onChange={(e) => handleChange(e, 'bot_token')}
+                                                        className="flex-1 border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                        placeholder="Enter your full name"
+                                                    />
+
+                                                </div>
+                                            ) : (
+                                                <p className="text-lg font-semibold text-gray-800 px-1 py-2">
+                                                    {data?.bot_token || 'Not provided'}
+                                                </p>
+                                            )}
+                                        </div>
+
+                                        {/* Phone Number Field */}
+                                        <div>
+                                            <div className="flex items-center justify-between mb-3">
+                                                <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                                                    <FiPhone className="text-gray-400" />
+                                                    Chat ID
+                                                </label>
+                                            </div>
+
+                                            {editing.telegram_service ? (
+                                                <div className="flex items-center gap-3">
+                                                    <input
+                                                        type="tel"
+                                                        value={tempData.chat_id}
+                                                        onChange={(e) => handleChange(e, 'chat_id')}
+                                                        className="flex-1 border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                        placeholder="Enter chat ID"
+                                                    />
+
+                                                </div>
+                                            ) : (
+                                                <p className="text-lg font-semibold text-gray-800 px-1 py-2">
+                                                    {data?.chat_id || 'Not provided'}
+                                                </p>
+                                            )}
+                                        </div>
+
                                     </div>
                                 </div>
                             </Card>

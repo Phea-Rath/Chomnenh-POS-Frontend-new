@@ -45,13 +45,15 @@ const LoginForm = () => {
       localStorage.setItem("profileId", profile_id);
       localStorage.setItem("userId", id);
       localStorage.setItem("token", token);
-      if (!isLoading && !loadMenu) {
+      if (!isLoading) {
         await refetch();
         await refetchMenu();
         toast.success("Login successful");
         setShowOtpInput(true);
         localStorage.setItem('menus', JSON.stringify(menus?.data));
-        navigate("/dashboard/analystic");
+        if (!loadMenu) {
+          navigate("/dashboard/analystic");
+        }
       }
     } catch (err) {
       toast.error(
@@ -88,12 +90,12 @@ const LoginForm = () => {
           <div className="bg-white rounded-full p-3 shadow-lg mb-3">
             <img
               src={logo}
-              alt="E-STORE Logo"
+              alt="CHOMNECH POS Logo"
               className="h-10 sm:h-12 transition-transform duration-300 hover:scale-105"
             />
           </div>
           <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-700 bg-clip-text text-transparent">
-            E-STORE
+            CHOMNECH APP
           </h1>
           <p className="text-gray-500 text-sm mt-2">Welcome back</p>
         </div>

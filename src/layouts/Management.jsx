@@ -56,6 +56,7 @@ const Management = () => {
     });
     echo.private(`check-online.user.${profileId}`).listen("OnlineEvent", (data) => {
       // refetch();
+      toast.info(`💬 New online order by ${data.data}`);
       refetchSale();
       refetchOnline();
       refetchOrder();

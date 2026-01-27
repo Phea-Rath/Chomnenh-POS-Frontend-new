@@ -16,11 +16,19 @@ export const userProfileApi = createApi({
         updateName: builder.mutation({
             query: ({ id, itemData, path, token }) => updateData(id, itemData, path, token),
         }),
+        updateQrCode: builder.mutation({
+            query: ({ id, itemData, path, token }) => updateDataByPost(id, itemData, path, token),
+        }),
+        updateTelegramService: builder.mutation({
+            query: ({ id, itemData, path, token }) => updateData(id, itemData, path, token),
+        }),
     }),
 });
 
 export const {
     useUpdateImageMutation,
+    useUpdateQrCodeMutation,
+    useUpdateTelegramServiceMutation,
     useUpdateNumberPhoneMutation,
     useUpdateNameMutation
 } = userProfileApi;
