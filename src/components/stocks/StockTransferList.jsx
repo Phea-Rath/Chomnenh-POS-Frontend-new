@@ -20,6 +20,7 @@ import dayjs from "dayjs";
 import { saveAs } from "file-saver";
 import * as XLSX from 'xlsx';
 import { FaEdit, FaEye, FaTrash } from "react-icons/fa";
+import api from "../../services/api";
 
 const { RangePicker } = DatePicker;
 const { Option } = Select;
@@ -44,10 +45,13 @@ const StockTransferList = () => {
 
   // Calculate statistics based on transfer data only
   const calculateStats = () => {
+
+    console.log(filteredData);
+
     const totalTransfers = filteredData.length;
-    const totalStockIn = filteredData.reduce((sum, item) => sum + (Number(item.stock_in) || 0), 0);
-    const totalStockOut = filteredData.reduce((sum, item) => sum + (Number(item.stock_out) || 0), 0);
-    const totalQuantity = filteredData.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0);
+    const totalStockIn = filteredData?.reduce((sum, item) => sum + (Number(item.stock_in) || 0), 0);
+    const totalStockOut = filteredData?.reduce((sum, item) => sum + (Number(item.stock_out) || 0), 0);
+    const totalQuantity = filteredData?.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0);
 
     // Calculate net transfer (incoming - outgoing)
     const netTransfer = totalStockIn - totalStockOut;
@@ -93,59 +97,11 @@ const StockTransferList = () => {
       ),
     },
     {
-      title: "PRODUCT",
-      width: "100px",
-      render: (_, record) => (
-        <div className="flex items-center justify-center">
-          <Image
-            width={60}
-            height={60}
-            src={record.image}
-            alt={record.item_name}
-            className="rounded-lg object-cover border border-gray-200"
-            fallback={
-              <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-blue-100 to-blue-50 border border-blue-200 flex items-center justify-center">
-                <span className="text-lg font-bold text-blue-600">
-                  {record.item_name?.charAt(0) || 'P'}
-                </span>
-              </div>
-            }
-          />
-        </div>
-      ),
-    },
-    {
-      title: "PRODUCT INFO",
-      width: "250px",
+      title: " STOCK NO.",
+      width: "50px",
       render: (_, record) => (
         <div>
-          <div className="font-semibold text-gray-900 text-sm mb-1">{record.item_name}</div>
-          <div className="text-xs text-gray-500 font-mono mb-2">{record.item_code}</div>
-          <div className="flex items-center gap-2 flex-wrap">
-            <Tag color="blue" className="text-xs px-2 py-0.5">
-              {record.category_name}
-            </Tag>
-            <Tag color="purple" className="text-xs px-2 py-0.5">
-              {record.brand_name}
-            </Tag>
-            {record.barcode && (
-              <div className="text-xs text-gray-500">
-                Barcode: {record.barcode}
-              </div>
-            )}
-          </div>
-        </div>
-      ),
-    },
-    {
-      title: "QUANTITY TRANSFERRED",
-      dataIndex: "quantity",
-      width: "120px",
-      align: 'center',
-      render: (value) => (
-        <div className="text-center">
-          <div className="text-2xl font-bold text-blue-600">{value}</div>
-          <div className="text-xs text-gray-500">Total Units</div>
+          <div className="font-semibold text-gray-900 text-sm mb-1">{record.stock_no}</div>
         </div>
       ),
     },
@@ -183,63 +139,14 @@ const StockTransferList = () => {
       ),
     },
     {
-      title: "STOCK MOVEMENT",
-      width: "180px",
-      render: (_, record) => (
-        <div className="grid grid-cols-2 gap-3">
-          <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-3 text-center">
-            <div className="font-bold text-green-600 text-xl">{record.stock_in || 0}</div>
-            <div className="text-xs text-green-700 font-medium">Stock In</div>
-          </div>
-          <div className="bg-gradient-to-br from-red-50 to-red-100 rounded-lg p-3 text-center">
-            <div className="font-bold text-red-600 text-xl">{record.stock_out || 0}</div>
-            <div className="text-xs text-red-700 font-medium">Stock Out</div>
-          </div>
-          <div className="col-span-2 mt-2">
-            <div className="text-center">
-              <div className={`text-sm font-bold ${(Number(record.stock_in) - Number(record.stock_out)) >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
-                Net: {Number(record.stock_in) - Number(record.stock_out)}
-              </div>
-              <div className="text-xs text-gray-500">Net Movement</div>
-            </div>
-          </div>
-        </div>
-      ),
-    },
-    {
-      title: "EXPIRY DATE",
-      dataIndex: "expire_date",
+      title: "QUANTITY TRANSFERRED",
+      dataIndex: "quantity",
       width: "120px",
       align: 'center',
-      render: (value) => {
-        const expired = dayjs().isAfter(dayjs(value));
-        const expiringSoon = dayjs().add(30, 'day').isAfter(dayjs(value));
-
-        return (
-          <div className="text-center">
-            <Tag
-              color={expired ? "red" : expiringSoon ? "orange" : "green"}
-              className="font-medium text-xs px-3 py-1 mb-2"
-            >
-              {expired ? "Expired" : expiringSoon ? "Expiring Soon" : "Valid"}
-            </Tag>
-            <div className="text-xs font-medium text-gray-900">
-              {dayjs(value).format('MMM DD, YYYY')}
-            </div>
-          </div>
-        );
-      },
-    },
-    {
-      title: "PRICE",
-      width: "100px",
-      align: 'center',
-      render: (_, record) => (
+      render: (value) => (
         <div className="text-center">
-          <div className="text-lg font-bold text-green-600">${record.item_price}</div>
-          <div className="text-xs text-gray-500">Retail</div>
-          <div className="text-sm font-medium text-blue-600">${record.wholesale_price}</div>
-          <div className="text-xs text-gray-500">Wholesale</div>
+          <div className="text-2xl font-bold text-blue-600">{value}</div>
+          <div className="text-xs text-gray-500">Total Units</div>
         </div>
       ),
     },
@@ -285,6 +192,7 @@ const StockTransferList = () => {
   }, [data, searchTerm, selectedWarehouse, dateRange]);
 
   const applyFilters = () => {
+
     let result = [...data];
 
     // Search filter
@@ -299,7 +207,7 @@ const StockTransferList = () => {
           item.brand_name?.toLowerCase().includes(term) ||
           item.from_warehouse_name?.toLowerCase().includes(term) ||
           item.to_warehouse_name?.toLowerCase().includes(term)
-      );
+      ) || [];
     }
 
     // Warehouse filter
@@ -308,7 +216,7 @@ const StockTransferList = () => {
         (item) =>
           item.from_warehouse_name?.toLowerCase() === selectedWarehouse.toLowerCase() ||
           item.to_warehouse_name?.toLowerCase() === selectedWarehouse.toLowerCase()
-      );
+      ) || [];
     }
 
     // Date range filter (for transfer date)
@@ -371,47 +279,44 @@ const StockTransferList = () => {
     });
   };
 
-  const fetchData = () => {
+  const fetchData = async () => {
     setLoading(true);
 
     const params = new URLSearchParams({
       page: tableParams.pagination.current,
       limit: tableParams.pagination.pageSize,
     });
+    try {
 
-    fetch(`http://127.0.0.1:8000/api/stock_transection?${params.toString()}`, {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
-        Accept: "application/json",
-      },
-    })
-      .then((res) => {
-        if (!res.ok) throw new Error("Network response was not ok");
-        return res.json();
-      })
-      .then((res) => {
-        if (res.status === 200 && res.data) {
-          setData(res.data);
-          setFilteredData(res.data);
-          setTableParams({
-            ...tableParams,
-            pagination: {
-              ...tableParams.pagination,
-              current: res.pagination?.current_page || 1,
-              pageSize: res.pagination?.per_page || 10,
-              total: res.pagination?.total || res.data?.length || 0,
-            },
-          });
-        } else {
-          throw new Error(res.message || "Failed to fetch data");
-        }
-        setLoading(false);
-      })
-      .catch((error) => {
-        toast.error("Failed to fetch data. Please try again.");
-        console.error("Error fetching data:", error);
-        setLoading(false);
+      const res = await api.get(`/stock_transfer?${params.toString()}`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          Accept: "application/json",
+        },
       });
+
+      if (res.status === 200 && res.data) {
+        setData(res?.data?.data);
+        setFilteredData(res?.data?.data);
+        setTableParams({
+          ...tableParams,
+          pagination: {
+            ...tableParams.pagination,
+            current: res.pagination?.current_page || 1,
+            pageSize: res.pagination?.per_page || 10,
+            total: res.pagination?.total || res.data?.length || 0,
+          },
+        });
+      } else {
+        throw new Error(res.message || "Failed to fetch data");
+      }
+      setLoading(false);
+
+    } catch (error) {
+      toast.error("Failed to fetch data. Please try again.");
+      console.error("Error fetching data:", error);
+      setLoading(false);
+    };
   };
 
   const onSearch = (e) => {
@@ -485,7 +390,7 @@ const StockTransferList = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-8"
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8"
         >
           <Card className="border-0 shadow-sm bg-gradient-to-br from-blue-500 to-blue-600">
             <div>
@@ -503,53 +408,7 @@ const StockTransferList = () => {
             </div>
           </Card>
 
-          <Card className="border-0 shadow-sm bg-gradient-to-br from-green-500 to-green-600">
-            <div>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-green-500 text-sm font-medium mb-1">Total Stock In</p>
-                  <p className="text-2xl font-bold text-green-500">
-                    {stats.totalStockIn}
-                  </p>
-                </div>
-                <div className="p-2 bg-green-400 rounded-full">
-                  <LuPackage className="text-xl text-white" />
-                </div>
-              </div>
-            </div>
-          </Card>
 
-          <Card className="border-0 shadow-sm bg-gradient-to-br from-red-500 to-red-600">
-            <div>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-red-500 text-sm font-medium mb-1">Total Stock Out</p>
-                  <p className="text-2xl font-bold text-red-500">
-                    {stats.totalStockOut}
-                  </p>
-                </div>
-                <div className="p-2 bg-red-400 rounded-full">
-                  <LuArrowRightLeft className="text-xl text-white transform rotate-90" />
-                </div>
-              </div>
-            </div>
-          </Card>
-
-          <Card className="border-0 shadow-sm bg-gradient-to-br from-purple-500 to-purple-600">
-            <div>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-purple-500 text-sm font-medium mb-1">Total Quantity</p>
-                  <p className="text-2xl font-bold text-purple-500">
-                    {stats.totalQuantity}
-                  </p>
-                </div>
-                <div className="p-2 bg-purple-400 rounded-full">
-                  <span className="text-xl text-white">📦</span>
-                </div>
-              </div>
-            </div>
-          </Card>
 
           <Card className="border-0 shadow-sm bg-gradient-to-br from-cyan-500 to-cyan-600">
             <div>
@@ -673,7 +532,7 @@ const StockTransferList = () => {
                 return (
                   <Table.Summary fixed>
                     <Table.Summary.Row className="bg-gradient-to-r from-gray-50 to-blue-50 border-t border-gray-200">
-                      <Table.Summary.Cell index={0} colSpan={4} align="right">
+                      <Table.Summary.Cell index={0} colSpan={3} align="right">
                         <strong className="text-gray-700 text-sm">Transfer Summary</strong>
                       </Table.Summary.Cell>
                       <Table.Summary.Cell index={1}>
@@ -682,24 +541,7 @@ const StockTransferList = () => {
                           <div className="text-xs text-gray-500">Total Units</div>
                         </div>
                       </Table.Summary.Cell>
-                      <Table.Summary.Cell index={2} colSpan={2}>
-                        <div className="flex items-center justify-center gap-6">
-                          <div className="text-center">
-                            <div className="font-semibold text-green-600 text-lg">{totalIn}</div>
-                            <div className="text-xs text-gray-500">Stock In</div>
-                          </div>
-                          <div className="text-center">
-                            <div className="font-semibold text-red-600 text-lg">{totalOut}</div>
-                            <div className="text-xs text-gray-500">Stock Out</div>
-                          </div>
-                          <div className="text-center">
-                            <div className={`font-semibold ${netTransfer >= 0 ? 'text-blue-600' : 'text-red-600'} text-lg`}>
-                              {netTransfer}
-                            </div>
-                            <div className="text-xs text-gray-500">Net Transfer</div>
-                          </div>
-                        </div>
-                      </Table.Summary.Cell>
+
                       <Table.Summary.Cell index={3} colSpan={3} />
                     </Table.Summary.Row>
                   </Table.Summary>

@@ -16,8 +16,9 @@ const LoginForm = () => {
   const [showOtpInput, setShowOtpInput] = useState(false);
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [Id, setId] = useState(0);
   const { refetch, isLoading } = useGetUserLoginQuery(localStorage.getItem('token'));
-  const { data: menus, refetch: refetchMenu, isLoading: loadMenu } = useGetPermissionByIdQuery({ id: localStorage.getItem('userId'), token: localStorage.getItem('token') });
+  // const { data: menus, refetch: refetchMenu, isLoading: loadMenu } = useGetPermissionByIdQuery({ id: Id, token: localStorage.getItem('token') });
   const [alert, setAlert] = useState({ message: "", show: false });
   const [login, setLogin] = useState({ phone_number: "", password: "" });
 
@@ -41,18 +42,22 @@ const LoginForm = () => {
         token,
         user: { profile_id, id },
       } = response.data;
+      refetch();
 
-      localStorage.setItem("profileId", profile_id);
-      localStorage.setItem("userId", id);
-      localStorage.setItem("token", token);
-      if (!isLoading) {
-        await refetch();
-        await refetchMenu();
-        toast.success("Login successful");
-        setShowOtpInput(true);
-        localStorage.setItem('menus', JSON.stringify(menus?.data));
-        if (!loadMenu) {
-          navigate("/dashboard/analystic");
+      if (response.status === 200) {
+        const res = await api.get(`/permission/${id}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        setId(id);
+        localStorage.setItem("profileId", profile_id);
+        localStorage.setItem("userId", id);
+        localStorage.setItem("token", token);
+        if (res.status == 200) {
+          localStorage.setItem('menus', JSON.stringify(res?.data.data));
+          toast.success("Login successful");
+          id == 1 ? navigate('/dashboard/analystic') : navigate("/dashboard");
         }
       }
     } catch (err) {
@@ -69,6 +74,7 @@ const LoginForm = () => {
       setLoading(false);
     }
   };
+
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-200 p-4">

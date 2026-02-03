@@ -59,7 +59,6 @@ const StockTransferDetail = () => {
     const [loading, setLoading] = useState(true);
     const [data, setData] = useState(null);
     const [error, setError] = useState(null);
-    const [printModalVisible, setPrintModalVisible] = useState(false);
     const printRef = useRef();
 
     // Fetch stock master data
@@ -203,13 +202,13 @@ const StockTransferDetail = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50/30 p-4 md:p-6"
+            className="min-h-screen bg-transparent p-4 md:p-6"
         >
             {/* Header */}
             <div className="mb-6">
                 <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
                     <div className="flex items-center gap-3">
-                        <Link to="/dashboard/stocks">
+                        <Link to="/dashboard/stock-transfer-list">
                             <Button icon={<LuArrowLeft />} type="text" className="hover:bg-gray-100">
                                 Back to Stocks
                             </Button>
@@ -236,7 +235,9 @@ const StockTransferDetail = () => {
                         <Button
                             icon={<LuPrinter />}
                             type="primary"
-                            onClick={() => setPrintModalVisible(true)}
+                            onClick={() => {
+                                setTimeout(handlePrintDetail, 300);
+                            }}
                             className="bg-gradient-to-r from-blue-600 to-blue-700 border-0"
                         >
                             Print Report
@@ -364,7 +365,6 @@ const StockTransferDetail = () => {
                                     <Title level={4} className="text-red-600">
                                         {data.from_warehouse_name}
                                     </Title>
-                                    <Text type="secondary">ID: {data.from_warehouse}</Text>
                                 </div>
 
                                 <div className="px-4">
@@ -377,7 +377,6 @@ const StockTransferDetail = () => {
                                     <Title level={4} className="text-green-600">
                                         {data.to_warehouse_name}
                                     </Title>
-                                    <Text type="secondary">ID: {data.warehouse_id}</Text>
                                 </div>
                             </div>
 
@@ -500,45 +499,6 @@ const StockTransferDetail = () => {
                     </Card>
                 </Col>
             </Row>
-
-            {/* Print Modal */}
-            <Modal
-                title="Print Options"
-                open={printModalVisible}
-                onCancel={() => setPrintModalVisible(false)}
-                footer={null}
-                width={400}
-            >
-                <Space direction="vertical" className="w-full">
-                    <Button
-                        icon={<LuPrinter />}
-                        block
-                        size="large"
-                        type="primary"
-                        onClick={() => {
-                            setPrintModalVisible(false);
-                            setTimeout(handlePrintDetail, 300);
-                        }}
-                        className="h-12"
-                    >
-                        Print Transfer Report
-                    </Button>
-                    <Button
-                        icon={<LuFileSpreadsheet />}
-                        block
-                        size="large"
-                        onClick={() => {
-                            // Additional print options could be added here
-                            toast.info('Additional print options coming soon!');
-                            setPrintModalVisible(false);
-                        }}
-                        className="h-12"
-                    >
-                        Print Receipt (Compact)
-                    </Button>
-                </Space>
-            </Modal>
-
             {/* Hidden Print Content */}
             <div style={{ display: 'none' }}>
                 <div ref={printRef}>
@@ -602,12 +562,10 @@ const StockTransferDetail = () => {
                                 <div className="border p-4 text-center">
                                     <h3 className="font-bold mb-2 text-red-600">FROM WAREHOUSE</h3>
                                     <p className="text-lg font-bold">{data.from_warehouse_name}</p>
-                                    <p className="text-sm text-gray-600">ID: {data.from_warehouse}</p>
                                 </div>
                                 <div className="border p-4 text-center">
                                     <h3 className="font-bold mb-2 text-green-600">TO WAREHOUSE</h3>
                                     <p className="text-lg font-bold">{data.to_warehouse_name}</p>
-                                    <p className="text-sm text-gray-600">ID: {data.warehouse_id}</p>
                                 </div>
                             </div>
                         </div>
@@ -654,41 +612,7 @@ const StockTransferDetail = () => {
                             </table>
                         </div>
 
-                        {/* Item Attributes */}
-                        {data.items?.some(item => item.attributes && item.attributes.length > 0) && (
-                            <div className="mb-8">
-                                <h2 className="text-lg font-bold mb-4 border-b pb-2">ITEM ATTRIBUTES</h2>
-                                {data.items.map((item, itemIndex) => (
-                                    item.attributes && item.attributes.length > 0 && (
-                                        <div key={item.detail_id} className="mb-4">
-                                            <h3 className="font-semibold mb-2">
-                                                {item.item_name} ({item.item_code})
-                                            </h3>
-                                            <table className="w-full border-collapse">
-                                                <thead>
-                                                    <tr className="bg-gray-100">
-                                                        <th className="border p-2 text-left">Attribute</th>
-                                                        <th className="border p-2 text-left">Values</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    {item.attributes.map((attr, attrIndex) => (
-                                                        <tr key={attr.id}>
-                                                            <td className="border p-2 font-semibold">{attr.name}</td>
-                                                            <td className="border p-2">
-                                                                {Array.isArray(attr.value)
-                                                                    ? attr.value.map(v => v.value).join(', ')
-                                                                    : attr.value}
-                                                            </td>
-                                                        </tr>
-                                                    ))}
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                    )
-                                ))}
-                            </div>
-                        )}
+
 
                         {/* Summary Section */}
                         <div className="mb-8">

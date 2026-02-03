@@ -75,6 +75,10 @@ import DeliverForm from "./components/delivers/DeliverForm";
 import DeliverList from "./components/delivers/DeliverList";
 import OrderTracking from "./components/orders/OrderTracking";
 import ForgotPassword from "./components/logins/ForgotPassword";
+import RawMaterials from "./components/RawMaterials/RawMaterialPage";
+import RawMaterialForm from "./components/RawMaterials/RawMaterialForm";
+import ProductionForm from "./components/productions/ProductionForm";
+import Production from "./components/productions/Production";
 function ProtectedRoute({ children }) {
   const token = localStorage.getItem("token");
 
@@ -243,6 +247,10 @@ const router = createBrowserRouter([
         element: <StockTransferDetail />,
       },
       {
+        path: "stock-transfer-list/update/:id",
+        element: <StockTransfer />,
+      },
+      {
         path: "transfer-stock",
         element: <StockTransfer />,
       },
@@ -407,6 +415,31 @@ const router = createBrowserRouter([
         path: "delivers",
         element: <DeliverList />,
       },
+      {
+        path: "raw-materials",
+        element: <RawMaterials />,
+      },
+      {
+        path: "raw-materials/create/",
+        element: <RawMaterialForm />,
+      },
+      {
+        path: "raw-materials/edit/:id",
+        element: <RawMaterialForm />,
+      },
+      {
+        path: "production",
+        element: <Production />,
+      },
+      {
+        path: "production/create/",
+        element: <ProductionForm />,
+      },
+      {
+        path: "production/edit/:id",
+        element: <ProductionForm />,
+      },
+
     ],
   },
   {

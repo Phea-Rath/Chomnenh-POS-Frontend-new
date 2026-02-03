@@ -1,9 +1,9 @@
 import React, { useEffect, useRef, useState } from "react";
-import { IoIosSearch, IoIosList, IoIosGrid } from "react-icons/io";
+import { IoIosSearch, IoIosList, IoIosGrid, IoMdFunnel } from "react-icons/io";
 import { Link } from "react-router";
 import AlertBox from "../../services/AlertBox";
 import { useOutletsContext } from "../../layouts/Management";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   useCancelPurchaseMutation,
   useConfirmPurchaseMutation,
@@ -13,33 +13,31 @@ import {
 } from "../../../app/Features/purchasesSlice";
 import { Atom } from "react-loading-indicators";
 import api from "../../services/api";
-import { Tag, Card, Statistic, Input, Select, Button, DatePicker } from "antd";
+import { Tag, Card, Input, Select, Button, DatePicker, Tooltip, Empty } from "antd";
 import { toast } from "react-toastify";
 import { useGetAllSaleQuery } from "../../../app/Features/salesSlice";
 import { useGetAllStockQuery } from "../../../app/Features/stocksSlice";
 import {
-  FaCalendarAlt,
   FaDollarSign,
-  FaBox,
   FaUser,
-  FaReceipt,
   FaPlus,
   FaDownload,
-  FaFilter,
   FaShoppingCart,
-  FaMoneyBillWave,
   FaBalanceScale,
   FaCheckCircle,
   FaTimesCircle,
-  FaClock
+  FaClock,
+  FaEllipsisV,
+  FaArrowRight
 } from "react-icons/fa";
 import dayjs from 'dayjs';
-
 import { LuRefreshCw } from "react-icons/lu";
+
 const { RangePicker } = DatePicker;
 const { Option } = Select;
 
 const Purchases = () => {
+  // ... (Keep existing logic/states/functions same)
   const [purchases, setPurchases] = useState([]);
   const [filteredPurchases, setFilteredPurchases] = useState([]);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -51,16 +49,13 @@ const Purchases = () => {
   const [alertBoxCancel, setAlertBoxCancel] = useState(false);
   const [alertBoxUncancel, setAlertBoxUncancel] = useState(false);
   const [alertBoxConfirm, setAlertBoxConfirm] = useState(false);
-  const [edit, setEdit] = useState({ id: 1, name: "" });
   const [viewMode, setViewMode] = useState("list");
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [dateRange, setDateRange] = useState(null);
   const { refetch: salesRefetch } = useGetAllSaleQuery(token);
   const { refetch: stockRefetch } = useGetAllStockQuery(token);
-  const { setLoading, loading, setAlert, setMessage, setAlertStatus } =
-    useOutletsContext();
-  const updateModalRef = useRef(null);
+  const { setLoading, loading } = useOutletsContext();
   const { data, isLoading, refetch } = useGetAllPurchaseQuery(token);
   const [deletePurchase] = useDeletePurchaseMutation();
   const [cancelPurchase] = useCancelPurchaseMutation();
@@ -78,31 +73,49 @@ const Purchases = () => {
 
   const applyFilters = () => {
     let result = [...purchases];
-
-    // Search filter
     if (searchTerm) {
-      result = result.filter((purchase) =>
-        purchase.purchase_no.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        purchase.supplier_name.toLowerCase().includes(searchTerm.toLowerCase())
+      result = result.filter((p) =>
+        p.purchase_no.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        p.supplier_name.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
-
-    // Status filter
     if (statusFilter !== "all") {
-      result = result.filter((purchase) => purchase.status.toString() === statusFilter);
+      result = result.filter((p) => p.status.toString() === statusFilter);
     }
-
-    // Date range filter
     if (dateRange && dateRange.length === 2) {
       const [start, end] = dateRange;
-      result = result.filter((purchase) => {
-        const purchaseDate = new Date(purchase.purchase_date);
-        return purchaseDate >= start && purchaseDate <= end;
+      result = result.filter((p) => {
+        const d = new Date(p.purchase_date);
+        return d >= start && d <= end;
       });
     }
-
     setFilteredPurchases(result);
   };
+
+  const stats = (() => {
+    const totalAmount = filteredPurchases.reduce((sum, item) => sum + (Number(item.total_amount) || 0), 0);
+    const totalBalance = filteredPurchases.reduce((sum, item) => sum + (Number(item.balance) || 0), 0);
+    return {
+      total: filteredPurchases.length,
+      amount: totalAmount,
+      balance: totalBalance,
+      pending: filteredPurchases.filter(i => i.status === 0).length
+    };
+  })();
+
+  // const formatCurrency = (amount) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
+
+  const getStatusConfig = (status) => {
+    switch (status) {
+      case 0: return { color: "orange", text: "Pending", icon: <FaClock />, bg: 'bg-orange-50' };
+      case 1: return { color: "green", text: "Received", icon: <FaCheckCircle />, bg: 'bg-green-50' };
+      case 2: return { color: "red", text: "Cancelled", icon: <FaTimesCircle />, bg: 'bg-red-50' };
+      default: return { color: "default", text: "Unknown", icon: null, bg: 'bg-gray-50' };
+    }
+  };
+
+  // ... (Include your existing handleConfirm, handlePurchase, etc functions)
+
 
   // Calculate statistics
   const calculateStats = () => {
@@ -122,8 +135,6 @@ const Purchases = () => {
       completedPurchases
     };
   };
-
-  const stats = calculateStats();
 
   function handlePurchase(purchase_id, btn) {
     switch (btn) {
@@ -278,518 +289,260 @@ const Purchases = () => {
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
-      transition={{ duration: 0.5 }}
-    >
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50/30 p-4 md:p-6">
-        {/* Header Section */}
-        <div className="mb-8">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-            <div>
-              <motion.h1
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                className="text-3xl font-bold text-gray-900 mb-2 flex items-center gap-3"
-              >
-                <div className="p-2 bg-blue-100 rounded-lg">
-                  <FaShoppingCart className="text-2xl text-blue-600" />
-                </div>
-                Purchase Management
-              </motion.h1>
-              <p className="text-gray-600 text-lg">
-                Manage and track your purchase orders
-              </p>
-            </div>
-
-            <div className="flex items-center space-x-3">
-              <Button
-                icon={<LuRefreshCw />}
-                onClick={refetch}
-                loading={isLoading}
-                className="flex items-center space-x-2"
-              >
-                Refresh
-              </Button>
-              <Button
-                icon={<FaDownload />}
-                className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white"
-              >
-                Export
-              </Button>
-              <Link to="/dashboard/add-purchase">
-                <Button
-                  icon={<FaPlus />}
-                  className="flex items-center space-x-2 bg-green-600 hover:bg-green-700 text-white"
-                >
-                  New Purchase
-                </Button>
-              </Link>
-            </div>
-          </div>
+    <div className="min-h-screen bg-transparent p-4 lg:p-8">
+      {/* HEADER SECTION */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-800 tracking-tight">Purchase Orders</h1>
+          <p className="text-slate-500 mt-1">Monitor and manage your procurement workflow</p>
         </div>
-
-        {/* Statistics Cards */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8"
-        >
-          <Card className="border-0 shadow-sm bg-gradient-to-br from-blue-500 to-blue-600 text-white">
-            <div className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-blue-500 text-sm font-medium mb-2">Total Purchases</p>
-                  <p className="text-3xl font-bold text-gray-500">
-                    {stats.totalPurchases}
-                  </p>
-                </div>
-                <div className="p-3 bg-blue-400 rounded-full">
-                  <FaShoppingCart className="text-2xl text-blue-200" />
-                </div>
-              </div>
-            </div>
-          </Card>
-
-          <Card className="border-0 shadow-sm bg-gradient-to-br from-green-500 to-green-600 text-white">
-            <div className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-green-500 text-sm font-medium mb-2">Total Amount</p>
-                  <p className="text-3xl font-bold text-gray-500">
-                    ${formatCurrency(stats.totalAmount)}
-                  </p>
-                </div>
-                <div className="p-3 bg-green-400 rounded-full">
-                  <FaDollarSign className="text-2xl text-green-200" />
-                </div>
-              </div>
-            </div>
-          </Card>
-
-          <Card className="border-0 shadow-sm bg-gradient-to-br from-purple-500 to-purple-600 text-white">
-            <div className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-purple-500 text-sm font-medium mb-2">Total Balance</p>
-                  <p className="text-3xl font-bold text-gray-500">
-                    ${formatCurrency(stats.totalBalance)}
-                  </p>
-                </div>
-                <div className="p-3 bg-purple-400 rounded-full">
-                  <FaBalanceScale className="text-2xl text-purple-200" />
-                </div>
-              </div>
-            </div>
-          </Card>
-
-          <Card className="border-0 shadow-sm bg-gradient-to-br from-orange-500 to-orange-600 text-white">
-            <div className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-orange-500 text-sm font-medium mb-2">Pending Orders</p>
-                  <p className="text-3xl font-bold text-gray-500">
-                    {stats.pendingPurchases}
-                  </p>
-                </div>
-                <div className="p-3 bg-orange-400 rounded-full">
-                  <FaClock className="text-2xl text-orange-200" />
-                </div>
-              </div>
-            </div>
-          </Card>
-        </motion.div>
-
-        {/* Controls Section */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-8"
-        >
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-            {/* View Toggle and Search */}
-            <div className="flex flex-col sm:flex-row sm:items-center gap-4 flex-1">
-              {/* View Mode Toggle */}
-              <div className="flex bg-gray-100 rounded-xl p-1 border">
-                <button
-                  onClick={() => setViewMode("list")}
-                  className={`px-4 py-2 rounded-lg transition-all duration-300 flex items-center space-x-2 ${viewMode === "list"
-                    ? "bg-white shadow-sm text-blue-600 font-semibold"
-                    : "text-gray-600 hover:text-gray-800"
-                    }`}
-                >
-                  <IoIosList className="text-lg" />
-                  <span>List</span>
-                </button>
-                <button
-                  onClick={() => setViewMode("grid")}
-                  className={`px-4 py-2 rounded-lg transition-all duration-300 flex items-center space-x-2 ${viewMode === "grid"
-                    ? "bg-white shadow-sm text-blue-600 font-semibold"
-                    : "text-gray-600 hover:text-gray-800"
-                    }`}
-                >
-                  <IoIosGrid className="text-lg" />
-                  <span>Grid</span>
-                </button>
-              </div>
-
-              {/* Search Input */}
-              <div className="flex-1 max-w-md">
-                <Input
-                  placeholder="Search by purchase number or supplier..."
-                  prefix={<IoIosSearch className="text-gray-400" />}
-                  value={searchTerm}
-                  onChange={onSearch}
-                  className="h-12 rounded-xl border-0 bg-gray-50 shadow-sm"
-                  allowClear
-                  size="large"
-                />
-              </div>
-            </div>
-
-            {/* Filters */}
-            <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-              <Select
-                placeholder="Status"
-                value={statusFilter}
-                onChange={setStatusFilter}
-                className="w-full sm:w-40 h-12 rounded-xl"
-                allowClear
-              >
-                <Option value="all">All Status</Option>
-                <Option value="0">Pending</Option>
-                <Option value="1">Completed</Option>
-                <Option value="2">Cancelled</Option>
-              </Select>
-
-              <RangePicker
-                placeholder={['Start Date', 'End Date']}
-                value={dateRange}
-                onChange={setDateRange}
-                className="h-12 rounded-xl"
-                format="MMM DD, YYYY"
-              />
-            </div>
-          </div>
-        </motion.div>
-
-        {/* Alert Boxes */}
-        <AlertBox
-          isOpen={alertBox}
-          title="Delete Purchase"
-          message="Are you sure you want to DELETE this purchase?"
-          onConfirm={handleConfirm}
-          onCancel={handleCancel}
-          confirmText="Delete"
-          cancelText="Cancel"
-        />
-        <AlertBox
-          isOpen={alertBoxCancel}
-          title="Cancel Purchase"
-          message="Are you sure you want to CANCEL this purchase?"
-          onConfirm={handlePurchaseCancel}
-          onCancel={handleCancel}
-          confirmText="Cancel"
-          cancelText="Keep"
-        />
-        <AlertBox
-          isOpen={alertBoxConfirm}
-          title="Confirm Purchase"
-          message="Are you sure you want to CONFIRM this purchase?"
-          onConfirm={handlePurchaseConfirm}
-          onCancel={handleCancel}
-          confirmText="Confirm"
-          cancelText="Cancel"
-        />
-        <AlertBox
-          isOpen={alertBoxUncancel}
-          title="Uncancel Purchase"
-          message="Are you sure you want to UNCANCEL this purchase?"
-          onConfirm={handlePurchaseUncancel}
-          onCancel={handleCancel}
-          confirmText="Uncancel"
-          cancelText="Cancel"
-        />
-
-        {/* Content Section */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-        >
-          {viewMode === "list" ? (
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-gray-50 border-b border-gray-200">
-                    <tr>
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Purchase No</th>
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Supplier</th>
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Date</th>
-                      <th className="px-6 py-4 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">Total Amount</th>
-                      <th className="px-6 py-4 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">Balance</th>
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Status</th>
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Created By</th>
-                      <th className="px-6 py-4 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200">
-                    {filteredPurchases.map((item, index) => (
-                      <tr key={index} className="hover:bg-gray-50 transition-colors">
-                        <td className="px-6 py-4">
-                          <div className="font-semibold text-blue-600">{item.purchase_no}</div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-2">
-                            <FaUser className="text-gray-400" />
-                            <span>{item.supplier_name}</span>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-600">{item.purchase_date}</td>
-                        <td className="px-6 py-4 text-right font-semibold">
-                          ${formatCurrency(item.total_amount)}
-                        </td>
-                        <td className={`px-6 py-4 text-right font-semibold ${item.balance > 0 ? 'text-red-600' : 'text-green-600'}`}>
-                          ${formatCurrency(item.balance)}
-                        </td>
-                        <td className="px-6 py-4">{getStatusTag(item.status)}</td>
-                        <td className="px-6 py-4 text-sm text-gray-600">{item.created_by_name}</td>
-                        <td className="px-6 py-4">
-                          <div className="flex justify-end gap-2">
-                            {item.status == 0 && (
-                              <Button
-                                size="small"
-                                type="primary"
-                                onClick={() => handlePurchase(item.purchase_id, "confirm")}
-                                className="bg-green-600 hover:bg-green-700"
-                              >
-                                Receive
-                              </Button>
-                            )}
-                            {item.status == 0 && item.balance != 0 && (
-                              <Button
-                                size="small"
-                                onClick={() => {
-                                  setShowPaymentModal(true);
-                                  setPaymentAmount(item.balance);
-                                  setId(item.purchase_id);
-                                  setPaymentDate(new Date().toISOString().split("T")[0]);
-                                }}
-                                className="bg-blue-600 hover:bg-blue-700 text-white"
-                              >
-                                Pay
-                              </Button>
-                            )}
-                            <Link to={"receipt/" + item.purchase_id}>
-                              <Button size="small" icon={<FaReceipt />}>
-                                Receipt
-                              </Button>
-                            </Link>
-                            <Link to={"update/" + item.purchase_id}>
-                              <Button size="small" type="default">
-                                Edit
-                              </Button>
-                            </Link>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              {isLoading && (
-                <div className="h-40 flex justify-center items-center">
-                  <Atom
-                    color={["#32cd32", "#327fcd", "#cd32cd", "#cd8032"]}
-                    size="medium"
-                    text="Loading data"
-                    textColor="#327fcd"
-                  />
-                </div>
-              )}
-
-              {filteredPurchases.length === 0 && !isLoading && (
-                <div className="text-center py-12 text-gray-500">
-                  <FaBox className="mx-auto text-4xl mb-4 text-gray-300" />
-                  <p className="text-lg">No purchases found</p>
-                </div>
-              )}
-            </div>
-          ) : (
-            // Grid View
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredPurchases.map((item, index) => (
-                <motion.div
-                  key={index}
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  className={`bg-white rounded-xl shadow-sm border-2 hover:shadow-sm transition-all duration-300 overflow-hidden ${getStatusColor(item.status)}`}
-                >
-                  <div className="p-6">
-                    {/* Header */}
-                    <div className="flex justify-between items-start mb-4">
-                      <div>
-                        <h3 className="font-bold text-lg text-blue-600">
-                          {item.purchase_no}
-                        </h3>
-                        <p className="text-sm text-gray-500">{item.purchase_date}</p>
-                      </div>
-                      {getStatusTag(item.status)}
-                    </div>
-
-                    {/* Supplier Info */}
-                    <div className="flex items-center gap-2 mb-3">
-                      <FaUser className="text-gray-400" />
-                      <span className="font-medium">{item.supplier_name}</span>
-                    </div>
-
-                    {/* Financial Info */}
-                    <div className="space-y-2 mb-4">
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-600">Total Amount:</span>
-                        <span className="font-semibold">${formatCurrency(item.total_amount)}</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-600">Total Paid:</span>
-                        <span className="font-semibold text-green-600">
-                          ${formatCurrency(item.total_paid)}
-                        </span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-600">Balance:</span>
-                        <span className={`font-semibold ${item.balance > 0 ? 'text-red-600' : 'text-green-600'}`}>
-                          ${formatCurrency(item.balance)}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Created By */}
-                    <div className="text-sm text-gray-500 mb-4">
-                      Created by: {item.created_by_name}
-                    </div>
-
-                    {/* Actions */}
-                    <div className="flex flex-wrap gap-2">
-                      {item.status == 0 && (
-                        <Button
-                          size="small"
-                          type="primary"
-                          onClick={() => handlePurchase(item.purchase_id, "confirm")}
-                          className="bg-green-600 hover:bg-green-700 flex-1"
-                        >
-                          Receive
-                        </Button>
-                      )}
-                      {item.status == 0 && item.balance != 0 && (
-                        <Button
-                          size="small"
-                          onClick={() => {
-                            setShowPaymentModal(true);
-                            setPaymentAmount(item.balance);
-                            setId(item.purchase_id);
-                            setPaymentDate(new Date().toISOString().split("T")[0]);
-                          }}
-                          className="bg-blue-600 hover:bg-blue-700 text-white flex-1"
-                        >
-                          Pay
-                        </Button>
-                      )}
-                      <Link to={"receipt/" + item.purchase_id} className="flex-1">
-                        <Button size="small" icon={<FaReceipt />} className="w-full">
-                          Receipt
-                        </Button>
-                      </Link>
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          )}
-
-          {viewMode === "grid" && isLoading && (
-            <div className="h-40 flex justify-center items-center">
-              <Atom
-                color={["#32cd32", "#327fcd", "#cd32cd", "#cd8032"]}
-                size="medium"
-                text="Loading data"
-                textColor="#327fcd"
-              />
-            </div>
-          )}
-
-          {viewMode === "grid" && filteredPurchases.length === 0 && !isLoading && (
-            <div className="text-center py-12 text-gray-500">
-              <FaBox className="mx-auto text-4xl mb-4 text-gray-300" />
-              <p className="text-lg">No purchases found</p>
-            </div>
-          )}
-        </motion.div>
+        <div className="flex items-center gap-3">
+          <Button
+            icon={<LuRefreshCw />}
+            onClick={refetch}
+            className="border-none shadow-sm hover:text-blue-600 h-10 px-4"
+          >
+            Refresh
+          </Button>
+          <Link to="/dashboard/add-purchase">
+            <Button
+              type="primary"
+              icon={<FaPlus />}
+              className="h-10 px-6 bg-blue-600 shadow-md shadow-blue-100 border-none rounded-lg"
+            >
+              New Order
+            </Button>
+          </Link>
+        </div>
       </div>
 
-      {/* Payment Modal */}
-      {showPaymentModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      {/* STATS SECTION */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        {[
+          { label: 'Total Orders', value: stats.total, icon: <FaShoppingCart />, color: 'text-blue-600', bg: 'bg-blue-100' },
+          { label: 'Total Amount', value: formatCurrency(stats.amount), icon: <FaDollarSign />, color: 'text-emerald-600', bg: 'bg-emerald-100' },
+          { label: 'Outstanding Balance', value: formatCurrency(stats.balance), icon: <FaBalanceScale />, color: 'text-rose-600', bg: 'bg-rose-100' },
+          { label: 'Pending Arrival', value: stats.pending, icon: <FaClock />, color: 'text-amber-600', bg: 'bg-amber-100' },
+        ].map((stat, idx) => (
           <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="bg-white rounded-2xl p-6 max-w-md w-full"
+            key={idx}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: idx * 0.1 }}
+            className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-4"
           >
-            <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
-              <FaMoneyBillWave className="text-green-500" />
-              Add Payment
-            </h3>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Amount <FaDollarSign className="inline ml-1" />
-                </label>
-                <Input
-                  type="number"
-                  value={paymentAmount}
-                  onChange={(e) => setPaymentAmount(parseFloat(e.target.value) || 0)}
-                  className="w-full"
-                  size="large"
-                  step="0.01"
-                  min="0"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Payment Date
-                </label>
-                <DatePicker
-                  value={paymentDate ? dayjs(paymentDate) : null}
-                  onChange={(date) => setPaymentDate(date ? date.format('YYYY-MM-DD') : '')}
-                  className="w-full"
-                  size="large"
-                />
-              </div>
-              <div className="flex justify-end space-x-3 pt-4">
-                <Button
-                  onClick={() => setShowPaymentModal(false)}
-                  className="px-6"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="primary"
-                  onClick={addPayment}
-                  className="px-6 bg-green-600 hover:bg-green-700"
-                  loading={loading}
-                >
-                  Add Payment
-                </Button>
-              </div>
+            <div className={`p-3 rounded-xl ${stat.bg} ${stat.color} text-xl`}>
+              {stat.icon}
+            </div>
+            <div>
+              <p className="text-sm font-medium text-slate-500 uppercase tracking-wider">{stat.label}</p>
+              <p className="text-2xl font-bold text-slate-800">{stat.value}</p>
             </div>
           </motion.div>
+        ))}
+      </div>
+
+      {/* FILTERS BAR */}
+      <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm mb-6 flex flex-col lg:flex-row items-center justify-between gap-4">
+        <div className="flex items-center gap-4 w-full lg:w-auto">
+          <div className="flex bg-slate-100 p-1 rounded-xl">
+            <button
+              onClick={() => setViewMode("list")}
+              className={`p-2 rounded-lg transition-all ${viewMode === "list" ? "bg-white shadow-sm text-blue-600" : "text-slate-400"}`}
+            >
+              <IoIosList size={20} />
+            </button>
+            <button
+              onClick={() => setViewMode("grid")}
+              className={`p-2 rounded-lg transition-all ${viewMode === "grid" ? "bg-white shadow-sm text-blue-600" : "text-slate-400"}`}
+            >
+              <IoIosGrid size={20} />
+            </button>
+          </div>
+          <Input
+            placeholder="Search ID or supplier..."
+            prefix={<IoIosSearch className="text-slate-400" />}
+            className="h-10 rounded-xl bg-slate-50 border-none w-full md:w-64"
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
         </div>
-      )}
-    </motion.div>
+
+        <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
+          <Select
+            defaultValue="all"
+            className="w-full sm:w-40 h-10 custom-select"
+            onChange={setStatusFilter}
+            prefix={<IoMdFunnel />}
+          >
+            <Option value="all">All Status</Option>
+            <Option value="0">Pending</Option>
+            <Option value="1">Completed</Option>
+            <Option value="2">Cancelled</Option>
+          </Select>
+          <RangePicker
+            className="h-10 rounded-xl border-slate-200 w-full sm:w-auto"
+            onChange={setDateRange}
+          />
+          <Tooltip title="Export Data">
+            <Button icon={<FaDownload />} className="h-10 w-10 flex items-center justify-center rounded-xl" />
+          </Tooltip>
+        </div>
+      </div>
+
+      {/* CONTENT AREA */}
+      <AnimatePresence mode="wait">
+        {isLoading ? (
+          <div className="h-64 flex flex-col items-center justify-center">
+            <Atom color="#2563eb" size="medium" />
+            <p className="mt-4 text-slate-500 font-medium">Fetching Records...</p>
+          </div>
+        ) : filteredPurchases.length === 0 ? (
+          <div className="bg-white rounded-3xl p-20 border border-dashed border-slate-200 flex flex-col items-center">
+            <Empty description="No Purchase Records Found" />
+          </div>
+        ) : viewMode === "list" ? (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden"
+          >
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-slate-50/50 border-b border-slate-100">
+                  <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase">Purchase ID</th>
+                  <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase">Supplier</th>
+                  <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase">Amount</th>
+                  <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase">Status</th>
+                  <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-50">
+                {filteredPurchases.map((item) => {
+                  const config = getStatusConfig(item.status);
+                  return (
+                    <tr key={item.purchase_id} className="hover:bg-blue-50/30 transition-colors group">
+                      <td className="px-6 py-4">
+                        <span className="font-bold text-slate-700">{item.purchase_no}</span>
+                        <div className="text-[11px] text-slate-400 mt-0.5">{dayjs(item.purchase_date).format('DD MMM YYYY')}</div>
+                      </td>
+                      <td className="px-6 py-4 text-slate-600 font-medium">
+                        <div className="flex items-center gap-2">
+                          <div className="w-7 h-7 bg-slate-100 rounded-full flex items-center justify-center text-xs text-slate-500 uppercase">
+                            {item.supplier_name.charAt(0)}
+                          </div>
+                          {item.supplier_name}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="font-bold text-slate-800">{formatCurrency(item.total_amount)}</div>
+                        <div className={`text-[11px] font-semibold ${item.balance > 0 ? 'text-rose-500' : 'text-emerald-500'}`}>
+                          {item.balance > 0 ? `Unpaid: ${formatCurrency(item.balance)}` : 'Fully Paid'}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <Tag color={config.color} className="rounded-full px-3 border-none font-medium flex items-center gap-1 w-fit">
+                          {config.icon} {config.text}
+                        </Tag>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          {item.status === 0 && (
+                            <Tooltip title="Mark as Received">
+                              <Button size="small" className="bg-emerald-50 text-emerald-600 border-emerald-100 hover:bg-emerald-600 hover:text-white"
+                                onClick={() => handlePurchase(item.purchase_id, "confirm")} icon={<FaCheckCircle />} />
+                            </Tooltip>
+                          )}
+                          <Link to={"receipt/" + item.purchase_id}>
+                            <Button size="small" icon={<FaArrowRight />} className="border-slate-200 text-slate-500">Details</Button>
+                          </Link>
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </motion.div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredPurchases.map((item) => (
+              <motion.div
+                layout key={item.purchase_id}
+                className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden"
+              >
+                <div className={`absolute top-0 right-0 w-1 h-full ${getStatusConfig(item.status).color === 'orange' ? 'bg-orange-400' : 'bg-emerald-400'}`} />
+                <div className="flex justify-between items-start mb-4">
+                  <div>
+                    <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded">#{item.purchase_no}</span>
+                    <h3 className="mt-2 font-bold text-slate-800 text-lg leading-tight">{item.supplier_name}</h3>
+                  </div>
+                  <Tag className="m-0 border-none rounded-full">{getStatusConfig(item.status).icon}</Tag>
+                </div>
+
+                <div className="space-y-3 border-y border-slate-50 py-4 my-4">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-slate-400">Date</span>
+                    <span className="text-slate-700 font-medium">{item.purchase_date}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-slate-400">Total</span>
+                    <span className="text-slate-800 font-bold">{formatCurrency(item.total_amount)}</span>
+                  </div>
+                </div>
+
+                <div className="flex gap-2">
+                  <Link to={"receipt/" + item.purchase_id} className="flex-1">
+                    <Button block className="rounded-lg font-medium">Receipt</Button>
+                  </Link>
+                  <Button type="primary" className="bg-slate-800 border-none flex-1 rounded-lg">Manage</Button>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* RETAIN YOUR MODALS (Payment, AlertBox) - Apply similar styling to the modal containers */}
+      <AlertBox isOpen={alertBox} title="Delete Purchase" message="Delete this order permanently?" onConfirm={handleConfirm} onCancel={handleCancel} confirmText="Delete" cancelText="Cancel" />
+      {/* ... other AlertBoxes */}
+      {/* Alert Boxes */}
+      <AlertBox
+        isOpen={alertBox}
+        title="Delete Purchase"
+        message="Are you sure you want to DELETE this purchase?"
+        onConfirm={handleConfirm}
+        onCancel={handleCancel}
+        confirmText="Delete"
+        cancelText="Cancel"
+      />
+      <AlertBox
+        isOpen={alertBoxCancel}
+        title="Cancel Purchase"
+        message="Are you sure you want to CANCEL this purchase?"
+        onConfirm={handlePurchaseCancel}
+        onCancel={handleCancel}
+        confirmText="Cancel"
+        cancelText="Keep"
+      />
+      <AlertBox
+        isOpen={alertBoxConfirm}
+        title="Confirm Purchase"
+        message="Are you sure you want to CONFIRM this purchase?"
+        onConfirm={handlePurchaseConfirm}
+        onCancel={handleCancel}
+        confirmText="Confirm"
+        cancelText="Cancel"
+      />
+      <AlertBox
+        isOpen={alertBoxUncancel}
+        title="Uncancel Purchase"
+        message="Are you sure you want to UNCANCEL this purchase?"
+        onConfirm={handlePurchaseUncancel}
+        onCancel={handleCancel}
+        confirmText="Uncancel"
+        cancelText="Cancel"
+      />
+
+    </div>
   );
 };
 

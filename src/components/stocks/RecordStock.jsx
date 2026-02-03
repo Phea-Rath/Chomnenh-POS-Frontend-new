@@ -27,6 +27,7 @@ import { motion } from "framer-motion";
 import ExportExel from "../../services/ExportExel";
 import { useGetAllCategoriesQuery } from "../../../app/Features/categoriesSlice";
 import dayjs from "dayjs";
+import api from "../../services/api";
 
 const { RangePicker } = DatePicker;
 const { Option } = Select;
@@ -306,10 +307,10 @@ const StockTransactions = () => {
 
   const params = toURLSearchParams(getRandomuserParams(tableParams));
 
-  const fetchData = () => {
+  const fetchData = async () => {
     setLoading(true);
-    fetch(
-      `http://127.0.0.1:8000/api/stock_tracking?${params.toString()}`,
+    try{
+    const res = await api.get(`/stock_tracking?${params.toString()}`,
       {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -318,16 +319,9 @@ const StockTransactions = () => {
         },
       }
     )
-      .then((res) => {
-        if (!res.ok) {
-          throw new Error("Network response was not ok");
-        }
-        return res.json();
-      })
-      .then((res) => {
         if (res.status === 200 && res.data) {
-          setData(res.data);
-          setItemData(res.data.map(item => ({
+          setData(res.data.data);
+          setItemData(res.data.data.map(item => ({
             item_code: item.item_code,
             item_name: item.item_name,
             category_name: item.category_name,
@@ -342,16 +336,16 @@ const StockTransactions = () => {
             ...tableParams,
             pagination: {
               ...tableParams.pagination,
-              total: res.pagination?.total || 100,
+              total: res.data.pagination?.total || 100,
             },
           });
         }
         setLoading(false);
-      })
-      .catch((error) => {
+      
+    }catch(error){
         console.error("Error fetching data:", error);
         setLoading(false);
-      });
+      };
   };
 
 

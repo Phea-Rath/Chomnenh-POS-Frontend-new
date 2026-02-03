@@ -189,7 +189,7 @@ const Sidebar = () => {
   };
 
   return (
-    <section className=" shadow-sm">
+    <section className=" shadow-xl drop-shadow-2xl">
       {/* Header Section */}
       <div className="hidden lg:block h-[100vh] relative !w-[346px]">
         <div className="bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 pt-4 px-4 text-white relative overflow-hidden">

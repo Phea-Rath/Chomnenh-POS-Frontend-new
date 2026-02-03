@@ -10,14 +10,14 @@ const echo = new Echo({
     broadcaster: "reverb",
     key: "mofytlf0bipddani4rrv",
 
-    // wsHost: "localhost",
-    // wsPort: 8080,
-    // wssPort: 8080,
+    // wsHost: "127.0.0.1",
+    // wsPort: 6001,
+    // wssPort: 6001,
     // forceTLS: false,
     // encrypted: false,
     wsHost: "api.chomnenhapp.com",
-    wsPort: 443,
     wssPort: 443,
+    wsPort: 443,
 
     forceTLS: true,
     encrypted: true,

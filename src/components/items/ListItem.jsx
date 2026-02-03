@@ -234,8 +234,8 @@ const GridCard = ({ item, onEdit, onDelete, onView, formatCurrency, getDiscount 
       hoverable
       className="h-full border-none shadow-sm hover:shadow-xl transition-all duration-300 rounded-2xl overflow-hidden group"
       cover={
-        <div onClick={onView} className="relative h-52 bg-gray-50 flex items-center justify-center">
-          <Image
+        <div onClick={onView} className="relative h-52 bg-gray-50 flex items-center justify-center overflow-hidden cursor-pointer">
+          <img
             src={item.image}
             alt={item.name}
             preview={false}

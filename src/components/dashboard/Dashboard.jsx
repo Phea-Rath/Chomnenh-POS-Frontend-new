@@ -403,7 +403,7 @@ const Dashboard = () => {
     );
   }
 
-  if (userLogin?.data?.role_id === 1 && !isLoading) {
+  if (userLogin?.data?.role_id === 1) {
     return (
       <div className="max-w-lg mx-auto p-6">
         {/* Welcome Header */}
@@ -658,7 +658,7 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="p-6 bg-blue-50 min-h-screen">
+    <div className="p-6 bg-transparent min-h-screen">
       {/* Top Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div className="bg-purple-300/50 text-purple-500 rounded-tl-lg rounded-tr-lg shadow-sm">
@@ -913,7 +913,7 @@ const Dashboard = () => {
             {popularSales?.data?.map((s) => (
               <div className="flex justify-between items-center h-10">
                 <div className="flex gap-2">
-                  <img className="w-10" src={s.image} alt="" />
+                  <img className="w-10 h-10 object-contain" src={s.image} alt="" />
                   <div>
                     <h1 className="text-[15px] font-extrabold text-gray-600">
                       {s.item_name}
@@ -1142,7 +1142,7 @@ const Dashboard = () => {
             {popularStock?.data?.map((s) => (
               <div className="flex justify-between items-center h-10">
                 <div className="flex gap-2">
-                  <img className="w-10" src={s.image} alt="" />
+                  <img className="w-10 h-10 object-contain" src={s.image} alt="" />
                   <div>
                     <h1 className="text-[15px] font-extrabold text-gray-600">
                       {s.item_name}
@@ -1291,7 +1291,7 @@ const Dashboard = () => {
             </div>
           ))}
         </div> */}
-        <div className="bg-white p-4 rounded-lg shadow">
+        {/* <div className="bg-white p-4 rounded-lg shadow">
           <h3 className="text-lg font-semibold">My Location</h3>
           <div className="h-48 bg-gray-200 flex items-center justify-center text-gray-500">
             <iframe
@@ -1304,7 +1304,7 @@ const Dashboard = () => {
               referrerpolicy="no-referrer-when-downgrade"
             ></iframe>
           </div>
-        </div>
+        </div> */}
       </div>
     </div>
   );

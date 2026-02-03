@@ -21,12 +21,15 @@ import { toast } from 'react-toastify';
 import api from '../../services/api';
 import AlertBox from '../../services/AlertBox';
 import { useGetAllOrderQuery, useGetOrderByUserQuery } from '../../../app/Features/ordersSlice';
+import { useGetAllWasteQuery } from '../../../app/Features/notificationSlice';
 
 const GuestOrderTracking = () => {
     const { data, refetch } = useGetOrderByUserQuery(localStorage.getItem('guestToken'), {
         refetchOnFocus: true,
         refetchOnReconnect: true,
     });
+
+    const { refetch: refetchWaste } = useGetAllWasteQuery(localStorage.getItem('token'));
     const [orders, setOrders] = useState([]);
 
     const [selectedOrder, setSelectedOrder] = useState(null);
@@ -111,6 +114,7 @@ const GuestOrderTracking = () => {
             if (response.data.status === 200) {
                 toast.success('Order cancelled successfully');
                 refetch();
+                refetchWaste();
                 // // Update the local state
                 setOrders(prev => prev.map(order =>
                     order.order_id === selectedOrder.order_id

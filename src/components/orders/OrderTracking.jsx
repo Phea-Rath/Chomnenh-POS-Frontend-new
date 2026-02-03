@@ -25,9 +25,10 @@ import {
 } from 'react-icons/fa';
 import { TbPackage } from 'react-icons/tb';
 import api from '../../services/api';
-import { useGetAllOrderOnlineQuery } from '../../../app/Features/notificationSlice';
+import { useGetAllOrderOnlineQuery, useGetAllWasteQuery } from '../../../app/Features/notificationSlice';
 import { toast } from 'react-toastify';
 import { useGetAllDeliverQuery } from '../../../app/Features/deliversSlice';
+import { useGetAllSaleQuery } from '../../../app/Features/salesSlice';
 
 const OrderTracking = () => {
     const [orders, setOrders] = useState([]);
@@ -39,6 +40,8 @@ const OrderTracking = () => {
     const [showField, setShowField] = useState({});
 
     const token = localStorage.getItem('token');
+    const { refetch: refetchWaste } = useGetAllWasteQuery(token);
+    const saleItemContext = useGetAllSaleQuery(token);
     const { data: delivers } = useGetAllDeliverQuery(token);
     const { data: dataOrderOnline, refetch, isLoading } = useGetAllOrderOnlineQuery(token);
 
@@ -136,7 +139,8 @@ const OrderTracking = () => {
                         : order
                 ));
                 refetch();
-
+                refetchWaste();
+                saleItemContext.refetch();
                 toast.success('Order updated successfully');
                 setEditingField({});
                 setShowField(prev => ({
@@ -158,8 +162,6 @@ const OrderTracking = () => {
     };
 
     const handleInputChange = async (orderId, field, value) => {
-        console.log(value);
-
         setTempValues(prev => ({
             ...prev,
             [orderId]: {
@@ -446,7 +448,7 @@ const OrderTracking = () => {
                                                 </div>
                                             ) : (
                                                 <div className="text-xs text-gray-700 py-2 rounded-lg">
-                                                    ${(order?.delivery_fee ?? 0).toFixed(2)}
+                                                    ${Number(order?.delivery_fee || 0).toFixed(2)}
                                                 </div>
                                             )}
                                         </div>

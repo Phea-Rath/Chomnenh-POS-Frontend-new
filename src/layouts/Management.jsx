@@ -43,7 +43,7 @@ const Management = () => {
 
   useEffect(() => {
     echo.private(`my-private-channel.user.${profileId}`).listen("PrivateChannelEvent", (data) => {
-      const audio = new Audio("../../public/sounds/notification.mp3");
+      const audio = new Audio("../../public/sounds/auto.wav");
       audio.currentTime = 0; // restart from beginning
       audio.play().catch((err) => console.log("🔇 Sound blocked:", err));
       console.log("📡 Event received:", data); // 👈 Debug first

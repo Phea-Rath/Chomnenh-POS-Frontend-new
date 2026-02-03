@@ -23,7 +23,7 @@ const Header = () => {
   }
 
   return (
-    <header className={`fixed shadow-sm w-full ${data?.data?.role_id !== 1 && "lg:w-[calc(100vw-346px)]"} top-0 z-50 bg-white border-b border-gray-200`}>
+    <header className={`fixed shadow-sm drop-shadow-2xl w-full ${data?.data?.role_id !== 1 && "lg:w-[calc(100vw-346px)]"} top-0 z-50 bg-white border-b border-gray-200`}>
       <div className="flex justify-between items-center px-4 lg:px-8 py-3">
         {/* Left Section - Logo and Menu */}
         <div className="flex items-center gap-4">

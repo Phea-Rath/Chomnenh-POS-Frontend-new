@@ -30,6 +30,8 @@ import { attributesApi } from "./Features/attributesSlice";
 import { quanApi } from "./Features/quantitySlice";
 import { quotesApi } from "./Features/quoteSlice";
 import { deliversApi } from "./Features/deliversSlice";
+import { rawMaterialsApi } from "./Features/RawMaterialSlice";
+import { productionsApi } from "./Features/productSlice";
 export const store = configureStore({
   reducer: {
     [brandsApi.reducerPath]: brandsApi.reducer,
@@ -62,6 +64,8 @@ export const store = configureStore({
     [quanApi.reducerPath]: quanApi.reducer,
     [quotesApi.reducerPath]: quotesApi.reducer,
     [deliversApi.reducerPath]: deliversApi.reducer,
+    [rawMaterialsApi.reducerPath]: rawMaterialsApi.reducer,
+    [productionsApi.reducerPath]: productionsApi.reducer,
   },
 
   middleware: (getDefaultMiddleware) =>
@@ -96,6 +100,8 @@ export const store = configureStore({
       quanApi.middleware,
       quotesApi.middleware,
       deliversApi.middleware,
+      rawMaterialsApi.middleware,
+      productionsApi.middleware,
     ),
 });
 setupListeners(store.dispatch);

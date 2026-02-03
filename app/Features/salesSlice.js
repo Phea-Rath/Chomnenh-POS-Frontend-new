@@ -8,7 +8,7 @@ export const salesApi = createApi({
     }),
     endpoints: (builder) => ({
         getAllSale: builder.query({
-            query: (token) => queryData('/sale-items', token),
+            query: ({ token, limit, page, search }) => queryData(`/sale-items?limit=${limit}&page=${page}&search=${search}`, token),
         }),
         getSaleById: builder.query({
             query: ({ id, token }) => queryDataById(id, '/sale-items', token),

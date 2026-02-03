@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { AiTwotoneDelete } from "react-icons/ai";
 import { LuListChecks } from "react-icons/lu";
 import { Link, useNavigate } from "react-router";
@@ -16,6 +16,7 @@ import {
   Divider,
   Tooltip,
   Typography,
+  Pagination,
 } from "antd";
 import { PiShoppingCartBold } from "react-icons/pi";
 import { motion } from "framer-motion";
@@ -35,6 +36,8 @@ import { BiCategory } from "react-icons/bi";
 import api from "../../services/api";
 import { MdOutlineAddShoppingCart } from "react-icons/md";
 import { TbShoppingCartOff } from "react-icons/tb";
+import { useGetAllWasteQuery } from "../../../app/Features/notificationSlice";
+import { useDebounce } from "use-debounce";
 
 // const { Option } = Select;
 
@@ -46,6 +49,7 @@ const initialOrder = {
   order_customer_id: 1,
   online: 0,
   status: 6,
+  deliver_id: 1,
   sale_type: "sale",
   order_payment_status: "paid",
   order_payment_method: "cash",
@@ -74,6 +78,10 @@ const Sales = () => {
   const [messageApi, contextHolder] = message.useMessage();
   const [Category, setCategory] = useState([]);
   const [orders, setOrders] = useState(localOrderItems || initialOrder);
+  const [search, setSearch] = useState('');
+  const [debounce] = useDebounce(search, 500);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const {
     setLoading,
     open,
@@ -83,9 +91,18 @@ const Sales = () => {
   } = useOutletsContext();
 
   const { data: customers } = useGetAllCustomerQuery(token);
-  const saleItemContext = useGetAllSaleQuery(token);
+  const saleItemContext = useGetAllSaleQuery({
+    token,
+    limit: pageSize,
+    page: currentPage,
+    search: debounce
+  });
   const categoryContext = useGetAllCategoriesQuery(token);
   const orderContext = useGetAllOrderQuery(token);
+  const { refetch: refetchWaste } = useGetAllWasteQuery(token);
+
+  const items = useMemo(() => saleItemContext?.data?.data || [], [saleItemContext?.data]);
+  const totalItems = saleItemContext?.data?.pagination?.total || 0;
 
   localStorage.setItem("orderItems", JSON.stringify(initialOrder));
 
@@ -176,8 +193,8 @@ const Sales = () => {
       setCategory(categoryContext.data.data);
     }
 
-    if (saleItemContext?.data?.data) {
-      const newItems = saleItemContext.data.data.map((item) => ({
+    if (items) {
+      const newItems = items.map((item) => ({
         ...item,
         quantity: 1,
         displayAttributes: parseAttributesForDisplay(item.attributes)
@@ -186,7 +203,7 @@ const Sales = () => {
       setAllItems(newItems);
       setItemsSech(newItems);
     }
-  }, [saleItemContext?.data, categoryContext?.data]);
+  }, [items, categoryContext?.data]);
 
   // Barcode scanner effect
   useEffect(() => {
@@ -650,6 +667,7 @@ const Sales = () => {
         if (saleItemContext?.refetch) saleItemContext.refetch();
         if (orderContext?.refetch) orderContext.refetch();
         // if (orderId?.refetch) orderId.refetch();
+        refetchWaste();
 
         setAlertBox(false);
         setLoading(false);
@@ -742,6 +760,7 @@ const Sales = () => {
         order_subtotal: totals.subtotal,
         order_subtotal_discount: totals.subtotal,
         order_total: totals.total,
+        deliver_id: 1,
         payment: Number(
           (prev.order_payment_status === "paid" ? totals.total : 0).toFixed(2)
         ),
@@ -873,7 +892,7 @@ const Sales = () => {
               <div className="flex-1">
                 <div className="relative">
                   <input
-                    onChange={onSearch}
+                    onChange={(e) => setSearch(e.target.value)}
                     className="w-full px-4 py-3 pl-12 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="Search products by name or code..."
                   />
@@ -1583,6 +1602,16 @@ const Sales = () => {
             </div>
           )}
         </Drawer>
+        <div className="mt-12 flex justify-center">
+          <Pagination
+            current={currentPage}
+            total={totalItems}
+            pageSize={pageSize}
+            onChange={(page) => { setCurrentPage(page); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+            showSizeChanger={false}
+            className="bg-white p-4 rounded-xl shadow-sm border border-gray-100"
+          />
+        </div>
       </section>
     </motion.div>
   );

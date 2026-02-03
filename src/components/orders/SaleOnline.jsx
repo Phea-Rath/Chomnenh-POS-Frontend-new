@@ -36,6 +36,7 @@ import api from "../../services/api";
 import { useGetUserLoginQuery, useGetUserProfileQuery } from "../../../app/Features/usersSlice";
 import { TbShoppingCartOff } from "react-icons/tb";
 import { MdOutlineAddShoppingCart } from "react-icons/md";
+import { IoExit } from "react-icons/io5";
 
 // const { Option } = Select;
 
@@ -94,6 +95,7 @@ const Sales = () => {
     });
   const categoryContext = useGetAllCategoriesQuery(token);
   const orderContext = useGetAllOrderQuery(token);
+  const { refetch: refetchWaste } = useGetAllWasteQuery(token);
 
   console.log(userLogin?.data?.id);
 
@@ -691,6 +693,7 @@ const Sales = () => {
 
       if (orderRes.data.status === 200) {
         orderContext.refetch();
+        refetchWaste();
         toast.success(orderRes.data.message || "Order created successfully");
 
         // Refresh data
@@ -949,7 +952,10 @@ const Sales = () => {
             </div>
 
             <div className="flex items-center gap-3">
-
+              <Button>
+                <IoExit className="w-5 h-5 mr-2" />
+                <span onClick={() => setShowSignInModal(true)}>Logout</span>
+              </Button>
               {user && <Link to='order-tracking'>
                 <Badge size="default" className="mr-2">
                   <Button

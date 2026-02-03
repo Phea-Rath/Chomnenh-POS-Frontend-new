@@ -111,7 +111,7 @@ const QRCodeGenerator = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-orange-50 p-4 md:p-8">
+    <div className="min-h-screen bg-transparent p-4 md:p-8">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="mb-8 text-center">

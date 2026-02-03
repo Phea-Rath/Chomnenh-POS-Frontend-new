@@ -26,7 +26,7 @@ const ItemForm = () => {
   const navigator = useNavigate();
   const token = localStorage.getItem("token");
   const { setLoading, loading } = useOutletsContext();
-  const { refetch } = useGetAllItemsQuery({ token, limit: 12, page: 1 });
+  const { refetch } = useGetAllItemsQuery({ token, limit: 12, page: 1, search: "" });
 
   // State management
   const [viewImages, setViewImages] = useState([]);

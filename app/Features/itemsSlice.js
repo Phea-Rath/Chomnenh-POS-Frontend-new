@@ -14,7 +14,7 @@ export const itemsApi = createApi({
             query: (token) => queryData('/item_in_stock', token),
         }),
         getItemsByStock: builder.query({
-            query: (token) => queryData('/item_by_stock', token),
+            query: ({ token, limit = 12, page = 1, search }) => queryData(`/item_by_stock?limit=${limit}&page=${page}&search=${search}`, token),
         }),
         getItemById: builder.query({
             query: ({ id, token }) => queryDataById(id, '/items', token),

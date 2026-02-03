@@ -29,6 +29,7 @@ const { Option } = Select;
 import dayjs from "dayjs";
 import { motion } from "framer-motion";
 import { useGetAllSaleQuery } from "../../../app/Features/salesSlice";
+import { useDebounce } from "use-debounce";
 
 const CreatePurchase = () => {
   const { id: purchaseId } = useParams();
@@ -62,7 +63,8 @@ const CreatePurchase = () => {
   const [attributes, setAttributes] = useState([]);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentAmount, setPaymentAmount] = useState(0);
-  const { data: itemData } = useGetAllSaleQuery(token);
+  const [debouncedSearch] = useDebounce(searchTerm, 500);
+  const { data: itemData } = useGetAllItemsQuery({ token, limit: 10, page: 1, search: debouncedSearch });
   const { data: supplierData } = useGetAllSupplierQuery(token);
   const [paymentDate, setPaymentDate] = useState(
     new Date().toISOString().split("T")[0]
@@ -209,7 +211,7 @@ const CreatePurchase = () => {
         newErrors.payments = "All payments must have valid amount and date.";
       }
 
-      if (formData.total_paid > formData.total_amount) {
+      if (Number(formData.total_paid) > Number(formData.total_amount)) {
         newErrors.payments = "Total paid cannot exceed total amount.";
       }
     }
@@ -292,7 +294,7 @@ const CreatePurchase = () => {
       return;
     }
 
-    if (paymentAmount > formData.balance) {
+    if (Number(paymentAmount.toFixed(0)) > Number(formData.balance.toFixed(0))) {
       setErrors({ paymentModal: "Payment amount cannot exceed the remaining balance." });
       return;
     }
@@ -441,7 +443,7 @@ const CreatePurchase = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 py-8">
+    <div className="min-h-screen bg-transparent py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-8">
@@ -525,9 +527,10 @@ const CreatePurchase = () => {
                         className={`w-full ${fieldErrors.supplier_id ? 'border-red-500' : ''}`}
                         placeholder="Select Supplier"
                         size="large"
+                        optionLabelProp="name"
                       >
                         {suppliers?.map((supplier) => (
-                          <Option key={supplier?.supplier_id} value={supplier?.supplier_id}>
+                          <Option key={supplier?.supplier_id} name={supplier?.supplier_name} value={supplier?.supplier_id}>
                             <div className="flex items-center gap-3">
                               <img
                                 src={supplier?.image}

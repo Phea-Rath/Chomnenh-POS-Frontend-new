@@ -1,14 +1,15 @@
 import React, { useEffect, useState } from 'react'
-import { Link, useNavigate } from 'react-router'
+import { Link, useNavigate, useParams } from 'react-router'
 import AlertBox from '../../services/AlertBox';
 import { useOutletsContext } from '../../layouts/Management';
 import { useGetAllStockTypesQuery } from '../../../app/Features/stockTypesSlice';
 import { useGetItemsByStockQuery } from '../../../app/Features/itemsSlice';
 import { useGetAllWarehousesQuery } from '../../../app/Features/warehousesSlice';
-import { useCreateStockMutation, useGetAllStockQuery } from '../../../app/Features/stocksSlice';
+import { useCreateStockMutation, useGetAllStockQuery, useGetStockByIdQuery, useUpdateStockMutation } from '../../../app/Features/stocksSlice';
 import { Select, Tag } from 'antd';
 import { toast } from 'react-toastify';
 import api from '../../services/api';
+import { useDebounce } from 'use-debounce';
 
 const StockTransfer = () => {
   const navigator = useNavigate();
@@ -23,20 +24,30 @@ const StockTransfer = () => {
   const [toWarehouseSelect, settoWarehouseSelect] = useState([]);
   const { setLoading, setAlert, setMessage, loading, setAlertStatus } = useOutletsContext();
   const token = localStorage.getItem('token');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearch] = useDebounce(searchTerm, 500);
   const { refetch } = useGetAllStockQuery(token);
   const stockRes = useGetAllStockTypesQuery(token);
-  const itemsRes = useGetItemsByStockQuery(token);
+  const itemsRes = useGetItemsByStockQuery({ token, limit: 10, page: 1, search: debouncedSearch });
   const warehouseRes = useGetAllWarehousesQuery(token);
   const [createStock] = useCreateStockMutation(token);
 
   // Initialize form state
+  const { id } = useParams();
+  const [isUpdate, setIsUpdate] = useState(false);
+
   const [form, setForm] = useState({
+    stock_id: null,
     from_warehouse: '',
     warehouse_id: '',
     stock_type_id: '',
     stock_remark: '',
     order_id: null
   });
+
+  /* Fetch stock when in update mode */
+  const stockByIdRes = useGetStockByIdQuery({ id, token }, { skip: !id });
+  const [updateStock] = useUpdateStockMutation(token);
 
   useEffect(() => {
     setitems(itemsRes.data?.data || []);
@@ -53,6 +64,56 @@ const StockTransfer = () => {
     settoWarehouse(newWare || []);
     settoWarehouseSelect(toWare || []);
   }, [stockRes.data, itemsRes.data, warehouseRes.data]);
+
+  // Populate form and items when loading in update mode
+  useEffect(() => {
+    const stock = stockByIdRes.data?.data;
+    if (stock) {
+      setIsUpdate(true);
+      setForm(prev => ({
+        ...prev,
+        stock_id: stock.stock_id,
+        from_warehouse: stock.from_warehouse,
+        warehouse_id: stock.warehouse_id,
+        stock_type_id: stock.stock_type_id,
+        stock_remark: stock.stock_remark,
+        stock_date: stock.stock_date,
+        order_id: stock.order_id
+      }));
+
+      // Map items into selectItems format
+      const mappedItems = (stock.items || []).map(it => ({
+        ...it,
+        item_id: it.item_id,
+        quantity: it.quantity,
+        expire_date: it.expire_date,
+        item_name: it.item_name,
+        barcode: it.item_code || it.barcode,
+        size_name: it.size_name || '',
+        // set a safe in_stock value to avoid validation errors in UI
+        stock: { in_stock: Number(it.quantity) }
+      }));
+
+      setselectItems(mappedItems);
+
+      // Fetch available items for the selected from_warehouse and exclude already selected ones
+      api.get(`stock_by_warehouse/${stock.from_warehouse}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      }).then((res) => {
+        const list = res.data.data || [];
+        const filtered = list.filter(li => !mappedItems.find(mi => mi.item_id == li.item_id));
+        setfielditems(filtered || []);
+      }).catch((err) => {
+        toast.error('Failed to fetch items for selected warehouse');
+      });
+
+      // Adjust warehouse selects to reflect current from/to
+      const toWare = warehouseRes.data?.data?.filter(
+        item => item.warehouse_id !== 2 && item.warehouse_id !== 3 && item.warehouse_id !== 4 && item.warehouse_id !== stock.from_warehouse
+      );
+      settoWarehouseSelect(toWare || []);
+    }
+  }, [stockByIdRes.data, warehouseRes.data]);
 
   function onSelectItem(value) {
     const finding = fielditems.find(exp => exp.item_id == value);
@@ -101,30 +162,49 @@ const StockTransfer = () => {
   async function handleConfirm() {
     setAlertBox(false);
     setLoading(true);
-    console.log(form);
 
     try {
-      const response = await createStock({ itemData: form, token });
+      let response;
+      const payload = { ...form, items: selectItems };
+      if (isUpdate) {
+        // Update existing stock master
+        response = await updateStock({ id: form.stock_id || id, itemData: payload, token });
+        // response = await api.put(`stock_masters/${form.stock_id || id}`, payload, {
+        //   headers: {
+        //     Authorization: `Bearer ${token}`,
+        //   },
+        // });
+      } else {
+        // Create new stock master
+        response = await createStock({ itemData: payload, token });
+      }
+
       if (response.data.status === 200) {
         refetch();
         setLoading(false);
-        toast.success(response.data.message || 'Stock transfer created successfully');
-        setForm({
-          item_id: '',
-          quantity: 0,
-          unit_price: 0,
-          from_warehouse_id: '',
-          to_warehouse_id: '',
-          stock_type_id: '',
-          note: ''
-        });
-        navigator('/dashboard/stock-transfer-list');
+        toast.success(response.data.message || (isUpdate ? 'Stock transfer updated successfully' : 'Stock transfer created successfully'));
+
+        if (isUpdate) {
+          // Navigate to detail view after update
+          navigator(`/dashboard/stock-transfer-list/detail/${form.stock_id || id}`);
+        } else {
+          setForm({
+            item_id: '',
+            quantity: 0,
+            unit_price: 0,
+            from_warehouse_id: '',
+            to_warehouse_id: '',
+            stock_type_id: '',
+            note: ''
+          });
+          navigator('/dashboard/stock-transfer-list');
+        }
       } else {
         throw new Error(response.data.message);
       }
     } catch (error) {
       setLoading(false);
-      toast.error(error?.message || error || 'An error occurred while creating the stock transfer');
+      toast.error(error?.message || error || `An error occurred while ${isUpdate ? 'updating' : 'creating'} the stock transfer`);
     }
   }
 
@@ -144,6 +224,7 @@ const StockTransfer = () => {
   for (let i = 0; i < fielditems.length; i++) {
     options.push({
       value: fielditems[i].item_id,
+      name: fielditems[i].item_name,
       label: (
         <div className='flex items-center gap-3 justify-between w-full'>
           <div className='flex items-center gap-3 flex-1'>
@@ -189,7 +270,7 @@ const StockTransfer = () => {
       <AlertBox
         isOpen={alertBox}
         title="Confirm Stock Transfer"
-        message="Are you sure you want to create this stock transfer?"
+        message="Are you sure you want to proceed with this stock transfer?"
         onConfirm={handleConfirm}
         onCancel={handleCancel}
         confirmText="Create Transfer"
@@ -200,8 +281,8 @@ const StockTransfer = () => {
         <div className="mb-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-gray-800 mb-2">Stock Transfer</h1>
-              <p className="text-gray-600">Transfer items between warehouses</p>
+              <h1 className="text-2xl font-bold text-gray-800 mb-2">{isUpdate ? 'Edit Stock Transfer' : 'Stock Transfer'}</h1>
+              <p className="text-gray-600">{isUpdate ? `Update stock transfer #${stockByIdRes.data?.data?.stock_no || form.stock_id}` : 'Transfer items between warehouses'}</p>
             </div>
           </div>
         </div>
@@ -227,11 +308,14 @@ const StockTransfer = () => {
                       style={{ width: '100%' }}
                       placeholder="Search and select items..."
                       onChange={onSelectItem}
+                      onSearch={(value) => setSearchTerm(value)}
                       options={options}
                       showSearch
                       filterOption={(input, option) =>
-                        option.label.props.children[1].props.children.toLowerCase().includes(input.toLowerCase())
+                        option.name.toLowerCase().indexOf(input.toLowerCase()) >= 0
+
                       }
+                    // optionLabelProp="name"
                     />
                   </div>
 
@@ -271,6 +355,7 @@ const StockTransfer = () => {
                       </label>
                       <select
                         name="stock_type_id"
+                        value={form.stock_type_id}
                         className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white'
                         onChange={(e) => {
                           setForm(prev => { return { ...prev, stock_type_id: e.target.value } });
@@ -300,6 +385,7 @@ const StockTransfer = () => {
                       </label>
                       <select
                         name="to_warehouse_id"
+                        value={form.warehouse_id}
                         className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white'
                         onChange={(e) => setForm(prev => { return { ...prev, warehouse_id: e.target.value } })}
                         required
@@ -327,6 +413,7 @@ const StockTransfer = () => {
                         placeholder="Enter description or remarks..."
                         rows="3"
                         name="stock_remark"
+                        value={form.stock_remark}
                         onChange={(e) => setForm(prev => { return { ...prev, stock_remark: e.target.value } })}
                       ></textarea>
                     </div>
@@ -341,7 +428,7 @@ const StockTransfer = () => {
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
                       </svg>
-                      <span>{loading ? 'Creating...' : 'Create Transfer'}</span>
+                      <span>{loading ? (isUpdate ? 'Updating...' : 'Creating...') : (isUpdate ? 'Update Transfer' : 'Create Transfer')}</span>
                     </button>
                     <Link to="/dashboard/stock-transfer-list" className="flex-1">
                       <button

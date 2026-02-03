@@ -429,7 +429,7 @@ const SupplierForm = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 py-8">
+    <div className="min-h-screen bg-transparent py-8">
       <div className=" mx-auto px-2">
         {/* Header */}
         <div className="mb-8">
@@ -446,7 +446,7 @@ const SupplierForm = () => {
 
         <form
           onSubmit={handleSubmit}
-          className="bg-white shadow-xl rounded-2xl p-4"
+          className="bg-transparent p-4"
         >
           {/* Validation Summary */}
           {(Object.keys(errors).length > 0 || Object.keys(fieldErrors).length > 0) && (
@@ -551,7 +551,7 @@ const SupplierForm = () => {
                   <h2 className="text-lg font-semibold text-gray-800">Location Services</h2>
                 </div>
 
-                <button
+                {/* <button
                   type="button"
                   onClick={getLocation}
                   disabled={loading}
@@ -562,7 +562,7 @@ const SupplierForm = () => {
                 >
                   <FaMapMarkerAlt className="text-lg" />
                   {loading ? "Fetching Location..." : "Get My Current Location"}
-                </button>
+                </button> */}
 
                 {errors.general && (
                   <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">

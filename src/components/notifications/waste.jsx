@@ -51,7 +51,7 @@ const Waste = () => {
                             title={<a href="https://ant.design">{item.item_name}</a>}
                             description={<span className='text-xs'>{`This item, It wasted ${timeSince(item?.expire_date)}`}</span>}
                         />
-                        <Tag bordered={false} color="magenta">{item.in_stock}</Tag>
+                        <Tag bordered={false} color="magenta">{item?.waste_quantity}</Tag>
                     </Skeleton>
                 </List.Item>
             )}
