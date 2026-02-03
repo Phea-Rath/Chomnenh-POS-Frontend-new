@@ -309,43 +309,43 @@ const StockTransactions = () => {
 
   const fetchData = async () => {
     setLoading(true);
-    try{
-    const res = await api.get(`/stock_tracking?${params.toString()}`,
-      {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-      }
-    )
-        if (res.status === 200 && res.data) {
-          setData(res.data.data);
-          setItemData(res.data.data.map(item => ({
-            item_code: item.item_code,
-            item_name: item.item_name,
-            category_name: item.category_name,
-            brand_name: item.brand_name,
-            stock_in: parseInt(item.stock_in),
-            stock_out: parseInt(item.stock_out),
-            stock_sale: parseInt(item.stock_sale),
-            stock_waste: parseInt(item.stock_waste || "0"),
-            stock_return: parseInt(item.stock_return || "0"),
-          })));
-          setTableParams({
-            ...tableParams,
-            pagination: {
-              ...tableParams.pagination,
-              total: res.data.pagination?.total || 100,
-            },
-          });
+    try {
+      const res = await api.get(`/stock_tracking?${params.toString()}`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
         }
-        setLoading(false);
-      
-    }catch(error){
-        console.error("Error fetching data:", error);
-        setLoading(false);
-      };
+      )
+      if (res.status === 200 && res.data) {
+        setData(res.data.data);
+        setItemData(res.data.data.map(item => ({
+          item_code: item.item_code,
+          item_name: item.item_name,
+          category_name: item.category_name,
+          brand_name: item.brand_name,
+          stock_in: parseInt(item.stock_in),
+          stock_out: parseInt(item.stock_out),
+          stock_sale: parseInt(item.stock_sale),
+          stock_waste: parseInt(item.stock_waste || "0"),
+          stock_return: parseInt(item.stock_return || "0"),
+        })));
+        setTableParams({
+          ...tableParams,
+          pagination: {
+            ...tableParams.pagination,
+            total: res.data.pagination?.total || 100,
+          },
+        });
+      }
+      setLoading(false);
+
+    } catch (error) {
+      console.error("Error fetching data:", error);
+      setLoading(false);
+    };
   };
 
 
@@ -596,7 +596,7 @@ const StockTransactions = () => {
     >
       <div className="min-h-screen bg-gradient-to-br from-transparent p-4">
         {/* Header Section */}
-        <div className="mb-8">
+        <div className="mb-2">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
             <div>
               <motion.h1
@@ -637,7 +637,7 @@ const StockTransactions = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-8"
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-2"
         >
           <Card className="border-0 shadow-sm bg-gradient-to-br from-blue-500 to-blue-600">
             <div>
@@ -741,7 +741,7 @@ const StockTransactions = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="bg-white rounded-lg shadow-sm border border-gray-200 p-1 mb-8"
+          className="bg-white rounded-lg shadow-sm border border-gray-200 p-1 mb-2"
         >
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             {/* View Toggle and Search */}

@@ -40,6 +40,10 @@ import { motion } from "framer-motion";
 import ExportExel from "../../services/ExportExel";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
+import api from "../../services/api";
+import { useDebounce } from "use-debounce";
+import Search from "antd/es/transfer/search";
+import { useGetAllOrderTransectionQuery } from "../../../app/Features/ordersSlice";
 
 dayjs.extend(relativeTime);
 
@@ -55,12 +59,39 @@ const RecordStockSale = () => {
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedBrand, setSelectedBrand] = useState("all");
   const [dateRange, setDateRange] = useState(null);
+  const [debounce] = useDebounce(searchTerm, 5000);
   const [tableParams, setTableParams] = useState({
     pagination: {
       current: 1,
       pageSize: 10,
     },
   });
+  const { data: stockTran, refetch } = useGetAllOrderTransectionQuery({ token, limit: tableParams?.pagination.pageSize, page: tableParams.pagination.current, search: debounce });
+  console.log(stockTran);
+
+  useEffect(() => {
+    const products = (stockTran?.data || []).map((item, index) => ({
+      ...item,
+      key: item.item_id || index,
+      index: index + 1,
+      amount_sold: Number(item.amount_sold) || 0,
+      total_quantity_sold: Number(item.total_quantity_sold) || 0,
+      item_code: item.item_code || `PRD-${String(index + 1).padStart(5, '0')}`,
+      category_name: item.category_name || 'Uncategorized',
+      brand_name: item.brand_name || 'Unknown'
+    }));
+
+    setData(products);
+    setFilteredData(products);
+    setLoading(false);
+    setTableParams({
+      ...tableParams,
+      pagination: {
+        ...tableParams.pagination,
+        total: stockTran?.pagination || 0,
+      },
+    });
+  }, [stockTran])
 
   // Get unique categories and brands for filters
   const getCategories = () => {
@@ -291,56 +322,51 @@ const RecordStockSale = () => {
     },
   ];
 
-  const fetchData = () => {
-    setLoading(true);
-    fetch(
-      `http://127.0.0.1:8000/api/order_transection`,
-      {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-      }
-    )
-      .then((res) => {
-        if (!res.ok) {
-          throw new Error("Network response was not ok");
-        }
-        return res.json();
-      })
-      .then((res) => {
-        const products = (res.data || []).map((item, index) => ({
-          ...item,
-          key: item.item_id || index,
-          index: index + 1,
-          amount_sold: Number(item.amount_sold) || 0,
-          total_quantity_sold: Number(item.total_quantity_sold) || 0,
-          item_code: item.item_code || `PRD-${String(index + 1).padStart(5, '0')}`,
-          category_name: item.category_name || 'Uncategorized',
-          brand_name: item.brand_name || 'Unknown'
-        }));
+  // const fetchData = async () => {
+  //   setLoading(true);
+  //   try {
+  //     const res = await api.get(
+  //       `/order_transection`,
+  //       {
+  //         headers: {
+  //           Authorization: `Bearer ${localStorage.getItem("token")}`,
+  //           "Content-Type": "application/json",
+  //           Accept: "application/json",
+  //         },
+  //       }
+  //     );
+  //     if (res.status == 200) {
+  //       const products = (res.data.data || []).map((item, index) => ({
+  //         ...item,
+  //         key: item.item_id || index,
+  //         index: index + 1,
+  //         amount_sold: Number(item.amount_sold) || 0,
+  //         total_quantity_sold: Number(item.total_quantity_sold) || 0,
+  //         item_code: item.item_code || `PRD-${String(index + 1).padStart(5, '0')}`,
+  //         category_name: item.category_name || 'Uncategorized',
+  //         brand_name: item.brand_name || 'Unknown'
+  //       }));
 
-        setData(products);
-        setFilteredData(products);
-        setLoading(false);
-        setTableParams({
-          ...tableParams,
-          pagination: {
-            ...tableParams.pagination,
-            total: products.length || 0,
-          },
-        });
-      })
-      .catch((error) => {
-        console.error("Error fetching data:", error);
-        setLoading(false);
-      });
-  };
+  //       setData(products);
+  //       setFilteredData(products);
+  //       setLoading(false);
+  //       setTableParams({
+  //         ...tableParams,
+  //         pagination: {
+  //           ...tableParams.pagination,
+  //           total: products.length || 0,
+  //         },
+  //       });
+  //     }
+  //   } catch (error) {
+  //     console.error("Error fetching data:", error);
+  //     setLoading(false);
+  //   };
+  // };
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  // useEffect(() => {
+  //   fetchData();
+  // }, []);
 
   const handleTableChange = (pagination, filters, sorter) => {
     setTableParams({
@@ -452,7 +478,7 @@ const RecordStockSale = () => {
             <div className="flex items-center space-x-3">
               <Button
                 icon={<LuRefreshCw />}
-                onClick={fetchData}
+                onClick={refetch}
                 loading={loading}
                 className="flex items-center space-x-2 h-12 px-4 rounded-xl bg-white hover:bg-gray-50 border border-gray-200 shadow-sm"
               >

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { AiTwotoneDelete } from "react-icons/ai";
 import { LuListChecks } from "react-icons/lu";
 import { Link, useNavigate, useParams } from "react-router";
@@ -17,6 +17,8 @@ import {
   Tooltip,
   Typography,
   Input,
+  Pagination,
+  Modal
 } from "antd";
 import { PiHandFistFill, PiShoppingCartBold } from "react-icons/pi";
 import { motion } from "framer-motion";
@@ -30,13 +32,21 @@ import { useGetAllCustomerQuery } from "../../../app/Features/customersSlice";
 import { useGetExchangeRateByIdQuery } from "../../../app/Features/exchangeRatesSlice";
 import { currencyFormat } from "../../services/serviceFunction";
 import { FaPercent, FaPalette, FaRuler, FaMapMarkerAlt, FaHistory, FaUser, FaPhone, FaCheck } from "react-icons/fa";
-import { GiSugarCane } from "react-icons/gi";
+import { GiScales, GiSugarCane } from "react-icons/gi";
 import { BiCategory } from "react-icons/bi";
 import api from "../../services/api";
 import { useGetUserLoginQuery, useGetUserProfileQuery } from "../../../app/Features/usersSlice";
 import { TbShoppingCartOff } from "react-icons/tb";
 import { MdOutlineAddShoppingCart } from "react-icons/md";
 import { IoExit } from "react-icons/io5";
+import { useGetAllWasteQuery } from "../../../app/Features/notificationSlice";
+import { useDebounce } from "use-debounce";
+import {
+  BsQrCodeScan, BsBoxSeam, BsArrowUpRight, BsArrowDownLeft,
+  BsTrash, BsBagPlusFill, BsLightningChargeFill
+} from "react-icons/bs";
+import { MdOutlineCategory, MdOutlineBrandingWatermark } from "react-icons/md";
+import { useGetItemByIdQuery } from "../../../app/Features/itemsSlice";
 
 // const { Option } = Select;
 
@@ -88,7 +98,22 @@ const Sales = () => {
   const [user, setUser] = useState(localStorage.getItem('guest') || null);
   const [validationErrors, setValidationErrors] = useState({});
   const { data: customers } = useGetAllCustomerQuery(token);
-  const saleItemContext = useGetAllSaleQuery(token,
+  const [search, setSearch] = useState('');
+  const [debounce] = useDebounce(search, 500);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [visible, setVisible] = useState(false);
+  const [itemDetail, setItemDetail] = useState({});
+  const [itemId, setItemId] = useState(0);
+  const [product, setProduct] = useState({});
+  const { data: item } = useGetItemByIdQuery({ id: itemId, token },
+    { skip: !itemId })
+  const saleItemContext = useGetAllSaleQuery({
+    token,
+    limit: pageSize,
+    page: currentPage,
+    search: debounce
+  },
     {
       refetchOnFocus: true,
       refetchOnReconnect: true,
@@ -97,9 +122,31 @@ const Sales = () => {
   const orderContext = useGetAllOrderQuery(token);
   const { refetch: refetchWaste } = useGetAllWasteQuery(token);
 
-  console.log(userLogin?.data?.id);
+  const items = useMemo(() => saleItemContext?.data?.data || [], [saleItemContext?.data]);
+  const totalItems = saleItemContext?.data?.pagination?.total || 0;
 
+  useEffect(() => {
+    setProduct(item?.data);
+    console.log(itemId);
 
+  }, [itemId, item])
+
+  useEffect(() => {
+    if (categoryContext.data?.data) {
+      setCategory(categoryContext.data.data);
+    }
+
+    if (items) {
+      const newItems = items.map((item) => ({
+        ...item,
+        quantity: 1,
+        displayAttributes: parseAttributesForDisplay(item.attributes)
+      }));
+
+      setAllItems(newItems);
+      setItemsSech(newItems);
+    }
+  }, [items, categoryContext?.data]);
 
   localStorage.setItem("orderItems", JSON.stringify(initialOrder));
   // Helper function to calculate price based on sale type and discount
@@ -781,6 +828,9 @@ const Sales = () => {
   const onClose = () => {
     setOpen(false);
   };
+  const onCloseModal = () => {
+    setVisible(false);
+  };
 
   const handleSaleType = (e) => {
     const newSaleType = e.target.value;
@@ -919,12 +969,21 @@ const Sales = () => {
     }
   };
 
+  // Helper component for stock numbers
+  const StockStat = ({ label, value, icon }) => (
+    <div className="bg-slate-50/50 border border-slate-100 p-3 rounded-2xl flex flex-col items-center">
+      <div className="mb-1">{icon}</div>
+      <span className="text-lg font-bold text-slate-800">{value}</span>
+      <span className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">{label}</span>
+    </div>
+  );
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="min-h-screen bg-gray-200"
+      className="min-h-screen bg-gray-200 p-3"
     >
       <section className="px-2">
         {contextHolder}
@@ -939,7 +998,7 @@ const Sales = () => {
         />
 
         {/* Header Section */}
-        <div className="mb-8">
+        <div className="mb-2">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
             <div className="flex items-center gap-3">
               <div className="w-20 h-20 object-center">
@@ -1072,7 +1131,7 @@ const Sales = () => {
                   whileHover={{ y: -5 }}
                   transition={{ duration: 0.2 }}
                 >
-                  <Card className="shadow-lg hover:shadow-xl border-0 transition-all duration-300 h-full">
+                  <Card onClick={() => { setVisible(true); setItemId(item.id) }} className="shadow-lg hover:shadow-xl border-0 transition-all duration-300 h-full">
                     {/* Product Image */}
                     <div className="relative mb-4 overflow-hidden rounded-lg bg-gray-100">
                       <img
@@ -1086,7 +1145,7 @@ const Sales = () => {
                       />
 
                       {/* Stock Badge */}
-                      <div className="absolute top-3 right-3">
+                      {/* <div className="absolute top-3 right-3">
                         <Badge
                           count={item.in_stock}
                           className={`${item.in_stock <= 5 ? 'bg-red-500' : 'bg-green-500'}`}
@@ -1095,7 +1154,7 @@ const Sales = () => {
                             color: 'white'
                           }}
                         />
-                      </div>
+                      </div> */}
 
                       {/* Discount Badge */}
                       {item.discount > 0 && (
@@ -1148,40 +1207,6 @@ const Sales = () => {
 
                       {/* Quantity Controls */}
                       <div className="flex items-center justify-end pt-3 border-t border-gray-100">
-                        {/* <div className="flex items-center gap-2">
-                          <button
-                            disabled={item.quantity <= 1}
-                            onClick={() => {
-                              const updatedItems = itemsSech.map(i =>
-                                i.id === item.id ? { ...i, quantity: Math.max(1, i.quantity - 1) } : i
-                              );
-                              setItemsSech(updatedItems);
-                            }}
-                            className={`p-2 rounded-lg ${item.quantity <= 1
-                              ? "text-gray-300 cursor-not-allowed"
-                              : "text-red-500 hover:bg-red-50 cursor-pointer"
-                              }`}
-                          >
-                            <IoMdRemoveCircle className="text-xl" />
-                          </button>
-                          <span className="w-8 text-center font-bold text-gray-800">{item.quantity}</span>
-                          <button
-                            disabled={item.quantity >= item.in_stock}
-                            onClick={() => {
-                              const updatedItems = itemsSech.map(i =>
-                                i.id === item.id ? { ...i, quantity: Math.min(i.in_stock, i.quantity + 1) } : i
-                              );
-                              setItemsSech(updatedItems);
-                            }}
-                            className={`p-2 rounded-lg ${item.quantity >= item.in_stock
-                              ? "text-gray-300 cursor-not-allowed"
-                              : "text-green-500 hover:bg-green-50 cursor-pointer"
-                              }`}
-                          >
-                            <IoMdAddCircle className="text-xl" />
-                          </button>
-                        </div> */}
-
                         <Button
                           type="primary"
                           size="small"
@@ -1267,42 +1292,6 @@ const Sales = () => {
                           </h4>
                           <p className="text-xs text-gray-500">{item.barcode}</p>
 
-                          {/* Display Attributes */}
-                          {/* {item.displayAttributes && item.displayAttributes.length > 0 && (
-                            <div className="mt-1 space-y-1">
-                              {item.displayAttributes.map((attr, idx) => {
-                                const uniqueKey = `${item.id}-${item.selectionKey}-${attr.name}-${idx}`;
-                                let colors = [];
-                                if (attr.isColor) {
-                                  colors = formatColorDisplay(attr.value);
-                                }
-
-                                return (
-                                  <div key={uniqueKey} className="flex items-center gap-1">
-                                    {renderIcon(attr.iconType)}
-                                    <span className="text-xs text-gray-500">{attr.name}:</span>
-                                    {attr.isColor ? (
-                                      colors.length > 0 ? (
-                                        <div className="flex gap-1">
-                                          {colors.map((color, colorIdx) => (
-                                            <div
-                                              key={`${uniqueKey}-${colorIdx}`}
-                                              className="w-3 h-3 rounded-full border border-gray-300"
-                                              style={{ backgroundColor: color }}
-                                            />
-                                          ))}
-                                        </div>
-                                      ) : (
-                                        <span className="text-xs font-medium text-gray-700">No color</span>
-                                      )
-                                    ) : (
-                                      <span className="text-xs font-medium text-gray-700">{attr.value}</span>
-                                    )}
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          )} */}
                         </div>
 
                         {/* Price and Quantity */}
@@ -1367,109 +1356,6 @@ const Sales = () => {
                   </div>
                 )}
 
-                {/* Delivery Fee */}
-                {/* <div className="flex justify-between items-center">
-                  <span className="text-gray-600">Delivery Fee</span>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="number"
-                      value={orders?.delivery_fee || ""}
-                      onChange={(e) => setOrders((prev) => {
-                        const deliveryFee = Number(e.target.value) || 0;
-                        const totals = calculateOrderTotals(
-                          prev.items,
-                          deliveryFee,
-                          prev.order_tax || 0,
-                          prev.sale_type
-                        );
-                        const results = {
-                          ...prev,
-                          delivery_fee: deliveryFee,
-                          order_total: totals.total,
-                          payment: prev.order_payment_status === "paid" ? totals.total : 0,
-                          balance: prev.order_payment_status === "paid" ? 0 : totals.total,
-                        };
-                        localStorage.setItem("orderItems", JSON.stringify(results));
-                        return results;
-                      })}
-                      className="w-24 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="0.00"
-                      min="0"
-                      step="0.01"
-                    />
-                  </div>
-                </div> */}
-
-                {/* Sale Type */}
-                {/* <div className="space-y-2">
-                  <label className="block text-sm font-medium text-gray-700">Sale Type</label>
-                  <div className="flex gap-4">
-                    <button
-                      onClick={() => handleSaleType({ target: { value: 'sale' } })}
-                      className={`flex-1 py-2 rounded-lg border ${orders?.sale_type === 'sale'
-                        ? 'bg-blue-500 text-white border-blue-500'
-                        : 'border-gray-300 text-gray-700 hover:border-blue-300'
-                        }`}
-                    >
-                      Retail
-                    </button>
-                    <button
-                      onClick={() => handleSaleType({ target: { value: 'wholesale' } })}
-                      className={`flex-1 py-2 rounded-lg border ${orders?.sale_type === 'wholesale'
-                        ? 'bg-blue-500 text-white border-blue-500'
-                        : 'border-gray-300 text-gray-700 hover:border-blue-300'
-                        }`}
-                    >
-                      Wholesale
-                    </button>
-                  </div>
-                </div> */}
-
-                {/* Tax */}
-                {/* <div className={`flex items-center justify-between gap-4 ${orders?.sale_type === "sale" ? "hidden" : ""}`}>
-                  <label className="label text-gray-600">ពន្ធ(Tax)</label>
-                  <div className="flex items-center gap-2">
-                    <input
-                      onChange={(e) =>
-                        setOrders((prev) => {
-                          const tax = Number(e.target.value) || 0;
-                          const totals = calculateOrderTotals(
-                            prev.items,
-                            prev.delivery_fee || 0,
-                            tax,
-                            prev.sale_type
-                          );
-                          const results = {
-                            ...prev,
-                            order_tax: tax,
-                            order_total: totals.total,
-                            payment:
-                              prev.order_payment_status === "paid"
-                                ? totals.total
-                                : 0,
-                            balance:
-                              prev.order_payment_status === "paid"
-                                ? 0
-                                : totals.total,
-                          };
-                          localStorage.setItem(
-                            "orderItems",
-                            JSON.stringify(results)
-                          );
-                          return results;
-                        })
-                      }
-                      type="number"
-                      value={orders?.order_tax || ""}
-                      className="w-20 px-2 py-1 border border-gray-300 rounded text-right"
-                      placeholder="0.00 %"
-                      min="0"
-                      step="0.01"
-                    />
-                    <span className="text-gray-500">%</span>
-                  </div>
-                </div> */}
-
                 {/* Payment Method */}
                 <div className="flex items-center justify-between gap-4">
                   <label className="label text-gray-600">វិធីសាស្រ្តបង់ប្រាក់</label>
@@ -1494,107 +1380,6 @@ const Sales = () => {
                     <option value="bank">ធនាគារ</option>
                   </select>
                 </div>
-
-                {/* Payment Status */}
-                {/* <div className="flex items-center justify-between gap-4">
-                  <label className="label text-gray-600">ការបង់ប្រាក់</label>
-                  <select
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      setOrders((prev) => {
-                        const results = {
-                          ...prev,
-                          order_payment_status: value,
-                          balance: value === "paid" ? 0 : prev.order_total,
-                          payment: value === "paid" ? prev.order_total : 0,
-                        };
-                        localStorage.setItem(
-                          "orderItems",
-                          JSON.stringify(results)
-                        );
-                        return results;
-                      });
-                      setPayment(value);
-                    }}
-                    value={orders?.order_payment_status || "paid"}
-                    className="w-30 px-2 py-1 border border-gray-300 rounded"
-                  >
-                    <option value="paid">បង់ទាំងអស់</option>
-                    <option value="cod">ជំពាក់</option>
-                  </select>
-                </div> */}
-
-                {/* Customer */}
-                {/* <div className={`flex items-center justify-between gap-4 ${orders?.sale_type === "sale" ? "hidden" : ""}`}>
-                  <label className="label text-gray-600">អតិថិជន</label>
-                  <select
-                    onChange={(e) => {
-                      const customerId = Number(e.target.value);
-                      const customerFind = customers?.data?.find(
-                        (c) => c.customer_id === customerId
-                      );
-                      setOrders((prev) => {
-                        const results = {
-                          ...prev,
-                          order_customer_id: customerId,
-                          order_tel: customerFind?.customer_tel || "",
-                          order_address: customerFind?.customer_address || "",
-                        };
-                        localStorage.setItem(
-                          "orderItems",
-                          JSON.stringify(results)
-                        );
-                        return results;
-                      });
-                    }}
-                    value={orders?.order_customer_id || 0}
-                    className="w-30 px-2 py-1 border border-gray-300 rounded"
-                  >
-                    <option value={0}>អតិថិជន...</option>
-                    {customers?.data?.map((customer) => (
-                      <option
-                        key={customer.customer_id}
-                        value={customer.customer_id}
-                      >
-                        {customer.customer_name}
-                      </option>
-                    ))}
-                  </select>
-                </div> */}
-
-                {/* Payment Amount */}
-                {/* <div className={`flex items-center justify-between gap-4 ${payment === "paid" ? "hidden" : ""}`}>
-                  <label className="label text-gray-600">បង់ប្រាក់</label>
-                  <input
-                    onChange={(e) =>
-                      setOrders((prev) => {
-                        const paymentAmount = Number(e.target.value) || 0;
-                        const results = {
-                          ...prev,
-                          payment: paymentAmount,
-                          balance: prev.order_total - paymentAmount,
-                        };
-                        localStorage.setItem(
-                          "orderItems",
-                          JSON.stringify(results)
-                        );
-                        return results;
-                      })
-                    }
-                    value={orders?.payment || ""}
-                    type="number"
-                    className="input w-20 bg-transparent text-gray-800 border-gray-400 focus:outline-none rounded"
-                    placeholder="$0.00"
-                    min="0"
-                    step="0.01"
-                  />
-                </div> */}
-
-                {/* Balance */}
-                {/* <div className={`text-black flex items-center justify-between gap-4 ${payment === "paid" ? "hidden" : ""}`}>
-                  <h1 className="text-gray-600">ជំពាក់</h1>
-                  <h1>${currencyFormat(orders?.balance || 0)}</h1>
-                </div> */}
 
                 {/* Customer Phone */}
                 <div className={`flex items-center justify-between gap-4 ${orders?.sale_type !== "sale" ? "hidden" : ""}`}>
@@ -1672,18 +1457,6 @@ const Sales = () => {
                   />
                   {/* <div className="text-xs text-gray-400 mt-1">Optional</div> */}
                 </div>
-                <button
-                  type="button"
-                  onClick={getLocation}
-                  disabled={loading}
-                  className={`w-full px-4 py-3 rounded-lg font-semibold transition-all duration-200 flex items-center justify-center gap-3 ${loading
-                    ? "bg-gray-400 cursor-not-allowed text-gray-700"
-                    : "bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-lg hover:shadow-xl"
-                    }`}
-                >
-                  <FaMapMarkerAlt className="text-lg" />
-                  {loading ? "Fetching Location..." : "Get My Current Location"}
-                </button>
 
                 {location.latitude && location.longitude && (
                   <div className="mt-6">
@@ -1757,8 +1530,18 @@ const Sales = () => {
             </div>
           )}
         </Drawer>
+        <div className="mt-12 flex justify-center">
+          <Pagination
+            current={currentPage}
+            total={totalItems}
+            pageSize={pageSize}
+            onChange={(page) => { setCurrentPage(page); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+            showSizeChanger={false}
+            className="bg-white p-4 rounded-xl shadow-sm border border-gray-100"
+          />
+        </div>
         {showSignInModal && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-100 p-4">
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -1808,6 +1591,140 @@ const Sales = () => {
             </motion.div>
           </div>
         )}
+        <Modal
+          open={visible}
+          onCancel={onCloseModal}
+          footer={null}
+          width={900}
+          centered
+          styles={{ body: { padding: 0, overflow: 'hidden' } }}
+          className="product-detail-modal"
+        >
+          <div className="flex flex-col md:flex-row h-full max-h-[90vh]">
+
+            {/* Left Side: Image Gallery */}
+            <div className="w-full md:w-1/2 bg-slate-50 p-6 flex flex-col items-center justify-center relative border-r border-slate-100">
+              <div className="absolute top-4 left-4 z-10">
+                <Tag color="blue" className="rounded-full px-3 py-1 font-bold border-none shadow-sm">
+                  {product?.code}
+                </Tag>
+              </div>
+
+              <img
+                src={product?.image}
+                alt={product?.name}
+                className="w-full aspect-square object-contain mix-blend-multiply transition-transform hover:scale-105 duration-500"
+              />
+
+              <div className="flex gap-2 mt-4 overflow-x-auto pb-2">
+                {product?.images?.map((img, idx) => (
+                  <img
+                    key={idx}
+                    src={img.image}
+                    className="w-16 h-16 rounded-xl border-2 border-white shadow-sm object-cover cursor-pointer hover:border-blue-400 transition-all"
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* Right Side: Details */}
+            <div className="w-full md:w-1/2 p-8 overflow-y-auto">
+              <header className="mb-6">
+                <div className="flex items-center gap-2 text-slate-400 text-xs font-bold uppercase tracking-widest mb-1">
+                  <MdOutlineCategory /> {product?.category_name} • <MdOutlineBrandingWatermark /> {product?.brand_name}
+                </div>
+                <h2 className="text-3xl font-black text-slate-800 leading-tight">
+                  {product?.name}
+                </h2>
+                <div className="flex items-center gap-4 mt-3">
+                  <span className="text-3xl font-bold text-blue-600">${product?.price}</span>
+                  {product?.price < product?.wholesale_price && (
+                    <span className="text-slate-400 line-through text-lg">${product?.wholesale_price}</span>
+                  )}
+                  <Tag color="green-inverse" className="rounded-md border-none font-bold">
+                    In Stock: {product?.stock?.in_stock}
+                  </Tag>
+                </div>
+              </header>
+
+              <Divider className="my-6" />
+
+              {/* Attributes */}
+              <section className="space-y-4">
+                <h4 className="text-sm font-bold text-slate-900 uppercase">Product Specifications</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-2xl border border-slate-100">
+                    <BsQrCodeScan className="text-blue-500" />
+                    <div>
+                      <p className="text-[10px] text-slate-400 font-bold uppercase leading-none">Barcode</p>
+                      <p className="text-sm font-semibold text-slate-700">{product?.barcode}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-2xl border border-slate-100">
+                    <GiScales className="text-blue-500 text-lg" />
+                    <div>
+                      <p className="text-[10px] text-slate-400 font-bold uppercase leading-none">Scale</p>
+                      <p className="text-sm font-semibold text-slate-700">{product?.scale_name}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Dynamic Attributes (Colors/Size) */}
+                {product?.attributes?.map((attr) => (
+                  <div key={attr.id} className="mt-4">
+                    <p className="text-xs font-bold text-slate-400 uppercase mb-2">{attr.name}</p>
+                    <div className="flex gap-2">
+                      {Array.isArray(attr.value) ? (
+                        attr.value.map((v) => (
+                          <Tooltip title={v.value} key={v.id}>
+                            <div
+                              className="w-8 h-8 rounded-full border-2 border-white shadow-md cursor-pointer hover:scale-110 transition-transform"
+                              style={{ backgroundColor: v.value }}
+                            />
+                          </Tooltip>
+                        ))
+                      ) : (
+                        <Tag className="px-4 py-1 rounded-full font-bold bg-slate-100 border-none text-slate-700">
+                          {attr.value.toUpperCase()}
+                        </Tag>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </section>
+
+              {/* Stock Metrics
+              <section className="mt-8">
+                <h4 className="text-sm font-bold text-slate-900 uppercase mb-3">Inventory Analytics</h4>
+                <div className="grid grid-cols-3 gap-2">
+                  <StockStat label="In" value={product?.stock?.stock_in} icon={<BsArrowDownLeft className="text-emerald-500" />} />
+                  <StockStat label="Out" value={product?.stock?.stock_out} icon={<BsArrowUpRight className="text-blue-500" />} />
+                  <StockStat label="Sold" value={product?.stock?.sold} icon={<BsBagPlusFill className="text-purple-500" />} />
+                  <StockStat label="Waste" value={product?.stock?.stock_wasted} icon={<BsTrash className="text-red-500" />} />
+                </div>
+              </section> */}
+
+              {/* Sticky Action Footer */}
+              <div className="mt-10 flex gap-3">
+                <Button
+                  type="primary"
+                  size="large"
+                  icon={<BsLightningChargeFill />}
+                  className="flex-1 h-14 rounded-2xl bg-blue-600 font-bold text-lg shadow-lg shadow-blue-200"
+                  onClick={() => { handleOrder(product, 1); onCloseModal() }}
+                >
+                  Add to Cart
+                </Button>
+                {/* <Button
+                  size="large"
+                  className="h-14 w-14 flex items-center justify-center rounded-2xl border-slate-200 text-slate-500 hover:text-blue-600"
+                >
+                  <BsBoxSeam size={20} />
+                </Button> */}
+              </div>
+            </div>
+          </div>
+        </Modal>
       </section>
     </motion.div>
   );

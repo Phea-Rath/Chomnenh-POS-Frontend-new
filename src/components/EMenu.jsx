@@ -24,13 +24,14 @@ import {
   FaStore
 } from 'react-icons/fa';
 import { toPng } from 'html-to-image';
-import { toast } from "react-toastify";
 import download from 'downloadjs';
 import saveAs from 'file-saver';
 import shopping from '../assets/shopping-cart.png';
 import { useGetUserProfileQuery } from '../../app/Features/usersSlice';
 import { convertImageToBase64, convertToBase64 } from '../services/serviceFunction';
 import api from '../services/api';
+import { BiCopy } from 'react-icons/bi';
+import { toast } from 'react-toastify';
 
 const QRCodeGenerator = () => {
   const token = localStorage.getItem('token');
@@ -76,6 +77,11 @@ const QRCodeGenerator = () => {
     }
   };
 
+  const copyURL = (text) => {
+    toast.info('URL copied!');
+    navigator.clipboard.writeText(text)
+
+  }
 
   // Download QR code only
   const downloadQRCode = async () => {
@@ -324,21 +330,22 @@ const QRCodeGenerator = () => {
                     Download QR Code Only
                   </Button>
 
-                  <a
+                  {/* <a
                     href={`/${token}/order-now/${localStorage.getItem('profileId')}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="block"
+                  > */}
+                  <Button
+                    icon={<BiCopy />}
+                    size="large"
+                    onClick={() => copyURL(`${window.location.host}/${token}/order-now/${localStorage.getItem('profileId')}`)}
+                    block
+                    className="h-14 border-blue-300 text-blue-700 hover:text-blue-800 hover:border-blue-400"
                   >
-                    <Button
-                      icon={<BsEyeFill />}
-                      size="large"
-                      block
-                      className="h-14 border-blue-300 text-blue-700 hover:text-blue-800 hover:border-blue-400"
-                    >
-                      Preview Order Page
-                    </Button>
-                  </a>
+                    Copy link
+                  </Button>
+                  {/* </a> */}
 
                   <a
                     href="/market"

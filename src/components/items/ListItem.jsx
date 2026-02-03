@@ -46,7 +46,7 @@ const ListItem = () => {
   // State management
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(12);
+  const [pageSize, setPageSize] = useState(10);
 
   // 1. Debounce Search: Wait 500ms after user stops typing before calling API
   const [debouncedSearch] = useDebounce(searchTerm, 500);
@@ -171,7 +171,7 @@ const ListItem = () => {
               className="w-32 border-none"
               variant="borderless"
             >
-              <Option value={12}>12 / page</Option>
+              <Option value={0}>10 / page</Option>
               <Option value={24}>24 / page</Option>
               <Option value={48}>48 / page</Option>
             </Select>

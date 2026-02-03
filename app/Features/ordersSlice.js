@@ -18,6 +18,10 @@ export const ordersApi = createApi({
     getAllOrder: builder.query({
       query: (token) => queryData("/order_masters", token),
     }),
+
+    getAllOrderTransection: builder.query({
+      query: ({ token, limit, page, search }) => queryData(`/order_transection?limit=${limit}&page=${page}&search=${search}`, token),
+    }),
     getOrderByUser: builder.query({
       query: (token) => queryData("/order_by_user", token),
     }),
@@ -61,6 +65,7 @@ export const ordersApi = createApi({
 
 export const {
   useGetAllOrderQuery,
+  useGetAllOrderTransectionQuery,
   useGetOrderByIdQuery,
   useGetOrderByUserQuery,
   useCreateOrderMutation,

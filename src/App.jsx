@@ -443,7 +443,7 @@ const router = createBrowserRouter([
     ],
   },
   {
-    path: "/expanse-print",
+    path: "/expanse-print/:id",
     element: <PrintExpanse />,
   },
   {

@@ -23,6 +23,7 @@ import { useGetAllCustomerQuery } from "../../../app/Features/customersSlice";
 import { scale } from "framer-motion";
 import { currencyFormat, totalPirceQuanDiscount } from "../../services/serviceFunction";
 import { useGetAllQuoteQuery, useGetQuoteByIdQuery } from "../../../app/Features/quoteSlice";
+import { useDebounce } from "use-debounce";
 
 const { Option } = Select;
 
@@ -30,6 +31,8 @@ const QuotationForm = () => {
     const { id } = useParams(); // Get stock ID from URL if editing
     const isEditMode = Boolean(id);
     const [stocktype, setstocktype] = useState([]);
+    const [search, setSearch] = useState("");
+    const [debounce] = useDebounce(search, 5000);
     const [alertBox, setAlertBox] = useState(false);
     const [items, setitems] = useState([]);
     const [fielditems, setfielditems] = useState([]);
@@ -41,7 +44,7 @@ const QuotationForm = () => {
     const { refetch } = useGetAllQuoteQuery(token);
     const stockRes = useGetAllStockTypesQuery(token);
     const navigator = useNavigate();
-    const itemsRes = useGetAllSaleQuery(token);
+    const itemsRes = useGetAllSaleQuery({ token, limit: 10, page: 1, search: debounce });
     const { data: customers } = useGetAllCustomerQuery(token);
     const warehouseRes = useGetAllWarehousesQuery(token);
 
@@ -422,6 +425,7 @@ const QuotationForm = () => {
                                         </label>
                                         <Select
                                             onSelect={onSelectItem}
+                                            onSearch={(value) => setSearch(value)}
                                             showSearch
                                             style={{ width: '100%' }}
                                             placeholder="Search items by name..."

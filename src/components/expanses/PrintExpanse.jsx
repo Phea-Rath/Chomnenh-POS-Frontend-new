@@ -1,33 +1,39 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { useParams } from 'react-router';
-import { useGetExpanseTypeByIdQuery } from '../../../app/Features/expanseTypesSlice';
+import { useGetExpanseByIdQuery } from '../../../app/Features/expansesSlice';
+import { toast } from 'react-toastify';
+import handleDownload from '../../services/imageDowload';
 
 const PrintExpanse = () => {
   const [data, setData] = useState({
-    expanse_no,
-    expanse_date,
-    expanse_by,
-    expanse_other,
-    amount,
+    expanse_no: '',
+    expanse_date: '',
+    expanse_by: '',
+    expanse_other: '',
+    amount: '',
     items: []
   });
+  const receiptRef = useRef();
+  const [totalAmount, setTotalAmount] = useState(0);
   const { id } = useParams();
   const token = localStorage.getItem('token');
-  const { data: expenseData } = useGetExpanseTypeByIdQuery({ id, token });
-  if (!data) return null
+  const { data: expenseData } = useGetExpanseByIdQuery({ id, token });
+  console.log(expenseData);
+
 
 
   useEffect(() => {
-    setData(expenseData?.data?.data);
+    setData(expenseData?.data);
+    const totalAmount = expenseData?.data?.items?.reduce(
+      (sum, item) => sum + Number(item.sub_total || 0),
+      0
+    );
+    setTotalAmount(totalAmount)
   }, [expenseData])
-  const totalAmount = items.reduce(
-    (sum, item) => sum + Number(item.sub_total || 0),
-    0
-  )
 
   const copyURL = () => {
     navigator.clipboard.writeText(window.location.href)
-    alert('URL copied!')
+    toast.success('URL copied!');
   }
 
   return (
@@ -36,19 +42,20 @@ const PrintExpanse = () => {
       <div className="button-group">
         <button onClick={() => window.print()}>🖨️ Print</button>
         <button onClick={copyURL}>🔗 Copy URL</button>
+        <button onClick={() => handleDownload(receiptRef, 'jpg', 'Expanse', data?.expanse_no)}>Download</button>
       </div>
 
-      <div className="receipt-container">
+      <div ref={receiptRef} className="receipt-container">
         <div className="header">
           <h1>Expense Receipt</h1>
           <p>Printed from Accounting System</p>
         </div>
 
         <div className="info">
-          <p><span>Expense No:</span> {expanse_no}</p>
-          <p><span>Date:</span> {expanse_date}</p>
-          <p><span>Created By:</span> {expanse_by}</p>
-          <p><span>Description:</span> {expanse_other}</p>
+          <p><span>Expense No:</span> {data?.expanse_no}</p>
+          <p><span>Date:</span> {data?.expanse_date}</p>
+          <p><span>Created By:</span> {data?.expanse_by}</p>
+          <p><span>Description:</span> {data?.expanse_other}</p>
         </div>
 
         <table>
@@ -62,7 +69,7 @@ const PrintExpanse = () => {
             </tr>
           </thead>
           <tbody>
-            {items?.map((item, index) => (
+            {data?.items?.map((item, index) => (
               <tr key={index}>
                 <td>{item.expanse_type_name}</td>
                 <td>{item.description}</td>
@@ -81,7 +88,7 @@ const PrintExpanse = () => {
         </table>
 
         <div className="footer">
-          <p>Generated on | www.yoursystem.com</p>
+          <p>Generated on | www.chomnenhapp.com</p>
         </div>
       </div>
 

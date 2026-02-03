@@ -197,7 +197,7 @@ const Scales = () => {
     <div>
       <div className="min-h-screen bg-transparent p-4 md:p-6">
         {/* Header Section */}
-        <div className="mb-8">
+        <div className="mb-2">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
             <div>
               <motion.h1
@@ -286,7 +286,7 @@ const Scales = () => {
 
         {/* Controls Section */}
         <div
-          className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-8"
+          className="bg-white rounded-2xl shadow-sm border border-gray-100 p-2 mb-2"
         >
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             {/* View Toggle and Search */}

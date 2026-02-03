@@ -205,9 +205,9 @@ const Warehouses = () => {
           cancelText="Cancel"
         />
 
-        <div className="mb-8">
+        <div>
           {/* Header Section */}
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 mb-8">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 mb-2">
             <div>
               <motion.h1
                 initial={{ opacity: 0, x: -20 }}
@@ -236,10 +236,10 @@ const Warehouses = () => {
 
           {/* Statistics Cards */}
           <div
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8"
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-2"
           >
             <Card className="border-0 shadow-sm bg-gradient-to-br from-blue-50 to-white">
-              <div className="p-4">
+              <div>
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-blue-600 text-sm font-semibold mb-2">Total Warehouses</p>
@@ -259,7 +259,7 @@ const Warehouses = () => {
             </Card>
 
             <Card className="border-0 shadow-sm bg-gradient-to-br from-green-50 to-white">
-              <div className="p-4">
+              <div>
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-green-600 text-sm font-semibold mb-2">Active Warehouses</p>
@@ -279,7 +279,7 @@ const Warehouses = () => {
             </Card>
 
             <Card className="border-0 shadow-sm bg-gradient-to-br from-yellow-50 to-white">
-              <div className="p-4">
+              <div>
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-yellow-600 text-sm font-semibold mb-2">Default Warehouses</p>
@@ -299,7 +299,7 @@ const Warehouses = () => {
             </Card>
 
             <Card className="border-0 shadow-sm bg-gradient-to-br from-purple-50 to-white">
-              <div className="p-4">
+              <div>
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-purple-600 text-sm font-semibold mb-2">Active Rate</p>
@@ -330,7 +330,7 @@ const Warehouses = () => {
 
           {/* Controls Section */}
           <div
-            className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-8"
+            className="bg-white rounded-2xl shadow-sm border border-gray-100 p-2 mb-2"
           >
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
               {/* View Toggle and Search */}
@@ -489,10 +489,10 @@ const Warehouses = () => {
                           </td>
                           <td className="py-4 px-6">
                             <Tag
-                              color={status === 1 ? "success" : "error"}
+                              color={status === 'stock' ? "success" : "error"}
                               className="font-semibold"
                             >
-                              {status === 1 ? "Active" : "Inactive"}
+                              {status === 'stock' ? "Active" : "Inactive"}
                             </Tag>
                           </td>
                           <td className="py-4 px-6">

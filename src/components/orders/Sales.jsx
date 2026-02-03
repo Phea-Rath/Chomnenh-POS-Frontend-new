@@ -1376,7 +1376,7 @@ const Sales = () => {
 
                 {/* Payment Method */}
                 <div className="flex items-center justify-between gap-4">
-                  <label className="label text-gray-600">វិធីសាស្រ្តបង់ប្រាក់</label>
+                  <label className="label text-gray-600">Payment Method</label>
                   <select
                     onChange={(e) =>
                       setOrders((prev) => {
@@ -1394,14 +1394,14 @@ const Sales = () => {
                     value={orders?.order_payment_method || "cash"}
                     className="w-30 px-2 py-1 border border-gray-300 rounded"
                   >
-                    <option value="cash">សាច់ប្រាក់</option>
-                    <option value="bank">ធនាគារ</option>
+                    <option value="cash">Cash</option>
+                    <option value="bank">Bank</option>
                   </select>
                 </div>
 
                 {/* Payment Status */}
                 <div className="flex items-center justify-between gap-4">
-                  <label className="label text-gray-600">ការបង់ប្រាក់</label>
+                  <label className="label text-gray-600">Payment</label>
                   <select
                     onChange={(e) => {
                       const value = e.target.value;
@@ -1423,14 +1423,14 @@ const Sales = () => {
                     value={orders?.order_payment_status || "paid"}
                     className="w-30 px-2 py-1 border border-gray-300 rounded"
                   >
-                    <option value="paid">បង់ទាំងអស់</option>
-                    <option value="cod">ជំពាក់</option>
+                    <option value="paid">Paid</option>
+                    <option value="cod">In debt</option>
                   </select>
                 </div>
 
                 {/* Customer */}
                 <div className={`flex items-center justify-between gap-4 ${orders?.sale_type === "sale" ? "hidden" : ""}`}>
-                  <label className="label text-gray-600">អតិថិជន</label>
+                  <label className="label text-gray-600">Customer</label>
                   <select
                     onChange={(e) => {
                       const customerId = Number(e.target.value);
@@ -1454,7 +1454,7 @@ const Sales = () => {
                     value={orders?.order_customer_id || 0}
                     className="w-30 px-2 py-1 border border-gray-300 rounded"
                   >
-                    <option value={0}>អតិថិជន...</option>
+                    <option value={0}>Customer...</option>
                     {customers?.data?.map((customer) => (
                       <option
                         key={customer.customer_id}
@@ -1468,7 +1468,7 @@ const Sales = () => {
 
                 {/* Payment Amount */}
                 <div className={`flex items-center justify-between gap-4 ${payment === "paid" ? "hidden" : ""}`}>
-                  <label className="label text-gray-600">បង់ប្រាក់</label>
+                  <label className="label text-gray-600">Pay</label>
                   <input
                     onChange={(e) =>
                       setOrders((prev) => {
@@ -1502,7 +1502,7 @@ const Sales = () => {
 
                 {/* Customer Phone */}
                 <div className={`flex items-center justify-between gap-4 ${orders?.sale_type !== "sale" ? "hidden" : ""}`}>
-                  <label className="label text-gray-600">លេខទូរស័ព្ទអតិថិជន</label>
+                  <label className="label text-gray-600">Customer Tel</label>
                   <input
                     onChange={(e) =>
                       setOrders((prev) => {
@@ -1526,7 +1526,7 @@ const Sales = () => {
 
                 {/* Customer Address */}
                 <div className={`${orders?.sale_type !== "sale" ? "hidden" : ""}`}>
-                  <label className="block text-gray-600 mb-1">អាស័យដ្ឋានអតិថិជន</label>
+                  <label className="block text-gray-600 mb-1">Customer Address</label>
                   <textarea
                     onChange={(e) =>
                       setOrders((prev) => {

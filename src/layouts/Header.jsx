@@ -38,12 +38,19 @@ const Header = () => {
             to="/dashboard/analystic"
             className="flex items-center gap-2 hover:opacity-80 transition-opacity"
           >
-            <h1 className="font-bold text-gray-400 text-sm">
-              {" "}
-              CHOMNENH
-              <span className="text-4xl text-warning">.</span>
-              <span className="text-info font-extrabold text-3xl">PoS</span>
-            </h1>
+            <div className="">
+              <div className="flex items-center gap-3">
+                <div className="w-5 h-5 bg-blue-600 rounded-2xl flex items-center justify-center shadow-inner shadow-blue-400">
+                  <span className="text-white font-black text-xl">C</span>
+                </div>
+                <div>
+                  <h1 className="text-slate-900 font-black text-xs leading-tight tracking-tight">
+                    CHOMNENH <span className="text-blue-600">POS</span>
+                  </h1>
+                  <p className="text-slate-400 text-[10px] uppercase font-bold tracking-[0.1em]">Management v2.0</p>
+                </div>
+              </div>
+            </div>
           </Link>
         </div>
 

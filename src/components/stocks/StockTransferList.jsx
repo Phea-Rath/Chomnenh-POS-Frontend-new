@@ -339,7 +339,7 @@ const StockTransferList = () => {
     >
       <div className="min-h-screen bg-transparent p-4 md:p-6">
         {/* Header Section */}
-        <div className="mb-8">
+        <div className="mb-2">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
             <div>
               <motion.h1
@@ -390,7 +390,7 @@ const StockTransferList = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8"
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-2"
         >
           <Card className="border-0 shadow-sm bg-gradient-to-br from-blue-500 to-blue-600">
             <div>
@@ -448,7 +448,7 @@ const StockTransferList = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="bg-white rounded-lg shadow-sm border border-gray-200 p-1 mb-8"
+          className="bg-white rounded-lg shadow-sm border border-gray-200 p-1 mb-2"
         >
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             {/* Search Input */}

@@ -401,7 +401,7 @@ const Expanses = () => {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                           <div className="flex items-center gap-2">
-                            <Link to="/expanse-print">
+                            <Link to={`/expanse-print/${exp.expanse_id}`} target="_blank">
                               <button
                                 className="inline-flex items-center px-3 py-1.5 border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-600 hover:text-white transition-colors duration-200 text-xs font-semibold"
                               >

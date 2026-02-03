@@ -53,7 +53,7 @@ const Reports = () => {
               <Link key={index} to={perm?.menu_path}>
                 <button
                   className={`
-          btn relative overflow-hidden rounded-tl-lg rounded-bl-lg group bg-white p-0
+          btn relative overflow-hidden rounded-tl-lg shadow-2xl rounded-bl-lg group bg-white p-0
           text-${color.text}
           border-[#e5e5e5]
           flex flex-col justify-center

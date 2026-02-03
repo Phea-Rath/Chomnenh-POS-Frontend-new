@@ -161,7 +161,7 @@ const Brands = () => {
     // >
     <div className="min-h-screen bg-transparent p-4">
       {/* Header Section */}
-      <div className="mb-8">
+      <div className="mb-2">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
           <div>
             <motion.h1
@@ -255,7 +255,7 @@ const Brands = () => {
           transition={{ delay: 0.2 }}
           className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-8"
         > */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-8">
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-2 mb-2">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           {/* View Toggle and Search */}
           <div className="flex flex-col sm:flex-row sm:items-center gap-4 flex-1">

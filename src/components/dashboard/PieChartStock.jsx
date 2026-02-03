@@ -79,7 +79,7 @@ export default function PieChartStock() {
         if (apiData) {
             setData([
                 // { name: 'Stock Return', value: Number(setdata?.data?.stock_return) || 0 },
-                { name: 'In Stock', value: (Number(apiData?.data?.stock_in) + Number(apiData?.data?.stock_return)) - (Number(apiData?.data?.stock_out) + Number(apiData?.data?.stock_sale) + Number(apiData?.data?.stock_waste)) || 0 },
+                { name: 'In Stock', value: (Number(apiData?.data?.stock_in) + Number(apiData?.data?.stock_return)) + (Number(apiData?.data?.stock_out) + Number(apiData?.data?.stock_sale) + Number(apiData?.data?.stock_waste)) || 0 },
                 { name: 'Stock Out', value: Number(apiData?.data?.stock_out) || 0 },
                 { name: 'Stock Sale', value: Number(apiData?.data?.stock_sale) || 0 },
                 { name: 'Stock Waste', value: Number(apiData?.data?.stock_waste) || 0 },

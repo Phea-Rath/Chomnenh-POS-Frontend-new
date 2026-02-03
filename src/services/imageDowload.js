@@ -56,7 +56,7 @@ const handleDownload = async (ref, format, title, code) => {
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
       pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
-      pdf.save(`${title}_${data.order_no}.pdf`);
+      pdf.save(`${title}_${code}.pdf`);
     } else {
       // Download as JPG or PNG
       const mimeType = format === "jpg" ? "image/jpeg" : "image/png";

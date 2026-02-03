@@ -114,7 +114,7 @@ const Management = () => {
         notification,
         setNotification
       }}>
-      {/* <ToastContainer position="top-right" autoClose={2000} /> */}
+      <ToastContainer position="top-right" autoClose={2000} />
       {loading ? <Loading /> : ""}
       <section className={`bg-sky-50 h-[100vh] flex`}>
         {/* <div className={`h-[100vh] bg-gray-50/50 absolute z-1000 w-full flex justify-center items-center ${perLoading ? '' : 'hidden'}`}>
@@ -127,7 +127,8 @@ const Management = () => {
         <div>
           <Header />
           <AlertMessage show={alert} message={renderAlertMessage(message)} status={alertStatus} className="z-1000" />
-          <main className={`h-[calc(100vh)] ${data?.data?.role_id !== 1 && "lg:w-[calc(100vw-346px)]"} pt-[86px] overflow-auto m-0 !text-black w-[100vw] p-4 bg-gray-200`}>
+          <main className={`h-[calc(100vh)] ${data?.data?.role_id !== 1 && "lg:w-[calc(100vw-346px)]"} pt-[86px] overflow-auto m-0 !text-black w-[100vw] p-4 bg-gray-200 `}>
+            <div className='absolute top-0 right-0 w-2/5 h-full bg-gradient-to-b from-blue-50/50 to-transparent pointer-events-none' />
             <Outlet />
           </main>
         </div>
