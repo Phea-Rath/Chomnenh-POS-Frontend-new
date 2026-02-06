@@ -1,156 +1,192 @@
-import React, { useEffect, useRef, useState } from 'react'
-import { IoIosSearch } from 'react-icons/io'
+import React, { useEffect, useRef, useState } from 'react';
+import { IoIosSearch } from 'react-icons/io';
+import { HiOutlinePlus, HiOutlinePencilAlt, HiOutlineTrash, HiOutlineDotsVertical } from 'react-icons/hi';
+import { toast } from 'react-toastify';
+
+// Services & Redux
 import api from '../../services/api';
 import { useOutletsContext } from '../../layouts/Management';
-import AlertBox from '../../services/AlertBox';
-import { Button, Flex, Modal } from 'antd';
-import { Link, useNavigate } from 'react-router';
 import { useGetAllMenuQuery } from '../../../app/Features/menusSlice';
-import { toast } from 'react-toastify';
-import CreateMenus from '../../views/menus/CreateMenus';
-import UpdateMenus from '../../views/menus/UpdateMenus';
 import { useGetAllPermissionQuery } from '../../../app/Features/permissionSlice';
 
+// Components
+import AlertBox from '../../services/AlertBox';
+import CreateMenus from '../../views/menus/CreateMenus';
+import UpdateMenus from '../../views/menus/UpdateMenus';
+
 const Menus = () => {
-    const [open, setOpen] = useState(false);
-    const [openResponsive, setOpenResponsive] = useState(false);
     const [data, setData] = useState([]);
-    const [menu, setUser] = useState([]);
-    const navigator = useNavigate();
+    const [filteredMenu, setFilteredMenu] = useState([]);
+    const [alertBox, setAlertBox] = useState(false);
+    const [selectedId, setSelectedId] = useState(0);
+    const [editData, setEditData] = useState({});
+
     const token = localStorage.getItem('token');
-    const [id, setId] = useState(0)
-    // const [loadings, setLoadings] = useState(false)
-    const [alertBox, setAlertBox] = useState(false)
-    const [edit, setEdit] = useState({});
-    const { setLoading, setAlert, setMessage, setAlertStatus, reload, setReload } = useOutletsContext();
+    const { setLoading, reload, setReload } = useOutletsContext();
     const { data: response, refetch, isLoading: loadings } = useGetAllMenuQuery(token);
+    const { refetch: permRefetch } = useGetAllPermissionQuery(token);
+
     const addModalRef = useRef(null);
     const updateModalRef = useRef(null);
-    const { refetch: permRefetch } = useGetAllPermissionQuery(token);
-    useEffect(() => {
 
-        // const response = await api.get("/menus", { headers: { Authorization: `Bearer ${token}` } });
-        setData(response?.data);
-        setUser(response?.data);
+    useEffect(() => {
+        setData(response?.data || []);
+        setFilteredMenu(response?.data || []);
     }, [response]);
 
-    function handleDelete(menu_id) {
+    const handleDelete = (id) => {
+        setSelectedId(id);
         setAlertBox(true);
-        setId(menu_id);
-    }
-    function handleCancel() {
-        setAlertBox(false);
-    }
-    async function handleConfirm() {
+    };
+
+    const handleConfirmDelete = async () => {
         try {
-            const response = await api.delete(`/menus/${id}`, {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                }
+            setLoading(true);
+            const res = await api.delete(`/menus/${selectedId}`, {
+                headers: { Authorization: `Bearer ${token}` }
             });
-            if (response.data.status == 200) {
-                setReload(!reload);
-                setAlertBox(false);
+            if (res.data.status === 200) {
+                toast.success('Menu removed');
                 refetch();
                 permRefetch();
-                setLoading(false);
-                toast.success(response.data.message || 'User deleted successfully');
+                setAlertBox(false);
             }
         } catch (error) {
-            setAlertBox(false);
+            toast.error('Could not delete item');
+        } finally {
             setLoading(false);
-            toast.error(error?.message || error || 'An error occurred while deleting the menu');
         }
-    }
-    function onSearch() {
-        if (event.target.value) {
-            const filterUser = data.filter((item) => item.menu_name.toLowerCase().includes(event.target.value.toLowerCase()));
-            setUser(filterUser);
-        } else {
-            setUser(data);
-        }
-    }
+    };
 
-    function handleUpdate(menu_name, menu_id, menu_path, menu_icon, menu_type) {
+    const onSearch = (e) => {
+        const query = e.target.value.toLowerCase();
+        const filtered = data.filter((item) =>
+            item.menu_name.toLowerCase().includes(query)
+        );
+        setFilteredMenu(filtered);
+    };
+
+    const openUpdate = (menu) => {
+        setEditData({
+            name: menu.menu_name,
+            id: menu.menu_id,
+            path: menu.menu_path,
+            icon: menu.menu_icon,
+            type: menu.menu_type
+        });
         updateModalRef.current?.showModal();
-        setEdit(prev => { return { ...prev, name: menu_name, id: menu_id, path: menu_path, icon: menu_icon, type: menu_type } })
+    };
 
-    }
     return (
-        <section className='px-2 md:px-10 flex flex-col gap-5'>
+        <section className="bg-white min-h-screen p-6 font-sans text-slate-700">
             <AlertBox
                 isOpen={alertBox}
-                title="Question"
-                message="Are you sure you want delete menu?"
-                onConfirm={handleConfirm}
-                onCancel={handleCancel}
-                confirmText="Ok"
-                cancelText="Cancel"
+                title="Delete Confirmation"
+                message="Are you sure you want to remove this menu item?"
+                onConfirm={handleConfirmDelete}
+                onCancel={() => setAlertBox(false)}
             />
-            <article className='flex justify-between items-end'>
-                <fieldset className="fieldset p-0 relative">
-                    <legend className="fieldset-legend text-gray-700 text-xl">Menus</legend>
-                    <input onChange={onSearch} type="text" className="input text-gray-700 bg-white border-none border-gray-400 pl-8 focus:outline-none" placeholder="ស្វែងរក. . ." />
-                    <IoIosSearch className=' absolute left-2 top-[10px] z-1 text-xl text-gray-400' />
-                </fieldset>
-                <button className="btn btn-outline btn-success" onClick={() => addModalRef.current?.showModal()}>Add New</button>
-                <dialog id="my_modal_5" ref={addModalRef} className="modal modal-bottom sm:modal-middle">
-                    <div className="modal-box bg-gray-100">
-                        <CreateMenus data={edit} onAdd={() => addModalRef.current?.close()} />
-                    </div>
-                </dialog>
-                <dialog id="my_modal_5" ref={updateModalRef} className="modal modal-bottom sm:modal-middle">
-                    <div className="modal-box bg-gray-100">
-                        <UpdateMenus dataMenu={edit} onAdd={() => updateModalRef.current?.close()} />
-                    </div>
-                </dialog>
-            </article>
-            <div className="overflow-x-auto">
-                <table className="table bg-white border-gray-500 text-black min-w-[700px]">
-                    {/* head */}
-                    <thead className='text-black'>
-                        <tr>
-                            <th>No</th>
-                            <th>Name</th>
-                            <td>Type</td>
-                            <th>Path</th>
-                            <th>Action</th>
+
+            {/* Simple Header */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+                <div>
+                    <h1 className="text-2xl font-semibold text-slate-900">Menus</h1>
+                    <p className="text-sm text-slate-500">Manage your application navigation and routes.</p>
+                </div>
+                <button
+                    className="inline-flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all shadow-sm"
+                    onClick={() => addModalRef.current?.showModal()}
+                >
+                    <HiOutlinePlus className="text-lg" />
+                    <span>Add Menu</span>
+                </button>
+            </div>
+
+            {/* Search Bar (Simple Style) */}
+            <div className="relative max-w-md mb-6">
+                <IoIosSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xl" />
+                <input
+                    onChange={onSearch}
+                    type="text"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 pl-10 pr-4 text-sm outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all"
+                    placeholder="Search by name..."
+                />
+            </div>
+
+            {/* Simple Table */}
+            <div className="border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+                <table className="w-full text-left border-collapse">
+                    <thead>
+                        <tr className="bg-slate-50 border-b border-slate-200">
+                            <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Name</th>
+                            <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Type</th>
+                            <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Route Path</th>
+                            <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Action</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        {/* row 1 */}
-                        {menu?.length == 0 ? <tr>{loadings ? <th colSpan={4} className='text-center text-info'>Loading<span className="loading loading-dots loading-xs"></span></th> :
-                            <th colSpan={4} className='text-center text-error'>Not Menu</th>}</tr>
-                            : menu?.map((menu, index) => <tr key={index}>
-                                <td>{index += 1}</td>
-                                <td>{menu.menu_name}</td>
-                                <td>
-                                    {menu.menu_type == 1 || menu.menu_type == 0 ? <span className="badge badge-warning text-white badge-sm">SideBar/Footer</span> : menu.menu_type == 2 ? <span className="badge badge-error text-white badge-sm">Home</span> : menu.menu_type == 4 ? <span className="badge badge-success text-white badge-sm">Report</span> : <span className="badge badge-info text-white badge-sm">Settings</span>}
+                    <tbody className="divide-y divide-slate-100">
+                        {loadings ? (
+                            <tr>
+                                <td colSpan={4} className="py-10 text-center text-slate-400 text-sm">Loading menus...</td>
+                            </tr>
+                        ) : filteredMenu?.length === 0 ? (
+                            <tr>
+                                <td colSpan={4} className="py-10 text-center text-slate-400 text-sm">No menus found.</td>
+                            </tr>
+                        ) : filteredMenu.map((item) => (
+                            <tr key={item.menu_id} className="hover:bg-slate-50/50 transition-colors">
+                                <td className="px-6 py-4">
+                                    <span className="font-medium text-slate-900">{item.menu_name}</span>
                                 </td>
-                                <td>
-                                    <span className="badge badge-primary badge-sm">{menu.menu_path}</span>
+                                <td className="px-6 py-4">
+                                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                        ${item.menu_type == 1 ? 'bg-blue-50 text-blue-700' :
+                                            item.menu_type == 2 ? 'bg-purple-50 text-purple-700' :
+                                                item.menu_type == 4 ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-700'}`}>
+                                        {item.menu_type == 1 ? 'Sidebar' : item.menu_type == 2 ? 'Home' : item.menu_type == 4 ? 'Report' : 'Setting'}
+                                    </span>
                                 </td>
-                                <th className='flex gap-1'>
-                                    <button className="btn btn-ghost btn-xs btn-outline btn-primary text-primary hover:text-white" onClick={() => handleUpdate(menu.menu_name, menu.menu_id, menu.menu_path, menu.menu_icon, menu.menu_type)}>edit</button>
-                                    <button className="btn btn-ghost btn-xs btn-outline btn-error text-error hover:text-white" onClick={() => handleDelete(menu.menu_id)}>delete</button>
-                                </th>
-                            </tr>)}
-
+                                <td className="px-6 py-4">
+                                    <code className="text-xs bg-slate-100 px-2 py-1 rounded text-slate-600">{item.menu_path}</code>
+                                </td>
+                                <td className="px-6 py-4 text-right">
+                                    <div className="flex justify-end gap-3">
+                                        <button
+                                            onClick={() => openUpdate(item)}
+                                            className="text-slate-400 hover:text-indigo-600 transition-colors"
+                                            title="Edit"
+                                        >
+                                            <HiOutlinePencilAlt size={18} />
+                                        </button>
+                                        <button
+                                            onClick={() => handleDelete(item.menu_id)}
+                                            className="text-slate-400 hover:text-red-600 transition-colors"
+                                            title="Delete"
+                                        >
+                                            <HiOutlineTrash size={18} />
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        ))}
                     </tbody>
-                    {/* foot */}
-                    {/* <tfoot>
-            <tr>
-              <th></th>
-              <th>Name</th>
-              <th>Job</th>
-              <th>Favorite Color</th>
-              <th></th>
-            </tr>
-          </tfoot> */}
                 </table>
             </div>
-        </section>
-    )
-}
 
-export default Menus
+            {/* Modals */}
+            <dialog ref={addModalRef} className="modal backdrop-blur-sm">
+                <div className="modal-box bg-white rounded-2xl shadow-2xl p-0 max-w-xl">
+                    <CreateMenus onAdd={() => addModalRef.current?.close()} />
+                </div>
+            </dialog>
+
+            <dialog ref={updateModalRef} className="modal backdrop-blur-sm">
+                <div className="modal-box bg-white rounded-2xl shadow-2xl p-0 max-w-xl">
+                    <UpdateMenus dataMenu={editData} onAdd={() => updateModalRef.current?.close()} />
+                </div>
+            </dialog>
+        </section>
+    );
+};
+
+export default Menus;

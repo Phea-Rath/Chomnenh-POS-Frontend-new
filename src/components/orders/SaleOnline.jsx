@@ -95,7 +95,7 @@ const Sales = () => {
   const [orderCount, setOrderCount] = useState(0);
   const [location, setLocation] = useState({ latitude: null, longitude: null });
   const [tel, setTel] = useState('');
-  const [user, setUser] = useState(localStorage.getItem('guest') || null);
+  const [user, setUser] = useState(JSON.parse(localStorage.getItem('guest')) || null);
   const [validationErrors, setValidationErrors] = useState({});
   const { data: customers } = useGetAllCustomerQuery(token);
   const [search, setSearch] = useState('');
@@ -1000,8 +1000,8 @@ const Sales = () => {
         {/* Header Section */}
         <div className="mb-2">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
-            <div className="flex items-center gap-3">
-              <div className="w-20 h-20 object-center">
+            <div className="flex items-center gap-3 p-4 bg-slate-200 rounded-[2rem] border border-slate-100">
+              <div className="w-15 h-15 object-center">
                 <img src={profile?.data?.image} alt={profile?.data?.profile_name} />
               </div>
               <div>
@@ -1011,7 +1011,7 @@ const Sales = () => {
             </div>
 
             <div className="flex items-center gap-3">
-              <Button>
+              <Button className="h-10 border-red-500 hover:border-red-500 !bg-red-500 !text-white hover:text-red-600">
                 <IoExit className="w-5 h-5 mr-2" />
                 <span onClick={() => setShowSignInModal(true)}>Logout</span>
               </Button>
@@ -1019,11 +1019,12 @@ const Sales = () => {
                 <Badge size="default" className="mr-2">
                   <Button
                     type="default"
+                    title={user?.phone_number}
                     icon={<FaUser />}
-                    className="h-10 border-blue-500 hover:border-blue-500 bg-blue-500 text-white hover:text-blue-600"
+                    className="h-10 border-green-500 hover:border-green-500 !bg-green-500 !text-white hover:text-green-600"
                     size="large"
                   >
-                    View History
+                    {user?.username}
                   </Button>
                 </Badge>
               </Link>}
@@ -1032,7 +1033,7 @@ const Sales = () => {
                   type="default"
                   icon={<PiShoppingCartBold />}
                   onClick={showDrawer}
-                  className="h-10 border-gray-300 hover:border-blue-500 hover:text-blue-600"
+                  className="h-10 border-blue-500 hover:border-blue-500 !bg-blue-500 !text-white hover:text-blue-600"
                   size="large"
                 >
                   View Cart
@@ -1131,13 +1132,14 @@ const Sales = () => {
                   whileHover={{ y: -5 }}
                   transition={{ duration: 0.2 }}
                 >
-                  <Card onClick={() => { setVisible(true); setItemId(item.id) }} className="shadow-lg hover:shadow-xl border-0 transition-all duration-300 h-full">
+                  <Card className="shadow-lg hover:shadow-xl border-0 transition-all duration-300 h-full">
                     {/* Product Image */}
                     <div className="relative mb-4 overflow-hidden rounded-lg bg-gray-100">
                       <img
                         src={item.image}
                         alt={item.name}
                         className="w-full h-48 object-contain p-4 hover:scale-105 transition-transform duration-300"
+                        onClick={() => { setVisible(true); setItemId(item.id) }}
                         onError={(e) => {
                           e.target.onerror = null;
                           e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(item.name)}&background=3b82f6&color=fff&size=256`;

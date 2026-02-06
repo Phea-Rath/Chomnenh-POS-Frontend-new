@@ -46,17 +46,20 @@ import { useGetAllItemsQuery } from '../../../app/Features/itemsSlice';
 import { useGetAllRawMaterialQuery } from '../../../app/Features/RawMaterialSlice';
 import { FaBox } from 'react-icons/fa';
 import { toast } from 'react-toastify';
+import { useGetAllProductionQuery } from '../../../app/Features/productSlice';
 
 const { Option } = Select;
 const { TextArea } = Input;
 
 const ProductionForm = () => {
     const [form] = Form.useForm();
+    const [rawMaterialForm] = Form.useForm();
     const navigate = useNavigate();
     const { id } = useParams();
     const isEditMode = !!id;
     const token = localStorage.getItem('token');
-
+    const [rawId, setRawId] = useState();
+    const [cost_per_unit, setCost] = useState();
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
     const [items, setItems] = useState([]);
@@ -72,11 +75,12 @@ const ProductionForm = () => {
     const [debounceRaw] = useDebounce(seaarchRaw, 5000);
     const { data: itemData } = useGetAllItemsQuery({ limit: 10, page: 1, search: debounceItem, token });
     const { data: rawData } = useGetAllRawMaterialQuery({ limit: 10, page: 1, search: debounceRaw, token });
+    const { refetch } = useGetAllProductionQuery({ limit: 10, page: 1, search: debounceRaw, token });
+    const [costLoading, setCostLoading] = useState(false);
+
 
     // Fetch items and raw materials
     useEffect(() => {
-        // fetchItems();
-        // fetchRawMaterials();
 
         if (isEditMode) {
             fetchProductionData();
@@ -90,41 +94,7 @@ const ProductionForm = () => {
         setRawMaterials(rawData?.data?.data);
     }, [itemData, rawData]);
 
-    // const fetchItems = async () => {
-    //     try {
-    //         const token = localStorage.getItem('token');
-    //         const response = await api.get('/items', {
-    //             headers: {
-    //                 Authorization: `Bearer ${token}`,
-    //             },
-    //         });
 
-    //         if (response.ok) {
-    //             const result = await response.json();
-    //             setItems(result.data || []);
-    //         }
-    //     } catch (error) {
-    //         console.error('Error fetching items:', error);
-    //     }
-    // };
-
-    // const fetchRawMaterials = async () => {
-    //     try {
-    //         const token = localStorage.getItem('token');
-    //         const response = await api.get('/raw_materials', {
-    //             headers: {
-    //                 Authorization: `Bearer ${token}`,
-    //             },
-    //         });
-
-    //         if (response.ok) {
-    //             const result = await response.json();
-    //             setRawMaterials(result.data?.data || []);
-    //         }
-    //     } catch (error) {
-    //         console.error('Error fetching raw materials:', error);
-    //     }
-    // };
 
     const fetchProductionData = async () => {
         setLoading(true);
@@ -140,11 +110,13 @@ const ProductionForm = () => {
                 }
             );
 
-            if (!response.ok) {
+            if (!response.status == 200) {
                 throw new Error('Failed to fetch production data');
             }
 
-            const result = await response.json();
+            const result = response.data;
+            console.log(result);
+
             const production = result.data;
 
             setCurrentProduction(production);
@@ -159,8 +131,8 @@ const ProductionForm = () => {
             });
 
             // Set selected raw materials
-            if (production.raw_materials && Array.isArray(production.raw_materials)) {
-                setSelectedRawMaterials(production.raw_materials.map(rm => ({
+            if (production?.details && Array.isArray(production.details)) {
+                setSelectedRawMaterials(production.details.map(rm => ({
                     ...rm,
                     cost_per_unit: parseFloat(rm.cost_per_unit) || 0,
                     quantity: parseFloat(rm.quantity) || 0,
@@ -173,11 +145,8 @@ const ProductionForm = () => {
             setSelectedItem(item);
         } catch (error) {
             console.error('Error fetching production:', error);
-            notification.error({
-                message: 'Error',
-                description: 'Failed to load production data. Please try again.',
-            });
-            navigate('/dashboard/production');
+            toast.error('Failed to load production data. Please try again.');
+            // navigate('/dashboard/production');
         } finally {
             setLoading(false);
         }
@@ -205,6 +174,19 @@ const ProductionForm = () => {
     // Add raw material
     const handleAddRawMaterial = (values) => {
         const rawMaterial = rawMaterials.find(rm => rm.id === values.raw_material_id);
+        const exist = selectedRawMaterials.some(i => i.raw_material_id == values.raw_material_id);
+        if (exist) {
+            toast.error('Duplicate item');
+            return;
+        }
+        if (rawMaterial.in_stock <= 0) {
+            toast.error('Item out stock');
+            return;
+        }
+        if (rawMaterial.in_stock < values.quantity) {
+            toast.error('Not enough item in stock');
+            return;
+        }
 
         const newMaterial = {
             key: Date.now(),
@@ -398,22 +380,14 @@ const ProductionForm = () => {
                 });
             }
 
-            const result = await response.json();
 
             if (response.status == 200) {
                 toast.success(isEditMode
                     ? 'Production record updated successfully!'
                     : 'Production record created successfully!',
                 );
+                refetch();
                 navigate('/dashboard/production');
-            } else {
-                // Handle validation errors
-                if (result.errors) {
-                    setFormErrors(result.errors);
-                    toast.error('Please check the form for errors.');
-                } else {
-                    throw new Error(result.message || 'Failed to save production record');
-                }
             }
         } catch (error) {
             console.error('Error saving production:', error);
@@ -447,6 +421,54 @@ const ProductionForm = () => {
             </div>
         );
     }
+
+    const handleRawMaterialChange = (materialId) => {
+        setRawId(materialId);
+
+        // reset fields when material changes
+        rawMaterialForm.setFieldsValue({
+            quantity: undefined,
+            cost_per_unit: undefined,
+        });
+    };
+
+
+    async function fetchCost(rawId, value) {
+        if (!value || !rawId) return;
+
+        try {
+            setCostLoading(true);
+            const res = await api.get(
+                `total-cost/${value}/${rawId}`,
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                }
+            );
+
+            if (res.status === 200) {
+                const cost = parseFloat(res.data?.data.totalCost) || 0;
+
+                // ✅ SET VALUE ON MODAL FORM
+                rawMaterialForm.setFieldsValue({
+                    cost_per_unit: cost,
+                });
+            }
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setCostLoading(false);
+        }
+
+    }
+
+    const handleQuantity = (e) => {
+        if (!e.target.value) return;
+        fetchCost(rawId, Number(e.target.value));
+        console.log(Number(e.target.value));
+    };
+
 
     return (
         <motion.div
@@ -641,7 +663,7 @@ const ProductionForm = () => {
                                                         min={0.01}
                                                         step={0.01}
                                                         precision={2}
-                                                        formatter={value => `$ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                                                        formatter={value => ` ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
                                                         parser={value => value.replace(/\$\s?|(,*)/g, '')}
                                                         prefix={<LuDollarSign className="text-gray-400" />}
                                                         readOnly
@@ -971,15 +993,20 @@ const ProductionForm = () => {
                 <Modal
                     title="Add Raw Material"
                     open={rawMaterialModalVisible}
-                    onCancel={() => setRawMaterialModalVisible(false)}
+                    onCancel={() => {
+                        rawMaterialForm.resetFields();
+                        setRawMaterialModalVisible(false);
+                    }}
                     footer={null}
                     width={500}
                 >
                     <Form
+                        form={rawMaterialForm}        // ✅ VERY IMPORTANT
                         layout="vertical"
                         onFinish={handleAddRawMaterial}
                         size="large"
                     >
+                        {/* RAW MATERIAL */}
                         <Form.Item
                             label="Raw Material"
                             name="raw_material_id"
@@ -989,13 +1016,18 @@ const ProductionForm = () => {
                                 placeholder="Select raw material"
                                 showSearch
                                 onSearch={(value) => setSearchRaw(value)}
+                                onChange={handleRawMaterialChange}
                                 filterOption={(input, option) =>
-                                    option.name.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                                    option.name.toLowerCase().includes(input.toLowerCase())
                                 }
                                 optionLabelProp="name"
                             >
                                 {getAvailableRawMaterials()?.map(material => (
-                                    <Option key={material.id} value={material.id} name={material.material_name}>
+                                    <Option
+                                        key={material.id}
+                                        value={material.id}
+                                        name={material.material_name}
+                                    >
                                         <div className="flex items-center gap-3 py-1">
                                             <Avatar
                                                 size="small"
@@ -1012,7 +1044,7 @@ const ProductionForm = () => {
                                                 </div>
                                             </div>
                                             <Tag color="blue" className="ml-auto">
-                                                ${material.material_cost}
+                                                {material.in_stock}
                                             </Tag>
                                         </div>
                                     </Option>
@@ -1021,49 +1053,65 @@ const ProductionForm = () => {
                         </Form.Item>
 
                         <Row gutter={16}>
+                            {/* QUANTITY */}
                             <Col span={12}>
                                 <Form.Item
                                     label="Quantity"
                                     name="quantity"
                                     rules={[
                                         { required: true, message: 'Please enter quantity' },
-                                        { type: 'number', min: 0.01, message: 'Quantity must be greater than 0' }
+                                        { type: 'number', min: 1, message: 'Quantity must be greater than 0' }
                                     ]}
                                 >
                                     <InputNumber
-                                        placeholder="0.00"
                                         className="w-full"
-                                        min={0.01}
-                                        step={0.01}
-                                        precision={2}
+                                        min={1}
+                                        step={1}
+                                        precision={0}
+                                        // onChange={}   // ✅ API call here
+                                        onBlur={handleQuantity}
                                     />
                                 </Form.Item>
                             </Col>
 
+                            {/* COST PER UNIT */}
                             <Col span={12}>
-                                <Form.Item
-                                    label="Cost per Unit"
-                                    name="cost_per_unit"
-                                    rules={[
-                                        { required: true, message: 'Please enter cost per unit' },
-                                        { validator: validateCost }
-                                    ]}
-                                >
-                                    <InputNumber
-                                        placeholder="0.00"
-                                        className="w-full"
-                                        min={0.01}
-                                        step={0.01}
-                                        precision={2}
-                                        formatter={value => `$ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                                        parser={value => value.replace(/\$\s?|(,*)/g, '')}
-                                    />
-                                </Form.Item>
+                                <Row>
+
+                                    <Form.Item
+                                        label="Cost per Unit"
+                                        name="cost_per_unit"
+                                        rules={[
+                                            { required: true, message: 'Please enter cost per unit' },
+                                            { validator: validateCost },
+                                        ]}
+                                    >
+                                        <InputNumber
+                                            className="w-full"
+                                            min={0.01}
+                                            step={0.01}
+                                            precision={2}
+                                            disabled={costLoading}
+                                            formatter={(value) =>
+                                                `$ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+                                            }
+                                            parser={(value) =>
+                                                value.replace(/\$\s?|(,*)/g, '')
+                                            }
+                                        />
+                                    </Form.Item>
+                                    <Spin spinning={costLoading} />
+                                </Row>
                             </Col>
                         </Row>
 
                         <div className="flex justify-end gap-2 pt-4">
-                            <Button onClick={() => setRawMaterialModalVisible(false)}>
+                            <Button
+                                onClick={() => {
+                                    rawMaterialForm.resetFields();
+                                    setRawMaterialModalVisible(false);
+                                }}
+                            >
                                 Cancel
                             </Button>
                             <Button type="primary" htmlType="submit">
@@ -1072,6 +1120,7 @@ const ProductionForm = () => {
                         </div>
                     </Form>
                 </Modal>
+
             </div>
         </motion.div>
     );

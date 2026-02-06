@@ -85,8 +85,8 @@ const Home = () => {
 
                     {/* Icon Section */}
                     <div className="flex justify-between items-start">
-                      <div className={`p-4 rounded-2xl ${color.bg} ${color.icon} text-2xl transition-transform duration-500 group-hover:rotate-[360deg]`}>
-                        {renderIcon(perm.menu_icon)}
+                      <div className={`p-4 rounded-2xl !${color.bg} ${color.icon} text-2xl transition-transform duration-500 group-hover:rotate-[360deg]`}>
+                        <img src={perm?.menu_icon} alt="" />
                       </div>
                       <div className={`text-[10px] uppercase tracking-widest font-bold px-3 py-1 rounded-full ${color.tag} ${color.icon}`}>
                         Active

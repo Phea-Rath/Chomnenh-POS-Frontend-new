@@ -19,13 +19,7 @@ import { useGetPermissionByIdQuery } from "../../app/Features/permissionSlice";
 
 const { Title, Text } = Typography;
 
-const iconComponents = {
-  HiHome, HiShoppingBag, PiShoppingCartBold, BsInboxesFill, BsTagsFill, BsPaletteFill,
-  MdCategory, MdDashboard, MdStorefront, IoColorPaletteSharp, IoStatsChart, IoDocumentText,
-  GiResize, GiMoneyStack, GiProfit, AiFillLike, AiFillPieChart, FaBalanceScaleLeft,
-  FaRegUserCircle, FaUsers, RiStore3Line, RiLineChartFill, GrDocumentStore,
-  GrSettingsOption, FaMoneyBillTrendUp,
-};
+
 
 const Sidebar = () => {
   const { setSidebar, sidebar } = useOutletsContext();
@@ -42,6 +36,7 @@ const Sidebar = () => {
   useEffect(() => {
     const menuData = JSON.parse(localStorage.getItem("menus")) ?? permData?.data;
     if (menuData?.length) {
+
       const menus = menuData?.filter((i) => i.menu_type == 1 || (i.menu_type == 0 && i.menu_id != 4));
       setMenu(menus);
     }
@@ -51,7 +46,7 @@ const Sidebar = () => {
 
   const CustomNavLink = ({ item }) => {
     const isActive = location.pathname === item.menu_path;
-    const Icon = iconComponents[item.menu_icon] || MdDashboard;
+
 
     return (
       <div
@@ -62,8 +57,8 @@ const Sidebar = () => {
             : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900'}`}
       >
         <div className={`p-2 rounded-xl transition-all duration-300 
-          ${isActive ? 'bg-white/20' : 'bg-slate-50 group-hover:bg-white'}`}>
-          <Icon className={`text-lg ${isActive ? 'text-white' : 'text-slate-500'}`} />
+          ${isActive ? 'bg-white/50' : 'bg-slate-50 group-hover:bg-white'}`}>
+          <img src={item.menu_icon} alt="" />
         </div>
 
         <span className="font-semibold text-[14px] flex-1 tracking-tight">
@@ -83,7 +78,7 @@ const Sidebar = () => {
 
 
       {/* Profile Card Simplified */}
-      <div className="mx-6 mb-6 p-4 bg-slate-50 rounded-[2rem] flex items-center gap-3 border border-slate-100">
+      <div className="m-6 p-4 bg-slate-200 rounded-[2rem] flex items-center gap-3 border border-slate-100">
         <Badge dot color="#10B981" offset={[-5, 35]}>
           <Avatar
             size={45}
@@ -98,7 +93,7 @@ const Sidebar = () => {
             {user?.profile_name || "Admin"}
           </p>
           <p className="text-slate-400 text-xs font-medium uppercase tracking-tighter">
-            {user?.role || "Manager"}
+            {"Company"}
           </p>
         </div>
       </div>

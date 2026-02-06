@@ -116,7 +116,7 @@ const CategoryList = () => {
             </h3>
             <div className="flex items-center gap-2 text-sm text-gray-600">
               <FaUser className="text-gray-400" />
-              <span>Created by: {category.created_by}</span>
+              <span>Created by: {category.created_by_name}</span>
             </div>
           </div>
 
@@ -186,69 +186,6 @@ const CategoryList = () => {
         </div>
       </div>
 
-      {/* Statistics Cards */}
-      {/* <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8"
-        >
-          <Card className="border-0 shadow-sm bg-gradient-to-br from-purple-500 to-purple-600 text-white">
-            <div className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-purple-100 text-sm font-medium mb-2">Total Categories</p>
-                  <p className="text-3xl font-bold text-white">
-                    {stats.totalCategories}
-                  </p>
-                </div>
-                <div className="p-3 bg-purple-400/20 rounded-full">
-                  <FaFolder className="text-2xl text-purple-200" />
-                </div>
-              </div>
-            </div>
-          </Card>
-
-          <Card className="border-0 shadow-sm bg-gradient-to-br from-blue-500 to-blue-600 text-white">
-            <div className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-blue-100 text-sm font-medium mb-2">Active Categories</p>
-                  <p className="text-3xl font-bold text-white">
-                    {stats.activeCategories}
-                  </p>
-                </div>
-                <div className="p-3 bg-blue-400/20 rounded-full">
-                  <FaTags className="text-2xl text-blue-200" />
-                </div>
-              </div>
-            </div>
-          </Card>
-
-          <Card className="border-0 shadow-sm bg-gradient-to-br from-pink-500 to-pink-600 text-white">
-            <div className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-pink-100 text-sm font-medium mb-2">Recent Categories</p>
-                  <p className="text-3xl font-bold text-white">
-                    {stats.recentCategories}
-                  </p>
-                </div>
-                <div className="p-3 bg-pink-400/20 rounded-full">
-                  <FaUser className="text-2xl text-pink-200" />
-                </div>
-              </div>
-            </div>
-          </Card>
-        </motion.div> */}
-
-      {/* Controls Section */}
-      {/* <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-8"
-        > */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-2 mb-2">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           {/* View Toggle and Search */}
@@ -340,7 +277,7 @@ const CategoryList = () => {
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-2 text-gray-600">
                           <FaUser className="text-gray-400" />
-                          {cat.created_by}
+                          {cat.created_by_name}
                         </div>
                       </td>
                       <td className="px-6 py-4">
@@ -400,7 +337,7 @@ const CategoryList = () => {
           </div>
         ) : (
           // Grid View
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 2xl:grid-cols-6 gap-3">
             {filteredCategory.map((cat, index) => (
               <CategoryCard key={cat.category_id} category={cat} index={index} />
             ))}

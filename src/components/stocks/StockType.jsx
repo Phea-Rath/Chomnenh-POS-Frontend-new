@@ -109,7 +109,7 @@ const StockType = () => {
                 <tr>
                   <th>No</th>
                   <th>Stock Type Name</th>
-                  <th>created_by</th>
+                  <th>created_by_name</th>
                   {/* <th>Action</th> */}
                 </tr>
               </thead>
@@ -130,10 +130,10 @@ const StockType = () => {
                     </Empty>
                   </td>
                 </tr>
-                  : stock_types.map(({ stock_type_id, stock_type_name, created_by }, index) => <tr key={index}>
+                  : stock_types.map(({ stock_type_id, stock_type_name, created_by_name }, index) => <tr key={index}>
                     <th>{index + 1}</th>
                     <td>{stock_type_name}</td>
-                    <td>{created_by == 0 ? <Tag color='success'>default</Tag> : created_by}</td>
+                    <td>{created_by_name == 0 ? <Tag color='success'>default</Tag> : created_by_name}</td>
                     {/* <th className='flex gap-1'>
                       <button className="btn btn-ghost btn-xs btn-outline btn-accent text-accent hover:text-white">details</button>
                       <button className="btn btn-ghost btn-xs btn-outline btn-primary text-primary hover:text-white" onClick={() => handleUpdate(stock_type_id, stock_type_name)}>edit</button>

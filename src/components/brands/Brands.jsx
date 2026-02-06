@@ -94,6 +94,8 @@ const Brands = () => {
     setEdit(prev => { return { ...prev, name: name, id: id } })
   }
 
+
+
   const BrandCard = ({ brand, index }) => (
     // <motion.div
     //   initial={{ opacity: 0, scale: 0.9 }}
@@ -122,7 +124,7 @@ const Brands = () => {
           </h3>
           <div className="flex items-center gap-2 text-sm text-gray-600">
             <FaUser className="text-gray-400" />
-            <span>Created by: {brand.created_by}</span>
+            <span>Created by: {brand.created_by_name}</span>
           </div>
         </div>
 
@@ -174,7 +176,7 @@ const Brands = () => {
               </div>
               Brand Management
             </motion.h1>
-            <p className="text-gray-600 text-lg">
+            <p className="text-gray-600 text-md">
               Manage your product brands and categories
             </p>
           </div>
@@ -191,70 +193,6 @@ const Brands = () => {
           </div>
         </div>
       </div>
-
-      {/* Statistics Cards */}
-      {/* <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8"
-        >
-          <Card className="border-0 shadow-sm bg-gradient-to-br from-blue-500 to-blue-600 text-white">
-            <div className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-blue-100 text-sm font-medium mb-2">Total Brands</p>
-                  <p className="text-3xl font-bold text-white">
-                    {stats.totalBrands}
-                  </p>
-                </div>
-                <div className="p-3 bg-blue-400/20 rounded-full">
-                  <FaTags className="text-2xl text-blue-200" />
-                </div>
-              </div>
-            </div>
-          </Card>
-
-          <Card className="border-0 shadow-sm bg-gradient-to-br from-green-500 to-green-600 text-white">
-            <div className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-green-100 text-sm font-medium mb-2">Active Brands</p>
-                  <p className="text-3xl font-bold text-white">
-                    {stats.activeBrands}
-                  </p>
-                </div>
-                <div className="p-3 bg-green-400/20 rounded-full">
-                  <FaBox className="text-2xl text-green-200" />
-                </div>
-              </div>
-            </div>
-          </Card>
-
-          <Card className="border-0 shadow-sm bg-gradient-to-br from-purple-500 to-purple-600 text-white">
-            <div className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-purple-100 text-sm font-medium mb-2">Recent Brands</p>
-                  <p className="text-3xl font-bold text-white">
-                    {stats.recentBrands}
-                  </p>
-                </div>
-                <div className="p-3 bg-purple-400/20 rounded-full">
-                  <FaUser className="text-2xl text-purple-200" />
-                </div>
-              </div>
-            </div>
-          </Card>
-        </motion.div> */}
-
-      {/* Controls Section */}
-      {/* <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-8"
-        > */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-2 mb-2">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           {/* View Toggle and Search */}
@@ -268,7 +206,7 @@ const Brands = () => {
                   : "text-gray-600 hover:text-gray-800"
                   }`}
               >
-                <IoIosList className="text-lg" />
+                <IoIosList className="text-md" />
                 <span>List View</span>
               </button>
               <button
@@ -278,7 +216,7 @@ const Brands = () => {
                   : "text-gray-600 hover:text-gray-800"
                   }`}
               >
-                <IoIosGrid className="text-lg" />
+                <IoIosGrid className="text-md" />
                 <span>Grid View</span>
               </button>
             </div>
@@ -346,7 +284,7 @@ const Brands = () => {
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-2 text-gray-600">
                           <FaUser className="text-gray-400" />
-                          {brand.created_by}
+                          {brand.created_by_name}
                         </div>
                       </td>
                       <td className="px-6 py-4">
@@ -406,7 +344,7 @@ const Brands = () => {
           </div>
         ) : (
           // Grid View
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-5 2xl:grid-cols-6 gap-3">
             {filteredBrands.map((brand, index) => (
               <BrandCard key={brand.brand_id} brand={brand} index={index} />
             ))}
@@ -444,6 +382,7 @@ const Brands = () => {
           </div>
         )}
         {/* </motion.div> */}
+
       </div>
       {/* Modals */}
       <dialog id="my_modal_5" ref={addModalRef} className="modal modal-bottom sm:modal-middle">

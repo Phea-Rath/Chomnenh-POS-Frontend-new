@@ -1,95 +1,135 @@
-import React, { use, useEffect, useState } from 'react'
+import React, { useState } from 'react';
+import { FaWarehouse, FaCheck, FaTimes, FaInfoCircle, FaHdd } from 'react-icons/fa';
+import { Input, Button, Radio, Divider } from 'antd';
+import { toast } from 'react-toastify';
+
+// Components & Services
 import AlertBox from '../../services/AlertBox';
 import { useOutletsContext } from '../../layouts/Management';
 import { useGetAllWarehousesQuery, useCreateWarehouseMutation } from '../../../app/Features/warehousesSlice';
-import { toast } from 'react-toastify';
 
 const CreateWarehouses = ({ onAdd }) => {
-  const { setLoading, loading, setAlert, setMessage, setAlertStatus, reload, setReload } = useOutletsContext();
+  const { setLoading } = useOutletsContext();
   const [alertBox, setAlertBox] = useState(false);
-  const [warehouses, setWarehouses] = useState({ warehouse_name: "", created_by: "", status: "stock" });
+  const [warehouses, setWarehouses] = useState({ warehouse_name: "", created_by: 0, status: "stock" });
+
   const token = localStorage.getItem('token');
   const { refetch } = useGetAllWarehousesQuery(token);
   const [createWarehouse] = useCreateWarehouseMutation();
 
-  async function handleConfirm() {
+  const handleConfirm = async () => {
     try {
       setLoading(true);
-      setAlertBox(false);
-      const response = await createWarehouse({ itemData: warehouses, token });
-      if (response?.data.status === 200) {
-        setAlertBox(false);
+      const response = await createWarehouse({ itemData: warehouses, token }).unwrap();
+      if (response?.status === 200 || response) {
         refetch();
-        toast.success(response.data.message || 'Warehouse created successfully');
-        setLoading(false);
+        toast.success('System record created');
         onAdd();
-      } else {
-        throw new Error(response.error?.data?.message || "Failed to create warehouse");
       }
     } catch (error) {
-      toast.error(error?.message || error || 'An error occurred while creating the warehouse');
+      toast.error('System error: Failed to initialize');
+    } finally {
       setLoading(false);
       setAlertBox(false);
-
     }
-  }
-
-  function handleSubmit() {
-    setAlertBox(true);
-    if (!warehouses.status) {
-      setWarehouses(prev => { return { ...prev, status: "stock" } });
-    }
-  }
-
-  function handleCancel() {
-    setAlertBox(false);
-  }
-
-  function onWarehouseName(e) {
-    setWarehouses(prev => { return { ...prev, warehouse_name: e.target.value, created_by: 0 } });
-  }
-  function onWarehouseStatus(e) {
-    setWarehouses(prev => { return { ...prev, status: e.target.value || "stock" } });
-  }
+  };
 
   return (
-    <section>
+    <section className="bg-[#f5f5f7] rounded-lg overflow-hidden border border-[#d2d2d7] shadow-lg font-sans">
       <AlertBox
         isOpen={alertBox}
-        title="Question"
-        message="Are you sure you want create warehouse?"
+        title="System Confirmation"
+        message={`Are you sure you want to register "${warehouses.warehouse_name}"?`}
         onConfirm={handleConfirm}
-        onCancel={handleCancel}
-        confirmText="Ok"
-        cancelText="Cancel"
+        onCancel={() => setAlertBox(false)}
       />
-      <fieldset className="fieldset w-full text-black bg-transparent">
-        <legend className="fieldset-legend text-xl text-black">Create wherehouse</legend>
-        <article className='flex gap-5 items-center'>
-          <nav className='flex flex-col gap-3 flex-1'>
-            <label className="label">Wherehouse name</label>
-            <input type="text" onChange={onWarehouseName} className="input bg-transparent border-gray-400" placeholder="Enter werehouse name here. . ." />
-            <label className="label">Status</label>
-            <div className='flex gap-2'>
-              <input type="radio" onChange={onWarehouseStatus} name="radio-createware" value="stock" className="radio radio-info checked:bg-transparent" defaultChecked />
-              <label className="label">Stock</label>
-              <input type="radio" onChange={onWarehouseStatus} name="radio-createware" value='none' className="radio radio-info checked:bg-transparent" />
-              <label className="label">None</label>
+
+      {/* System Title Bar */}
+      <div className="bg-white px-5 py-3 border-b border-[#d2d2d7] flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <FaHdd className="text-slate-500" />
+          <span className="text-[13px] font-semibold text-slate-700">Add New Storage Entity</span>
+        </div>
+        <div className="flex gap-1.5">
+          <div className="w-3 h-3 rounded-full bg-[#ff5f57]" />
+          <div className="w-3 h-3 rounded-full bg-[#ffbd2e]" />
+          <div className="w-3 h-3 rounded-full bg-[#28c940]" />
+        </div>
+      </div>
+
+      <div className="p-6 bg-[#f5f5f7]">
+        <div className="bg-white border border-[#d2d2d7] rounded-md p-6 space-y-6 shadow-sm">
+
+          {/* Form Field 1 */}
+          <div className="grid grid-cols-3 items-center gap-4">
+            <label className="text-[13px] text-right font-medium text-slate-600">
+              Entity Name:
+            </label>
+            <div className="col-span-2">
+              <Input
+                size="small"
+                placeholder="Enter identifier..."
+                value={warehouses.warehouse_name}
+                onChange={(e) => setWarehouses({ ...warehouses, warehouse_name: e.target.value })}
+                className="rounded border-[#d2d2d7] focus:border-[#007aff] focus:ring-1 focus:ring-[#007aff] hover:border-[#b1b1b6] text-[13px]"
+              />
             </div>
-          </nav>
-        </article>
-        <div className='flex items-end gap-2'>
-          <button onClick={handleSubmit} className="btn btn-success mt-4 flex-1">Add</button>
-          <div className="modal-action">
-            <form method="dialog">
-              {/* if there is a button, it will close the modal */}
-              <button className="btn btn-error">Close</button>
-            </form>
+          </div>
+
+          <Divider className="my-0 opacity-50" />
+
+          {/* Form Field 2 */}
+          <div className="grid grid-cols-3 items-start gap-4">
+            <label className="text-[13px] text-right font-medium text-slate-600 pt-1">
+              Operational Status:
+            </label>
+            <div className="col-span-2 space-y-3">
+              <Radio.Group
+                value={warehouses.status}
+                onChange={(e) => setWarehouses({ ...warehouses, status: e.target.value })}
+                className="flex flex-col gap-2"
+              >
+                <Radio value="stock" className="text-[13px]">
+                  <span className="font-semibold">Stocked</span>
+                  <p className="text-[11px] text-slate-400 -mt-1 leading-tight">Entity will be available for inventory indexing.</p>
+                </Radio>
+                <Radio value="none" className="text-[13px]">
+                  <span className="font-semibold">Disabled</span>
+                  <p className="text-[11px] text-slate-400 -mt-1 leading-tight">Entity will be created but remain inactive.</p>
+                </Radio>
+              </Radio.Group>
+            </div>
           </div>
         </div>
-      </fieldset>
-    </section>
-  )
-}
 
-export default CreateWarehouses
+        {/* System Message */}
+        <div className="mt-4 flex gap-2 items-start px-1 text-slate-500">
+          <FaInfoCircle className="mt-0.5 text-[#007aff]" />
+          <p className="text-[11px] leading-relaxed">
+            Note: Changes to system entities may take a few moments to propagate across all nodes in the management cluster.
+          </p>
+        </div>
+
+        {/* Footer Actions */}
+        <div className="mt-6 flex justify-end gap-2 border-t border-[#d2d2d7] pt-4">
+          <form method="dialog">
+            <button
+              onClick={onAdd}
+              className="px-4 py-1 rounded bg-white border border-[#d2d2d7] text-[13px] text-slate-700 hover:bg-slate-50 active:bg-slate-100 transition-colors"
+            >
+              Cancel
+            </button>
+          </form>
+          <button
+            onClick={() => setAlertBox(true)}
+            className="px-4 py-1 rounded bg-[#007aff] border border-[#0070e0] text-[13px] text-white font-medium hover:bg-[#006ee0] active:bg-[#0062c9] shadow-sm transition-colors"
+          >
+            Create Record
+          </button>
+        </div>
+      </div>
+    </section>
+  );
+};
+
+export default CreateWarehouses;

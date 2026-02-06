@@ -1,79 +1,146 @@
-import React, { useEffect, useState } from 'react'
-import api from '../../services/api';
+import React, { useEffect, useState } from 'react';
+import { FaEdit, FaCheck, FaTimes, FaHistory } from 'react-icons/fa';
+import { motion } from 'framer-motion';
+import { Input, Button, Tooltip, Tag } from 'antd';
+import { toast } from 'react-toastify';
+
+// Components & Services
 import AlertBox from '../../services/AlertBox';
 import { useOutletsContext } from '../../layouts/Management';
 import { useGetAllBrandQuery, useUpdateBrandMutation } from '../../../app/Features/brandsSlice';
-import { toast } from 'react-toastify';
-
 
 const UpdateBrands = ({ onAdd, dataBrand }) => {
-  const { setLoading, loading, setAlert, setMessage, setAlertStatus, reload, setReload } = useOutletsContext();
+  const { setLoading } = useOutletsContext();
   const [alertBox, setAlertBox] = useState(false);
-  const [brands, setBrands] = useState({ brand_name: "", created_by: "" });
+  const [brands, setBrands] = useState({ brand_name: "", created_by: 0 });
+
   const token = localStorage.getItem('token');
   const { refetch } = useGetAllBrandQuery(token);
-  const [updateBrand, { data, isLoading, error, message }] = useUpdateBrandMutation();
-  useEffect(() => {
-    setBrands({ brand_name: dataBrand.name || '', });
-  }, [dataBrand])
+  const [updateBrand] = useUpdateBrandMutation();
 
-  async function handleConfirm() {
+  // Sync state with incoming dataBrand prop
+  useEffect(() => {
+    if (dataBrand) {
+      setBrands({
+        brand_name: dataBrand.name || '',
+        created_by: 0
+      });
+    }
+  }, [dataBrand]);
+
+  const handleConfirm = async () => {
+    if (!brands.brand_name.trim()) {
+      toast.warning('Brand name cannot be empty');
+      return;
+    }
+
     try {
       setLoading(true);
-      await updateBrand({ id: dataBrand.id, itemData: brands, token });
+      await updateBrand({ id: dataBrand.id, itemData: brands, token }).unwrap();
       refetch();
-      if (!error && !isLoading) {
-        setLoading(false);
-        toast.success('Brand updated successfully');
-        onAdd();
-        setAlertBox(false);
-      } else {
-        toast.error('Failed to update brand');
-      }
+      toast.success('Brand updated successfully');
+      setAlertBox(false);
+      onAdd(); // Close modal
     } catch (error) {
-      toast.error(error?.message || error || 'An error occurred while updating the brand');
+      toast.error(error?.data?.message || 'Failed to update brand');
+    } finally {
       setLoading(false);
     }
-  }
-  function handleSubmit() {
-    setAlertBox(true);
-  }
-
-  function handleCancel() {
-    setAlertBox(false);
-  }
+  };
 
   return (
-    <section>
+    <section className="bg-white overflow-hidden">
+      {/* Alert Confirmation */}
       <AlertBox
         isOpen={alertBox}
-        title="Question"
-        message="Are you sure you want update brand?"
+        title="Save Changes?"
+        message={`Are you sure you want to rename "${dataBrand.name}" to "${brands.brand_name}"?`}
         onConfirm={handleConfirm}
-        onCancel={handleCancel}
-        confirmText="Ok"
-        cancelText="Cancel"
+        onCancel={() => setAlertBox(false)}
+        confirmText="Save Changes"
+        cancelText="Discard"
       />
-      <fieldset className="fieldset w-full text-black bg-transparent">
-        <legend className="fieldset-legend text-xl text-black">Update Brand</legend>
-        <article className='flex gap-5 items-center'>
-          <nav className='flex flex-col gap-3 flex-1'>
-            <label className="label">Brand name</label>
-            <input type="text" defaultValue={brands.brand_name} onChange={(e) => setBrands(prev => { return { ...prev, brand_name: e.target.value, created_by: 0 } })} className="input bg-transparent border-gray-400" placeholder="Enter brand name here. . ." />
-          </nav>
-        </article>
-        <div className='flex items-end gap-2'>
-          <button onClick={handleSubmit} className="btn btn-success mt-4 flex-1">Submit</button>
-          <div className="modal-action">
-            <form method="dialog">
-              {/* if there is a button, it will close the modal */}
-              <button className="btn btn-error">Close</button>
-            </form>
+
+      {/* Header Section */}
+      <div className="p-8 bg-gradient-to-r from-amber-50 to-orange-50 border-b border-amber-100 flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 bg-white rounded-2xl shadow-sm flex items-center justify-center text-amber-600">
+            <FaEdit className="text-xl" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-black text-slate-800 leading-none">Edit Brand</h2>
+            <p className="text-slate-500 text-sm mt-1 font-medium">Update manufacturer details</p>
           </div>
         </div>
-      </fieldset>
-    </section>
-  )
-}
+        <div className="hidden sm:block">
+          <Tag color="amber" className="rounded-full px-4 py-1 font-bold border-none bg-amber-200/50 text-amber-700">
+            ID: #{dataBrand.id}
+          </Tag>
+        </div>
+      </div>
 
-export default UpdateBrands
+      {/* Body Section */}
+      <div className="p-8">
+        <div className="space-y-6">
+          <div>
+            <div className="flex justify-between items-center mb-3">
+              <label className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">
+                Brand Name
+              </label>
+              {dataBrand.name !== brands.brand_name && (
+                <span className="text-[10px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded italic">
+                  Modified
+                </span>
+              )}
+            </div>
+            <Input
+              size="large"
+              placeholder="Enter brand name..."
+              value={brands.brand_name}
+              onChange={(e) => setBrands(prev => ({ ...prev, brand_name: e.target.value }))}
+              className="h-14 rounded-2xl border-slate-200 bg-slate-50/50 hover:bg-white focus:bg-white transition-all font-medium text-lg px-6"
+            />
+          </div>
+
+          <div className="flex items-start gap-3 bg-slate-50 p-4 rounded-2xl border border-slate-100">
+            <FaHistory className="text-slate-400 mt-1" />
+            <div>
+              <p className="text-xs text-slate-500 font-medium leading-relaxed">
+                Original Name: <span className="text-slate-800 font-bold">{dataBrand.name}</span>
+              </p>
+              <p className="text-[10px] text-slate-400 font-medium">
+                This change will reflect across all products associated with this brand.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="mt-10 flex flex-col sm:flex-row gap-3">
+          <Button
+            type="primary"
+            icon={<FaCheck />}
+            onClick={() => setAlertBox(true)}
+            disabled={dataBrand.name === brands.brand_name}
+            className={`h-14 flex-1 rounded-2xl font-bold text-base order-2 sm:order-1 border-none shadow-lg transition-all
+                ${dataBrand.name === brands.brand_name
+                ? 'bg-slate-200 text-slate-400 shadow-none'
+                : 'bg-slate-900 hover:bg-blue-600 text-white shadow-slate-200'}`}
+          >
+            Update Brand
+          </Button>
+
+          <form method="dialog" className="order-1 sm:order-2">
+            <Button
+              icon={<FaTimes />}
+              className="h-14 w-full sm:w-14 rounded-2xl border-slate-200 text-slate-400 hover:text-rose-500 hover:border-rose-100 hover:bg-rose-50 flex items-center justify-center font-bold"
+              onClick={onAdd}
+            />
+          </form>
+        </div>
+      </div>
+    </section>
+  );
+};
+
+export default UpdateBrands;

@@ -8,13 +8,7 @@ import { FcCurrencyExchange } from "react-icons/fc";
 import ExchangeRate from "../ExchangeRate";
 import { useGetPermissionByIdQuery } from "../../../app/Features/permissionSlice";
 import { useGetUserLoginQuery } from "../../../app/Features/usersSlice";
-const iconComponents = {
-  MdManageAccounts: MdManageAccounts,
-  BsPersonRolodex: BsPersonRolodex,
-  BsMenuButtonWideFill: BsMenuButtonWideFill,
-  FcCurrencyExchange: FcCurrencyExchange,
-  GiPadlock: GiPadlock,
-};
+
 const colors = [
   { main: "yellow-500", light: "yellow-50", text: "yellow-600" },
   { main: "blue-500", light: "blue-50", text: "blue-600" },
@@ -39,10 +33,7 @@ const Settings = () => {
     console.log(userLogin);
 
   }, [data, userLogin]);
-  const renderIcon = (iconName) => {
-    const IconComponent = iconComponents[String(iconName)];
-    return IconComponent ? <IconComponent /> : <AiFillProduct />; // Default icon
-  };
+
   return (
     <section className="p-2 md:px-20">
       {userLogin?.data?.role_id == 2 || userLogin?.data?.role_id == 3 && <ExchangeRate />}
@@ -68,7 +59,7 @@ const Settings = () => {
                 ></div>
                 <div className="flex flex-col justify-center items-center space-y-2 absolute w-full h-full z-3">
                   <div className={`text-4xl text-${color.main}`}>
-                    {renderIcon(perm.menu_icon)}
+                    <img src={perm?.menu_icon} alt="" />
                   </div>
                   <h1>{perm?.menu_name}</h1>
                 </div>

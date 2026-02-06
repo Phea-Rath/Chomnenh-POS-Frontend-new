@@ -24,13 +24,17 @@ import { useGetAllSupplierQuery } from "../../../app/Features/suppliesSlice";
 import { toast } from "react-toastify";
 import { useNavigate, useParams } from "react-router";
 import { useGetAllPurchaseQuery } from "../../../app/Features/purchasesSlice";
-import { DatePicker, Input, Select, Card, Badge, Tag, Divider } from "antd";
+import { DatePicker, Input, Select, Card, Badge, Tag, Divider, Radio } from "antd";
 const { Option } = Select;
 import dayjs from "dayjs";
 import { motion } from "framer-motion";
 import { useGetAllSaleQuery } from "../../../app/Features/salesSlice";
 import { useDebounce } from "use-debounce";
-
+import { useGetAllRawMaterialQuery } from "../../../app/Features/RawMaterialSlice";
+const options = [
+  { label: 'Products', value: 0, className: 'label-1' },
+  { label: 'Raw Materials', value: 1, className: 'label-2' },
+];
 const CreatePurchase = () => {
   const { id: purchaseId } = useParams();
   const isEditMode = !!purchaseId;
@@ -53,9 +57,11 @@ const CreatePurchase = () => {
   const navigator = useNavigate();
   const token = localStorage.getItem("token");
   const [items, setItems] = useState([]);
+  const [itemType, setValue4] = useState(0);
   const [suppliers, setSuppliers] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredItems, setFilteredItems] = useState([]);
+  const [filteredRaw, setFilteredRaw] = useState([]);
   const [showItemModal, setShowItemModal] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
   const [quantity, setQuantity] = useState(1);
@@ -63,8 +69,10 @@ const CreatePurchase = () => {
   const [attributes, setAttributes] = useState([]);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentAmount, setPaymentAmount] = useState(0);
+  const [rawMaterials, setRawMaterials] = useState([]);
   const [debouncedSearch] = useDebounce(searchTerm, 500);
   const { data: itemData } = useGetAllItemsQuery({ token, limit: 10, page: 1, search: debouncedSearch });
+  const { data: rawData } = useGetAllRawMaterialQuery({ token, limit: 10, page: 1, search: debouncedSearch });
   const { data: supplierData } = useGetAllSupplierQuery(token);
   const [paymentDate, setPaymentDate] = useState(
     new Date().toISOString().split("T")[0]
@@ -74,19 +82,31 @@ const CreatePurchase = () => {
   const [errors, setErrors] = useState({});
   const [fieldErrors, setFieldErrors] = useState({});
 
+  const onChangeItemType = ({ target: { value } }) => {
+    console.log('radio4 checked', value);
+    setValue4(value);
+  };
+
   useEffect(() => {
     setSuppliers(supplierData?.data || []);
     setItems(itemData?.data || []);
-  }, [itemData, supplierData]);
+    setRawMaterials(rawData?.data?.data || []);
+  }, [itemData, supplierData, rawData]);
 
   useEffect(() => {
     const filtered = items.filter(
       (item) =>
-        item.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.code?.toLowerCase().includes(searchTerm.toLowerCase())
+        item.name?.toLowerCase().includes(searchTerm.toLowerCase().trim()) ||
+        item.code?.toLowerCase().includes(searchTerm.toLowerCase().trim())
     );
     setFilteredItems(filtered);
-  }, [searchTerm, items]);
+    const filteredRaw = rawMaterials.filter(
+      (item) =>
+        item.material_name?.toLowerCase().includes(searchTerm.toLowerCase().trim()) ||
+        item.material_code?.toLowerCase().includes(searchTerm.toLowerCase().trim())
+    );
+    setFilteredRaw(filteredRaw);
+  }, [searchTerm, items, rawMaterials]);
 
   useEffect(() => {
     if (isEditMode && purchaseId && token) {
@@ -251,13 +271,13 @@ const CreatePurchase = () => {
     }
 
     const newItem = {
-      item_id: selectedItem.id,
+      item_id: itemType == 0 ? selectedItem.id : selectedItem.id,
       quantity,
       item_cost: itemCost,
       attributes,
-      name: selectedItem.name,
-      code: selectedItem.code,
-      image: selectedItem.image,
+      name: itemType == 0 ? selectedItem.name : selectedItem.material_name,
+      code: itemType == 0 ? selectedItem.code : selectedItem.material_code,
+      image: itemType == 0 ? selectedItem.image : selectedItem.material_image,
     };
 
     setFormData((prev) => ({
@@ -404,6 +424,7 @@ const CreatePurchase = () => {
         shipping_fee: parseFloat(formData.shipping_fee) || 0,
         total_amount: parseFloat(formData.total_amount),
         total_paid: parseFloat(formData.total_paid) || 0,
+        purchase_type: itemType,
         balance: parseFloat(formData.balance) || 0,
         exchange_rate: 1,
         status: formData.status === 'Completed' ? 1 : formData.status === 'Cancelled' ? 2 : 0,
@@ -928,12 +949,18 @@ const CreatePurchase = () => {
               </div>
 
               <div className="mb-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-60 overflow-y-auto p-2">
+                <Radio.Group
+                  options={options}
+                  onChange={onChangeItemType}
+                  value={itemType}
+                  optionType="button"
+                  buttonStyle="solid"
+                />
+                {itemType == 0 ? <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-60 overflow-y-auto p-2">
                   {filteredItems.map((item) => (
                     <div
                       key={item.id}
                       onClick={() => {
-                        setAttributes([]);
                         setSelectedItem(item);
                         setItemCost(item.price || 0);
                         setErrors({});
@@ -974,7 +1001,45 @@ const CreatePurchase = () => {
                       </div>
                     </div>
                   ))}
-                </div>
+                </div> : <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-60 overflow-y-auto p-2">
+                  {filteredRaw.map((item) => (
+                    <div
+                      key={item.id}
+                      onClick={() => {
+                        setSelectedItem(item);
+                        setItemCost(item.price || 0);
+                        setErrors({});
+                      }}
+                      className={`p-4 border rounded-xl cursor-pointer transition-all ${selectedItem?.id === item.id
+                        ? "border-blue-500 bg-blue-50 ring-2 ring-blue-200"
+                        : "border-gray-200 hover:border-blue-300 hover:bg-gray-50"
+                        }`}
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="h-16 w-16 rounded-lg border border-gray-300 overflow-hidden bg-white flex-shrink-0">
+                          {item.material_image ? (
+                            <img
+                              src={item.material_image}
+                              alt={item.material_name}
+                              className="h-full w-full object-contain p-2"
+                            />
+                          ) : (
+                            <div className="h-full w-full flex items-center justify-center bg-gray-100">
+                              <FaBox className="text-gray-400" />
+                            </div>
+                          )}
+                        </div>
+                        <div>
+                          <div className="font-bold text-gray-800">{item.material_name}</div>
+                          <div className="text-sm text-gray-600 mb-1">{item.material_code}</div>
+                          <div className="flex items-center gap-2">
+
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>}
               </div>
 
               {selectedItem && (

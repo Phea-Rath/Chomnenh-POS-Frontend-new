@@ -45,6 +45,7 @@ const RawMaterialForm = () => {
     const navigate = useNavigate();
     const { id } = useParams();
     const isEditMode = !!id;
+    const token = localStorage.getItem('token');
 
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
@@ -54,6 +55,7 @@ const RawMaterialForm = () => {
     const [hasSecondaryUnit, setHasSecondaryUnit] = useState(false);
     const [formErrors, setFormErrors] = useState({});
     const [currentMaterial, setCurrentMaterial] = useState(null);
+    const { refetch } = useGetAllRawMaterialQuery({ limit: 10, page: 1, search: '', token });
 
     // Common units for selection
     const unitOptions = [
@@ -86,8 +88,7 @@ const RawMaterialForm = () => {
         setLoading(true);
         try {
             const token = localStorage.getItem('token');
-            const response = await fetch(
-                `http://127.0.0.1:8000/api/raw_materials/${id}`,
+            const response = await api.get(`/raw_materials/${id}`,
                 {
                     headers: {
                         Authorization: `Bearer ${token}`,
@@ -96,12 +97,11 @@ const RawMaterialForm = () => {
                 }
             );
 
-            if (!response.ok) {
+            if (!response) {
                 throw new Error('Failed to fetch material');
             }
 
-            const result = await response.json();
-            const material = result.data;
+            const material = response.data;
 
             setCurrentMaterial(material);
 
@@ -109,11 +109,9 @@ const RawMaterialForm = () => {
             form.setFieldsValue({
                 material_name: material.material_name,
                 material_code: material.material_code || '',
-                material_description: material.material_description || '',
                 primary_unit: material.primary_unit,
                 secondary_unit: material.secondary_unit || '',
                 conversion_value: material.conversion_value ? parseFloat(material.conversion_value) : undefined,
-                material_cost: material.material_cost ? parseFloat(material.material_cost) : undefined,
             });
 
             // Handle secondary unit toggle
@@ -213,10 +211,39 @@ const RawMaterialForm = () => {
             if (!hasSecondaryUnit) {
                 formData.delete('secondary_unit');
                 formData.delete('conversion_value');
+                // formData.delete('attrs');
+                // Append attributes - ensure colors are properly formatted
+                const formattedAttributes = [{
+                    name: values.primary_unit,
+                    type: 'number',
+                    value: 1
+                }];
+
+                formData.append("attributes", JSON.stringify(formattedAttributes));
+
+            } else {
+
+                const formattedAttributes = [
+                    {
+                        name: values.primary_unit,
+                        type: 'number',
+                        value: 1
+                    },
+                    {
+                        name: values.secondary_unit,
+                        type: 'number',
+                        value: values.conversion_value
+                    }
+                ];
+                formData.append("attributes", JSON.stringify(formattedAttributes));
             }
+
+
+
 
             let response;
             if (isEditMode) {
+                formData.append("edit_id", JSON.stringify(id));
                 response = await api.post(`/raw_material/${id}`, formData, {
                     headers: {
                         Authorization: `Bearer ${token}`,
@@ -230,34 +257,18 @@ const RawMaterialForm = () => {
                 });
             }
 
-            const result = await response.json();
-
             if (response.status == 200) {
-                toast.success({
-                    message: 'Success',
-                    description: isEditMode
-                        ? 'Material updated successfully!'
-                        : 'Material created successfully!',
-                });
+                refetch();
+                toast.success(isEditMode
+                    ? 'Material updated successfully!'
+                    : 'Material created successfully!',
+                );
                 navigate('/dashboard/raw-materials');
-            } else {
-                // Handle validation errors
-                if (result.errors) {
-                    setFormErrors(result.errors);
-                    notification.error({
-                        message: 'Validation Error',
-                        description: 'Please check the form for errors.',
-                    });
-                } else {
-                    throw new Error(result.message || 'Failed to save material');
-                }
             }
+
         } catch (error) {
             console.error('Error saving material:', error);
-            notification.error({
-                message: 'Error',
-                description: error.message || 'Failed to save material. Please try again.',
-            });
+            toast.error('Failed to save material. Please try again.');
         } finally {
             setSaving(false);
         }
@@ -416,26 +427,6 @@ const RawMaterialForm = () => {
                                                     />
                                                 </Form.Item>
                                             </Col>
-
-                                            <Col span={24} md={12}>
-                                                <Form.Item
-                                                    label="Description"
-                                                    name="material_description"
-                                                    rules={[
-                                                        { max: 500, message: 'Description cannot exceed 500 characters' }
-                                                    ]}
-                                                    validateStatus={formErrors.material_description ? 'error' : ''}
-                                                    help={formErrors.material_description?.[0]}
-                                                >
-                                                    <TextArea
-                                                        placeholder="Enter material description, specifications, or notes..."
-                                                        rows={4}
-                                                        showCount
-                                                        maxLength={500}
-                                                        prefix={<LuFileText className="text-gray-400" />}
-                                                    />
-                                                </Form.Item>
-                                            </Col>
                                         </Row>
 
 
@@ -476,30 +467,6 @@ const RawMaterialForm = () => {
                                                             </Option>
                                                         ))}
                                                     </Select>
-                                                </Form.Item>
-                                            </Col>
-
-                                            <Col span={24} md={12}>
-                                                <Form.Item
-                                                    label="Material Cost"
-                                                    name="material_cost"
-                                                    rules={[
-                                                        { required: true, message: 'Please enter material cost' },
-                                                        { validator: validateCost }
-                                                    ]}
-                                                    validateStatus={formErrors.material_cost ? 'error' : ''}
-                                                    help={formErrors.material_cost?.[0]}
-                                                >
-                                                    <InputNumber
-                                                        placeholder="0.00"
-                                                        className="w-full"
-                                                        prefix={<LuDollarSign className="text-gray-400" />}
-                                                        min={0}
-                                                        step={0.01}
-                                                        precision={2}
-                                                        formatter={value => `$ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                                                        parser={value => value.replace(/\$\s?|(,*)/g, '')}
-                                                    />
                                                 </Form.Item>
                                             </Col>
                                         </Row>

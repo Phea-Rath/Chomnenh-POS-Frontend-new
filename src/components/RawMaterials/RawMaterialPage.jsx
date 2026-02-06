@@ -70,23 +70,24 @@ const RawMaterials = () => {
     const [deleteModalVisible, setDeleteModalVisible] = useState(false);
     const [selectedMaterial, setSelectedMaterial] = useState(null);
 
-
     useEffect(() => {
         const data = raw?.data?.data || [];
-        console.log(raw?.data);
         setPagination({
             current: raw?.data?.current_page,
             pageSize: raw?.data?.per_page,
             total: raw?.data?.total
 
         })
-
         setMaterials(data);
         setFilteredMaterials(data);
-    }, [raw, pagination.current, pagination.pageSize]);
+        console.log(data);
+
+    }, [raw?.data?.data, pagination.pageSize]);
 
     // Apply filters and search
     useEffect(() => {
+        console.log(materials);
+
         let filtered = [...materials];
 
         // Filter by search term
@@ -98,18 +99,14 @@ const RawMaterials = () => {
             );
         }
 
-        // Filter by deletion status
-        if (!showDeleted) {
-            filtered = filtered.filter(material => material.is_deleted === 0);
-        }
-
         // Filter by category (if you have categories in the future)
         if (selectedCategory !== 'all') {
             filtered = filtered.filter(material => material.category === selectedCategory);
         }
 
         setFilteredMaterials(filtered);
-    }, [searchTerm, showDeleted, selectedCategory, materials]);
+
+    }, [searchTerm, selectedCategory, materials]);
 
     // Handle pagination change
     const handlePaginationChange = (page, pageSize) => {
@@ -153,7 +150,7 @@ const RawMaterials = () => {
                 },
             });
 
-            if (response.ok) {
+            if (response.status == 200) {
                 toast.success('Material deleted successfully');
                 setDeleteModalVisible(false);
                 setSelectedMaterial(null);
@@ -271,7 +268,7 @@ const RawMaterials = () => {
                         <Button
                             type="text"
                             icon={<LuEye className="w-4 h-4" />}
-                            onClick={() => navigate(`/dashboard/raw-materials/${record.id}`)}
+                            onClick={() => navigate(`view/${record.id}`)}
                             className="text-blue-600 hover:text-blue-800"
                         />
                     </Tooltip>
@@ -279,7 +276,7 @@ const RawMaterials = () => {
                         <Button
                             type="text"
                             icon={<BiEdit className="w-4 h-4" />}
-                            onClick={() => navigate(`/dashboard/raw-materials/edit/${record.id}`)}
+                            onClick={() => navigate(`edit/${record.id}`)}
                             className="text-green-600 hover:text-green-800"
                         />
                     </Tooltip>
@@ -320,7 +317,6 @@ const RawMaterials = () => {
         'Updated At': formatDate(material.updated_at)
     }));
 
-    console.log(pagination);
 
 
     return (
@@ -510,7 +506,6 @@ const RawMaterials = () => {
                                                 <LuCalendar className="w-4 h-4" />
                                                 <span>{formatDate(material.created_at)}</span>
                                             </div>
-                                            {getStatusBadge(material.is_deleted)}
                                         </div>
                                     </div>
 
@@ -518,7 +513,7 @@ const RawMaterials = () => {
                                         <Button
                                             type="text"
                                             icon={<LuEye className="w-4 h-4" />}
-                                            onClick={() => navigate(`/dashboard/raw-materials/${material.id}`)}
+                                            onClick={() => navigate(`view/${material.id}`)}
                                             className="text-blue-600 hover:text-blue-800"
                                         >
 
@@ -526,7 +521,7 @@ const RawMaterials = () => {
                                         <Button
                                             type="text"
                                             icon={<BiEdit className="w-4 h-4" />}
-                                            onClick={() => navigate(`/dashboard/raw-materials/edit/${material.id}`)}
+                                            onClick={() => navigate(`edit/${material.id}`)}
                                             className="text-green-600 hover:text-green-800"
                                         >
 

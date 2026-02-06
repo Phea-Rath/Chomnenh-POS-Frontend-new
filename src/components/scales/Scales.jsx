@@ -156,15 +156,13 @@ const Scales = () => {
               />
             </div>
             <h3 className="text-lg font-bold text-gray-900 mb-1">{scale.scale_name}</h3>
-            <div className="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full inline-block">
-              MEASUREMENT UNIT
-            </div>
+
           </div>
 
           {/* Created By */}
           <div className="flex items-center gap-2 text-sm text-gray-600 mb-4">
             <FaUser className="text-gray-400" />
-            <span>Created by: {scale.created_by}</span>
+            <span>Created by: {scale.created_by_name}</span>
           </div>
 
           {/* Actions */}
@@ -227,63 +225,6 @@ const Scales = () => {
             </div>
           </div>
         </div>
-
-        {/* Statistics Cards */}
-        {/* <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8"
-        >
-          <Card className="border-0 shadow-sm bg-gradient-to-br from-orange-500 to-orange-600 text-white">
-            <div className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-orange-100 text-sm font-medium mb-2">Total Scales</p>
-                  <p className="text-3xl font-bold text-white">
-                    {stats.totalScales}
-                  </p>
-                </div>
-                <div className="p-3 bg-orange-400/20 rounded-full">
-                  <FaBalanceScale className="text-2xl text-orange-200" />
-                </div>
-              </div>
-            </div>
-          </Card>
-
-          <Card className="border-0 shadow-sm bg-gradient-to-br from-red-500 to-red-600 text-white">
-            <div className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-red-100 text-sm font-medium mb-2">Weight Units</p>
-                  <p className="text-3xl font-bold text-white">
-                    {stats.weightScales}
-                  </p>
-                </div>
-                <div className="p-3 bg-red-400/20 rounded-full">
-                  <FaWeight className="text-2xl text-red-200" />
-                </div>
-              </div>
-            </div>
-          </Card>
-
-          <Card className="border-0 shadow-sm bg-gradient-to-br from-blue-500 to-blue-600 text-white">
-            <div className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-blue-100 text-sm font-medium mb-2">Volume Units</p>
-                  <p className="text-3xl font-bold text-white">
-                    {stats.volumeScales}
-                  </p>
-                </div>
-                <div className="p-3 bg-blue-400/20 rounded-full">
-                  <FaRulerCombined className="text-2xl text-blue-200" />
-                </div>
-              </div>
-            </div>
-          </Card>
-        </motion.div> */}
-
         {/* Controls Section */}
         <div
           className="bg-white rounded-2xl shadow-sm border border-gray-100 p-2 mb-2"
@@ -388,7 +329,7 @@ const Scales = () => {
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-2 text-gray-600">
                             <FaUser className="text-gray-400" />
-                            {scale.created_by}
+                            {scale.created_by_name}
                           </div>
                         </td>
                         <td className="px-6 py-4">
@@ -450,7 +391,7 @@ const Scales = () => {
             </div>
           ) : (
             // Grid View
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 2xl:grid-cols-6 gap-3">
               {filteredScales.map((scale, index) => (
                 <ScaleCard key={scale.scale_id} scale={scale} index={index} />
               ))}

@@ -1,83 +1,114 @@
-import React, { useEffect, useState } from 'react'
+import React, { useState } from 'react';
+import { FaTags, FaPlus, FaTimes } from 'react-icons/fa';
+import { motion } from 'framer-motion';
+import { Input, Button } from 'antd';
+import { toast } from 'react-toastify';
+
+// Components & Services
 import AlertBox from '../../services/AlertBox';
 import { useOutletsContext } from '../../layouts/Management';
 import { useCreateBrandMutation, useGetAllBrandQuery } from '../../../app/Features/brandsSlice';
-import { toast } from 'react-toastify';
 
 const CreateBrands = ({ onAdd }) => {
-  const { setLoading, loading, setAlert, setMessage, setAlertStatus, } = useOutletsContext();
+  const { setLoading } = useOutletsContext();
   const [alertBox, setAlertBox] = useState(false);
-  const [brands, setBrands] = useState({ brand_name: "", created_by: "" });
+  const [brandData, setBrandData] = useState({ brand_name: "", created_by: 0 });
+
   const token = localStorage.getItem('token');
   const { refetch } = useGetAllBrandQuery(token);
-  const [createBrand, { data, isLoading, error }] = useCreateBrandMutation();
+  const [createBrand] = useCreateBrandMutation();
 
+  const handleConfirm = async () => {
+    if (!brandData.brand_name.trim()) {
+      toast.warning('Please enter a brand name');
+      return;
+    }
 
-  async function handleConfirm() {
     try {
       setLoading(true);
-      await createBrand({ itemData: brands, token });
+      await createBrand({ itemData: brandData, token }).unwrap();
       refetch();
-      if (!error && !isLoading) {
-        setLoading(false);
-        toast.success('Brand created successfully');
-        onAdd();
-        setAlertBox(false);
-      } else {
-        toast.error('Failed to create brand');
-      }
+      toast.success('Brand created successfully');
+      setAlertBox(false);
+      onAdd(); // Close modal
     } catch (error) {
-      toast.error(error?.message || error || 'An error occurred while creating the brand');
+      toast.error(error?.data?.message || 'An error occurred while creating the brand');
+    } finally {
       setLoading(false);
     }
-  }
-
-  function handleSubmit() {
-    console.log(brands);
-    setAlertBox(true);
-  }
-
-  function handleCancel() {
-    setAlertBox(false);
-  }
-
-  function onBrandName(e) {
-    setBrands(prev => { return { ...prev, brand_name: e.target.value, created_by: 0 } });
-  }
+  };
 
   return (
-    <section>
+    <section className="bg-white overflow-hidden">
+      {/* Alert Confirmation */}
       <AlertBox
         isOpen={alertBox}
-        title="Question"
-        message="Are you sure you want create brand?"
+        title="Confirm Creation"
+        message={`Do you want to add "${brandData.brand_name}" to your brand list?`}
         onConfirm={handleConfirm}
-        onCancel={handleCancel}
-        confirmText="Ok"
+        onCancel={() => setAlertBox(false)}
+        confirmText="Confirm"
         cancelText="Cancel"
       />
-      <fieldset className="fieldset w-full text-black bg-transparent">
-        <legend className="fieldset-legend text-xl text-black">Create Brand</legend>
 
-        <article className='flex gap-5 items-center'>
-          <nav className='flex flex-col gap-3 flex-1'>
-            <label className="label">Brand name</label>
-            <input onChange={onBrandName} type="text" className="input bg-transparent border-gray-400" placeholder="Enter brand name here. . ." />
-          </nav>
-        </article>
-
-        <div className='flex items-end gap-2'>
-          <button className="btn btn-success mt-4 flex-1" onClick={handleSubmit}>Add</button>
-          <div className="modal-action">
-            <form method="dialog">
-              {/* if there is a button, it will close the modal */}
-              <button className="btn btn-error">Close</button>
-            </form>
+      {/* Header Section */}
+      <div className="p-8 bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-blue-100 flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 bg-white rounded-2xl shadow-sm flex items-center justify-center text-blue-600">
+            <FaTags className="text-xl" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-black text-slate-800 leading-none">New Brand</h2>
+            <p className="text-slate-500 text-sm mt-1 font-medium">Add a new manufacturer to your inventory</p>
           </div>
         </div>
-      </fieldset>
-    </section>
-  )
-}
+      </div>
 
-export default CreateBrands
+      {/* Body Section */}
+      <div className="p-8">
+        <div className="space-y-6">
+          <div>
+            <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 ml-1">
+              Brand Identity
+            </label>
+            <Input
+              size="large"
+              placeholder="e.g. Nike, Apple, Samsung..."
+              value={brandData.brand_name}
+              onChange={(e) => setBrandData({ ...brandData, brand_name: e.target.value })}
+              className="h-14 rounded-2xl border-slate-200 bg-slate-50/50 hover:bg-white focus:bg-white transition-all font-medium text-lg px-6"
+            />
+          </div>
+
+          <div className="bg-blue-50/50 p-4 rounded-2xl border border-blue-100/50">
+            <p className="text-xs text-blue-600 font-medium leading-relaxed">
+              <strong>Tip:</strong> Ensure the brand name is unique to avoid duplicates in your reports.
+            </p>
+          </div>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="mt-10 flex flex-col sm:flex-row gap-3">
+          <Button
+            type="primary"
+            icon={<FaPlus />}
+            onClick={() => setAlertBox(true)}
+            className="h-14 flex-1 rounded-2xl bg-blue-600 shadow-lg shadow-blue-200 border-none font-bold text-base order-2 sm:order-1"
+          >
+            Create Brand
+          </Button>
+
+          <form method="dialog" className="order-1 sm:order-2">
+            <Button
+              icon={<FaTimes />}
+              className="h-14 w-full sm:w-14 rounded-2xl border-slate-200 text-slate-400 hover:text-rose-500 hover:border-rose-100 hover:bg-rose-50 flex items-center justify-center font-bold"
+              onClick={onAdd}
+            />
+          </form>
+        </div>
+      </div>
+    </section>
+  );
+};
+
+export default CreateBrands;

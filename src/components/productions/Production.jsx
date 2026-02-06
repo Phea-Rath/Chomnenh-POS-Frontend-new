@@ -353,7 +353,7 @@ const Production = () => {
                         <Button
                             type="text"
                             icon={<LuEye className="w-4 h-4" />}
-                            onClick={() => navigate(`/dashboard/production/${record.id}`)}
+                            onClick={() => navigate(`view/${record.id}`)}
                             className="text-blue-600 hover:text-blue-800"
                         />
                     </Tooltip>
@@ -808,7 +808,7 @@ const Production = () => {
                                         <Button
                                             type="text"
                                             icon={<LuEye className="w-4 h-4" />}
-                                            onClick={() => navigate(`/dashboard/production/${production.id}`)}
+                                            onClick={() => navigate(`view/${production.id}`)}
                                             className="text-blue-600 hover:text-blue-800"
                                         >
                                             View

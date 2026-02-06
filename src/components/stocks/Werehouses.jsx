@@ -36,7 +36,7 @@ const Warehouses = () => {
   const calculateStats = () => {
     const totalWarehouses = warehouses.length;
     const activeWarehouses = warehouses.filter(w => w.status === 1).length;
-    const defaultWarehouses = warehouses.filter(w => w.created_by === 0).length;
+    const defaultWarehouses = warehouses.filter(w => w.created_by_name === 0).length;
 
     return {
       totalWarehouses,
@@ -110,51 +110,33 @@ const Warehouses = () => {
             <div className="flex items-start justify-between mb-4">
               <div className="flex items-center space-x-3">
                 <div className="p-3 bg-gradient-to-r from-blue-100 to-indigo-100 rounded-xl">
-                  <TbBuildingWarehouse className="text-2xl text-blue-600" />
+                  <HiOutlineBuildingOffice2 className="text-2xl text-blue-600" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <Badge
-                    count={index + 1}
-                    className="bg-gradient-to-r from-blue-500 to-indigo-600"
-                    style={{ backgroundColor: '#3b82f6' }}
-                  />
                 </div>
               </div>
               <Tag
-                color={warehouse.status === 1 ? "success" : "error"}
+                color={warehouse.status === "stock" ? "success" : "error"}
                 className="font-semibold text-xs"
               >
-                {warehouse.status === 1 ? 'Active' : 'Inactive'}
+                {warehouse.status === "stock" ? 'Active' : 'Inactive'}
               </Tag>
             </div>
 
             {/* Warehouse Info */}
-            <div className="mb-4">
-              <h3 className="font-bold text-gray-900 text-lg mb-2 truncate">
+            <div>
+              <h3 className="font-bold text-gray-900 text-center text-lg mb-2 truncate">
                 {warehouse.warehouse_name}
               </h3>
-              <div className="flex items-center space-x-2 text-gray-600">
-                <HiOutlineBuildingOffice2 className="text-gray-400" />
-                <span className="text-sm">Warehouse ID: {warehouse.warehouse_id}</span>
-              </div>
+
             </div>
 
             {/* Details */}
             <div className="space-y-3 mb-4">
               <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <div className="flex items-center space-x-2">
-                  <MdLocationCity className="text-blue-400" />
-                  <span className="text-sm text-gray-600">Type</span>
-                </div>
-                <Tag color={warehouse.created_by === 0 ? "gold" : "blue"} className="font-semibold">
-                  {warehouse.created_by === 0 ? 'Default' : 'Custom'}
-                </Tag>
-              </div>
-
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                 <span className="text-sm text-gray-600">Created By</span>
                 <span className="font-semibold text-gray-900">
-                  {warehouse.created_by === 0 ? 'System' : `User #${warehouse.created_by}`}
+                  {warehouse.created_by_name === 0 ? 'System' : `${warehouse.created_by_name}`}
                 </span>
               </div>
             </div>
@@ -234,99 +216,6 @@ const Warehouses = () => {
             </Button>
           </div>
 
-          {/* Statistics Cards */}
-          <div
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-2"
-          >
-            <Card className="border-0 shadow-sm bg-gradient-to-br from-blue-50 to-white">
-              <div>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-blue-600 text-sm font-semibold mb-2">Total Warehouses</p>
-                    {isLoading ? (
-                      <div className="h-8 bg-blue-100 rounded animate-pulse w-16"></div>
-                    ) : (
-                      <p className="text-3xl font-bold text-gray-900">
-                        {stats.totalWarehouses}
-                      </p>
-                    )}
-                  </div>
-                  <div className="p-3 bg-blue-100 rounded-full">
-                    <TbBuildingWarehouse className="text-2xl text-blue-600" />
-                  </div>
-                </div>
-              </div>
-            </Card>
-
-            <Card className="border-0 shadow-sm bg-gradient-to-br from-green-50 to-white">
-              <div>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-green-600 text-sm font-semibold mb-2">Active Warehouses</p>
-                    {isLoading ? (
-                      <div className="h-8 bg-green-100 rounded animate-pulse w-12"></div>
-                    ) : (
-                      <p className="text-3xl font-bold text-gray-900">
-                        {stats.activeWarehouses}
-                      </p>
-                    )}
-                  </div>
-                  <div className="p-3 bg-green-100 rounded-full">
-                    <div className="w-6 h-6 rounded-full bg-green-500"></div>
-                  </div>
-                </div>
-              </div>
-            </Card>
-
-            <Card className="border-0 shadow-sm bg-gradient-to-br from-yellow-50 to-white">
-              <div>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-yellow-600 text-sm font-semibold mb-2">Default Warehouses</p>
-                    {isLoading ? (
-                      <div className="h-8 bg-yellow-100 rounded animate-pulse w-12"></div>
-                    ) : (
-                      <p className="text-3xl font-bold text-gray-900">
-                        {stats.defaultWarehouses}
-                      </p>
-                    )}
-                  </div>
-                  <div className="p-3 bg-yellow-100 rounded-full">
-                    <HiOutlineBuildingOffice2 className="text-2xl text-yellow-600" />
-                  </div>
-                </div>
-              </div>
-            </Card>
-
-            <Card className="border-0 shadow-sm bg-gradient-to-br from-purple-50 to-white">
-              <div>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-purple-600 text-sm font-semibold mb-2">Active Rate</p>
-                    {isLoading ? (
-                      <div className="h-8 bg-purple-100 rounded animate-pulse w-16"></div>
-                    ) : (
-                      <div className="flex items-center space-x-2">
-                        <p className="text-3xl font-bold text-gray-900">
-                          {stats.activePercentage}%
-                        </p>
-                        <Progress
-                          type="circle"
-                          percent={stats.activePercentage}
-                          size={40}
-                          strokeColor="#8b5cf6"
-                          trailColor="#e5e7eb"
-                        />
-                      </div>
-                    )}
-                  </div>
-                  <div className="p-3 bg-purple-100 rounded-full">
-                    <div className="text-2xl text-purple-600">📊</div>
-                  </div>
-                </div>
-              </div>
-            </Card>
-          </div>
 
           {/* Controls Section */}
           <div
@@ -389,8 +278,7 @@ const Warehouses = () => {
         {/* Modals */}
         <dialog id="my_modal_5" ref={addModalRef} className="modal">
           <div className="modal-box max-w-4xl bg-gradient-to-br from-gray-50 to-white p-0 rounded-2xl overflow-hidden">
-            <div className="p-6">
-              <h3 className="text-xl font-bold text-gray-900 mb-4">Add New Warehouse</h3>
+            <div>
               <CreateWarehouses data={edit} onAdd={() => addModalRef.current?.close()} />
             </div>
           </div>
@@ -401,8 +289,7 @@ const Warehouses = () => {
 
         <dialog id="my_modal_5" ref={updateModalRef} className="modal">
           <div className="modal-box max-w-4xl bg-gradient-to-br from-gray-50 to-white p-0 rounded-2xl overflow-hidden">
-            <div className="p-6">
-              <h3 className="text-xl font-bold text-gray-900 mb-4">Update Warehouse</h3>
+            <div>
               <UpdateWarehouses data={edit} onAdd={() => updateModalRef.current?.close()} />
             </div>
           </div>
@@ -436,7 +323,7 @@ const Warehouses = () => {
                             className="w-full flex flex-col items-center justify-center"
                             image={
                               <div className="text-gray-400 mb-4">
-                                <TbBuildingWarehouse className="w-16 h-16 mx-auto" />
+                                <HiOutlineBuildingOffice2 className="w-16 h-16 mx-auto" />
                               </div>
                             }
                             description={
@@ -462,7 +349,7 @@ const Warehouses = () => {
                         </td>
                       </tr>
                     ) : (
-                      warehouses.map(({ warehouse_id, warehouse_name, status, created_by }, index) => (
+                      warehouses.map(({ warehouse_id, warehouse_name, status, created_by_name }, index) => (
                         <tr key={warehouse_id} className="hover:bg-gray-50 transition-colors border-b border-gray-100">
                           <td className="py-4 px-6">
                             <div className="font-semibold text-gray-900">{index + 1}</div>
@@ -470,21 +357,20 @@ const Warehouses = () => {
                           <td className="py-4 px-6">
                             <div className="flex items-center space-x-3">
                               <div className="p-2 bg-blue-100 rounded-lg">
-                                <TbBuildingWarehouse className="text-blue-600" />
+                                <HiOutlineBuildingOffice2 className="text-blue-600" />
                               </div>
                               <div>
                                 <div className="font-semibold text-gray-900">{warehouse_name}</div>
-                                <div className="text-xs text-gray-500">ID: {warehouse_id}</div>
                               </div>
                             </div>
                           </td>
                           <td className="py-4 px-6">
-                            {created_by === 0 ? (
+                            {created_by_name === 0 ? (
                               <Tag color="gold" className="font-semibold">
                                 Default
                               </Tag>
                             ) : (
-                              <span className="text-gray-700">User #{created_by}</span>
+                              <span className="text-gray-700">{created_by_name}</span>
                             )}
                           </td>
                           <td className="py-4 px-6">
@@ -556,7 +442,7 @@ const Warehouses = () => {
               {warehouses.length === 0 && !isLoading && (
                 <div className="text-center py-20">
                   <div className="text-gray-400 text-6xl mb-4">
-                    <TbBuildingWarehouse className="mx-auto w-16 h-16" />
+                    <HiOutlineBuildingOffice2 className="mx-auto w-16 h-16" />
                   </div>
                   <h3 className="text-xl font-semibold text-gray-600 mb-2">No warehouses found</h3>
                   <p className="text-gray-500">

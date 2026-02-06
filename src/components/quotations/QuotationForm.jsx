@@ -373,7 +373,7 @@ const QuotationForm = () => {
     }, [selectItems.length]);
 
     return (
-        <section className="px-6 py-6 bg-gray-50 min-h-screen">
+        <section className="px-6 py-6 bg-transparent min-h-screen">
             <AlertBox
                 isOpen={alertBox}
                 title="Confirmation"

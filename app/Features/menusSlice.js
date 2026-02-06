@@ -1,5 +1,5 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
-import { queryData, queryDataById, createData, updateData, deleteData } from '../api';
+import { queryData, queryDataById, createData, updateData, deleteData, updateDataByPost } from '../api';
 import { url } from '../api';
 export const menusApi = createApi({
     reducerPath: 'menus',
@@ -17,7 +17,7 @@ export const menusApi = createApi({
             query: ({ itemData, token }) => createData(itemData, '/menus', token),
         }),
         updateMenu: builder.mutation({
-            query: ({ id, itemData, token }) => updateData(id, itemData, '/menus', token),
+            query: ({ id, itemData, token }) => updateDataByPost(id, itemData, '/menus', token),
         }),
         deleteMenu: builder.mutation({
             query: ({ id, token }) => deleteData(id, '/menus', token),

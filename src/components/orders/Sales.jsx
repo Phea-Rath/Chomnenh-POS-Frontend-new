@@ -841,7 +841,7 @@ const Sales = () => {
       transition={{ duration: 0.5 }}
       className="min-h-screen bg-transparent"
     >
-      <section className="px-2">
+      <section className="p-3">
         {contextHolder}
         <AlertBox
           isOpen={alertBox}
@@ -854,7 +854,7 @@ const Sales = () => {
         />
 
         {/* Header Section */}
-        <div className="mb-8">
+        <div className="mb-3">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
             <div>
               <h1 className="text-3xl font-bold text-gray-800">Point of Sale</h1>

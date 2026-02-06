@@ -22,8 +22,10 @@ import api from '../../services/api';
 import AlertBox from '../../services/AlertBox';
 import { useGetAllOrderQuery, useGetOrderByUserQuery } from '../../../app/Features/ordersSlice';
 import { useGetAllWasteQuery } from '../../../app/Features/notificationSlice';
+import { useNavigate } from 'react-router';
 
 const GuestOrderTracking = () => {
+    const navigater = useNavigate();
     const { data, refetch } = useGetOrderByUserQuery(localStorage.getItem('guestToken'), {
         refetchOnFocus: true,
         refetchOnReconnect: true,
@@ -171,7 +173,7 @@ const GuestOrderTracking = () => {
             <div className="mb-8">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                     <div>
-                        <h1 className="text-2xl md:text-3xl font-bold text-gray-800 flex items-center gap-3">
+                        <h1 onClick={() => navigater(-1)} className="text-2xl md:text-3xl font-bold text-gray-800 flex items-center gap-3">
                             <div className="p-2 bg-blue-100 rounded-lg">
                                 <FaShoppingBag className="w-6 h-6 text-blue-600" />
                             </div>

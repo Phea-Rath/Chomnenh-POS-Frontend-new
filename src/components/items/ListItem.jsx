@@ -110,7 +110,7 @@ const ListItem = () => {
         confirmColor="error"
       />
 
-      <div className=" border-b border-gray-200 px-2">
+      <div className=" border-b border-gray-200 p-3">
         <div className=" mx-auto flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
             <Title level={2} className="!m-0 !text-gray-900 !font-bold">Items</Title>

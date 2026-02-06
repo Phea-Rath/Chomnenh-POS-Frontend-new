@@ -6,11 +6,7 @@ import { useEffect, useState } from "react"
 import { TbReportMoney } from "react-icons/tb";
 import { TbReportMedical } from "react-icons/tb";
 import { useGetPermissionByIdQuery } from "../../../app/Features/permissionSlice";
-const iconComponents = {
-  TbReportAnalytics: TbReportAnalytics,
-  TbReportMoney: TbReportMoney,
-  TbReportMedical: TbReportMedical
-}
+
 const colors = [
   { main: "yellow-500", light: "yellow-50", text: "yellow-600" },
   { main: "blue-500", light: "blue-50", text: "blue-600" },
@@ -34,10 +30,6 @@ const Reports = () => {
 
     }
   }, [data])
-  const renderIcon = (iconName) => {
-    const IconComponent = iconComponents[String(iconName)];
-    return IconComponent ? <IconComponent /> : <AiFillProduct />; // Default icon
-  };
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -64,7 +56,7 @@ const Reports = () => {
                   <div className={`absolute h-full left-[4px] rounded-md group-hover:left-2 transition-all duration-500 w-full bg-white/95 z-2`}></div>
                   <div className="flex flex-col justify-center items-center space-y-2 absolute w-full h-full z-3">
                     <div className={`text-4xl text-${color.main}`}>
-                      {renderIcon(perm.menu_icon)}
+                      <img src={perm?.menu_icon} alt="" />
                     </div>
                     <h1>{perm?.menu_name}</h1>
                   </div>

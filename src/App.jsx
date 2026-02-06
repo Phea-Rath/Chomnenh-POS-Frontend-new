@@ -79,6 +79,8 @@ import RawMaterials from "./components/RawMaterials/RawMaterialPage";
 import RawMaterialForm from "./components/RawMaterials/RawMaterialForm";
 import ProductionForm from "./components/productions/ProductionForm";
 import Production from "./components/productions/Production";
+import ProductionDetail from "./components/productions/ProductionDetail";
+import RawMaterialDetail from "./components/RawMaterials/RawMaterialDetail";
 function ProtectedRoute({ children }) {
   const token = localStorage.getItem("token");
 
@@ -428,6 +430,10 @@ const router = createBrowserRouter([
         element: <RawMaterialForm />,
       },
       {
+        path: "raw-materials/view/:id",
+        element: <RawMaterialDetail />,
+      },
+      {
         path: "production",
         element: <Production />,
       },
@@ -438,6 +444,10 @@ const router = createBrowserRouter([
       {
         path: "production/edit/:id",
         element: <ProductionForm />,
+      },
+      {
+        path: "production/view/:id",
+        element: <ProductionDetail />,
       },
 
     ],

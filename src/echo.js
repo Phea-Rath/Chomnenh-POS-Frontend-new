@@ -15,15 +15,13 @@ const echo = new Echo({
     // wssPort: 6001,
     // forceTLS: false,
     // encrypted: false,
+    // enabledTransports: ["ws", "wss"], // ⬅️ THIS FIXES ws://443
     wsHost: "api.chomnenhapp.com",
     wssPort: 443,
     wsPort: 443,
-
     forceTLS: true,
     encrypted: true,
-
     enabledTransports: ["wss"], // ⬅️ THIS FIXES ws://443
-    // enabledTransports: ["ws", "wss"], // ⬅️ THIS FIXES ws://443
 
     authEndpoint: `${baseUrl}/broadcasting/auth`,
     auth: {
