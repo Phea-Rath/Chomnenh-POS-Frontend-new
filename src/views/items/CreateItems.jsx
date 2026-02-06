@@ -26,7 +26,7 @@ const ItemForm = () => {
   const navigator = useNavigate();
   const token = localStorage.getItem("token");
   const { setLoading, loading } = useOutletsContext();
-  const { refetch } = useGetAllItemsQuery({ token, limit: 12, page: 1, search: "" });
+  const { refetch } = useGetAllItemsQuery({ token, limit: 10, page: 1, search: "" });
 
   // State management
   const [viewImages, setViewImages] = useState([]);
@@ -69,7 +69,7 @@ const ItemForm = () => {
   const brandContext = useGetAllBrandQuery(token);
   const categoryContext = useGetAllCategoriesQuery(token);
   const scaleContext = useGetAllScalesQuery(token);
-  const saleContext = useGetAllSaleQuery(token);
+  const saleContext = useGetAllSaleQuery({ token, limit: 10, page: 1, search: "" });
   const attributeContext = useGetAllAttributeQuery(token);
 
   // Helper function to extract colors from attributes
