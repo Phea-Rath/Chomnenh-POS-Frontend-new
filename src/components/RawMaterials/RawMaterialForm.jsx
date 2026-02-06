@@ -36,7 +36,7 @@ import { useNavigate, useParams } from 'react-router';
 import { UploadOutlined, DeleteOutlined } from '@ant-design/icons';
 import api from '../../services/api';
 import { toast } from 'react-toastify';
-import { useGetAllRawMaterialQuery } from '../../../app/Features/RawMaterialSlice';
+import { useGetAllRawMaterialQuery, useGetRawMaterialByIdQuery } from '../../../app/Features/RawMaterialSlice';
 
 const { TextArea } = Input;
 const { Option } = Select;
@@ -57,6 +57,7 @@ const RawMaterialForm = () => {
     const [formErrors, setFormErrors] = useState({});
     const [currentMaterial, setCurrentMaterial] = useState(null);
     const { refetch } = useGetAllRawMaterialQuery({ limit: 10, page: 1, search: '', token });
+    const { data } = useGetRawMaterialByIdQuery({ id, token });
 
     // Common units for selection
     const unitOptions = [
@@ -81,29 +82,7 @@ const RawMaterialForm = () => {
     // Fetch material data for edit mode
     useEffect(() => {
         if (isEditMode) {
-            fetchMaterialData();
-        }
-    }, [id]);
-
-    const fetchMaterialData = async () => {
-        setLoading(true);
-        try {
-            const token = localStorage.getItem('token');
-            const response = await api.get(`/raw_materials/${id}`,
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                        'Content-Type': 'application/json',
-                    },
-                }
-            );
-
-            if (!response) {
-                throw new Error('Failed to fetch material');
-            }
-
-            const material = response.data;
-
+            const material = data?.data;
             setCurrentMaterial(material);
 
             // Set form values
@@ -125,14 +104,8 @@ const RawMaterialForm = () => {
                 setImageUrl(material.material_image);
                 setImagePreview(material.material_image);
             }
-        } catch (error) {
-            console.error('Error fetching material:', error);
-            toast.error('Failed to load material data. Please try again.');
-            navigate('/dashboard/raw-materials');
-        } finally {
-            setLoading(false);
         }
-    };
+    }, [id]);
 
     // Handle image upload
     const handleImageUpload = (info) => {
@@ -257,6 +230,8 @@ const RawMaterialForm = () => {
                     }
                 });
             }
+
+            console.log(response);
 
             if (response.status == 200) {
                 refetch();
@@ -606,9 +581,9 @@ const RawMaterialForm = () => {
                                                         ) : (
                                                             <div className="text-center p-4">
                                                                 <LuUpload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                                                                <div className="text-gray-600">Upload Image</div>
+                                                                {/* <div className="text-gray-600">Upload Image</div> */}
                                                                 <div className="text-xs text-gray-500 mt-1">
-                                                                    Max 2MB • JPG, PNG, GIF
+                                                                    Max 2MB • JPG, PNG
                                                                 </div>
                                                             </div>
                                                         )}
@@ -620,7 +595,7 @@ const RawMaterialForm = () => {
                                                         <p className="font-medium">Image Guidelines:</p>
                                                         <ul className="space-y-1 list-disc list-inside">
                                                             <li>Maximum file size: 2MB</li>
-                                                            <li>Supported formats: JPG, PNG, GIF</li>
+                                                            <li>Supported formats: JPG, PNG</li>
                                                             <li>Recommended size: 500x500px</li>
                                                             <li>Clear, well-lit product photos work best</li>
                                                         </ul>
