@@ -71,13 +71,13 @@ const UpdateMenus = ({ onAdd, dataMenu }) => {
         formData.append('menu_icon', menus.menu_icon);
       }
 
-      await updateMenu({ id: dataMenu.id, itemData: formData, token }).unwrap();
-      // const res = await api.post(`/menus/${dataMenu.id}`, formData, {
-      //   headers: {
-      //     Authorization: `Bearer ${token}`,
-      //     'Content-Type': 'multipart/form-data',
-      //   },
-      // });
+      // await updateMenu({ id: dataMenu.id, itemData: formData, token }).unwrap();
+      const res = await api.post(`/menus/${dataMenu.id}`, formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data',
+        },
+      });
       refetch();
       permRefetch();
 
