@@ -36,8 +36,18 @@ const Management = () => {
   const [sidebar, setSidebar] = useState(false);
   const { data } = useGetUserLoginQuery(token);
   const { refetch: refetchOrder } = useGetAllOrderQuery(token);
-  const { refetch: refetchSale } = useGetAllSaleQuery(token);
-  const { refetch: refetchItem } = useGetAllItemsQuery(token);
+  const { refetch: refetchSale } = useGetAllSaleQuery({
+    token,
+    limit: 10,
+    page: 1,
+    search: ''
+  });
+  const { refetch: refetchItem } = useGetAllItemsQuery({
+    token,
+    limit: 10,
+    page: 1,
+    search: ''
+  });
   const { refetch: refetchItemInStock } = useGetAllItemInStockQuery(token);
   const { refetch: userRefetch } = useGetAllUserQuery(token);
   const { data: permission } = useGetPermissionByIdQuery({ id: userId, token });
@@ -55,7 +65,8 @@ const Management = () => {
 
   useEffect(() => {
     echo.private(`my-private-channel.user.${profileId}`).listen("PrivateChannelEvent", (data) => {
-      const audio = new Audio("../../public/sounds/auto.wav");
+      // const audio = new Audio("../../public/sounds/auto.wav");
+      const audio = new Audio("/sounds/auto.wav");
       audio.currentTime = 0; // restart from beginning
       audio.play().catch((err) => console.log("🔇 Sound blocked:", err));
       console.log("📡 Event received:", data); // 👈 Debug first
@@ -68,13 +79,13 @@ const Management = () => {
     });
     echo.private(`check-online.user.${profileId}`).listen("OnlineEvent", (data) => {
       // refetch();
-      toast.info(`💬 New online order by ${data.data}`);
+      toast.info(`💬 Order tracking updated ${data.data}`);
       refetchSale();
       refetchOnline();
       refetchOrder();
     });
     echo.channel("my-public-channel").listen("PublicChannelEvent", (data) => {
-      const audio = new Audio("../../public/sounds/notification.mp3");
+      const audio = new Audio("/sounds/auto.wav");
       audio.currentTime = 0; // restart from beginning
       audio.play().catch((err) => console.log("🔇 Sound blocked:", err));
       console.log("📡 Event received:", data); // 👈 Debug first

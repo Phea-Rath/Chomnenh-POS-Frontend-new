@@ -41,7 +41,12 @@ const OrderTracking = () => {
 
     const token = localStorage.getItem('token');
     const { refetch: refetchWaste } = useGetAllWasteQuery(token);
-    const saleItemContext = useGetAllSaleQuery(token);
+    const saleItemContext = useGetAllSaleQuery({
+        token,
+        limit: 10,
+        page: 1,
+        search: ''
+    });
     const { data: delivers } = useGetAllDeliverQuery(token);
     const { data: dataOrderOnline, refetch, isLoading } = useGetAllOrderOnlineQuery(token);
 
