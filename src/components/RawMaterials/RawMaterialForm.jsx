@@ -87,22 +87,22 @@ const RawMaterialForm = () => {
 
             // Set form values
             form.setFieldsValue({
-                material_name: material.material_name,
-                material_code: material.material_code || '',
-                primary_unit: material.primary_unit,
-                secondary_unit: material.secondary_unit || '',
-                conversion_value: material.conversion_value ? parseFloat(material.conversion_value) : undefined,
+                material_name: material?.material_name,
+                material_code: material?.material_code || '',
+                primary_unit: material?.primary_unit,
+                secondary_unit: material?.secondary_unit || '',
+                conversion_value: material?.conversion_value ? parseFloat(material?.conversion_value) : undefined,
             });
 
             // Handle secondary unit toggle
-            if (material.secondary_unit) {
+            if (material?.secondary_unit) {
                 setHasSecondaryUnit(true);
             }
 
             // Set image preview if exists
-            if (material.material_image) {
-                setImageUrl(material.material_image);
-                setImagePreview(material.material_image);
+            if (material?.material_image) {
+                setImageUrl(material?.material_image);
+                setImagePreview(material?.material_image);
             }
         }
     }, [id]);
