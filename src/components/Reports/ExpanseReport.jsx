@@ -4,50 +4,92 @@ import { useGetExpanseReportMutation } from '../../../app/Features/reportsSlice'
 import { toast } from 'react-toastify';
 import * as XLSX from 'xlsx';
 import { useGetAllUserQuery } from '../../../app/Features/usersSlice';
+import { useReactToPrint } from 'react-to-print';
+import { useGetAllExpanseTypesQuery } from '../../../app/Features/expanseTypesSlice';
 
 const ExpenseReportByUser = () => {
     const token = localStorage.getItem('token');
-    const [getExpense, { isLoading }] = useGetExpanseReportMutation();
+    const [getExpense] = useGetExpanseReportMutation();
+    const formatDateForInput = (date) => {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    };
+    const today = new Date();
+    const firstDayOfCurrentMonth = new Date(today.getFullYear(), today.getMonth(), 1);
     const [formData, setFormData] = useState({
-        expense_by: '',
-        start_date: '',
-        end_date: ''
+        expanse_by: '',
+        username: '',
+        expanse_type_id: '',
+        expanse_type_name: '',
+        start_date: formatDateForInput(firstDayOfCurrentMonth),
+        end_date: formatDateForInput(today)
     });
     const [users, setUsers] = useState([]);
-    const { data } = useGetAllUserQuery(token);
-    console.log(data);
+    const [expanseTypes, setExpanseTypes] = useState([]);
+    const { data: userData } = useGetAllUserQuery(token);
+    const { data: expenseTypeData } = useGetAllExpanseTypesQuery(token);
 
     const tableRef = useRef();
     const [reportData, setReportData] = useState(null);
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
-        setUsers(data?.data);
-    }, [data]);
+        if (userData?.data) {
+            setUsers(userData.data);
+        }
+    }, [userData]);
+
+    useEffect(() => {
+        if (expenseTypeData?.data) {
+            setExpanseTypes(expenseTypeData.data);
+        }
+    }, [expenseTypeData]);
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
-        setFormData(prev => ({
-            ...prev,
-            [name]: value
-        }));
+        setFormData((prev) => {
+            const next = {
+                ...prev,
+                [name]: value
+            };
+            if (name === 'expanse_by') {
+                next.username = value || '';
+            }
+            if (name === 'expanse_type_id') {
+                const selected = expanseTypes.find(
+                    (type) => String(type.expanse_type_id) === String(value)
+                );
+                next.expanse_type_name = selected?.expanse_type_name || '';
+            }
+            return next;
+        });
     };
 
-    const handleGetReport = async () => {
+    async function fetchReport() {
         try {
             setLoading(true);
             const res = await getExpense({ itemData: formData, token });
-            if (res.data.status === 200) {
-                setReportData(res.data.data);
-                setLoading(false);
-                toast.success('Expense report generated successfully');
+            if (res?.data?.status === 200) {
+                setReportData(res.data.data || []);
+                // toast.success('Expense report generated successfully');
             } else {
                 toast.error('Failed to generate expense report');
             }
         } catch (error) {
             toast.error(error?.message || 'An error occurred while generating the report');
+        } finally {
             setLoading(false);
         }
+    }
+
+    useEffect(() => {
+        fetchReport();
+    }, [])
+
+    const handleGetReport = async () => {
+        fetchReport();
     };
 
     const handleExportExcel = () => {
@@ -58,22 +100,10 @@ const ExpenseReportByUser = () => {
         XLSX.writeFile(wb, "ExpenseReport.xlsx");
     };
 
-    const handlePrint = () => {
-        if (!tableRef.current) return;
-        const printContents = tableRef.current.innerHTML;
-        const win = window.open('', '', 'height=700,width=1000');
-        win.document.write('<html><head><title>Expense Report</title>');
-        win.document.write('<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css">');
-        win.document.write('</head><body>');
-        win.document.write(printContents);
-        win.document.write('</body></html>');
-        win.document.close();
-        win.focus();
-        setTimeout(() => {
-            win.print();
-            win.close();
-        }, 500);
-    };
+    const handlePrint = useReactToPrint({
+        content: () => tableRef.current,
+        contentRef: tableRef,
+    });
 
     const totals = reportData
         ? reportData.reduce(
@@ -98,7 +128,7 @@ const ExpenseReportByUser = () => {
     };
 
     return (
-        <div className="min-h-screen bg-gray-50 p-1 md:p-3">
+        <div className="min-h-screen bg-transparent p-1 md:p-3">
             <div className="max-w-7xl mx-auto">
                 {/* Header */}
                 <div className="mb-8 ml-2">
@@ -109,25 +139,43 @@ const ExpenseReportByUser = () => {
                 {/* Filter Form */}
                 <div className="bg-white rounded-lg text-xs shadow-md p-6 mb-6">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">
                                 Expense By
                             </label>
                             <select
-                                name="expense_by"
-                                value={formData.expense_by}
+                                name="expanse_by"
+                                value={formData.expanse_by}
                                 onChange={handleInputChange}
                                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                             >
                                 <option value="">All Users</option>
                                 {users?.map((user) => (
-                                    <option key={user.id} value={user.username}>
+                                    <option key={user.id} value={user.id}>
                                         {user.username}
                                     </option>
                                 ))}
                             </select>
                         </div>
-
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Expense Type By
+                            </label>
+                            <select
+                                name="expanse_type_id"
+                                value={formData.expanse_type_id}
+                                onChange={handleInputChange}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            >
+                                <option value="">All Types</option>
+                                {expanseTypes?.map((type) => (
+                                    <option key={type.expanse_type_id} value={type.expanse_type_id}>
+                                        {type.expanse_type_name}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">
                                 Start Date
@@ -165,7 +213,7 @@ const ExpenseReportByUser = () => {
                         <button
                             onClick={handleGetReport}
                             disabled={loading}
-                            className="flex items-center gap-2 bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="flex items-center gap-2 bg-blue-600 text-white border border-gray-300 px-6 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             <FiFilter size={18} />
                             {loading ? 'Loading...' : 'Get Report'}
@@ -195,32 +243,38 @@ const ExpenseReportByUser = () => {
                         </div>
 
                         {/* Report Table */}
-                        <div className="overflow-x-auto" ref={tableRef}>
-                            <table className="min-w-full divide-y divide-gray-200">
+                        <div className="overflow-x-auto print:overflow-visible print:p-10" ref={tableRef}>
+                            <ul className='px-5 flex justify-between text-left text-xs font-medium mb-5 text-gray-500 uppercase tracking-wider'>
+                                <li>User:   <span className='font-bold'>{formData?.username || 'All'}</span></li>
+                                <li>Type: <span className='font-bold'>{formData.expanse_type_name || 'All'}</span></li>
+                                <li>Start Date: <span className='font-bold'>{formData.start_date || 'All'}</span></li>
+                                <li>End Date: <span className='font-bold'>{formData.end_date || 'All'}</span></li>
+                            </ul>
+                            <table className="min-w-full border-collapse border border-gray-400">
                                 <thead className="bg-gray-50">
                                     <tr>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th className="border border-gray-300 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Expense No
                                         </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th className="border border-gray-300 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Expense Date
                                         </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th className="border border-gray-300 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Expense By
                                         </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th className="border border-gray-300 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Supplier
                                         </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th className="border border-gray-300 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Expense Type
                                         </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th className="border border-gray-300 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Quantity
                                         </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th className="border border-gray-300 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Unit Price
                                         </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th className="border border-gray-300 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Sub Total
                                         </th>
                                     </tr>
@@ -228,39 +282,41 @@ const ExpenseReportByUser = () => {
                                 <tbody className="bg-white divide-y divide-gray-200">
                                     {reportData?.map((item, index) => (
                                         <tr key={index} className="hover:bg-gray-50 !text-xs">
-                                            <td className="px-6 py-4 whitespace-nowrap font-medium text-gray-900">
+                                            <td className="border border-gray-300 px-6 py-4 whitespace-nowrap font-medium text-gray-900">
                                                 {item.expanse_no}
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-gray-500">
+                                            <td className="border border-gray-300 px-6 py-4 whitespace-nowrap text-gray-500">
                                                 {new Date(item.expanse_date).toLocaleDateString()}
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-gray-500">
+                                            <td className="border border-gray-300 px-6 py-4 whitespace-nowrap text-gray-500">
                                                 {item.expanse_by}
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-gray-500">
+                                            <td className="border border-gray-300 px-6 py-4 whitespace-nowrap text-gray-500">
                                                 {item.expanse_supplier}
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-gray-500">
+                                            <td className="border border-gray-300 px-6 py-4 whitespace-nowrap text-gray-500">
                                                 {item.expanse_type_name}
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-gray-500">
+                                            <td className="border border-gray-300 px-6 py-4 whitespace-nowrap text-gray-500">
                                                 {item.quantity}
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-gray-500">
+                                            <td className="border border-gray-300 px-6 py-4 whitespace-nowrap text-gray-500">
                                                 {formatCurrency(item.unit_price)}
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap font-medium text-green-600">
+                                            <td className="border border-gray-300 px-6 py-4 whitespace-nowrap font-medium text-green-600">
                                                 {formatCurrency(item.sub_total)}
                                             </td>
                                         </tr>
                                     ))}
                                     {/* Row Totals */}
-                                    <tr className="bg-gray-100 font-bold">
-                                        <td className="px-6 py-4 text-right" colSpan={5}>Total</td>
-                                        <td className="px-6 py-4">{totals.quantity}</td>
-                                        <td className="px-6 py-4">{formatCurrency(totals.unit_price)}</td>
-                                        <td className="px-6 py-4 text-green-600">{formatCurrency(totals.sub_total)}</td>
-                                    </tr>
+                                    {reportData.length > 0 && (
+                                        <tr className="bg-gray-100 font-bold">
+                                            <td className="border border-gray-300 px-6 py-4 text-right" colSpan={5}>Total</td>
+                                            <td className="border border-gray-300 px-6 py-4">{totals.quantity}</td>
+                                            <td className="border border-gray-300 px-6 py-4">{formatCurrency(totals.unit_price)}</td>
+                                            <td className="border border-gray-300 px-6 py-4 text-green-600">{formatCurrency(totals.sub_total)}</td>
+                                        </tr>
+                                    )}
                                 </tbody>
                             </table>
                             {reportData?.length > 0 && (

@@ -5,52 +5,113 @@ import { toast } from 'react-toastify';
 import * as XLSX from 'xlsx';
 import { useGetAllUserQuery } from '../../../app/Features/usersSlice';
 import { useGetAllCustomerQuery } from '../../../app/Features/customersSlice';
+import { useGetAllItemsQuery } from '../../../app/Features/itemsSlice';
+import { useReactToPrint } from 'react-to-print';
 
 const SaleReportByCustomer = () => {
     const token = localStorage.getItem('token');
-    const [getSaleByCustomer, { isLoading }] = useGetSaleByCustomerReportMutation()
+    const [getSaleByCustomer] = useGetSaleByCustomerReportMutation();
+    const formatDateForInput = (date) => {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    };
+    const today = new Date();
+    const firstDayOfCurrentMonth = new Date(today.getFullYear(), today.getMonth(), 1);
     const [formData, setFormData] = useState({
         order_customer: '',
-        start_date: '',
-        end_date: ''
+        customer_name: '',
+        item_id: '',
+        item_name: '',
+        user_id: '',
+        username: '',
+        start_date: formatDateForInput(firstDayOfCurrentMonth),
+        end_date: formatDateForInput(today)
     });
     const [users, setUsers] = useState([]);
-    const { data } = useGetAllUserQuery(token);
+    const [customers, setCustomers] = useState([]);
+    const [items, setItems] = useState([]);
+    const { data: userData } = useGetAllUserQuery(token);
+    const { data: customerData } = useGetAllCustomerQuery(token);
+    const { data: itemData } = useGetAllItemsQuery({ token, limit: 1000, page: 1, search: '' });
     const tableRef = useRef();
 
     const [reportData, setReportData] = useState(null);
     const [loading, setLoading] = useState(false);
-    const { data: customer } = useGetAllCustomerQuery(token);
 
     useEffect(() => {
-        setUsers(data?.data);
+        if (userData?.data) {
+            setUsers(userData.data);
+        }
+    }, [userData]);
 
-    }, [data]);
+    useEffect(() => {
+        if (customerData?.data) {
+            setCustomers(customerData.data);
+        }
+    }, [customerData]);
+
+    useEffect(() => {
+        if (itemData?.data) {
+            setItems(itemData.data);
+        }
+    }, [itemData]);
+
     const handleInputChange = (e) => {
         const { name, value } = e.target;
-        setFormData(prev => ({
-            ...prev,
-            [name]: value
-        }));
+        setFormData((prev) => {
+            const next = {
+                ...prev,
+                [name]: value
+            };
+
+            if (name === 'order_customer') {
+                const selected = customers.find(
+                    (c) => String(c.customer_id) === String(value)
+                );
+                next.customer_name = selected?.customer_name || '';
+            }
+
+            if (name === 'item_id') {
+                const selected = items.find(
+                    (item) => String(item.item_id ?? item.id) === String(value)
+                );
+                next.item_name = selected?.item_name ?? selected?.name ?? '';
+            }
+
+            if (name === 'user_id') {
+                const selected = users.find((u) => String(u.id) === String(value));
+                next.username = selected?.username || '';
+            }
+
+            return next;
+        });
     };
 
-    const handleGetReport = async () => {
+    useEffect(() => {
+        fetchReport();
+    }, []);
+
+    async function fetchReport() {
         try {
             setLoading(true);
             const res = await getSaleByCustomer({ itemData: formData, token });
-            console.log(res);
-            if (res.data.status == 200) {
-
-                setReportData(res.data.data);
-                setLoading(false);
-                toast.success('sale report get successfully');
+            if (res?.data?.status === 200) {
+                setReportData(res.data.data || []);
+                // toast.success('sale report get successfully');
             } else {
                 toast.error('Failed to get sale report');
             }
         } catch (error) {
             toast.error(error?.message || error || 'An error occurred while creating the menu');
+        } finally {
             setLoading(false);
         }
+    }
+
+    const handleGetReport = async () => {
+        await fetchReport();
     };
 
     const handleExportExcel = () => {
@@ -61,22 +122,10 @@ const SaleReportByCustomer = () => {
         XLSX.writeFile(wb, "SalesReport.xlsx");
     };
 
-    const handlePrint = () => {
-        if (!tableRef.current) return;
-        const printContents = tableRef.current.innerHTML;
-        const win = window.open('', '', 'height=700,width=1000');
-        win.document.write('<html><head><title>Sales Report</title>');
-        win.document.write('<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css">');
-        win.document.write('</head><body>');
-        win.document.write(printContents);
-        win.document.write('</body></html>');
-        win.document.close();
-        win.focus();
-        setTimeout(() => {
-            win.print();
-            win.close();
-        }, 500);
-    };
+    const handlePrint = useReactToPrint({
+        content: () => tableRef.current,
+        contentRef: tableRef,
+    });
 
 
     const totals = reportData
@@ -107,7 +156,7 @@ const SaleReportByCustomer = () => {
     };
 
     return (
-        <div className="min-h-screen bg-gray-50 p-1 md:p-3">
+        <div className="min-h-screen bg-transparent p-1 md:p-3">
             <div className="max-w-7xl mx-auto">
                 {/* Header */}
                 <div className="mb-8 ml-2">
@@ -116,28 +165,67 @@ const SaleReportByCustomer = () => {
                 </div>
 
                 {/* Filter Form */}
-                <div className="bg-white rounded-lg text-xs shadow-md p-6 mb-6">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                <div className="bg-white rounded-lg shadow-md p-6 text-xs mb-6">
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                            <label className="block  font-medium text-gray-700 mb-2">
                                 Customer
                             </label>
                             <select
-                                type="text"
                                 name="order_customer"
                                 value={formData.order_customer}
                                 onChange={handleInputChange}
-                                placeholder="Enter customer ID or name"
                                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                             >
-                                <option value="">ទាំងអស់</option>
-                                <option value="1">Unknown</option>
-                                {customer?.data?.map((cus) => <option value={cus.customer_id}>{cus.customer_name}</option>)}
+                                <option value="">All Customers</option>
+                                <option value={1}>Unknown</option>
+                                {customers?.map((c) => (
+                                    <option key={c.customer_id} value={c.customer_id}>
+                                        {c.customer_name}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+
+                        {/* <div>
+                            <label className="block  font-medium text-gray-700 mb-2">
+                                Item
+                            </label>
+                            <select
+                                name="item_id"
+                                value={formData.item_id}
+                                onChange={handleInputChange}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            >
+                                <option value="">All Items</option>
+                                {items?.map((item) => (
+                                    <option key={item.item_id ?? item.id} value={item.item_id ?? item.id}>
+                                        {item.item_name ?? item.name} ({item.barcode})
+                                    </option>
+                                ))}
+                            </select>
+                        </div> */}
+                        <div>
+                            <label className="block  font-medium text-gray-700 mb-2">
+                                User
+                            </label>
+                            <select
+                                name="user_id"
+                                value={formData.user_id}
+                                onChange={handleInputChange}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            >
+                                <option value="">All Users</option>
+                                {users?.map((user) => (
+                                    <option key={user.id} value={user.id}>
+                                        {user.username}
+                                    </option>
+                                ))}
                             </select>
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                            <label className="block  font-medium text-gray-700 mb-2">
                                 Start Date
                             </label>
                             <div className="relative">
@@ -153,7 +241,7 @@ const SaleReportByCustomer = () => {
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                            <label className="block  font-medium text-gray-700 mb-2">
                                 End Date
                             </label>
                             <div className="relative">
@@ -203,38 +291,45 @@ const SaleReportByCustomer = () => {
                         </div>
 
                         {/* Report Table */}
-                        <div className="overflow-x-auto" ref={tableRef}>
-                            <table className="min-w-full divide-y divide-gray-200">
+                        <div className="overflow-x-auto print:overflow-visible print:p-10" ref={tableRef}>
+                            <ul className='px-5 flex justify-between text-left text-xs font-medium mb-5 text-gray-500 uppercase tracking-wider'>
+                                <li>User:   <span className='font-bold'>{formData?.username || 'All'}</span></li>
+                                <li>Customer:   <span className='font-bold'>{formData?.customer_name || 'All'}</span></li>
+                                {/* <li>Item:   <span className='font-bold'>{formData?.item_name || 'All'}</span></li> */}
+                                <li>Start Date:     <span className='font-bold'>{formData.start_date || 'All'}</span></li>
+                                <li>End Date:   <span className='font-bold'>{formData.end_date || 'All'}</span></li>
+                            </ul>
+                            <table className="min-w-full border-collapse border border-gray-400">
                                 <thead className="bg-gray-50">
                                     <tr>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th className="border border-gray-300 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Order No
                                         </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th className="border border-gray-300 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Phone
                                         </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th className="border border-gray-300 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Date
                                         </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th className="border border-gray-300 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Customer
                                         </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th className="border border-gray-300 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Subtotal
                                         </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th className="border border-gray-300 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Discount
                                         </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th className="border border-gray-300 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Delivery
                                         </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th className="border border-gray-300 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Total
                                         </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th className="border border-gray-300 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Payment
                                         </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th className="border border-gray-300 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Balance
                                         </th>
                                     </tr>
@@ -242,47 +337,47 @@ const SaleReportByCustomer = () => {
                                 <tbody className="bg-white divide-y divide-gray-200">
                                     {reportData?.map((item, index) => (
                                         <tr key={index} className="hover:bg-gray-50 !text-xs">
-                                            <td className="px-6 py-4 whitespace-nowrap font-medium text-gray-900">
+                                            <td className="border border-gray-300 px-6 py-4 whitespace-nowrap font-medium text-gray-900">
                                                 {item.order_no}
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap  text-gray-500">
+                                            <td className="border border-gray-300 px-6 py-4 whitespace-nowrap  text-gray-500">
                                                 {item.order_tel}
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap  text-gray-500">
+                                            <td className="border border-gray-300 px-6 py-4 whitespace-nowrap  text-gray-500">
                                                 {new Date(item.order_date).toLocaleDateString()}
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap  text-gray-500">
+                                            <td className="border border-gray-300 px-6 py-4 whitespace-nowrap  text-gray-500">
                                                 {item.order_customer}
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap  text-gray-500">
+                                            <td className="border border-gray-300 px-6 py-4 whitespace-nowrap  text-gray-500">
                                                 {formatCurrency(item.order_subtotal)}
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap  text-gray-500">
+                                            <td className="border border-gray-300 px-6 py-4 whitespace-nowrap  text-gray-500">
                                                 {formatCurrency(item.order_discount)}
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap  text-gray-500">
+                                            <td className="border border-gray-300 px-6 py-4 whitespace-nowrap  text-gray-500">
                                                 {formatCurrency(item.delivery_fee)}
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap  font-medium text-green-600">
+                                            <td className="border border-gray-300 px-6 py-4 whitespace-nowrap  font-medium text-green-600">
                                                 {formatCurrency(item.order_total)}
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap  text-blue-500">
+                                            <td className="border border-gray-300 px-6 py-4 whitespace-nowrap  text-blue-500">
                                                 {formatCurrency(parseFloat(item.payment))}
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap  font-medium text-red-600">
+                                            <td className="border border-gray-300 px-6 py-4 whitespace-nowrap  font-medium text-red-600">
                                                 {formatCurrency(parseFloat(item.balance))}
                                             </td>
                                         </tr>
                                     ))}
                                     {/* Row Totals */}
                                     <tr className="bg-gray-100 font-bold">
-                                        <td className="px-6 py-4 text-right" colSpan={4}>Total</td>
-                                        <td className="px-6 py-4">{formatCurrency(totals.order_subtotal)}</td>
-                                        <td className="px-6 py-4">{formatCurrency(totals.order_discount)}</td>
-                                        <td className="px-6 py-4">{formatCurrency(totals.delivery_fee)}</td>
-                                        <td className="px-6 py-4 text-green-600">{formatCurrency(totals.order_total)}</td>
-                                        <td className="px-6 py-4 text-blue-600">{formatCurrency(totals.payment)}</td>
-                                        <td className="px-6 py-4 text-red-600">{formatCurrency(totals.balance)}</td>
+                                        <td className="border border-gray-300 px-6 py-4 text-right" colSpan={4}>Total</td>
+                                        <td className="border border-gray-300 px-6 py-4">{formatCurrency(totals.order_subtotal)}</td>
+                                        <td className="border border-gray-300 px-6 py-4">{formatCurrency(totals.order_discount)}</td>
+                                        <td className="border border-gray-300 px-6 py-4">{formatCurrency(totals.delivery_fee)}</td>
+                                        <td className="border border-gray-300 px-6 py-4 text-green-600">{formatCurrency(totals.order_total)}</td>
+                                        <td className="border border-gray-300 px-6 py-4 text-blue-600">{formatCurrency(totals.payment)}</td>
+                                        <td className="border border-gray-300 px-6 py-4 text-red-600">{formatCurrency(totals.balance)}</td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -296,7 +391,7 @@ const SaleReportByCustomer = () => {
                                         <div>
                                             <span className=" font-medium text-gray-700">Total Amount: </span>
                                             <span className=" text-green-600 font-medium">
-                                                {formatCurrency(reportData.reduce((sum, item) => sum + item.order_total, 0))}
+                                                {formatCurrency(reportData.reduce((sum, item) => sum + (Number(item.order_total) || 0), 0))}
                                             </span>
                                         </div>
                                     </div>

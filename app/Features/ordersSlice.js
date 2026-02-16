@@ -23,7 +23,7 @@ export const ordersApi = createApi({
       query: ({ token, limit, page, search }) => queryData(`/order_transection?limit=${limit}&page=${page}&search=${search}`, token),
     }),
     getOrderByUser: builder.query({
-      query: (token) => queryData("/order_by_user", token),
+      query: ({ id, token }) => queryData(`/order_by_user/${id}`, token),
     }),
     getPopularOrder: builder.query({
       query: (token) => queryData("/popular_sales", token),

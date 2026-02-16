@@ -566,23 +566,7 @@ const CustomerForm = () => {
 
               {/* Location Section */}
               <div className="bg-gray-50 rounded-xl p-6 border border-gray-200">
-                <div className="flex items-center gap-3 mb-4">
-                  <FaMapMarkerAlt className="text-blue-500 text-xl" />
-                  <h2 className="text-lg font-semibold text-gray-800">Location Services</h2>
-                </div>
 
-                <button
-                  type="button"
-                  onClick={getLocation}
-                  disabled={loading}
-                  className={`w-full px-4 py-3 rounded-lg font-semibold transition-all duration-200 flex items-center justify-center gap-3 ${loading
-                    ? "bg-gray-400 cursor-not-allowed text-gray-700"
-                    : "bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-lg hover:shadow-xl"
-                    }`}
-                >
-                  <FaMapMarkerAlt className="text-lg" />
-                  {loading ? "Fetching Location..." : "Get My Current Location"}
-                </button>
 
                 {errors.general && (
                   <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
@@ -595,7 +579,8 @@ const CustomerForm = () => {
 
                 {location.latitude && location.longitude && (
                   <div className="mt-6">
-                    <h3 className="text-md font-semibold text-gray-700 mb-3">Location Preview:</h3>
+                    <h3 className="text-md font-semibold text-gray-700 flex mb-3">
+                      <FaMapMarkerAlt className="text-blue-500 text-xl" />Location Preview:</h3>
                     <div className="bg-white p-4 rounded-lg border border-gray-200">
                       <iframe
                         src={`https://www.google.com/maps?q=${location.latitude},${location.longitude}&hl=es;z=14&output=embed`}

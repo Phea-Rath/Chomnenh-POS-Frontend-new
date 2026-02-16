@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { AiTwotoneDelete } from "react-icons/ai";
-import { LuListChecks } from "react-icons/lu";
+import { LuListChecks, LuLogOut } from "react-icons/lu";
 import { Link, useNavigate, useParams } from "react-router";
 import { useOutletsContext } from "../../layouts/Management";
 import AlertBox from "../../services/AlertBox";
@@ -38,7 +38,7 @@ import api from "../../services/api";
 import { useGetUserLoginQuery, useGetUserProfileQuery } from "../../../app/Features/usersSlice";
 import { TbShoppingCartOff } from "react-icons/tb";
 import { MdOutlineAddShoppingCart } from "react-icons/md";
-import { IoExit } from "react-icons/io5";
+import { IoExit, IoLogOutOutline } from "react-icons/io5";
 import { useGetAllWasteQuery } from "../../../app/Features/notificationSlice";
 import { useDebounce } from "use-debounce";
 import {
@@ -386,7 +386,7 @@ const Sales = () => {
     const selectionKey = `${item.id}-${attributeKey}`;
 
     const sameOrder = orders?.items?.find(
-      (orderItem) => orderItem.selectionKey === selectionKey
+      (orderItem) => orderItem.id === item.id
     );
 
     if (sameOrder) {
@@ -1010,10 +1010,9 @@ const Sales = () => {
               </div>
             </div>
 
-            <div className="flex items-center gap-3">
-              <Button className="h-10 border-red-500 hover:border-red-500 !bg-red-500 !text-white hover:text-red-600">
-                <IoExit className="w-5 h-5 mr-2" />
-                <span onClick={() => setShowSignInModal(true)}>Logout</span>
+            <div className="flex items-center justify-end gap-3">
+              <Button icon={<IoLogOutOutline />} onClick={() => setShowSignInModal(true)} className="h-10 border-red-500 !rounded-full hover:border-red-500 !bg-red-500 !text-white hover:text-red-600">
+                {/* <span ></span> */}
               </Button>
               {user && <Link to='order-tracking'>
                 <Badge size="default" className="mr-2">
@@ -1024,7 +1023,7 @@ const Sales = () => {
                     className="h-10 border-green-500 hover:border-green-500 !bg-green-500 !text-white hover:text-green-600"
                     size="large"
                   >
-                    {user?.username}
+                    {/* {user?.username} */}
                   </Button>
                 </Badge>
               </Link>}
@@ -1036,7 +1035,7 @@ const Sales = () => {
                   className="h-10 border-blue-500 hover:border-blue-500 !bg-blue-500 !text-white hover:text-blue-600"
                   size="large"
                 >
-                  View Cart
+
                 </Button>
               </Badge>
             </div>
@@ -1138,7 +1137,7 @@ const Sales = () => {
                       <img
                         src={item.image}
                         alt={item.name}
-                        className="w-full h-48 object-contain p-4 hover:scale-105 transition-transform duration-300"
+                        className="w-full h-30 object-contain hover:scale-105 transition-transform duration-300"
                         onClick={() => { setVisible(true); setItemId(item.id) }}
                         onError={(e) => {
                           e.target.onerror = null;
@@ -1175,15 +1174,23 @@ const Sales = () => {
 
                     {/* Product Info */}
                     <div className="space-y-3">
-                      <div>
-                        <h3 className="font-bold text-gray-800 text-sm line-clamp-1 mb-1">
-                          {item.name}
-                        </h3>
-                        <p className="text-xs text-gray-500 font-mono">{item.code}</p>
+                      <div className="flex item-center justify-between">
+                        <div>
+                          <h3 className="font-bold text-gray-800 text-sm line-clamp-1 mb-1">
+                            {item.name}
+                          </h3>
+                          <p className="text-xs text-gray-500 font-mono">{item.code}</p>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-xs text-gray-600">Wholesale</div>
+                          <div className="text-sm font-medium text-blue-600">
+                            ${getItemPrice(item, "wholesale").toFixed(2)}
+                          </div>
+                        </div>
                       </div>
 
                       {/* Attributes Display */}
-                      {renderAttributesDisplay(item)}
+                      {/* {renderAttributesDisplay(item)} */}
 
                       {/* Price Information */}
                       <div className="space-y-2">
@@ -1198,29 +1205,19 @@ const Sales = () => {
                               </div>
                             )}
                           </div>
-                          <div className="text-right">
-                            <div className="text-xs text-gray-600">Wholesale</div>
-                            <div className="text-sm font-medium text-blue-600">
-                              ${getItemPrice(item, "wholesale").toFixed(2)}
-                            </div>
-                          </div>
+                          <Button
+                            type="primary"
+                            size="small"
+                            onClick={() => handleOrder(item, item.quantity)}
+                            disabled={item.in_stock <= 0}
+                            className={`${item.stock_in <= 0
+                              ? 'bg-gray-400 cursor-not-allowed'
+                              : 'bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 border-0'
+                              }`}
+                          >
+                            {item.stock_in <= 0 ? <TbShoppingCartOff /> : <MdOutlineAddShoppingCart />}
+                          </Button>
                         </div>
-                      </div>
-
-                      {/* Quantity Controls */}
-                      <div className="flex items-center justify-end pt-3 border-t border-gray-100">
-                        <Button
-                          type="primary"
-                          size="small"
-                          onClick={() => handleOrder(item, item.quantity)}
-                          disabled={item.in_stock <= 0}
-                          className={`${item.stock_in <= 0
-                            ? 'bg-gray-400 cursor-not-allowed'
-                            : 'bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 border-0'
-                            }`}
-                        >
-                          {item.stock_in <= 0 ? <TbShoppingCartOff /> : <MdOutlineAddShoppingCart />}
-                        </Button>
                       </div>
                     </div>
                   </Card>

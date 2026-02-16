@@ -78,9 +78,8 @@ const QRCodeGenerator = () => {
   };
 
   const copyURL = (text) => {
-    toast.info('URL copied!');
-    navigator.clipboard.writeText(text)
-
+    toast.info(`URL copied: ${text}`);
+    navigator.clipboard.writeText(text);
   }
 
   // Download QR code only

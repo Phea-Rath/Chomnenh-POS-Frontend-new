@@ -13,7 +13,7 @@ import { useGetAllSaleQuery } from '../../app/Features/salesSlice';
 import { useGetAllItemInStockQuery, useGetAllItemsQuery } from '../../app/Features/itemsSlice';
 import { useGetAllPermissionQuery, useGetPermissionByIdQuery } from '../../app/Features/permissionSlice';
 import { Atom, BlinkBlur, Slab } from 'react-loading-indicators';
-import { useGetAllOrderQuery } from '../../app/Features/ordersSlice';
+import { useGetAllOrderQuery, useGetOrderByUserQuery } from '../../app/Features/ordersSlice';
 import { Button } from 'antd';
 const outletContext = createContext();
 export const useOutletsContext = () => useContext(outletContext);
@@ -22,6 +22,7 @@ export const useOutletsContext = () => useContext(outletContext);
 const Management = () => {
   const token = localStorage.getItem('token');
   const userId = localStorage.getItem('userId');
+  const guestId = localStorage.getItem('guestId');
   const profileId = localStorage.getItem('profileId');
   const { data: dataWaste, isLoading, refetch } = useGetAllWasteQuery(token);
   const { data: dataOrderOnline, isLoading: isLoadingOnline, refetch: refetchOnline } = useGetAllOrderOnlineQuery(token);
@@ -48,6 +49,7 @@ const Management = () => {
     page: 1,
     search: ''
   });
+  const { refetch: refetchGuestOrder } = useGetOrderByUserQuery({ id: guestId, token });
   const { refetch: refetchItemInStock } = useGetAllItemInStockQuery(token);
   const { refetch: userRefetch } = useGetAllUserQuery(token);
   const { data: permission } = useGetPermissionByIdQuery({ id: userId, token });
@@ -63,36 +65,37 @@ const Management = () => {
     }
   }, [permission]);
 
-  useEffect(() => {
-    echo.private(`my-private-channel.user.${profileId}`).listen("PrivateChannelEvent", (data) => {
-      // const audio = new Audio("../../public/sounds/auto.wav");
-      const audio = new Audio("/sounds/auto.wav");
-      audio.currentTime = 0; // restart from beginning
-      audio.play().catch((err) => console.log("🔇 Sound blocked:", err));
-      console.log("📡 Event received:", data); // 👈 Debug first
-      toast.info(`💬 New orders by ${data.data}`);
-      refetch();
-      refetchOnline();
-      refetchSale();
-      refetchItem();
-      refetchItemInStock();
-    });
-    echo.private(`check-online.user.${profileId}`).listen("OnlineEvent", (data) => {
-      // refetch();
-      toast.info(`💬 Order tracking updated ${data.data}`);
-      refetchSale();
-      refetchOnline();
-      refetchOrder();
-    });
-    echo.channel("my-public-channel").listen("PublicChannelEvent", (data) => {
-      const audio = new Audio("/sounds/auto.wav");
-      audio.currentTime = 0; // restart from beginning
-      audio.play().catch((err) => console.log("🔇 Sound blocked:", err));
-      console.log("📡 Event received:", data); // 👈 Debug first
-      toast.info(`💬 New orders by ${data.message}`);
-    });
+  // useEffect(() => {
+  //   echo.private(`my-private-channel.user.${profileId}`).listen("PrivateChannelEvent", (data) => {
+  //     // const audio = new Audio("../../public/sounds/auto.wav");
+  //     const audio = new Audio("/sounds/auto.wav");
+  //     audio.currentTime = 0; // restart from beginning
+  //     audio.play().catch((err) => console.log("🔇 Sound blocked:", err));
+  //     console.log("📡 Event received:", data); // 👈 Debug first
+  //     toast.info(`💬 New orders by ${data.data}`);
+  //     refetch();
+  //     refetchOnline();
+  //     refetchSale();
+  //     refetchItem();
+  //     refetchItemInStock();
+  //   });
+  //   echo.private(`check-online.user.${profileId}`).listen("OnlineEvent", (data) => {
+  //     // refetch();
+  //     toast.info(`💬 Order tracking updated ${data.data}`);
+  //     refetchSale();
+  //     refetchGuestOrder();
+  //     refetchOnline();
+  //     refetchOrder();
+  //   });
+  //   echo.channel("my-public-channel").listen("PublicChannelEvent", (data) => {
+  //     const audio = new Audio("/sounds/auto.wav");
+  //     audio.currentTime = 0; // restart from beginning
+  //     audio.play().catch((err) => console.log("🔇 Sound blocked:", err));
+  //     console.log("📡 Event received:", data); // 👈 Debug first
+  //     toast.info(`💬 New orders by ${data.message}`);
+  //   });
 
-  }, []);
+  // }, []);
   useEffect(() => {
     setNotification(dataWaste?.data?.length + dataOrderOnline?.data?.length);
   }, [dataOrderOnline, dataWaste, data])

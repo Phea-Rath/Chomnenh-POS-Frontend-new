@@ -21,6 +21,7 @@ import { toast } from "react-toastify";
 import { Tag, Divider, Badge, Card, Statistic, Tooltip } from "antd";
 import { FaPalette, FaRuler, FaTag } from "react-icons/fa";
 import { useGetAllSaleQuery } from "../../../app/Features/salesSlice";
+import Barcode from 'react-barcode';
 
 const ItemDetails = () => {
   const { id } = useParams();
@@ -55,7 +56,7 @@ const ItemDetails = () => {
   const otherSpecs = currentItem.attributes?.filter(a => !["colors", "size"].includes(a.name)) || [];
 
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0 }} animate={{ opacity: 1 }}
       className="min-h-screen bg-transparent p-4 lg:p-8"
     >
@@ -80,7 +81,7 @@ const ItemDetails = () => {
       {/* --- TOP NAVIGATION BAR --- */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
         <div className="flex items-center gap-4">
-          <button 
+          <button
             onClick={() => navigator("/dashboard/list")}
             className="p-2 hover:bg-gray-100 rounded-full transition-colors"
           >
@@ -97,7 +98,7 @@ const ItemDetails = () => {
           <button onClick={() => setAlertBox(true)} className="p-2.5 text-red-500 hover:bg-red-50 rounded-xl transition-all">
             <RiDeleteBin6Line size={20} />
           </button>
-          <button 
+          <button
             onClick={() => navigator(`/dashboard/list/update/${currentItem.id}`)}
             className="flex items-center gap-2 bg-blue-600 text-white px-6 py-2.5 rounded-xl hover:bg-blue-700 shadow-md transition-all font-medium"
           >
@@ -107,7 +108,7 @@ const ItemDetails = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        
+
         {/* --- LEFT: MEDIA GALLERY (Sticky) --- */}
         <div className="lg:col-span-5">
           <div className="sticky top-8 space-y-4">
@@ -122,23 +123,23 @@ const ItemDetails = () => {
                   className="max-h-full max-w-full object-contain"
                 />
               </AnimatePresence>
-              
+
               {/* Image Controls */}
               {currentItem.images?.length > 1 && (
                 <div className="absolute inset-x-4 top-1/2 -translate-y-1/2 flex justify-between opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button 
+                  <button
                     disabled={currentImageIndex === 0}
                     onClick={() => setCurrentImageIndex(prev => prev - 1)}
                     className="p-2 bg-white/90 shadow-lg rounded-full disabled:opacity-30"
                   >
-                    <MdKeyboardArrowLeft size={24}/>
+                    <MdKeyboardArrowLeft size={24} />
                   </button>
-                  <button 
+                  <button
                     disabled={currentImageIndex === currentItem.images.length - 1}
                     onClick={() => setCurrentImageIndex(prev => prev + 1)}
                     className="p-2 bg-white/90 shadow-lg rounded-full disabled:opacity-30"
                   >
-                    <MdKeyboardArrowRight size={24}/>
+                    <MdKeyboardArrowRight size={24} />
                   </button>
                 </div>
               )}
@@ -161,7 +162,7 @@ const ItemDetails = () => {
 
         {/* --- RIGHT: PRODUCT INFO --- */}
         <div className="lg:col-span-7 space-y-6">
-          
+
           {/* Price Insights */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 relative overflow-hidden">
@@ -176,6 +177,7 @@ const ItemDetails = () => {
               <Badge status="processing" text="Active Listing" className="mt-4" />
             </div>
 
+
             <div className="bg-blue-600 p-6 rounded-3xl shadow-lg shadow-blue-100 relative overflow-hidden">
               <div className="absolute top-0 right-0 p-4"><MdTrendingUp className="text-blue-500 text-6xl" /></div>
               <p className="text-sm font-medium text-blue-100 uppercase tracking-wider">Wholesale Rate</p>
@@ -184,16 +186,17 @@ const ItemDetails = () => {
                 <Tag color="blue" className="bg-white/20 border-none text-white ml-2">Min. Bulk</Tag>
               </div>
             </div>
+            <Barcode value={currentItem.barcode} />
           </div>
 
           {/* Quick Stats Grid */}
-          
+
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
-              { label: 'In Stock', val: currentItem.stock?.in_stock || 0, icon: <MdInventory/>, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-              { label: 'Units Sold', val: currentItem.stock?.sold || 0, icon: <MdShoppingCart/>, color: 'text-blue-600', bg: 'bg-blue-50' },
-              { label: 'Rating', val: currentItem.rating || 'N/A', icon: <MdStar/>, color: 'text-amber-600', bg: 'bg-amber-50' },
-              { label: 'Discount', val: `${currentItem.discount}%`, icon: <MdLocalOffer/>, color: 'text-purple-600', bg: 'bg-purple-50' },
+              { label: 'In Stock', val: currentItem.stock?.in_stock || 0, icon: <MdInventory />, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+              { label: 'Units Sold', val: currentItem.stock?.sold || 0, icon: <MdShoppingCart />, color: 'text-blue-600', bg: 'bg-blue-50' },
+              { label: 'Rating', val: currentItem.rating || 'N/A', icon: <MdStar />, color: 'text-amber-600', bg: 'bg-amber-50' },
+              { label: 'Discount', val: `${currentItem.discount}%`, icon: <MdLocalOffer />, color: 'text-purple-600', bg: 'bg-purple-50' },
             ].map((stat, i) => (
               <div key={i} className="bg-white p-4 rounded-2xl border border-gray-100 text-center">
                 <div className={`w-10 h-10 ${stat.bg} ${stat.color} rounded-xl flex items-center justify-center mx-auto mb-2 text-xl`}>
@@ -210,7 +213,7 @@ const ItemDetails = () => {
             <h3 className="text-lg font-bold text-gray-800 mb-6 flex items-center gap-2">
               <MdInventory className="text-blue-500" /> Technical Specifications
             </h3>
-            
+
             <div className="space-y-8">
               {/* Colors */}
               {colors.length > 0 && (
@@ -222,8 +225,8 @@ const ItemDetails = () => {
                     {colors.map((c, i) => (
                       <Tooltip title={c} key={i}>
                         <div className="group flex flex-col items-center gap-2">
-                          <div 
-                            className="w-12 h-12 rounded-2xl border-4 border-white shadow-md ring-1 ring-gray-100 transition-transform group-hover:scale-110" 
+                          <div
+                            className="w-12 h-12 rounded-2xl border-4 border-white shadow-md ring-1 ring-gray-100 transition-transform group-hover:scale-110"
                             style={{ backgroundColor: c }}
                           />
                           <span className="text-[10px] font-mono text-gray-400 uppercase">{c}</span>
@@ -237,7 +240,7 @@ const ItemDetails = () => {
               {/* Sizes */}
               {sizes.length > 0 && (
                 <div>
-                   <label className="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2 mb-4">
+                  <label className="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2 mb-4">
                     <FaRuler /> Size Selection
                   </label>
                   <div className="flex gap-2 flex-wrap">

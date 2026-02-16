@@ -811,7 +811,7 @@ const Production = () => {
                                             onClick={() => navigate(`view/${production.id}`)}
                                             className="text-blue-600 hover:text-blue-800"
                                         >
-                                            View
+
                                         </Button>
                                         <Button
                                             type="text"
@@ -820,7 +820,7 @@ const Production = () => {
                                             className="text-green-600 hover:text-green-800"
                                             disabled={production.is_deleted === 1}
                                         >
-                                            Edit
+
                                         </Button>
                                         <Popconfirm
                                             title="Delete Production Record"
@@ -835,7 +835,7 @@ const Production = () => {
                                                 icon={<LuTrash2 className="w-4 h-4" />}
                                                 className="text-red-600 hover:text-red-800"
                                             >
-                                                Delete
+
                                             </Button>
                                         </Popconfirm>
                                     </div>

@@ -22,14 +22,18 @@ import api from '../../services/api';
 import AlertBox from '../../services/AlertBox';
 import { useGetAllOrderQuery, useGetOrderByUserQuery } from '../../../app/Features/ordersSlice';
 import { useGetAllWasteQuery } from '../../../app/Features/notificationSlice';
-import { useNavigate } from 'react-router';
+import { useNavigate, useParams } from 'react-router';
+import Echo from '../../echo';
+import { IoRefresh } from 'react-icons/io5';
+import { Button } from 'antd';
+import { GrRefresh } from 'react-icons/gr';
 
 const GuestOrderTracking = () => {
     const navigater = useNavigate();
-    const { data, refetch } = useGetOrderByUserQuery(localStorage.getItem('guestToken'), {
-        refetchOnFocus: true,
-        refetchOnReconnect: true,
-    });
+    const { id, token } = useParams();
+    const profileId = localStorage.getItem('profileId');
+    const guest = JSON.parse(localStorage.getItem('guest'));
+    const { data, refetch } = useGetOrderByUserQuery({ id: guest.id, token });
 
     const { refetch: refetchWaste } = useGetAllWasteQuery(localStorage.getItem('token'));
     const [orders, setOrders] = useState([]);
@@ -41,6 +45,14 @@ const GuestOrderTracking = () => {
     useEffect(() => {
         setOrders(data?.data);
     }, [data]);
+
+    useEffect(() => {
+        Echo.private(`check-online.user.${profileId}`).listen("OnlineEvent", (data) => {
+            refetch();
+            // toast.info(`💬 Order tracking updated ${data.data}`);
+        });
+    }, []);
+
 
     // Get status badge styling
     const getStatusBadge = (order) => {
@@ -170,8 +182,8 @@ const GuestOrderTracking = () => {
             />
 
             {/* Header */}
-            <div className="mb-8">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+            <div className="mb-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-3">
                     <div>
                         <h1 onClick={() => navigater(-1)} className="text-2xl md:text-3xl font-bold text-gray-800 flex items-center gap-3">
                             <div className="p-2 bg-blue-100 rounded-lg">
@@ -182,10 +194,11 @@ const GuestOrderTracking = () => {
                         <p className="text-gray-600 mt-1">Manage and track all customer orders</p>
                     </div>
 
-                    <div className="flex items-center gap-2 px-4 py-2 bg-white rounded-lg border border-gray-200 shadow-sm">
+                    <div className="flex items-center justify-between gap-2 px-4 py-2 bg-white rounded-lg border border-gray-200 shadow-sm">
                         <div className="text-sm font-medium text-gray-700">
                             {orders?.length} order{orders?.length !== 1 ? 's' : ''}
                         </div>
+                        <Button onClick={refetch}><GrRefresh /></Button>
                     </div>
                 </div>
 
@@ -248,7 +261,7 @@ const GuestOrderTracking = () => {
             </div>
 
             {/* Orders Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 {orders?.map((order) => {
                     const statusBadge = getStatusBadge(order);
                     const paymentBadge = getPaymentMethodBadge(order.order_payment_method);
@@ -288,17 +301,17 @@ const GuestOrderTracking = () => {
                                         <div className="w-full bg-gray-200 rounded-full h-2">
                                             <div
                                                 className={`h-2 rounded-full ${order.order_payment_status === 'paid' ? 'bg-green-500' :
-                                                    order.order_payment_status === 'cod' ? 'bg-yellow-500' : 'bg-blue-500'
+                                                    order.status == 1 ? 'bg-yellow-500' : order.status == 3 ? 'bg-blue-500' : order.status == 4 ? 'bg-purple-500' : order.status == 5 ? 'bg-indigo-500' : 'bg-green-500'
                                                     }`}
                                                 style={{ width: `${progress}%` }}
                                             ></div>
                                         </div>
-                                        <div className="flex justify-between text-xs text-gray-500 mt-1">
-                                            <span>Pending</span>
-                                            <span>Packaged</span>
-                                            <span>Pickup</span>
-                                            <span>Delivering</span>
-                                            <span>Completed</span>
+                                        <div className="flex justify-between text-[9px] sm:text-xs text-gray-500 mt-1">
+                                            <span className={order.status == 1 ? 'text-yellow-500' : ''}>Pending</span>
+                                            <span className={order.status == 3 ? 'text-blue-500' : ''}>Packaged</span>
+                                            <span className={order.status == 4 ? 'text-purple-500' : ''}>Pickup</span>
+                                            <span className={order.status == 5 ? 'text-indigo-500' : ''}>Delivering</span>
+                                            <span className={order.status == 6 ? 'text-green-500' : ''}>Completed</span>
                                         </div>
                                     </div>
                                 )}

@@ -406,13 +406,13 @@ const Purchases = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="bg-white rounded-2xl shadow-sm border border-gray-100 p-2 mb-2"
+          className="bg-transparent p-2 mb-2"
         >
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             {/* View Toggle and Search */}
             <div className="flex flex-col sm:flex-row sm:items-center gap-4 flex-1">
               {/* View Mode Toggle */}
-              <div className="flex bg-gray-100 rounded-xl p-1 border">
+              <div className="flex bg-gray-100 rounded-xl p-1">
                 <button
                   onClick={() => setViewMode("list")}
                   className={`px-4 py-2 rounded-lg transition-all duration-300 flex items-center space-x-2 ${viewMode === "list"

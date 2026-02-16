@@ -594,7 +594,7 @@ const CreatePurchase = () => {
 
                   <Divider className="my-4" />
 
-                  <div>
+                  {/* <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       <span className="flex items-center gap-2">
                         <FaReceipt className="text-gray-400" />
@@ -618,7 +618,7 @@ const CreatePurchase = () => {
                         <Tag color="red">Cancelled</Tag>
                       </Option>
                     </Select>
-                  </div>
+                  </div> */}
                 </Card>
               </motion.div>
 

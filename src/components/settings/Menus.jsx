@@ -78,7 +78,7 @@ const Menus = () => {
     };
 
     return (
-        <section className="bg-white min-h-screen p-6 font-sans text-slate-700">
+        <section className="bg-transparent min-h-screen p-6 font-sans text-slate-700">
             <AlertBox
                 isOpen={alertBox}
                 title="Delete Confirmation"

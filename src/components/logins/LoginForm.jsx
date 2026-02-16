@@ -4,13 +4,13 @@ import api from "../../services/api";
 import { Link, useNavigate } from "react-router";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import logo from "../../assets/shopping-cart.png";
 import { useGetUserLoginQuery } from "../../../app/Features/usersSlice";
 import { useGetAllMenuQuery } from "../../../app/Features/menusSlice";
 import { useGetPermissionByIdQuery } from "../../../app/Features/permissionSlice";
+import logo from '../../assets/logo.jpg';
 
 // Placeholder logo (you can replace this with your actual logo URL)
-const LOGO_URL = "https://via.placeholder.com/150x50.png?text=E-STORE";
+
 
 const LoginForm = () => {
   const [showOtpInput, setShowOtpInput] = useState(false);
@@ -93,11 +93,11 @@ const LoginForm = () => {
       <div className="w-full max-w-md bg-white rounded-2xl shadow-sm p-6 sm:p-8 transition-all duration-300 hover:shadow-xl">
         {/* Logo and Company Name */}
         <div className="flex flex-col items-center mb-8">
-          <div className="bg-white rounded-full p-3 shadow-lg mb-3">
+          <div className="bg-white rounded-full p-3 shadow-lg mb-3 overflow-hidden">
             <img
               src={logo}
               alt="CHOMNECH POS Logo"
-              className="h-10 sm:h-12 transition-transform duration-300 hover:scale-105"
+              className="h-25 transition-transform duration-300 hover:scale-105"
             />
           </div>
           <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-700 bg-clip-text text-transparent">

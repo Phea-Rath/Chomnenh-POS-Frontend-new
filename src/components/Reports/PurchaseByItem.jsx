@@ -1,16 +1,16 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { FiDownload, FiPrinter, FiFilter, FiCalendar } from 'react-icons/fi';
-import { useGetSaleByItemReportMutation } from '../../../app/Features/reportsSlice';
+import { useGetPurchaseByItemReportMutation } from '../../../app/Features/reportsSlice';
 import { toast } from 'react-toastify';
 import * as XLSX from 'xlsx';
 import { useGetAllUserQuery } from '../../../app/Features/usersSlice';
+import { useGetAllSupplierQuery } from '../../../app/Features/suppliesSlice';
 import { useGetAllItemsQuery } from '../../../app/Features/itemsSlice';
 import { useReactToPrint } from 'react-to-print';
-import { useGetAllCustomerQuery } from '../../../app/Features/customersSlice';
 
-const SaleReportByItem = () => {
+const PurchaseReportByItem = () => {
     const token = localStorage.getItem('token');
-    const [getSaleByItem] = useGetSaleByItemReportMutation();
+    const [getPurchaseByItem] = useGetPurchaseByItemReportMutation();
     const formatDateForInput = (date) => {
         const year = date.getFullYear();
         const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -20,24 +20,24 @@ const SaleReportByItem = () => {
     const today = new Date();
     const firstDayOfCurrentMonth = new Date(today.getFullYear(), today.getMonth(), 1);
     const [formData, setFormData] = useState({
-        order_customer: '',
-        customer_name: '',
-        item_name: '',
+        created_by: '',
         username: '',
+        supplier_id: '',
+        supplier_name: '',
         item_id: '',
-        user_id: '',
+        item_name: '',
         start_date: formatDateForInput(firstDayOfCurrentMonth),
         end_date: formatDateForInput(today)
     });
     const [users, setUsers] = useState([]);
+    const [suppliersData, setSuppliersData] = useState([]);
     const [items, setItems] = useState([]);
-    const [customers, setCustomers] = useState([]);
     const { data: userData } = useGetAllUserQuery(token);
+    const { data: supplierData } = useGetAllSupplierQuery(token);
     const { data: itemData } = useGetAllItemsQuery({ token, limit: 1000, page: 1, search: '' });
-    const { data: customerData } = useGetAllCustomerQuery(token);
+    const reportRef = useRef();
     const [reportData, setReportData] = useState(null);
     const [loading, setLoading] = useState(false);
-    const reportRef = useRef();
 
     useEffect(() => {
         if (userData?.data) {
@@ -46,10 +46,10 @@ const SaleReportByItem = () => {
     }, [userData]);
 
     useEffect(() => {
-        if (customerData?.data) {
-            setCustomers(customerData.data);
+        if (supplierData?.data) {
+            setSuppliersData(supplierData.data);
         }
-    }, [customerData]);
+    }, [supplierData]);
 
     useEffect(() => {
         if (itemData?.data) {
@@ -62,11 +62,16 @@ const SaleReportByItem = () => {
         setFormData((prev) => {
             const next = { ...prev, [name]: value };
 
-            if (name === 'order_customer') {
-                const selected = customers.find(
-                    (c) => String(c.customer_id) === String(value)
+            if (name === 'created_by') {
+                const selected = users.find((u) => String(u.id) === String(value));
+                next.username = selected?.username || '';
+            }
+
+            if (name === 'supplier_id') {
+                const selected = suppliersData.find(
+                    (s) => String(s.supplier_id) === String(value)
                 );
-                next.customer_name = value == 1 ? 'Unknow' : selected?.customer_name || '';
+                next.supplier_name = selected?.supplier_name || '';
             }
 
             if (name === 'item_id') {
@@ -76,11 +81,6 @@ const SaleReportByItem = () => {
                 next.item_name = selected?.item_name ?? selected?.name ?? '';
             }
 
-            if (name === 'user_id') {
-                const selected = users.find((u) => String(u.id) === String(value));
-                next.username = selected?.username || '';
-            }
-
             return next;
         });
     };
@@ -88,32 +88,33 @@ const SaleReportByItem = () => {
     useEffect(() => {
         fetchReport();
     }, []);
+
     async function fetchReport() {
         try {
             setLoading(true);
-            const res = await getSaleByItem({ itemData: formData, token });
+            const res = await getPurchaseByItem({ itemData: formData, token });
             if (res?.data?.status === 200) {
                 setReportData(res.data.data || []);
-                // toast.success('Sales report retrieved successfully');
             } else {
-                toast.error('Failed to get sales report');
+                toast.error('Failed to generate purchase report');
             }
         } catch (error) {
-            toast.error(error?.message || error || 'An error occurred while generating the report');
+            toast.error(error?.message || 'An error occurred while generating the report');
         } finally {
             setLoading(false);
         }
     }
+
     const handleGetReport = async () => {
-        fetchReport();
+        await fetchReport();
     };
 
     const handleExportExcel = () => {
         if (!reportData || reportData.length === 0) return;
         const ws = XLSX.utils.json_to_sheet(reportData);
         const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "SalesReport");
-        XLSX.writeFile(wb, "SalesReport.xlsx");
+        XLSX.utils.book_append_sheet(wb, ws, "PurchaseReportByItem");
+        XLSX.writeFile(wb, "PurchaseReportByItem.xlsx");
     };
 
     const handlePrint = useReactToPrint({
@@ -121,6 +122,30 @@ const SaleReportByItem = () => {
         contentRef: reportRef,
     });
 
+    const totals = reportData
+        ? reportData.reduce(
+            (acc, item) => ({
+                quantity: acc.quantity + (Number(item.quantity) || 0),
+                item_price: acc.item_price + (Number(item.item_price) || 0),
+                subtotal: acc.subtotal + (Number(item.subtotal) || 0),
+                shipping_fee: acc.shipping_fee + (Number(item.shipping_fee) || 0),
+                tax_amount: acc.tax_amount + (Number(item.tax_amount) || 0),
+                total_amount: acc.total_amount + (Number(item.total_amount) || 0),
+                total_paid: acc.total_paid + (Number(item.total_paid) || 0),
+                balance: acc.balance + (Number(item.balance) || 0),
+            }),
+            {
+                quantity: 0,
+                item_price: 0,
+                subtotal: 0,
+                shipping_fee: 0,
+                tax_amount: 0,
+                total_amount: 0,
+                total_paid: 0,
+                balance: 0,
+            }
+        )
+        : {};
 
     const formatCurrency = (amount) => {
         return new Intl.NumberFormat('en-US', {
@@ -129,62 +154,56 @@ const SaleReportByItem = () => {
         }).format(amount);
     };
 
-    // Calculate totals for item report
-    const calculateTotals = () => {
-        if (!reportData || reportData.length === 0) return {};
-
-        return reportData.reduce(
-            (acc, item) => ({
-                quantity: acc.quantity + (Number(item.quantity) || 0),
-                item_price: acc.item_price + (Number(item.item_price) || 0),
-                price: acc.price + (Number(item.price) || 0),
-                order_discount: acc.order_discount + (Number(item.order_discount) || 0),
-            }),
-            {
-                quantity: 0,
-                item_price: 0,
-                price: 0,
-                order_discount: 0,
-            }
-        );
-    };
-
-    const totals = calculateTotals();
-
     return (
         <div className="min-h-screen bg-transparent p-1 md:p-3">
             <div className="max-w-7xl mx-auto">
                 {/* Header */}
                 <div className="mb-8 ml-2">
-                    <h1 className="text-3xl font-bold text-gray-900">Sales Report By Item</h1>
-                    <p className="text-gray-600 mt-2">Generate and export sales reports by item</p>
+                    <h1 className="text-3xl font-bold text-gray-900">Purchase Report By Item</h1>
+                    <p className="text-gray-600 mt-2">Generate and export purchase reports by item</p>
                 </div>
 
                 {/* Filter Form */}
                 <div className="bg-white rounded-lg shadow-md p-6 text-xs mb-6">
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
                         <div>
-                            <label className="block  font-medium text-gray-700 mb-2">
-                                Customer
+                            <label className="block font-medium text-gray-700 mb-2">
+                                User
                             </label>
                             <select
-                                name="order_customer"
-                                value={formData.order_customer}
+                                name="created_by"
+                                value={formData.created_by}
                                 onChange={handleInputChange}
                                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                             >
-                                <option value="">All Customers</option>
-                                <option value={1}>Unknow</option>
-                                {customers?.map((c) => (
-                                    <option key={c.customer_id} value={c.customer_id}>
-                                        {c.customer_name}
+                                <option value="">All Users</option>
+                                {users?.map((user) => (
+                                    <option key={user.id} value={user.id}>
+                                        {user.username}
                                     </option>
                                 ))}
                             </select>
                         </div>
-
                         <div>
-                            <label className="block  font-medium text-gray-700 mb-2">
+                            <label className="block font-medium text-gray-700 mb-2">
+                                Supplier
+                            </label>
+                            <select
+                                name="supplier_id"
+                                value={formData.supplier_id}
+                                onChange={handleInputChange}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            >
+                                <option value="">All Supplier</option>
+                                {suppliersData?.map((sup) => (
+                                    <option key={sup.supplier_id} value={sup.supplier_id}>
+                                        {sup.supplier_name}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block font-medium text-gray-700 mb-2">
                                 Item
                             </label>
                             <select
@@ -201,27 +220,9 @@ const SaleReportByItem = () => {
                                 ))}
                             </select>
                         </div>
-                        <div>
-                            <label className="block  font-medium text-gray-700 mb-2">
-                                User
-                            </label>
-                            <select
-                                name="user_id"
-                                value={formData.user_id}
-                                onChange={handleInputChange}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            >
-                                <option value="">All Users</option>
-                                {users?.map((user) => (
-                                    <option key={user.id} value={user.id}>
-                                        {user.username}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
 
                         <div>
-                            <label className="block  font-medium text-gray-700 mb-2">
+                            <label className="block font-medium text-gray-700 mb-2">
                                 Start Date
                             </label>
                             <div className="relative">
@@ -237,7 +238,7 @@ const SaleReportByItem = () => {
                         </div>
 
                         <div>
-                            <label className="block  font-medium text-gray-700 mb-2">
+                            <label className="block font-medium text-gray-700 mb-2">
                                 End Date
                             </label>
                             <div className="relative">
@@ -289,11 +290,11 @@ const SaleReportByItem = () => {
                         {/* Report Table */}
                         <div className="overflow-x-auto print:overflow-visible print:p-10" ref={reportRef}>
                             <ul className='px-5 flex justify-between text-left text-xs font-medium mb-5 text-gray-500 uppercase tracking-wider'>
-                                <li>User:   <span className='font-bold'>{formData?.username || 'All'}</span></li>
-                                <li>Customer:   <span className='font-bold'>{formData?.customer_name || 'All'}</span></li>
-                                <li>Item:   <span className='font-bold'>{formData?.item_name || 'All'}</span></li>
-                                <li>Start Date:     <span className='font-bold'>{formData.start_date || 'All'}</span></li>
-                                <li>End Date:   <span className='font-bold'>{formData.end_date || 'All'}</span></li>
+                                <li>User: <span className='font-bold'>{formData?.username || 'All'}</span></li>
+                                <li>Supplier: <span className='font-bold'>{formData?.supplier_name || 'All'}</span></li>
+                                <li>Item: <span className='font-bold'>{formData?.item_name || 'All'}</span></li>
+                                <li>Start Date: <span className='font-bold'>{formData.start_date || 'All'}</span></li>
+                                <li>End Date: <span className='font-bold'>{formData.end_date || 'All'}</span></li>
                             </ul>
                             <table className="min-w-full border-collapse border border-gray-400">
                                 <thead className="bg-gray-50">
@@ -314,54 +315,81 @@ const SaleReportByItem = () => {
                                             Quantity
                                         </th>
                                         <th className="border border-gray-300 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Discount
-                                        </th>
-                                        <th className="border border-gray-300 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Unit Price
                                         </th>
                                         <th className="border border-gray-300 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Total Price
+                                            Subtotal
+                                        </th>
+                                        <th className="border border-gray-300 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Tax Amount
+                                        </th>
+                                        <th className="border border-gray-300 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Shipping Fee
+                                        </th>
+                                        <th className="border border-gray-300 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Total Amount
+                                        </th>
+                                        <th className="border border-gray-300 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Total Paid
+                                        </th>
+                                        <th className="border border-gray-300 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Balance
                                         </th>
                                     </tr>
                                 </thead>
                                 <tbody className="bg-white divide-y divide-gray-200">
                                     {reportData?.map((item, index) => (
-                                        <tr key={index} className="hover:bg-gray-50">
-                                            <td className="border border-gray-300 px-6 py-4 whitespace-nowrap  font-medium text-gray-900">
+                                        <tr key={index} className="hover:bg-gray-50 !text-xs">
+                                            <td className="border border-gray-300 px-6 py-4 whitespace-nowrap font-medium text-gray-900">
                                                 {item.barcode}
                                             </td>
-                                            <td className="border border-gray-300 px-6 py-4 whitespace-nowrap  text-gray-500">
+                                            <td className="border border-gray-300 px-6 py-4 whitespace-nowrap text-gray-500">
                                                 {item.item_name}
                                             </td>
-                                            <td className="border border-gray-300 px-6 py-4 whitespace-nowrap  text-gray-500">
+                                            <td className="border border-gray-300 px-6 py-4 whitespace-nowrap text-gray-500">
                                                 {item.category_name}
                                             </td>
-                                            <td className="border border-gray-300 px-6 py-4 whitespace-nowrap  text-gray-500">
+                                            <td className="border border-gray-300 px-6 py-4 whitespace-nowrap text-gray-500">
                                                 {item.brand_name}
                                             </td>
-                                            <td className="border border-gray-300 px-6 py-4 whitespace-nowrap  text-gray-500">
+                                            <td className="border border-gray-300 px-6 py-4 whitespace-nowrap text-gray-500">
                                                 {item.quantity}
                                             </td>
-                                            <td className="border border-gray-300 px-6 py-4 whitespace-nowrap  text-gray-500">
-                                                {formatCurrency(item.order_discount)}
-                                            </td>
-                                            <td className="border border-gray-300 px-6 py-4 whitespace-nowrap  text-gray-500">
+                                            <td className="border border-gray-300 px-6 py-4 whitespace-nowrap text-gray-500">
                                                 {formatCurrency(item.item_price)}
                                             </td>
-                                            <td className="border border-gray-300 px-6 py-4 whitespace-nowrap  font-medium text-green-600">
-                                                {formatCurrency(item.price)}
+                                            <td className="border border-gray-300 px-6 py-4 whitespace-nowrap text-gray-500">
+                                                {formatCurrency(item.subtotal)}
+                                            </td>
+                                            <td className="border border-gray-300 px-6 py-4 whitespace-nowrap text-gray-500">
+                                                {formatCurrency(item.tax_amount)}
+                                            </td>
+                                            <td className="border border-gray-300 px-6 py-4 whitespace-nowrap text-gray-500">
+                                                {formatCurrency(item.shipping_fee)}
+                                            </td>
+                                            <td className="border border-gray-300 px-6 py-4 whitespace-nowrap font-medium text-green-600">
+                                                {formatCurrency(item.total_amount)}
+                                            </td>
+                                            <td className="border border-gray-300 px-6 py-4 whitespace-nowrap text-blue-500">
+                                                {formatCurrency(item.total_paid)}
+                                            </td>
+                                            <td className="border border-gray-300 px-6 py-4 whitespace-nowrap font-medium text-red-600">
+                                                {formatCurrency(item.balance)}
                                             </td>
                                         </tr>
                                     ))}
-
                                     {/* Row Totals */}
                                     {reportData.length > 0 && (
                                         <tr className="bg-gray-100 font-bold">
                                             <td className="border border-gray-300 px-6 py-4 text-right" colSpan={4}>Total</td>
                                             <td className="border border-gray-300 px-6 py-4">{totals.quantity}</td>
-                                            <td className="border border-gray-300 px-6 py-4">{formatCurrency(totals.order_discount)}</td>
                                             <td className="border border-gray-300 px-6 py-4">{formatCurrency(totals.item_price)}</td>
-                                            <td className="border border-gray-300 px-6 py-4 text-green-600">{formatCurrency(totals.price)}</td>
+                                            <td className="border border-gray-300 px-6 py-4">{formatCurrency(totals.subtotal)}</td>
+                                            <td className="border border-gray-300 px-6 py-4">{formatCurrency(totals.tax_amount)}</td>
+                                            <td className="border border-gray-300 px-6 py-4">{formatCurrency(totals.shipping_fee)}</td>
+                                            <td className="border border-gray-300 px-6 py-4 text-green-600">{formatCurrency(totals.total_amount)}</td>
+                                            <td className="border border-gray-300 px-6 py-4 text-blue-600">{formatCurrency(totals.total_paid)}</td>
+                                            <td className="border border-gray-300 px-6 py-4 text-red-600">{formatCurrency(totals.balance)}</td>
                                         </tr>
                                     )}
                                 </tbody>
@@ -370,19 +398,13 @@ const SaleReportByItem = () => {
                                 <div className="mt-6 p-4 bg-gray-50 rounded-md">
                                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                                         <div>
-                                            <span className=" font-medium text-gray-700">Total Items: </span>
-                                            <span className=" text-gray-600">{reportData.length}</span>
+                                            <span className="font-medium text-gray-700">Total Items: </span>
+                                            <span className="text-gray-600">{reportData.length}</span>
                                         </div>
                                         <div>
-                                            <span className=" font-medium text-gray-700">Total Sales: </span>
-                                            <span className=" text-green-600 font-medium">
-                                                {formatCurrency(reportData.reduce((sum, item) => sum + (Number(item.price) || 0), 0))}
-                                            </span>
-                                        </div>
-                                        <div>
-                                            <span className=" font-medium text-gray-700">Total Quantity: </span>
-                                            <span className=" text-gray-600 font-medium">
-                                                {reportData.reduce((sum, item) => sum + Number(item.quantity), 0)}
+                                            <span className="font-medium text-gray-700">Total Amount: </span>
+                                            <span className="text-green-600 font-medium">
+                                                {formatCurrency(totals.total_amount)}
                                             </span>
                                         </div>
                                     </div>
@@ -397,7 +419,7 @@ const SaleReportByItem = () => {
                     <div className="bg-white rounded-lg shadow-md p-12 text-center">
                         <FiFilter size={48} className="mx-auto text-gray-400 mb-4" />
                         <h3 className="text-lg font-medium text-gray-900 mb-2">No Report Generated</h3>
-                        <p className="text-gray-500">Use the filters above to generate a sales report</p>
+                        <p className="text-gray-500">Use the filters above to generate a purchase report by item</p>
                     </div>
                 )}
 
@@ -413,4 +435,4 @@ const SaleReportByItem = () => {
     );
 };
 
-export default SaleReportByItem;
+export default PurchaseReportByItem;

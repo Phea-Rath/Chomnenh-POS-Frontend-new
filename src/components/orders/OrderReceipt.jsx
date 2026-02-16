@@ -70,7 +70,7 @@ const OrderReceipt = () => {
   };
 
   return (
-    <div className="p-4 bg-transparentmin-h-screen">
+    <div className="p-4 bg-transparent min-h-screen">
       {/* Header with navigation and action buttons */}
       <div className="flex justify-between items-center mb-4 no-print">
         <button

@@ -105,7 +105,7 @@ const RawMaterialForm = () => {
                 setImagePreview(material?.material_image);
             }
         }
-    }, [id]);
+    }, [data]);
 
     // Handle image upload
     const handleImageUpload = (info) => {
@@ -344,7 +344,7 @@ const RawMaterialForm = () => {
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                     {/* Form Section */}
                     <div className="lg:col-span-2">
                         <motion.div
@@ -375,7 +375,6 @@ const RawMaterialForm = () => {
                                     form={form}
                                     layout="vertical"
                                     onFinish={handleSubmit}
-                                    className="space-y-6"
                                     size="large"
                                 >
                                     {/* Basic Information Section */}
@@ -408,10 +407,9 @@ const RawMaterialForm = () => {
 
                                     </div>
 
-                                    <Divider />
 
                                     {/* Units & Conversion Section */}
-                                    <div>
+                                    <div className='border p-3 rounded-2xl border-gray-400'>
                                         <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
                                             <LuScale className="text-purple-500" />
                                             Units & Conversion

@@ -196,16 +196,16 @@ const RawMaterials = () => {
                 </div>
             ),
         },
-        {
-            title: 'DESCRIPTION',
-            dataIndex: 'material_description',
-            width: 250,
-            render: (description) => (
-                <div className="text-sm text-gray-600 truncate max-w-xs">
-                    {description || 'No description'}
-                </div>
-            ),
-        },
+        // {
+        //     title: 'DESCRIPTION',
+        //     dataIndex: 'material_description',
+        //     width: 250,
+        //     render: (description) => (
+        //         <div className="text-sm text-gray-600 truncate max-w-xs">
+        //             {description || 'No description'}
+        //         </div>
+        //     ),
+        // },
         {
             title: 'UNITS',
             width: 150,
@@ -226,27 +226,27 @@ const RawMaterials = () => {
                 </div>
             ),
         },
-        {
-            title: 'COST',
-            dataIndex: 'material_cost',
-            width: 120,
-            align: 'right',
-            sorter: (a, b) => a.material_cost - b.material_cost,
-            render: (cost) => (
-                <div className="text-right">
-                    <div className="font-bold text-green-600">
-                        {formatCurrency(cost)}
-                    </div>
-                    <div className="text-xs text-gray-500">per unit</div>
-                </div>
-            ),
-        },
-        {
-            title: 'STATUS',
-            dataIndex: 'is_deleted',
-            width: 100,
-            render: (isDeleted) => getStatusBadge(isDeleted),
-        },
+        // {
+        //     title: 'COST',
+        //     dataIndex: 'material_cost',
+        //     width: 120,
+        //     align: 'right',
+        //     sorter: (a, b) => a.material_cost - b.material_cost,
+        //     render: (cost) => (
+        //         <div className="text-right">
+        //             <div className="font-bold text-green-600">
+        //                 {formatCurrency(cost)}
+        //             </div>
+        //             <div className="text-xs text-gray-500">per unit</div>
+        //         </div>
+        //     ),
+        // },
+        // {
+        //     title: 'STATUS',
+        //     dataIndex: 'is_deleted',
+        //     width: 100,
+        //     render: (isDeleted) => getStatusBadge(isDeleted),
+        // },
         {
             title: 'CREATED',
             dataIndex: 'created_at',
@@ -487,17 +487,17 @@ const RawMaterials = () => {
                                     </div>
 
                                     <div className="space-y-3 mb-4">
-                                        <div className="text-sm text-gray-600 line-clamp-2">
+                                        {/* <div className="text-sm text-gray-600 line-clamp-2">
                                             {material.material_description || 'No description'}
-                                        </div>
+                                        </div> */}
 
                                         <div className="flex items-center justify-between text-sm">
                                             <div className="flex items-center gap-1 text-gray-600">
                                                 <LuScale className="w-4 h-4" />
-                                                <span>{material.primary_unit}</span>
+                                                <span>1{material.primary_unit}</span>
                                             </div>
                                             <div className="font-bold text-green-600">
-                                                {formatCurrency(material.material_cost)}
+                                                {material.conversion_value}{material.secondary_unit}
                                             </div>
                                         </div>
 

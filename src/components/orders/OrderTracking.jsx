@@ -275,7 +275,7 @@ const OrderTracking = () => {
                         </p>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-6">
                         {orders?.map((order) => (
                             <div
                                 key={order.order_id}
@@ -339,6 +339,7 @@ const OrderTracking = () => {
                                                     <button
                                                         key={option.id}
                                                         onClick={async () => {
+                                                            localStorage.setItem('guestId', order.created_by);
                                                             await handleInputChange(order.order_id, 'status', option.id);
                                                             await handleSaveField(order.order_id, 'status', option.id);
                                                         }}
@@ -432,7 +433,7 @@ const OrderTracking = () => {
                                                             min="0"
                                                             step="0.01"
                                                             value={tempValues[order.order_id]?.delivery_fee || order.delivery_fee || 0}
-                                                            onChange={(e) => handleInputChange(order.order_id, 'delivery_fee', e.target.value)}
+                                                            onChange={(e) => { localStorage.setItem('guestId', order.created_by); handleInputChange(order.order_id, 'delivery_fee', e.target.value); }}
                                                             className="w-full pl-8 pr-4 py-2.5 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                                                             placeholder="0.00"
                                                         />
@@ -466,7 +467,7 @@ const OrderTracking = () => {
                                                     Delivery Service
                                                 </label>
                                                 <button
-                                                    onClick={() => handleEditClick(order.order_id, 'deliver_id', order.deliver_id)}
+                                                    onClick={() => { localStorage.setItem('guestId', order.created_by); handleEditClick(order.order_id, 'deliver_id', order.deliver_id); }}
                                                     className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
                                                     title="Show and Edit Delivery Service"
                                                 >
@@ -481,7 +482,7 @@ const OrderTracking = () => {
                                                         onChange={(e) => handleInputChange(order.order_id, 'deliver_id', e.target.value)}
                                                         className="flex-1 px-4 py-2.5 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 bg-white"
                                                     >
-                                                        <option value="" disabled>Delivery service</option>
+                                                        <option value="">Delivery service</option>
                                                         {delivers?.data?.map((service) => (
                                                             <option key={service.deliver_id} value={service.deliver_id}>
                                                                 {service.deliver_name}

@@ -312,7 +312,7 @@ const Sales = () => {
     const selectionKey = `${item.id}-${attributeKey}`;
 
     const sameOrder = orders?.items?.find(
-      (orderItem) => orderItem.selectionKey === selectionKey
+      (orderItem) => orderItem.id === item.id
     );
 
     if (sameOrder) {

@@ -59,7 +59,7 @@ const Settings = () => {
                 ></div>
                 <div className="flex flex-col justify-center items-center space-y-2 absolute w-full h-full z-3">
                   <div className={`text-4xl text-${color.main}`}>
-                    <img src={perm?.menu_icon} alt="" />
+                    <img className="w-5 h-5" src={perm?.menu_icon} alt="" />
                   </div>
                   <h1>{perm?.menu_name}</h1>
                 </div>

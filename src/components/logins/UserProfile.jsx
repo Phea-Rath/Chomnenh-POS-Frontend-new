@@ -3,7 +3,7 @@ import { FiEdit2, FiSave, FiX, FiUser, FiPhone, FiCalendar, FiClock, FiKey, FiUp
 import { motion } from 'framer-motion';
 import { useGetUserProfileQuery } from '../../../app/Features/usersSlice';
 import { useParams } from 'react-router';
-import { useUpdateImageMutation, useUpdateNameMutation, useUpdateNumberPhoneMutation, useUpdateQrCodeMutation, useUpdateTelegramServiceMutation } from '../../../app/Features/userProfileSlice';
+import { useUpdateAddressMutation, useUpdateImageMutation, useUpdateNameMutation, useUpdateNumberPhoneMutation, useUpdateQrCodeMutation, useUpdateTelegramServiceMutation } from '../../../app/Features/userProfileSlice';
 import { useOutletsContext } from '../../layouts/Management';
 import { toast } from 'react-toastify';
 import { Card, Badge, Progress, Tooltip } from 'antd';
@@ -21,6 +21,7 @@ const UserProfile = () => {
     const [qrFile, setQrFile] = useState("");
     const [profileName, setProfileName] = useState("");
     const [numberPhone, setNumberPhone] = useState("");
+    const [address, setAddress] = useState("");
 
     const { data: profileData, refetch } = useGetUserProfileQuery({ id, token });
     const [updateImage] = useUpdateImageMutation();
@@ -28,11 +29,13 @@ const UserProfile = () => {
     const [updateQrCode] = useUpdateQrCodeMutation();
     const [updateNumberPhone] = useUpdateNumberPhoneMutation();
     const [updateName] = useUpdateNameMutation();
+    const [updateAddress] = useUpdateAddressMutation();
 
     const [data, setData] = useState(null);
     const [editing, setEditing] = useState({
         profile_name: false,
         telephone: false,
+        address: false,
         image: false,
         telegram_service: false,
         qr_code: false
@@ -136,11 +139,20 @@ const UserProfile = () => {
                     path: "/profile/telegram_service",
                     token
                 });
-            } else if (field === 'telephone') {
+            }
+            else if (field === 'telephone') {
                 response = await updateNumberPhone({
                     id,
                     itemData: { number_phone: tempData.telephone },
                     path: "/profile/number_phone",
+                    token
+                });
+            }
+            else if (field === 'address') {
+                response = await updateAddress({
+                    id,
+                    itemData: { address },
+                    path: "/profile/address",
                     token
                 });
             }
@@ -169,6 +181,7 @@ const UserProfile = () => {
         setTempData(prev => ({ ...prev, [field]: value }));
         if (field === 'profile_name') setProfileName(value);
         if (field === 'telephone') setNumberPhone(value);
+        if (field === 'address') setAddress(value);
     };
 
     const handleImageUpload = (e, field = 'image') => {
@@ -277,14 +290,14 @@ const UserProfile = () => {
                                                 className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors disabled:opacity-50 flex items-center gap-2"
                                             >
                                                 <FiSave size={16} />
-                                                Save Image
+
                                             </button>
                                             <button
                                                 onClick={() => handleCancel('image')}
                                                 className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors flex items-center gap-2"
                                             >
                                                 <FiX size={16} />
-                                                Cancel
+
                                             </button>
                                         </div>
                                     )}
@@ -294,9 +307,52 @@ const UserProfile = () => {
                                         <h2 className="text-xl font-bold text-gray-800 mb-2">
                                             {data?.profile_name}
                                         </h2>
+                                        <div>
+
+                                            {editing.address ? (
+                                                <div className="flex items-center gap-3">
+                                                    <input
+                                                        type="textarea"
+                                                        value={tempData.address}
+                                                        onChange={(e) => handleChange(e, 'address')}
+                                                        className="flex-1 border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                        placeholder="Enter address"
+                                                    />
+                                                    <div className="flex gap-2">
+                                                        <button
+                                                            onClick={() => handleSave('address')}
+                                                            disabled={isSaving}
+                                                            className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors disabled:opacity-50 flex items-center gap-2"
+                                                        >
+                                                            <FiSave size={16} />
+
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleCancel('address')}
+                                                            className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors flex items-center gap-2"
+                                                        >
+                                                            <FiX size={16} />
+
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <p className="text-sm text-gray-800 px-1 py-2">
+                                                    {data?.address}
+                                                    {!editing.address && (
+                                                        <button
+                                                            onClick={() => handleEdit('address')}
+                                                            className="text-blue-600 hover:text-blue-800 p-2 hover:bg-blue-50 rounded-lg transition-colors"
+                                                        >
+                                                            <FiEdit2 size={16} />
+                                                        </button>
+                                                    )}
+                                                </p>
+                                            )}
+                                        </div>
                                         <div className="flex items-center justify-center gap-2">
                                             <FiUser className="text-gray-400" />
-                                            <span className="text-sm text-gray-600">Profile ID: {data?.id}</span>
+                                            <span className="text-xs text-gray-600">Profile ID: {data?.id}</span>
                                         </div>
                                     </div>
 
@@ -343,8 +399,8 @@ const UserProfile = () => {
 
                                                 {editing.qr_code && (
                                                     <div className="flex gap-2 mt-2">
-                                                        <button onClick={() => handleSave('qr_code')} disabled={isSaving} className="px-3 py-2 bg-green-500 text-white rounded-md">Save QR</button>
-                                                        <button onClick={() => handleCancel('qr_code')} className="px-3 py-2 bg-gray-200 rounded-md">Cancel</button>
+                                                        <button onClick={() => handleSave('qr_code')} disabled={isSaving} className="px-3 py-2 bg-green-500 text-white rounded-md"><FiSave /></button>
+                                                        <button onClick={() => handleCancel('qr_code')} className="px-3 py-2 bg-gray-200 rounded-md"><FiX /></button>
                                                     </div>
                                                 )}
                                             </div>
@@ -403,14 +459,14 @@ const UserProfile = () => {
                                                             className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors disabled:opacity-50 flex items-center gap-2"
                                                         >
                                                             <FiSave size={16} />
-                                                            Save
+
                                                         </button>
                                                         <button
                                                             onClick={() => handleCancel('profile_name')}
                                                             className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors flex items-center gap-2"
                                                         >
                                                             <FiX size={16} />
-                                                            Cancel
+
                                                         </button>
                                                     </div>
                                                 </div>
@@ -454,14 +510,14 @@ const UserProfile = () => {
                                                             className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors disabled:opacity-50 flex items-center gap-2"
                                                         >
                                                             <FiSave size={16} />
-                                                            Save
+
                                                         </button>
                                                         <button
                                                             onClick={() => handleCancel('telephone')}
                                                             className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors flex items-center gap-2"
                                                         >
                                                             <FiX size={16} />
-                                                            Cancel
+
                                                         </button>
                                                     </div>
                                                 </div>
@@ -495,8 +551,8 @@ const UserProfile = () => {
 
                                         {editing.telegram_service && (
                                             <div className="flex gap-2 mt-2">
-                                                <button onClick={() => handleSave('telegram_service')} disabled={isSaving} className="px-3 py-2 bg-green-500 text-white rounded-md">Save QR</button>
-                                                <button onClick={() => handleCancel('telegram_service')} className="px-3 py-2 bg-gray-200 rounded-md">Cancel</button>
+                                                <button onClick={() => handleSave('telegram_service')} disabled={isSaving} className="px-3 py-2 bg-green-500 text-white rounded-md"><FiSave /></button>
+                                                <button onClick={() => handleCancel('telegram_service')} className="px-3 py-2 bg-gray-200 rounded-md"><FiX /></button>
                                             </div>
                                         )}
                                     </div>
@@ -522,7 +578,7 @@ const UserProfile = () => {
 
                                                 </div>
                                             ) : (
-                                                <p className="text-lg font-semibold text-gray-800 px-1 py-2">
+                                                <p className="text-md font-normal italic text-blue-800 px-1 py-2">
                                                     {data?.bot_token || 'Not provided'}
                                                 </p>
                                             )}
@@ -549,7 +605,7 @@ const UserProfile = () => {
 
                                                 </div>
                                             ) : (
-                                                <p className="text-lg font-semibold text-gray-800 px-1 py-2">
+                                                <p className="text-md font-normal italic text-blue-800 px-1 py-2">
                                                     {data?.chat_id || 'Not provided'}
                                                 </p>
                                             )}

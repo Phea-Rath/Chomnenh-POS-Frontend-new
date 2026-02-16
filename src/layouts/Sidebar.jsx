@@ -2,16 +2,6 @@ import React, { useEffect, useState } from "react";
 import { Drawer, Avatar, Typography, Badge } from "antd";
 import { useNavigate, useLocation, Link } from "react-router";
 import { HiHome, HiShoppingBag, HiCog, HiLogout } from "react-icons/hi";
-import { BsInboxesFill, BsTagsFill, BsPaletteFill, BsChevronRight, BsGrid1X2Fill } from "react-icons/bs";
-import { MdCategory, MdDashboard, MdStorefront } from "react-icons/md";
-import { IoColorPaletteSharp, IoStatsChart, IoDocumentText } from "react-icons/io5";
-import { GiMoneyStack, GiResize, GiProfit } from "react-icons/gi";
-import { AiFillLike, AiFillPieChart } from "react-icons/ai";
-import { FaBalanceScaleLeft, FaRegUserCircle, FaUsers } from "react-icons/fa";
-import { RiStore3Line, RiLineChartFill } from "react-icons/ri";
-import { GrDocumentStore, GrSettingsOption } from "react-icons/gr";
-import { FaMoneyBillTrendUp, FaShieldHalved } from "react-icons/fa6";
-import { PiShoppingCartBold } from "react-icons/pi";
 import { useOutletsContext } from "./Management";
 import { motion } from "framer-motion";
 import { useGetUserLoginQuery, useGetUserProfileQuery } from "../../app/Features/usersSlice";
@@ -58,7 +48,7 @@ const Sidebar = () => {
       >
         <div className={`p-2 rounded-xl transition-all duration-300 
           ${isActive ? 'bg-white/50' : 'bg-slate-50 group-hover:bg-white'}`}>
-          <img src={item.menu_icon} alt="" />
+          <img className={item.menu_icon ? 'w-5 h-5' : ''} src={item.menu_icon} alt="" />
         </div>
 
         <span className="font-semibold text-[14px] flex-1 tracking-tight">

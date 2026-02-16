@@ -26,8 +26,6 @@ import Settings from "./components/settings/Settings";
 import CreateExpanses from "./views/expanses/CreateExpanses";
 import UpdateOrders from "./views/orders/UpdateOrders";
 import EMenu from "./components/EMenu";
-import { store } from "../app/store";
-import { Provider } from "react-redux";
 import RegisterForm from "./components/logins/RegisterForm";
 import StockDetail from "./components/stocks/StockDetails";
 import UserProfile from "./components/logins/UserProfile";
@@ -53,7 +51,7 @@ import SupplierForm from "./views/Suppliers/SupplierForm";
 import PurchaseReceipt from "./components/Purchases/PurchaseReceipt";
 import PurchaseReport from "./components/Reports/PurchaseReport";
 import CodeScanner from "./components/orders/CodeScanner";
-import PurchaseReportByUser from "./components/Reports/PurchaseByUser";
+import PurchaseReportByItem from "./components/Reports/PurchaseByItem";
 import ExpenseReportByUser from "./components/Reports/ExpanseReport";
 import ExchangeRateForm from "./components/ExchangeRate";
 import Dashboard from "./components/dashboard/Dashboard";
@@ -81,6 +79,18 @@ import ProductionForm from "./components/productions/ProductionForm";
 import Production from "./components/productions/Production";
 import ProductionDetail from "./components/productions/ProductionDetail";
 import RawMaterialDetail from "./components/RawMaterials/RawMaterialDetail";
+import { useGetAllOrderQuery, useGetOrderByUserQuery } from "../app/Features/ordersSlice";
+import { useGetAllItemInStockQuery, useGetAllItemsQuery } from "../app/Features/itemsSlice";
+import { useGetAllUserQuery } from "../app/Features/usersSlice";
+import { useGetAllSaleQuery } from "../app/Features/salesSlice";
+import { useGetAllOrderOnlineQuery, useGetAllWasteQuery } from "../app/Features/notificationSlice";
+import Echo from "./echo";
+import { toast } from "react-toastify";
+import { useEffect } from "react";
+import RawMaterialReport from "./components/Reports/RawMaterialReport";
+import ProfitAnalysis from "./components/Reports/AnalysisProfit";
+
+
 function ProtectedRoute({ children }) {
   const token = localStorage.getItem("token");
 
@@ -191,7 +201,6 @@ const router = createBrowserRouter([
           },
         ],
       },
-
       {
         path: "expanse-type",
         element: <ExpansesType />,
@@ -329,6 +338,26 @@ const router = createBrowserRouter([
         element: <SaleReportByItem />,
       },
       {
+        path: "report/purchases",
+        element: <PurchaseReport />,
+      },
+      {
+        path: "report/purchase-item",
+        element: <PurchaseReportByItem />,
+      },
+      {
+        path: "report/expenses",
+        element: <ExpenseReportByUser />,
+      },
+      {
+        path: "report/raw-materials",
+        element: <RawMaterialReport />,
+      },
+      {
+        path: "report/analysis-profit",
+        element: <ProfitAnalysis />,
+      },
+      {
         path: "purchases",
         element: <Purchases />,
       },
@@ -344,18 +373,7 @@ const router = createBrowserRouter([
         path: "purchases/receipt/:id",
         element: <PurchaseReceipt />,
       },
-      {
-        path: "purchases/report",
-        element: <PurchaseReport />,
-      },
-      {
-        path: "purchases/report_user",
-        element: <PurchaseReportByUser />,
-      },
-      {
-        path: "expanse/report",
-        element: <ExpenseReportByUser />,
-      },
+
       {
         path: "suppliers",
         element: <SupplierList />,
@@ -422,9 +440,10 @@ const router = createBrowserRouter([
         element: <RawMaterials />,
       },
       {
-        path: "raw-materials/create/",
+        path: "raw-materials/create",
         element: <RawMaterialForm />,
       },
+
       {
         path: "raw-materials/edit/:id",
         element: <RawMaterialForm />,
@@ -471,11 +490,66 @@ const router = createBrowserRouter([
 ]
 );
 
+
+
 function App() {
+  const token = localStorage.getItem('token');
+  const userId = localStorage.getItem('userId');
+  const guestId = localStorage.getItem('guestId');
+  const profileId = localStorage.getItem('profileId');
+  const { data: dataWaste, isLoading, refetch } = useGetAllWasteQuery(token);
+  const { data: dataOrderOnline, isLoading: isLoadingOnline, refetch: refetchOnline } = useGetAllOrderOnlineQuery(token);
+  const { refetch: refetchOrder } = useGetAllOrderQuery(token);
+  const { refetch: refetchSale } = useGetAllSaleQuery({
+    token,
+    limit: 10,
+    page: 1,
+    search: ''
+  });
+  const { refetch: refetchItem } = useGetAllItemsQuery({
+    token,
+    limit: 10,
+    page: 1,
+    search: ''
+  });
+  const { refetch: refetchGuestOrder } = useGetOrderByUserQuery({ id: guestId, token });
+  // const { refetch: refetchItemInStock } = useGetAllItemInStockQuery(token);
+  // const { refetch: userRefetch } = useGetAllUserQuery(token);
+
+  useEffect(() => {
+    Echo.private(`my-private-channel.user.${profileId}`).listen("PrivateChannelEvent", (data) => {
+      // const audio = new Audio("../../public/sounds/auto.wav");
+      const audio = new Audio("/sounds/auto.wav");
+      audio.currentTime = 0; // restart from beginning
+      audio.play().catch((err) => console.log("🔇 Sound blocked:", err));
+      console.log("📡 Event received:", data); // 👈 Debug first
+      toast.info(`💬 New orders by ${data.data}`);
+      refetch();
+      refetchOnline();
+      refetchSale();
+      refetchItem();
+      // refetchItemInStock();
+    });
+    Echo.private(`check-online.user.${profileId}`).listen("OnlineEvent", (data) => {
+      // refetch();
+      toast.info(`💬 Order tracking updated ${data.data}`);
+      refetchSale();
+      refetchGuestOrder();
+      refetchOnline();
+      refetchOrder();
+    });
+    Echo.channel("my-public-channel").listen("PublicChannelEvent", (data) => {
+      const audio = new Audio("/sounds/auto.wav");
+      audio.currentTime = 0; // restart from beginning
+      audio.play().catch((err) => console.log("🔇 Sound blocked:", err));
+      console.log("📡 Event received:", data); // 👈 Debug first
+      toast.info(`💬 New orders by ${data.message}`);
+    });
+
+  }, []);
+
   return (
-    <Provider store={store} >
-      <RouterProvider router={router}></RouterProvider>
-    </Provider>
+    <RouterProvider router={router}></RouterProvider>
   );
 }
 
