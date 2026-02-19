@@ -1001,77 +1001,74 @@ const Sales = () => {
         <div className="mb-2">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
             <div className="flex items-center gap-3 p-4 bg-slate-200 rounded-[2rem] border border-slate-100">
-              <div className="w-15 h-15 object-center">
+              <div className="w-10 h-10 object-center">
                 <img src={profile?.data?.image} alt={profile?.data?.profile_name} />
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-gray-800">{profile?.data?.profile_name}</h1>
-                <p className="text-gray-600">Select products and create orders</p>
+                <h1 className="text-xl font-bold text-gray-800">{profile?.data?.profile_name}</h1>
+                <p className="text-gray-600 text-sm">Select products and create orders</p>
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-3">
-              <Button icon={<IoLogOutOutline />} onClick={() => setShowSignInModal(true)} className="h-10 border-red-500 !rounded-full hover:border-red-500 !bg-red-500 !text-white hover:text-red-600">
-                {/* <span ></span> */}
-              </Button>
-              {user && <Link to='order-tracking'>
-                <Badge size="default" className="mr-2">
+            <div className="flex items-center justify-between gap-3">
+              <div className="relative">
+                <input
+                  onChange={onSearch}
+                  className="w-full px-4 py-2 pl-12 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Search products by name or code..."
+                />
+                <div className="absolute left-4 top-3.5 text-gray-400">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button icon={<IoLogOutOutline />} onClick={() => setShowSignInModal(true)} className="h-10 border-red-500 !rounded-full hover:border-red-500 !bg-red-500 !text-white hover:text-red-600">
+                  {/* <span ></span> */}
+                </Button>
+                {user && <Link to='order-tracking'>
+                  <Badge size="default" className="mr-2">
+                    <Button
+                      type="default"
+                      title={user?.phone_number}
+                      icon={<FaUser />}
+                      className="h-10 border-green-500 hover:border-green-500 !bg-green-500 !text-white hover:text-green-600"
+                      size="large"
+                    >
+                      {/* {user?.username} */}
+                    </Button>
+                  </Badge>
+                </Link>}
+                <Badge count={orderCount} size="default" className="mr-2">
                   <Button
                     type="default"
-                    title={user?.phone_number}
-                    icon={<FaUser />}
-                    className="h-10 border-green-500 hover:border-green-500 !bg-green-500 !text-white hover:text-green-600"
+                    icon={<PiShoppingCartBold />}
+                    onClick={showDrawer}
+                    className="h-10 border-blue-500 hover:border-blue-500 !bg-blue-500 !text-white hover:text-blue-600"
                     size="large"
                   >
-                    {/* {user?.username} */}
                   </Button>
                 </Badge>
-              </Link>}
-              <Badge count={orderCount} size="default" className="mr-2">
-                <Button
-                  type="default"
-                  icon={<PiShoppingCartBold />}
-                  onClick={showDrawer}
-                  className="h-10 border-blue-500 hover:border-blue-500 !bg-blue-500 !text-white hover:text-blue-600"
-                  size="large"
-                >
-
-                </Button>
-              </Badge>
+              </div>
             </div>
           </div>
 
           {/* Search and Filter Bar */}
-          <Card className="mb-6 shadow-lg border-0">
-            <div className="flex flex-col sm:flex-row gap-4">
-              <div className="flex-1">
-                <div className="relative">
-                  <input
-                    onChange={onSearch}
-                    className="w-full px-4 py-3 pl-12 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Search products by name or code..."
-                  />
-                  <div className="absolute left-4 top-3.5 text-gray-400">
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                    </svg>
-                  </div>
-                </div>
-              </div>
-              <select
-                onChange={onFilterCategory}
-                defaultValue="all"
-                className="px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white min-w-[180px]"
-              >
-                <option value="all">All Categories</option>
-                {Category.map((item, index) => (
-                  <option key={index} value={item.category_id}>
-                    {item.category_name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </Card>
+          <div className="flex flex-col sm:flex-row ">
+            <select
+              onChange={onFilterCategory}
+              defaultValue="all"
+              className="px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent min-w-[180px]"
+            >
+              <option value="all">All Categories</option>
+              {Category.map((item, index) => (
+                <option key={index} value={item.category_id}>
+                  {item.category_name}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
 
         {/* Products Grid */}

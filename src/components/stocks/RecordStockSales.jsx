@@ -8,95 +8,65 @@ import {
   LuDollarSign,
   LuShoppingCart,
   LuPackage,
-  LuCalendar,
-  LuUser,
-  LuReceipt,
-  LuCreditCard,
-  LuCircleAlert,
-  LuCircleCheck,
-  LuPercent,
   LuStore,
   LuTag,
   LuBarcode,
-  LuChartBar
+  LuChartBar,
+  LuChevronLeft,
+  LuChevronRight,
+  LuChevronsLeft,
+  LuChevronsRight,
 } from "react-icons/lu";
-import {
-  Table,
-  Card,
-  Input,
-  Select,
-  Button,
-  Tag,
-  Progress,
-  DatePicker,
-  Badge,
-  Avatar,
-  Tooltip,
-  Row,
-  Col,
-  Statistic
-} from "antd";
 import { motion } from "framer-motion";
 import ExportExel from "../../services/ExportExel";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
-import api from "../../services/api";
-import { useDebounce } from "use-debounce";
-import Search from "antd/es/transfer/search";
 import { useGetAllOrderTransectionQuery } from "../../../app/Features/ordersSlice";
+import { useDebounce } from "use-debounce";
 
 dayjs.extend(relativeTime);
-
-const { Option } = Select;
-const { RangePicker } = DatePicker;
 
 const RecordStockSale = () => {
   const [data, setData] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
   const token = localStorage.getItem("token");
-  const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedBrand, setSelectedBrand] = useState("all");
-  const [dateRange, setDateRange] = useState(null);
-  const [debounce] = useDebounce(searchTerm, 5000);
-  const [tableParams, setTableParams] = useState({
-    pagination: {
-      current: 1,
-      pageSize: 10,
-    },
+  const [debouncedSearch] = useDebounce(searchTerm, 500);
+  const [sortConfig, setSortConfig] = useState({ field: null, order: null });
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
+  const { data: stockTran, refetch, isLoading } = useGetAllOrderTransectionQuery({
+    token,
+    limit: pageSize,
+    page: currentPage,
+    search: debouncedSearch,
   });
-  const { data: stockTran, refetch } = useGetAllOrderTransectionQuery({ token, limit: tableParams?.pagination.pageSize, page: tableParams.pagination.current, search: debounce });
-  console.log(stockTran);
 
+  // Transform API data
   useEffect(() => {
-    const products = (stockTran?.data || []).map((item, index) => ({
-      ...item,
-      key: item.item_id || index,
-      index: index + 1,
-      amount_sold: Number(item.amount_sold) || 0,
-      total_quantity_sold: Number(item.total_quantity_sold) || 0,
-      item_code: item.item_code || `PRD-${String(index + 1).padStart(5, '0')}`,
-      category_name: item.category_name || 'Uncategorized',
-      brand_name: item.brand_name || 'Unknown'
-    }));
+    if (stockTran?.data) {
+      const products = stockTran.data.map((item, index) => ({
+        ...item,
+        key: item.item_id || index,
+        index: index + 1,
+        amount_sold: Number(item.amount_sold) || 0,
+        total_quantity_sold: Number(item.total_quantity_sold) || 0,
+        item_code: item.item_code || `PRD-${String(index + 1).padStart(5, "0")}`,
+        category_name: item.category_name || "Uncategorized",
+        brand_name: item.brand_name || "Unknown",
+      }));
+      setData(products);
+      setFilteredData(products);
+    }
+  }, [stockTran]);
 
-    setData(products);
-    setFilteredData(products);
-    setLoading(false);
-    setTableParams({
-      ...tableParams,
-      pagination: {
-        ...tableParams.pagination,
-        total: stockTran?.pagination || 0,
-      },
-    });
-  }, [stockTran])
-
-  // Get unique categories and brands for filters
+  // Get unique categories and brands
   const getCategories = () => {
     const categories = new Set();
-    data.forEach(item => {
+    data.forEach((item) => {
       if (item.category_name) categories.add(item.category_name);
     });
     return Array.from(categories);
@@ -104,7 +74,7 @@ const RecordStockSale = () => {
 
   const getBrands = () => {
     const brands = new Set();
-    data.forEach(item => {
+    data.forEach((item) => {
       if (item.brand_name) brands.add(item.brand_name);
     });
     return Array.from(brands);
@@ -113,28 +83,28 @@ const RecordStockSale = () => {
   // Calculate statistics
   const calculateStats = () => {
     const totalProducts = filteredData.length;
-    const totalAmountSold = filteredData.reduce((sum, item) => sum + (Number(item.amount_sold) || 0), 0);
-    const totalQuantitySold = filteredData.reduce((sum, item) => sum + (Number(item.total_quantity_sold) || 0), 0);
+    const totalAmountSold = filteredData.reduce(
+      (sum, item) => sum + (Number(item.amount_sold) || 0),
+      0
+    );
+    const totalQuantitySold = filteredData.reduce(
+      (sum, item) => sum + (Number(item.total_quantity_sold) || 0),
+      0
+    );
     const avgAmountPerProduct = totalProducts > 0 ? totalAmountSold / totalProducts : 0;
     const avgQuantityPerProduct = totalProducts > 0 ? totalQuantitySold / totalProducts : 0;
 
-    // Top categories
     const categorySales = filteredData.reduce((acc, item) => {
-      const category = item.category_name || 'Uncategorized';
-      if (!acc[category]) {
-        acc[category] = { amount: 0, quantity: 0 };
-      }
+      const category = item.category_name || "Uncategorized";
+      if (!acc[category]) acc[category] = { amount: 0, quantity: 0 };
       acc[category].amount += Number(item.amount_sold) || 0;
       acc[category].quantity += Number(item.total_quantity_sold) || 0;
       return acc;
     }, {});
 
-    // Top brands
     const brandSales = filteredData.reduce((acc, item) => {
-      const brand = item.brand_name || 'Unknown';
-      if (!acc[brand]) {
-        acc[brand] = { amount: 0, quantity: 0 };
-      }
+      const brand = item.brand_name || "Unknown";
+      if (!acc[brand]) acc[brand] = { amount: 0, quantity: 0 };
       acc[brand].amount += Number(item.amount_sold) || 0;
       acc[brand].quantity += Number(item.total_quantity_sold) || 0;
       return acc;
@@ -147,7 +117,7 @@ const RecordStockSale = () => {
       avgAmountPerProduct,
       avgQuantityPerProduct,
       categorySales,
-      brandSales
+      brandSales,
     };
   };
 
@@ -155,10 +125,10 @@ const RecordStockSale = () => {
 
   // Format currency
   const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+      minimumFractionDigits: 0,
     }).format(amount);
   };
 
@@ -172,281 +142,105 @@ const RecordStockSale = () => {
   // Get attribute display
   const getAttributesDisplay = (attributes) => {
     if (!attributes || !Array.isArray(attributes)) return null;
-
     return attributes.map((attr, idx) => (
-      <div key={idx} className="flex items-center gap-1">
-        <span className="text-xs text-gray-500">{attr.name}:</span>
-        {attr.type === 'select' ? (
+      <div key={idx} className="flex items-center gap-1 text-xs">
+        <span className="text-gray-500">{attr.name}:</span>
+        {attr.type === "select" ? (
           <div className="flex items-center gap-1">
             {attr.value?.map((val, vIdx) => (
-              <div key={vIdx} className="w-3 h-3 rounded-full border"
+              <div
+                key={vIdx}
+                className="w-3 h-3 rounded-full border"
                 style={{ backgroundColor: val.value }}
-                title={val.value} />
+                title={val.value}
+              />
             ))}
           </div>
         ) : (
-          <span className="text-xs font-medium">{attr.value}</span>
+          <span className="font-medium">{attr.value}</span>
         )}
       </div>
     ));
   };
 
-  // Table columns
-  const columns = [
-    {
-      title: "#",
-      dataIndex: "index",
-      width: "60px",
-      align: 'center',
-      render: (text, record, index) => (
-        <div className="font-semibold text-gray-600">
-          {index + 1}
-        </div>
-      ),
-    },
-    {
-      title: "PRODUCT",
-      dataIndex: "item_name",
-      width: "250px",
-      render: (name, record) => (
-        <div className="flex items-center gap-3">
-          <Avatar
-            size={48}
-            src={getItemImage(record)}
-            className="bg-gradient-to-r from-blue-100 to-purple-100"
-            shape="square"
-          >
-            <LuPackage className="text-xl text-gray-400" />
-          </Avatar>
-          <div className="flex-1 min-w-0">
-            <div className="font-semibold text-gray-900 truncate">{name}</div>
-            <div className="flex items-center gap-2 mt-1">
-              <Tooltip title="Item Code">
-                <div className="flex items-center gap-1">
-                  <LuTag className="w-3 h-3 text-gray-400" />
-                  <span className="text-xs text-gray-600">{record.item_code}</span>
-                </div>
-              </Tooltip>
-              <Tooltip title="Barcode">
-                <div className="flex items-center gap-1">
-                  <LuBarcode className="w-3 h-3 text-gray-400" />
-                  <span className="text-xs text-gray-600">{record.barcode}</span>
-                </div>
-              </Tooltip>
-            </div>
-          </div>
-        </div>
-      ),
-    },
-    {
-      title: "CATEGORY",
-      dataIndex: "category_name",
-      width: "120px",
-      render: (category) => (
-        <Tag color="blue" className="font-medium">
-          {category || 'Uncategorized'}
-        </Tag>
-      ),
-      filters: getCategories().map(cat => ({ text: cat, value: cat })),
-      onFilter: (value, record) => record.category_name === value,
-    },
-    {
-      title: "BRAND",
-      dataIndex: "brand_name",
-      width: "120px",
-      render: (brand) => (
-        <div className="text-sm font-medium text-gray-700">
-          {brand || 'Unknown'}
-        </div>
-      ),
-      filters: getBrands().map(brand => ({ text: brand, value: brand })),
-      onFilter: (value, record) => record.brand_name === value,
-    },
-    {
-      title: "ATTRIBUTES",
-      dataIndex: "attributes",
-      width: "150px",
-      render: (attributes) => (
-        <div className="space-y-1">
-          {getAttributesDisplay(attributes)}
-        </div>
-      ),
-    },
-    {
-      title: "AMOUNT SOLD",
-      dataIndex: "amount_sold",
-      width: "120px",
-      align: 'right',
-      sorter: (a, b) => (a.amount_sold || 0) - (b.amount_sold || 0),
-      render: (amount) => (
-        <div className="text-right">
-          <div className="text-lg font-bold text-green-600">
-            {formatCurrency(amount || 0)}
-          </div>
-          <div className="text-xs text-gray-500">Revenue</div>
-        </div>
-      ),
-    },
-    {
-      title: "QUANTITY SOLD",
-      dataIndex: "total_quantity_sold",
-      width: "120px",
-      align: 'center',
-      sorter: (a, b) => (a.total_quantity_sold || 0) - (b.total_quantity_sold || 0),
-      render: (quantity) => (
-        <div className="text-center">
-          <div className="text-lg font-bold text-blue-600">
-            {Number(quantity || 0).toLocaleString()}
-          </div>
-          <div className="text-xs text-gray-500">Units</div>
-        </div>
-      ),
-    },
-    {
-      title: "AVG. PRICE",
-      width: "100px",
-      align: 'right',
-      render: (_, record) => {
-        const amount = Number(record.amount_sold) || 0;
-        const quantity = Number(record.total_quantity_sold) || 1;
-        const avgPrice = quantity > 0 ? amount / quantity : 0;
-        return (
-          <div className="text-right">
-            <div className="font-medium text-gray-900">
-              {formatCurrency(avgPrice)}
-            </div>
-            <div className="text-xs text-gray-500">Per unit</div>
-          </div>
-        );
-      },
-    },
-  ];
-
-  // const fetchData = async () => {
-  //   setLoading(true);
-  //   try {
-  //     const res = await api.get(
-  //       `/order_transection`,
-  //       {
-  //         headers: {
-  //           Authorization: `Bearer ${localStorage.getItem("token")}`,
-  //           "Content-Type": "application/json",
-  //           Accept: "application/json",
-  //         },
-  //       }
-  //     );
-  //     if (res.status == 200) {
-  //       const products = (res.data.data || []).map((item, index) => ({
-  //         ...item,
-  //         key: item.item_id || index,
-  //         index: index + 1,
-  //         amount_sold: Number(item.amount_sold) || 0,
-  //         total_quantity_sold: Number(item.total_quantity_sold) || 0,
-  //         item_code: item.item_code || `PRD-${String(index + 1).padStart(5, '0')}`,
-  //         category_name: item.category_name || 'Uncategorized',
-  //         brand_name: item.brand_name || 'Unknown'
-  //       }));
-
-  //       setData(products);
-  //       setFilteredData(products);
-  //       setLoading(false);
-  //       setTableParams({
-  //         ...tableParams,
-  //         pagination: {
-  //           ...tableParams.pagination,
-  //           total: products.length || 0,
-  //         },
-  //       });
-  //     }
-  //   } catch (error) {
-  //     console.error("Error fetching data:", error);
-  //     setLoading(false);
-  //   };
-  // };
-
-  // useEffect(() => {
-  //   fetchData();
-  // }, []);
-
-  const handleTableChange = (pagination, filters, sorter) => {
-    setTableParams({
-      pagination,
-      filters,
-      sortOrder: Array.isArray(sorter) ? undefined : sorter.order,
-      sortField: Array.isArray(sorter) ? undefined : sorter.field,
-    });
-  };
-
-  // Filter products
-  const applyFilters = () => {
+  // Apply filters
+  useEffect(() => {
     let filtered = [...data];
 
-    // Search filter
     if (searchTerm) {
-      filtered = filtered.filter(item =>
-        item.item_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.item_code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.barcode?.includes(searchTerm) ||
-        item.category_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.brand_name?.toLowerCase().includes(searchTerm.toLowerCase())
+      filtered = filtered.filter(
+        (item) =>
+          item.item_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          item.item_code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          item.barcode?.includes(searchTerm) ||
+          item.category_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          item.brand_name?.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
-    // Category filter
     if (selectedCategory !== "all") {
-      filtered = filtered.filter(item => item.category_name === selectedCategory);
+      filtered = filtered.filter((item) => item.category_name === selectedCategory);
     }
 
-    // Brand filter
     if (selectedBrand !== "all") {
-      filtered = filtered.filter(item => item.brand_name === selectedBrand);
+      filtered = filtered.filter((item) => item.brand_name === selectedBrand);
     }
 
     setFilteredData(filtered);
-    setTableParams({
-      ...tableParams,
-      pagination: {
-        ...tableParams.pagination,
-        current: 1,
-        total: filtered.length,
-      },
-    });
+    setCurrentPage(1); // Reset to first page on filter change
+  }, [searchTerm, selectedCategory, selectedBrand, data]);
+
+  // Sorting logic
+  const handleSort = (field) => {
+    let order = "asc";
+    if (sortConfig.field === field && sortConfig.order === "asc") {
+      order = "desc";
+    } else if (sortConfig.field === field && sortConfig.order === "desc") {
+      order = null;
+    }
+    setSortConfig({ field, order });
   };
+
+  const sortedData = React.useMemo(() => {
+    if (!sortConfig.field || !sortConfig.order) return filteredData;
+
+    return [...filteredData].sort((a, b) => {
+      let aVal = a[sortConfig.field];
+      let bVal = b[sortConfig.field];
+
+      // Handle nested fields if needed (e.g., amount_sold, total_quantity_sold)
+      if (sortConfig.field === "amount_sold" || sortConfig.field === "total_quantity_sold") {
+        aVal = Number(aVal) || 0;
+        bVal = Number(bVal) || 0;
+      }
+
+      if (aVal < bVal) return sortConfig.order === "asc" ? -1 : 1;
+      if (aVal > bVal) return sortConfig.order === "asc" ? 1 : -1;
+      return 0;
+    });
+  }, [filteredData, sortConfig]);
+
+  // Pagination
+  const totalItems = sortedData.length;
+  const totalPages = Math.ceil(totalItems / pageSize);
+  const paginatedData = sortedData.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  );
 
   // Reset filters
   const resetFilters = () => {
     setSearchTerm("");
     setSelectedCategory("all");
     setSelectedBrand("all");
-    setDateRange(null);
-    setFilteredData(data);
   };
 
-  useEffect(() => {
-    applyFilters();
-  }, [searchTerm, selectedCategory, selectedBrand, data]);
-
-  // Get top selling products
+  // Get top products (for potential future use)
   const getTopProducts = () => {
     return [...filteredData]
       .sort((a, b) => (b.total_quantity_sold || 0) - (a.total_quantity_sold || 0))
       .slice(0, 5);
   };
-
-  // Get top categories
-  const getTopCategories = () => {
-    return Object.entries(stats.categorySales)
-      .map(([category, data]) => ({
-        category,
-        amount: data.amount,
-        quantity: data.quantity
-      }))
-      .sort((a, b) => b.amount - a.amount)
-      .slice(0, 5);
-  };
-
-  const topProducts = getTopProducts();
-  const topCategories = getTopCategories();
 
   return (
     <motion.div
@@ -454,473 +248,355 @@ const RecordStockSale = () => {
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
       transition={{ duration: 0.5 }}
+      className="min-h-screen bg-transparent p-4 font-sans"
     >
-      <div className="min-h-screen bg-transparent p-4">
-        {/* Header Section */}
-        <div className="mb-2">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-            <div>
-              <motion.h1
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                className="text-3xl font-bold text-gray-900 mb-2 flex items-center gap-3"
-              >
-                <div className="p-3 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-xl shadow-sm">
-                  <LuChartBar className="text-2xl text-white" />
-                </div>
-                Sales Analytics
-              </motion.h1>
-              <p className="text-gray-600 text-lg">
-                Product sales performance and revenue insights
-              </p>
+      {/* Header */}
+      <div className="mb-6 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+            <div className="p-2 bg-blue-600 rounded-lg">
+              <LuChartBar className="text-white text-xl" />
             </div>
+            Sales Analytics
+          </h1>
+          <p className="text-sm text-gray-600">Product sales performance and revenue insights</p>
+        </div>
 
-            <div className="flex items-center space-x-3">
-              <Button
-                icon={<LuRefreshCw />}
-                onClick={refetch}
-                loading={loading}
-                className="flex items-center space-x-2 h-12 px-4 rounded-xl bg-white hover:bg-gray-50 border border-gray-200 shadow-sm"
-              >
-                Refresh Data
-              </Button>
-              <ExportExel
-                data={filteredData.map(item => ({
-                  'Product ID': item.item_id,
-                  'Product Name': item.item_name,
-                  'Item Code': item.item_code,
-                  'Barcode': item.barcode,
-                  'Category': item.category_name,
-                  'Brand': item.brand_name,
-                  'Amount Sold': formatCurrency(item.amount_sold),
-                  'Quantity Sold': item.total_quantity_sold,
-                  'Average Price': formatCurrency(item.amount_sold / (item.total_quantity_sold || 1))
-                }))}
-                title={"Product_Sales_Report"}
-                className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-6 py-3 rounded-xl flex items-center space-x-2 font-semibold shadow-sm hover:shadow-sm transition-all duration-300 h-12"
-              >
-                <LuDownload className="text-lg" />
-                <span>Export Report</span>
-              </ExportExel>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={refetch}
+            disabled={isLoading}
+            className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+          >
+            <LuRefreshCw className={`text-gray-500 ${isLoading ? "animate-spin" : ""}`} />
+            Refresh
+          </button>
+          <ExportExel
+            data={filteredData.map((item) => ({
+              "Product ID": item.item_id,
+              "Product Name": item.item_name,
+              "Item Code": item.item_code,
+              Barcode: item.barcode,
+              Category: item.category_name,
+              Brand: item.brand_name,
+              "Amount Sold": formatCurrency(item.amount_sold),
+              "Quantity Sold": item.total_quantity_sold,
+              "Average Price": formatCurrency(item.amount_sold / (item.total_quantity_sold || 1)),
+            }))}
+            title={"Product_Sales_Report"}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700"
+          >
+            <LuDownload />
+            Export
+          </ExportExel>
+        </div>
+      </div>
+
+      {/* Statistics Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <StatCard
+          title="Products Tracked"
+          value={stats.totalProducts?.toLocaleString() || "0"}
+          subtitle="Active products"
+          icon={<LuPackage className="text-blue-600" />}
+          bgColor="bg-blue-50"
+        />
+        <StatCard
+          title="Total Revenue"
+          value={formatCurrency(stats.totalAmountSold)}
+          subtitle="Sales amount"
+          icon={<LuDollarSign className="text-green-600" />}
+          bgColor="bg-green-50"
+        />
+        <StatCard
+          title="Units Sold"
+          value={stats.totalQuantitySold?.toLocaleString() || "0"}
+          subtitle="Total quantity"
+          icon={<LuShoppingCart className="text-purple-600" />}
+          bgColor="bg-purple-50"
+        />
+        <StatCard
+          title="Avg. Sale Value"
+          value={formatCurrency(stats.avgAmountPerProduct)}
+          subtitle="Per product"
+          icon={<LuTrendingUp className="text-orange-600" />}
+          bgColor="bg-orange-50"
+        />
+      </div>
+
+      {/* Filters */}
+      <div className="bg-white border border-gray-200 rounded-lg p-4 mb-6">
+        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Search */}
+          <div className="col-span-2">
+            <div className="relative">
+              <LuSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search by name, code..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full text-sm pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
             </div>
+          </div>
+
+          {/* Category Filter */}
+          <div>
+            <select
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value)}
+              className="w-full text-sm px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none bg-white"
+            >
+              <option value="all">All Categories</option>
+              {getCategories().map((cat) => (
+                <option key={cat} value={cat}>
+                  {cat}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Brand Filter */}
+          <div>
+            <select
+              value={selectedBrand}
+              onChange={(e) => setSelectedBrand(e.target.value)}
+              className="w-full text-sm px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none bg-white"
+            >
+              <option value="all">All Brands</option>
+              {getBrands().map((brand) => (
+                <option key={brand} value={brand}>
+                  {brand}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
 
-        {/* Statistics Cards */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-2"
-        >
-          {/* Total Products Card */}
-          <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-blue-50 hover:shadow-sm transition-all duration-300">
-            <div>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-blue-600 text-sm font-semibold mb-2 uppercase tracking-wider">Products Tracked</p>
-                  <p className="text-3xl font-bold text-gray-900">
-                    {stats.totalProducts?.toLocaleString() || 0}
-                  </p>
-                  <p className="text-xs text-gray-500 mt-2">Active products</p>
-                </div>
-                <div className="p-3 bg-gradient-to-r from-blue-100 to-blue-200 rounded-xl">
-                  <LuPackage className="text-2xl text-blue-600" />
-                </div>
-              </div>
-            </div>
-          </Card>
-
-          {/* Total Revenue Card */}
-          <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-green-50 hover:shadow-sm transition-all duration-300">
-            <div>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-green-600 text-sm font-semibold mb-2 uppercase tracking-wider">Total Revenue</p>
-                  <p className="text-3xl font-bold text-gray-900">
-                    {formatCurrency(stats.totalAmountSold)}
-                  </p>
-                  <p className="text-xs text-gray-500 mt-2">Sales amount</p>
-                </div>
-                <div className="p-3 bg-gradient-to-r from-green-100 to-green-200 rounded-xl">
-                  <LuDollarSign className="text-2xl text-green-600" />
-                </div>
-              </div>
-            </div>
-          </Card>
-
-          {/* Total Quantity Sold Card */}
-          <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-purple-50 hover:shadow-sm transition-all duration-300">
-            <div>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-purple-600 text-sm font-semibold mb-2 uppercase tracking-wider">Units Sold</p>
-                  <p className="text-3xl font-bold text-gray-900">
-                    {stats.totalQuantitySold?.toLocaleString() || 0}
-                  </p>
-                  <p className="text-xs text-gray-500 mt-2">Total quantity</p>
-                </div>
-                <div className="p-3 bg-gradient-to-r from-purple-100 to-purple-200 rounded-xl">
-                  <LuShoppingCart className="text-2xl text-purple-600" />
-                </div>
-              </div>
-            </div>
-          </Card>
-
-          {/* Average Sale Card */}
-          <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-orange-50 hover:shadow-sm transition-all duration-300">
-            <div>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-orange-600 text-sm font-semibold mb-2 uppercase tracking-wider">Avg. Sale Value</p>
-                  <p className="text-3xl font-bold text-gray-900">
-                    {formatCurrency(stats.avgAmountPerProduct)}
-                  </p>
-                  <p className="text-xs text-gray-500 mt-2">Per product</p>
-                </div>
-                <div className="p-3 bg-gradient-to-r from-orange-100 to-orange-200 rounded-xl">
-                  <LuTrendingUp className="text-2xl text-orange-600" />
-                </div>
-              </div>
-            </div>
-          </Card>
-        </motion.div>
-
-        {/* Filters and Controls */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="bg-white rounded-2xl shadow-sm border border-gray-100 p-2 mb-2"
-        >
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2">
-            {/* Search Input */}
-            <div className="lg:col-span-2">
-              <Input
-                placeholder="Search by product name, code, barcode, category or brand..."
-                prefix={<LuSearch className="text-gray-400" />}
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="h-12 rounded-xl"
-                allowClear
-                size="large"
-              />
-            </div>
-
-            {/* Category Filter */}
-            <div>
-              <Select
-                placeholder="Filter by Category"
-                value={selectedCategory}
-                onChange={setSelectedCategory}
-                className="w-full h-12 rounded-xl"
-                suffixIcon={<LuFilter className="text-gray-400" />}
-              >
-                <Option value="all">All Categories</Option>
-                {getCategories().map(category => (
-                  <Option key={category} value={category}>{category}</Option>
-                ))}
-              </Select>
-            </div>
-
-            {/* Brand Filter */}
-            <div>
-              <Select
-                placeholder="Filter by Brand"
-                value={selectedBrand}
-                onChange={setSelectedBrand}
-                className="w-full h-12 rounded-xl"
-                suffixIcon={<LuStore className="text-gray-400" />}
-              >
-                <Option value="all">All Brands</Option>
-                {getBrands().map(brand => (
-                  <Option key={brand} value={brand}>{brand}</Option>
-                ))}
-              </Select>
-            </div>
+        <div className="flex justify-between items-center mt-4">
+          <button
+            onClick={resetFilters}
+            className="px-2 py-2 text-xs border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+          >
+            Reset Filters
+          </button>
+          <div className="text-xs text-gray-600">
+            Showing <span className="font-medium">{paginatedData.length}</span> of{" "}
+            <span className="font-medium">{totalItems}</span> products
           </div>
+        </div>
+      </div>
 
-          {/* Action Buttons */}
-          <div className="flex justify-between items-center mt-2">
-            <Button
-              onClick={resetFilters}
-              className="flex items-center space-x-2 h-10 px-4"
-            >
-              Reset Filters
-            </Button>
-
-            <div className="flex items-center gap-2">
-              <Tag color="blue" className="text-sm py-1 px-3">
-                Showing: {filteredData.length} products
-              </Tag>
-            </div>
-          </div>
-        </motion.div>
-
-        {/* Main Content */}
-        <div className="">
-          {/* Products Table */}
-          <div>
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-            >
-              <Card
-                className="border-0 shadow-sm h-full"
-                bodyStyle={{ padding: 0 }}
-              >
-                <div className="p-6 border-b border-gray-100">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-semibold text-gray-900">
-                      Product Sales Performance
-                    </h3>
-                    <div className="flex items-center gap-3">
-                      <Tag color="green" className="font-medium">
-                        Total: {formatCurrency(stats.totalAmountSold)}
-                      </Tag>
-                      <Tag color="blue" className="font-medium">
-                        Units: {stats.totalQuantitySold.toLocaleString()}
-                      </Tag>
-                    </div>
-                  </div>
-                </div>
-
-                <Table
-                  columns={columns}
-                  rowKey="key"
-                  dataSource={filteredData}
-                  pagination={{
-                    ...tableParams.pagination,
-                    showSizeChanger: true,
-                    showQuickJumper: true,
-                    showTotal: (total, range) =>
-                      `Showing ${range[0]}-${range[1]} of ${total} products`,
-                    pageSizeOptions: ['10', '25', '50', '100'],
-                    className: "px-6 py-4"
-                  }}
-                  loading={loading}
-                  onChange={handleTableChange}
-                  scroll={{ x: 1200 }}
-                  className="ant-table-striped"
-                  rowClassName={(record, index) =>
-                    index % 2 === 0 ? "bg-gray-50" : ""
-                  }
-                // expandable={{
-                //   expandedRowRender: (record) => (
-                //     <div className="p-4 bg-gray-50 rounded-lg">
-                //       <h4 className="font-semibold text-gray-900 mb-3">Product Details</h4>
-                //       <div className="grid grid-cols-2 gap-6">
-                //         <div>
-                //           <p className="text-sm text-gray-600 mb-2">Product Information:</p>
-                //           <div className="space-y-2">
-                //             <p className="text-sm">
-                //               <span className="text-gray-600">Item Code:</span>{' '}
-                //               <span className="font-medium">{record.item_code}</span>
-                //             </p>
-                //             <p className="text-sm">
-                //               <span className="text-gray-600">Barcode:</span>{' '}
-                //               <span className="font-medium">{record.barcode}</span>
-                //             </p>
-                //             <p className="text-sm">
-                //               <span className="text-gray-600">Category:</span>{' '}
-                //               <span className="font-medium">{record.category_name}</span>
-                //             </p>
-                //             <p className="text-sm">
-                //               <span className="text-gray-600">Brand:</span>{' '}
-                //               <span className="font-medium">{record.brand_name}</span>
-                //             </p>
-                //           </div>
-                //         </div>
-                //         <div>
-                //           <p className="text-sm text-gray-600 mb-2">Sales Metrics:</p>
-                //           <div className="space-y-3">
-                //             <div>
-                //               <div className="flex justify-between text-sm">
-                //                 <span className="text-gray-600">Revenue:</span>
-                //                 <span className="font-semibold text-green-600">
-                //                   {formatCurrency(record.amount_sold)}
-                //                 </span>
-                //               </div>
-                //               <Progress
-                //                 percent={stats.totalAmountSold > 0 ?
-                //                   Math.round((record.amount_sold / stats.totalAmountSold) * 100) : 0}
-                //                 size="small"
-                //                 strokeColor="#10b981"
-                //                 showInfo={false}
-                //                 className="mt-1"
-                //               />
-                //             </div>
-                //             <div>
-                //               <div className="flex justify-between text-sm">
-                //                 <span className="text-gray-600">Units Sold:</span>
-                //                 <span className="font-semibold text-blue-600">
-                //                   {record.total_quantity_sold}
-                //                 </span>
-                //               </div>
-                //               <Progress
-                //                 percent={stats.totalQuantitySold > 0 ?
-                //                   Math.round((record.total_quantity_sold / stats.totalQuantitySold) * 100) : 0}
-                //                 size="small"
-                //                 strokeColor="#3b82f6"
-                //                 showInfo={false}
-                //                 className="mt-1"
-                //               />
-                //             </div>
-                //           </div>
-                //         </div>
-                //       </div>
-                //     </div>
-                //   ),
-                // }}
+      {/* Table */}
+      <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse text-sm">
+            <thead>
+              <tr className="bg-gray-100 border-b border-gray-300">
+                <TableHeader
+                  label="#"
+                  field="index"
+                  sortConfig={sortConfig}
+                  onSort={handleSort}
+                  className="w-16"
                 />
-              </Card>
-            </motion.div>
+                <TableHeader label="Product" field="item_name" sortConfig={sortConfig} onSort={handleSort} />
+                <TableHeader label="Category" field="category_name" sortConfig={sortConfig} onSort={handleSort} />
+                <TableHeader label="Brand" field="brand_name" sortConfig={sortConfig} onSort={handleSort} />
+                <TableHeader label="Attributes" />
+                <TableHeader
+                  label="Amount Sold"
+                  field="amount_sold"
+                  sortConfig={sortConfig}
+                  onSort={handleSort}
+                  align="right"
+                />
+                <TableHeader
+                  label="Quantity Sold"
+                  field="total_quantity_sold"
+                  sortConfig={sortConfig}
+                  onSort={handleSort}
+                  align="center"
+                />
+                <TableHeader label="Avg. Price" align="right" />
+              </tr>
+            </thead>
+            <tbody>
+              {isLoading ? (
+                <tr>
+                  <td colSpan="8" className="text-center py-8 text-gray-500">
+                    Loading...
+                  </td>
+                </tr>
+              ) : paginatedData.length === 0 ? (
+                <tr>
+                  <td colSpan="8" className="text-center py-8 text-gray-500">
+                    No products found
+                  </td>
+                </tr>
+              ) : (
+                paginatedData.map((item, idx) => (
+                  <tr key={item.key} className="border-b border-gray-200 hover:bg-gray-50">
+                    <td className="p-3 text-gray-600 font-medium">{idx + 1 + (currentPage - 1) * pageSize}</td>
+                    <td className="p-3">
+                      <div className="flex items-center gap-3">
+                        {getItemImage(item) ? (
+                          <img
+                            src={getItemImage(item)}
+                            alt={item.item_name}
+                            className="w-10 h-10 object-cover rounded border border-gray-200"
+                          />
+                        ) : (
+                          <div className="w-10 h-10 bg-gray-100 rounded flex items-center justify-center text-gray-400">
+                            <LuPackage />
+                          </div>
+                        )}
+                        <div>
+                          <div className="font-medium text-gray-900">{item.item_name}</div>
+                          <div className="flex items-center gap-2 text-xs text-gray-500 mt-1">
+                            <span className="flex items-center gap-1">
+                              <LuTag className="w-3 h-3" /> {item.item_code}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <LuBarcode className="w-3 h-3" /> {item.barcode}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="p-3">
+                      <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium">
+                        {item.category_name}
+                      </span>
+                    </td>
+                    <td className="p-3 text-gray-700">{item.brand_name}</td>
+                    <td className="p-3">{getAttributesDisplay(item.attributes)}</td>
+                    <td className="p-3 text-right">
+                      <div className="font-semibold text-green-600">{formatCurrency(item.amount_sold)}</div>
+                      <div className="text-xs text-gray-500">Revenue</div>
+                    </td>
+                    <td className="p-3 text-center">
+                      <div className="font-semibold text-blue-600">
+                        {Number(item.total_quantity_sold).toLocaleString()}
+                      </div>
+                      <div className="text-xs text-gray-500">Units</div>
+                    </td>
+                    <td className="p-3 text-right">
+                      <div className="font-medium text-gray-900">
+                        {formatCurrency(
+                          item.total_quantity_sold > 0
+                            ? item.amount_sold / item.total_quantity_sold
+                            : 0
+                        )}
+                      </div>
+                      <div className="text-xs text-gray-500">Per unit</div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Pagination */}
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 border-t border-gray-200 bg-gray-50">
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-600">Rows per page:</span>
+            <select
+              value={pageSize}
+              onChange={(e) => {
+                setPageSize(Number(e.target.value));
+                setCurrentPage(1);
+              }}
+              className="border border-gray-300 rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+            >
+              {[10, 25, 50, 100].map((size) => (
+                <option key={size} value={size}>
+                  {size}
+                </option>
+              ))}
+            </select>
           </div>
 
-          {/* Sidebar - Stats and Analytics */}
-          {/* <div>
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4 }}
-              className="space-y-8"
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setCurrentPage(1)}
+              disabled={currentPage === 1}
+              className="p-1 border border-gray-300 rounded-md disabled:opacity-50 hover:bg-gray-100"
             >
-              
-              <Card className="border-0 shadow-sm">
-                <div className="p-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                    <LuTrendingUp className="text-green-500" />
-                    Top Selling Products
-                  </h3>
-                  <div className="space-y-4">
-                    {topProducts.map((product, index) => {
-                      const amount = Number(product.amount_sold) || 0;
-                      const quantity = Number(product.total_quantity_sold) || 0;
-                      const avgPrice = quantity > 0 ? amount / quantity : 0;
-
-                      return (
-                        <div key={product.item_id} className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold ${index === 0 ? 'bg-yellow-100 text-yellow-700' :
-                              index === 1 ? 'bg-gray-100 text-gray-700' :
-                                index === 2 ? 'bg-amber-100 text-amber-700' :
-                                  'bg-blue-100 text-blue-700'
-                              }`}>
-                              {index + 1}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="font-medium text-sm truncate">{product.item_name}</p>
-                              <p className="text-xs text-gray-500">{quantity} units</p>
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <p className="font-semibold text-green-600">{formatCurrency(amount)}</p>
-                            <p className="text-xs text-gray-500">{formatCurrency(avgPrice)}/unit</p>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              </Card>
-
-              
-              <Card className="border-0 shadow-sm">
-                <div className="p-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                    <LuPercent className="text-blue-500" />
-                    Category Performance
-                  </h3>
-                  <div className="space-y-4">
-                    {topCategories.map((category, index) => (
-                      <div key={category.category}>
-                        <div className="flex justify-between items-center mb-1">
-                          <div className="flex items-center gap-2">
-                            <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${index === 0 ? 'bg-blue-100 text-blue-600' :
-                              index === 1 ? 'bg-green-100 text-green-600' :
-                                index === 2 ? 'bg-purple-100 text-purple-600' :
-                                  'bg-orange-100 text-orange-600'
-                              }`}>
-                              {index + 1}
-                            </div>
-                            <span className="text-sm font-medium truncate max-w-[120px]">{category.category}</span>
-                          </div>
-                          <span className="font-semibold text-green-600">{formatCurrency(category.amount)}</span>
-                        </div>
-                        <Progress
-                          percent={stats.totalAmountSold > 0 ?
-                            Math.round((category.amount / stats.totalAmountSold) * 100) : 0}
-                          size="small"
-                          strokeColor={index === 0 ? '#3b82f6' :
-                            index === 1 ? '#10b981' :
-                              index === 2 ? '#8b5cf6' :
-                                '#f97316'}
-                          className="mt-1"
-                          showInfo={false}
-                        />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </Card>
-
-              
-              <Card className="border-0 shadow-sm">
-                <div className="p-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                    <LuChartBar className="text-purple-500" />
-                    Performance Metrics
-                  </h3>
-                  <div className="space-y-4">
-                    <div>
-                      <div className="flex justify-between text-sm mb-1">
-                        <span className="text-gray-600">Average Revenue per Product</span>
-                        <span className="font-semibold">{formatCurrency(stats.avgAmountPerProduct)}</span>
-                      </div>
-                      <Progress
-                        percent={Math.min(100, Math.round(stats.avgAmountPerProduct / 100))}
-                        size="small"
-                        strokeColor="#8b5cf6"
-                        className="mt-1"
-                      />
-                    </div>
-
-                    <div>
-                      <div className="flex justify-between text-sm mb-1">
-                        <span className="text-gray-600">Average Units per Product</span>
-                        <span className="font-semibold">{stats.avgQuantityPerProduct.toFixed(1)} units</span>
-                      </div>
-                      <Progress
-                        percent={Math.min(100, Math.round(stats.avgQuantityPerProduct * 10))}
-                        size="small"
-                        strokeColor="#10b981"
-                        className="mt-1"
-                      />
-                    </div>
-
-                    <div>
-                      <div className="flex justify-between text-sm mb-1">
-                        <span className="text-gray-600">Active Products Ratio</span>
-                        <span className="font-semibold">
-                          {data.length > 0 ? Math.round((filteredData.length / data.length) * 100) : 0}%
-                        </span>
-                      </div>
-                      <Progress
-                        percent={data.length > 0 ? Math.round((filteredData.length / data.length) * 100) : 0}
-                        size="small"
-                        strokeColor="#3b82f6"
-                        className="mt-1"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </Card>
-            </motion.div>
-          </div> */}
+              <LuChevronsLeft className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+              disabled={currentPage === 1}
+              className="p-1 border border-gray-300 rounded-md disabled:opacity-50 hover:bg-gray-100"
+            >
+              <LuChevronLeft className="w-4 h-4" />
+            </button>
+            <span className="text-sm text-gray-700">
+              Page {currentPage} of {totalPages || 1}
+            </span>
+            <button
+              onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+              disabled={currentPage === totalPages || totalPages === 0}
+              className="p-1 border border-gray-300 rounded-md disabled:opacity-50 hover:bg-gray-100"
+            >
+              <LuChevronRight className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => setCurrentPage(totalPages)}
+              disabled={currentPage === totalPages || totalPages === 0}
+              className="p-1 border border-gray-300 rounded-md disabled:opacity-50 hover:bg-gray-100"
+            >
+              <LuChevronsRight className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       </div>
     </motion.div>
+  );
+};
+
+// Stat Card Component
+const StatCard = ({ title, value, subtitle, icon, bgColor }) => (
+  <div className={`${bgColor} border border-gray-200 rounded-lg p-4 flex items-center justify-between`}>
+    <div>
+      <p className="text-xs font-semibold text-gray-600 uppercase tracking-wider">{title}</p>
+      <p className="text-xl font-bold text-gray-900 mt-1">{value}</p>
+      <p className="text-xs text-gray-500 mt-1">{subtitle}</p>
+    </div>
+    <div className="p-2 bg-white rounded-lg border border-gray-200">{icon}</div>
+  </div>
+);
+
+// Table Header Component with sorting
+const TableHeader = ({ label, field, sortConfig, onSort, align = "left", className = "" }) => {
+  const isSorted = sortConfig?.field === field;
+  const sortOrder = isSorted ? sortConfig?.order : null;
+
+  return (
+    <th
+      className={`p-3 font-semibold text-gray-700 border-r border-gray-300 last:border-r-0 ${className}`}
+      style={{ textAlign: align }}
+    >
+      {field ? (
+        <button
+          onClick={() => onSort(field)}
+          className="flex items-center gap-1 w-full hover:text-gray-900"
+          style={{ justifyContent: align === "right" ? "flex-end" : "flex-start" }}
+        >
+          {label}
+          {sortOrder && (
+            <span className="text-xs">
+              {sortOrder === "asc" ? " ↑" : " ↓"}
+            </span>
+          )}
+        </button>
+      ) : (
+        label
+      )}
+    </th>
   );
 };
 

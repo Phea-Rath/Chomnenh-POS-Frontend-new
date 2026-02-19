@@ -1,8 +1,7 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     LuSearch,
     LuPlus,
-    LuFilter,
     LuRefreshCw,
     LuDownload,
     LuEye,
@@ -11,28 +10,14 @@ import {
     LuDollarSign,
     LuPackage,
     LuScale,
-    LuArchive,
-    LuUser,
     LuCalendar,
-    LuGrid3X3
+    LuGrid3X3,
+    LuChevronLeft,
+    LuChevronRight,
+    LuChevronsLeft,
+    LuChevronsRight,
+    LuX
 } from 'react-icons/lu';
-import {
-    Table,
-    Card,
-    Input,
-    Button,
-    Tag,
-    Modal,
-    Pagination,
-    Space,
-    Tooltip,
-    Avatar,
-    Badge,
-    Popconfirm,
-    Select,
-    Switch,
-    notification
-} from 'antd';
 import { motion } from 'framer-motion';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
@@ -46,8 +31,6 @@ import { toast } from 'react-toastify';
 
 dayjs.extend(relativeTime);
 
-const { Option } = Select;
-
 const RawMaterials = () => {
     const navigate = useNavigate();
     const token = localStorage.getItem('token');
@@ -59,568 +42,562 @@ const RawMaterials = () => {
         current: 1,
         pageSize: 10,
         total: 0,
-        showSizeChanger: true,
-        pageSizeOptions: ['10', '20', '50', '100']
+        pageSizeOptions: [10, 20, 50, 100]
     });
     const [viewMode, setViewMode] = useState('card'); // 'table' or 'card'
     const [selectedCategory, setSelectedCategory] = useState('all');
     const [showDeleted, setShowDeleted] = useState(false);
-    const [debounce] = useDebounce(searchTerm, 5000);
-    const { data: raw, refetch } = useGetAllRawMaterialQuery({ limit: pagination.pageSize, page: pagination.current, search: debounce, token });
-    const [deleteModalVisible, setDeleteModalVisible] = useState(false);
-    const [selectedMaterial, setSelectedMaterial] = useState(null);
+    const [sortConfig, setSortConfig] = useState({ field: null, order: null }); // for table sorting
+    const [deleteConfirmId, setDeleteConfirmId] = useState(null); // for custom delete modal
 
+    const [debouncedSearch] = useDebounce(searchTerm, 500);
+    const { data: raw, refetch, isLoading: queryLoading } = useGetAllRawMaterialQuery({
+        limit: pagination.pageSize,
+        page: pagination.current,
+        search: debouncedSearch,
+        token
+    });
+
+    // Update data when query returns
     useEffect(() => {
         const data = raw?.data?.data || [];
-        setPagination({
-            current: raw?.data?.current_page,
-            pageSize: raw?.data?.per_page,
-            total: raw?.data?.total
 
-        })
+        setPagination(prev => ({
+            ...prev,
+            current: raw?.data?.current_page || 1,
+            pageSize: raw?.data?.per_page || prev.pageSize,
+            total: raw?.data?.total || 0
+        }));
         setMaterials(data);
         setFilteredMaterials(data);
-        console.log(data);
+    }, [raw]);
 
-    }, [raw?.data?.data, pagination.pageSize]);
-
-    // Apply filters and search
+    // Apply filters and search (client-side, because we also filter by category and showDeleted)
     useEffect(() => {
-        console.log(materials);
-
         let filtered = [...materials];
 
-        // Filter by search term
+        // Search (already partially done by API, but we also filter by description and code)
         if (searchTerm) {
-            filtered = filtered.filter(material =>
-                material.material_name?.toLowerCase().includes(searchTerm.toLowerCase().trim()) ||
-                material.material_code?.toLowerCase().includes(searchTerm.toLowerCase().trim()) ||
-                material.material_description?.toLowerCase().includes(searchTerm.toLowerCase().trim())
+            const term = searchTerm.toLowerCase();
+            filtered = filtered.filter(m =>
+                m.material_name?.toLowerCase().includes(term) ||
+                m.material_code?.toLowerCase().includes(term) ||
+                m.material_description?.toLowerCase().includes(term)
             );
         }
 
-        // Filter by category (if you have categories in the future)
+        // Category filter (if implemented)
         if (selectedCategory !== 'all') {
-            filtered = filtered.filter(material => material.category === selectedCategory);
+            filtered = filtered.filter(m => m.category === selectedCategory);
         }
 
-        setFilteredMaterials(filtered);
 
-    }, [searchTerm, selectedCategory, materials]);
+
+        // Apply sorting (if any)
+        if (sortConfig.field && sortConfig.order) {
+            filtered.sort((a, b) => {
+                let aVal = a[sortConfig.field];
+                let bVal = b[sortConfig.field];
+                if (sortConfig.field === 'material_cost') {
+                    aVal = Number(aVal) || 0;
+                    bVal = Number(bVal) || 0;
+                } else if (sortConfig.field === 'created_at') {
+                    aVal = new Date(aVal);
+                    bVal = new Date(bVal);
+                }
+                if (aVal < bVal) return sortConfig.order === 'asc' ? -1 : 1;
+                if (aVal > bVal) return sortConfig.order === 'asc' ? 1 : -1;
+                return 0;
+            });
+        }
+
+        console.log(materials);
+        setFilteredMaterials(filtered);
+    }, [materials, searchTerm, selectedCategory, showDeleted, sortConfig]);
 
     // Handle pagination change
-    const handlePaginationChange = (page, pageSize) => {
-        setPagination(prev => ({
-            ...prev,
-            current: page,
-            pageSize
-        }));
+    const handlePageChange = (page) => {
+        setPagination(prev => ({ ...prev, current: page }));
     };
 
-    // Format currency
-    const formatCurrency = (amount) => {
-        return new Intl.NumberFormat('en-US', {
-            style: 'currency',
-            currency: 'USD',
-            minimumFractionDigits: 2
-        }).format(amount || 0);
+    const handlePageSizeChange = (e) => {
+        const size = parseInt(e.target.value);
+        setPagination(prev => ({ ...prev, pageSize: size, current: 1 }));
     };
 
-    // Format date
-    const formatDate = (dateString) => {
-        return dayjs(dateString).format('MMM D, YYYY');
-    };
-
-    // Get status badge
-    const getStatusBadge = (isDeleted) => {
-        if (isDeleted === 1) {
-            return <Badge status="error" text="Deleted" />;
+    // Handle sort
+    const handleSort = (field) => {
+        let order = 'asc';
+        if (sortConfig.field === field && sortConfig.order === 'asc') {
+            order = 'desc';
+        } else if (sortConfig.field === field && sortConfig.order === 'desc') {
+            order = null;
         }
-        return <Badge status="success" text="Active" />;
+        setSortConfig({ field: order ? field : null, order });
     };
 
-    // Handle delete material
+    // Handle delete
     const handleDelete = async (id) => {
+        setDeleteConfirmId(null);
         try {
-            const token = localStorage.getItem('token');
+            setLoading(true);
             const response = await api.delete(`/raw_materials/${id}`, {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                    'Content-Type': 'application/json',
-                },
+                headers: { Authorization: `Bearer ${token}` }
             });
-
-            if (response.status == 200) {
+            if (response.status === 200) {
                 toast.success('Material deleted successfully');
-                setDeleteModalVisible(false);
-                setSelectedMaterial(null);
-            } else {
-                throw new Error('Delete failed');
+                refetch();
             }
         } catch (error) {
-            toast.error('Failed to delete material. Please try again.');
+            toast.error('Failed to delete material');
+        } finally {
+            setLoading(false);
         }
     };
 
-    // Table columns
-    const columns = [
-        {
-            title: '#',
-            dataIndex: 'index',
-            width: 60,
-            align: 'center',
-            render: (_, __, index) => {
-                const current = pagination.current;
-                const pageSize = pagination.pageSize;
-                return (current - 1) * pageSize + index + 1;
-            },
-        },
-        {
-            title: 'MATERIAL',
-            dataIndex: 'material_name',
-            width: 200,
-            render: (name, record) => (
-                <div className="flex items-center gap-3">
-                    <Avatar
-                        size={48}
-                        src={record.material_image}
-                        className="bg-gradient-to-r from-blue-100 to-purple-100 border"
-                        shape="square"
-                    >
-                        <LuPackage className="text-xl text-gray-400" />
-                    </Avatar>
-                    <div>
-                        <div className="font-semibold text-gray-900">{name}</div>
-                        <div className="text-xs text-gray-500">{record.material_code}</div>
-                    </div>
-                </div>
-            ),
-        },
-        // {
-        //     title: 'DESCRIPTION',
-        //     dataIndex: 'material_description',
-        //     width: 250,
-        //     render: (description) => (
-        //         <div className="text-sm text-gray-600 truncate max-w-xs">
-        //             {description || 'No description'}
-        //         </div>
-        //     ),
-        // },
-        {
-            title: 'UNITS',
-            width: 150,
-            render: (_, record) => (
-                <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                        <LuScale className="w-4 h-4 text-gray-500" />
-                        <span className="text-sm">
-                            {record.primary_unit}
-                            {record.secondary_unit && ` → ${record.secondary_unit}`}
-                        </span>
-                    </div>
-                    {record.conversion_value && (
-                        <div className="text-xs text-gray-500">
-                            1 {record.primary_unit} = {record.conversion_value} {record.secondary_unit}
-                        </div>
-                    )}
-                </div>
-            ),
-        },
-        // {
-        //     title: 'COST',
-        //     dataIndex: 'material_cost',
-        //     width: 120,
-        //     align: 'right',
-        //     sorter: (a, b) => a.material_cost - b.material_cost,
-        //     render: (cost) => (
-        //         <div className="text-right">
-        //             <div className="font-bold text-green-600">
-        //                 {formatCurrency(cost)}
-        //             </div>
-        //             <div className="text-xs text-gray-500">per unit</div>
-        //         </div>
-        //     ),
-        // },
-        // {
-        //     title: 'STATUS',
-        //     dataIndex: 'is_deleted',
-        //     width: 100,
-        //     render: (isDeleted) => getStatusBadge(isDeleted),
-        // },
-        {
-            title: 'CREATED',
-            dataIndex: 'created_at',
-            width: 120,
-            render: (date) => (
-                <div>
-                    <div className="text-sm text-gray-900">{formatDate(date)}</div>
-                    <div className="text-xs text-gray-500">{dayjs(date).fromNow()}</div>
-                </div>
-            ),
-        },
-        {
-            title: 'ACTIONS',
-            width: 150,
-            fixed: 'right',
-            render: (_, record) => (
-                <Space size="small">
-                    <Tooltip title="View Details">
-                        <Button
-                            type="text"
-                            icon={<LuEye className="w-4 h-4" />}
-                            onClick={() => navigate(`view/${record.id}`)}
-                            className="text-blue-600 hover:text-blue-800"
-                        />
-                    </Tooltip>
-                    <Tooltip title="Edit">
-                        <Button
-                            type="text"
-                            icon={<BiEdit className="w-4 h-4" />}
-                            onClick={() => navigate(`edit/${record.id}`)}
-                            className="text-green-600 hover:text-green-800"
-                        />
-                    </Tooltip>
-                    <Tooltip title="Delete">
-                        <Popconfirm
-                            title="Delete Material"
-                            description="Are you sure you want to delete this material?"
-                            onConfirm={() => handleDelete(record.id)}
-                            okText="Yes"
-                            cancelText="No"
-                            okButtonProps={{ danger: true }}
-                        >
-                            <Button
-                                type="text"
-                                icon={<LuTrash2 className="w-4 h-4" />}
-                                className="text-red-600 hover:text-red-800"
-                            />
-                        </Popconfirm>
-                    </Tooltip>
-                </Space>
-            ),
-        },
-    ];
+    // Format helpers
+    const formatCurrency = (amount) => {
+        return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount || 0);
+    };
+    const formatDate = (date) => dayjs(date).format('MMM D, YYYY');
 
-    // Export data for Excel
-    const exportData = filteredMaterials.map(material => ({
-        'ID': material.id,
-        'Name': material.material_name,
-        'Code': material.material_code,
-        'Description': material.material_description,
-        'Primary Unit': material.primary_unit,
-        'Secondary Unit': material.secondary_unit || 'N/A',
-        'Conversion Value': material.conversion_value || 'N/A',
-        'Cost': formatCurrency(material.material_cost),
-        'Status': material.is_deleted === 0 ? 'Active' : 'Deleted',
-        'Created By': material.created_by,
-        'Created At': formatDate(material.created_at),
-        'Updated At': formatDate(material.updated_at)
+    // Export data
+    const exportData = filteredMaterials.map(m => ({
+        ID: m.id,
+        Name: m.material_name,
+        Code: m.material_code,
+        Description: m.material_description,
+        'Primary Unit': m.primary_unit,
+        'Secondary Unit': m.secondary_unit || 'N/A',
+        'Conversion Value': m.conversion_value || 'N/A',
+        Cost: formatCurrency(m.material_cost),
+        Status: m.is_deleted === 0 ? 'Active' : 'Deleted',
+        'Created At': formatDate(m.created_at)
     }));
 
+    // Custom components
+    const Avatar = ({ src, alt, size = 40 }) => {
+        const [error, setError] = useState(false);
+        if (src && !error) {
+            return <img src={src} alt={alt} className={`w-${size / 4} h-${size / 4} rounded object-cover border border-gray-200`} onError={() => setError(true)} />;
+        }
+        return (
+            <div className={`w-${size / 4} h-${size / 4} bg-blue-100 rounded flex items-center justify-center text-blue-600`}>
+                <LuPackage className={`text-${size / 4 - 2}`} />
+            </div>
+        );
+    };
 
+    const Badge = ({ isDeleted }) => {
+        if (isDeleted === 1) {
+            return <span className="px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">Deleted</span>;
+        }
+        return <span className="px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">Active</span>;
+    };
+
+    const DeleteConfirmModal = () => {
+        if (!deleteConfirmId) return null;
+        return (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                <div className="bg-white rounded-lg max-w-md w-full p-6 shadow-xl">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">Delete Material</h3>
+                    <p className="text-gray-600 mb-6">Are you sure you want to delete this material? This action cannot be undone.</p>
+                    <div className="flex justify-end gap-3">
+                        <button
+                            onClick={() => setDeleteConfirmId(null)}
+                            className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            onClick={() => handleDelete(deleteConfirmId)}
+                            className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+                        >
+                            Delete
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
+    const PaginationControls = () => {
+        const totalPages = Math.ceil(pagination.total / pagination.pageSize);
+        const start = (pagination.current - 1) * pagination.pageSize + 1;
+        const end = Math.min(pagination.current * pagination.pageSize, pagination.total);
+        return (
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 border-t border-gray-200 bg-gray-50">
+                <div className="flex items-center gap-2">
+                    <span className="text-sm text-gray-600">Rows per page:</span>
+                    <select
+                        value={pagination.pageSize}
+                        onChange={handlePageSizeChange}
+                        className="border border-gray-300 rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    >
+                        {pagination.pageSizeOptions.map(size => (
+                            <option key={size} value={size}>{size}</option>
+                        ))}
+                    </select>
+                </div>
+                <div className="flex items-center gap-2">
+                    <button
+                        onClick={() => handlePageChange(1)}
+                        disabled={pagination.current === 1}
+                        className="p-1 border border-gray-300 rounded-md disabled:opacity-50 hover:bg-gray-100"
+                    >
+                        <LuChevronsLeft />
+                    </button>
+                    <button
+                        onClick={() => handlePageChange(pagination.current - 1)}
+                        disabled={pagination.current === 1}
+                        className="p-1 border border-gray-300 rounded-md disabled:opacity-50 hover:bg-gray-100"
+                    >
+                        <LuChevronLeft />
+                    </button>
+                    <span className="text-sm text-gray-700">
+                        Page {pagination.current} of {totalPages || 1}
+                    </span>
+                    <button
+                        onClick={() => handlePageChange(pagination.current + 1)}
+                        disabled={pagination.current === totalPages || totalPages === 0}
+                        className="p-1 border border-gray-300 rounded-md disabled:opacity-50 hover:bg-gray-100"
+                    >
+                        <LuChevronRight />
+                    </button>
+                    <button
+                        onClick={() => handlePageChange(totalPages)}
+                        disabled={pagination.current === totalPages || totalPages === 0}
+                        className="p-1 border border-gray-300 rounded-md disabled:opacity-50 hover:bg-gray-100"
+                    >
+                        <LuChevronsRight />
+                    </button>
+                </div>
+                <div className="text-sm text-gray-600">
+                    Showing {start} to {end} of {pagination.total} materials
+                </div>
+            </div>
+        );
+    };
+
+    // Table View
+    const TableView = () => {
+        const start = (pagination.current - 1) * pagination.pageSize;
+        const paginatedData = filteredMaterials.slice(start, start + pagination.pageSize);
+
+        return (
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                <div className="overflow-x-auto">
+                    <table className="w-full border-collapse text-sm">
+                        <thead className="bg-gray-100 border-b border-gray-300">
+                            <tr>
+                                <th className="p-3 text-left font-semibold text-gray-700 border-r border-gray-300 w-16">#</th>
+                                <th className="p-3 text-left font-semibold text-gray-700 border-r border-gray-300 cursor-pointer" onClick={() => handleSort('material_name')}>
+                                    Material {sortConfig.field === 'material_name' && (sortConfig.order === 'asc' ? '↑' : '↓')}
+                                </th>
+                                <th className="p-3 text-left font-semibold text-gray-700 border-r border-gray-300">Units</th>
+                                <th className="p-3 text-right font-semibold text-gray-700 border-r border-gray-300 cursor-pointer" onClick={() => handleSort('material_cost')}>
+                                    Cost {sortConfig.field === 'material_cost' && (sortConfig.order === 'asc' ? '↑' : '↓')}
+                                </th>
+                                <th className="p-3 text-left font-semibold text-gray-700 border-r border-gray-300">Status</th>
+                                <th className="p-3 text-left font-semibold text-gray-700 border-r border-gray-300 cursor-pointer" onClick={() => handleSort('created_at')}>
+                                    Created {sortConfig.field === 'created_at' && (sortConfig.order === 'asc' ? '↑' : '↓')}
+                                </th>
+                                <th className="p-3 text-center font-semibold text-gray-700">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {paginatedData.map((item, idx) => {
+                                const index = start + idx + 1;
+                                return (
+                                    <tr key={item.id} className={`border-b border-gray-200 hover:bg-gray-50 ${item.is_deleted === 1 ? 'bg-red-50' : ''}`}>
+                                        <td className="p-3 text-center text-gray-600">{index}</td>
+                                        <td className="p-3">
+                                            <div className="flex items-center gap-3">
+                                                <Avatar src={item.material_image} alt={item.material_name} size={48} />
+                                                <div>
+                                                    <div className="font-semibold text-gray-900">{item.material_name}</div>
+                                                    <div className="text-xs text-gray-500">{item.material_code}</div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td className="p-3">
+                                            <div className="flex items-center gap-1 text-sm">
+                                                <LuScale className="text-gray-500" />
+                                                <span>{item.primary_unit}</span>
+                                                {item.secondary_unit && (
+                                                    <>
+                                                        <span>→</span>
+                                                        <span>{item.secondary_unit}</span>
+                                                        {item.conversion_value && (
+                                                            <span className="text-xs text-gray-500 ml-1">
+                                                                (1 {item.primary_unit} = {item.conversion_value} {item.secondary_unit})
+                                                            </span>
+                                                        )}
+                                                    </>
+                                                )}
+                                            </div>
+                                        </td>
+                                        <td className="p-3 text-right">
+                                            <div className="font-bold text-green-600">{formatCurrency(item.material_cost)}</div>
+                                        </td>
+                                        <td className="p-3"><Badge isDeleted={item.is_deleted} /></td>
+                                        <td className="p-3">
+                                            <div className="text-sm text-gray-900">{formatDate(item.created_at)}</div>
+                                            <div className="text-xs text-gray-500">{dayjs(item.created_at).fromNow()}</div>
+                                        </td>
+                                        <td className="p-3">
+                                            <div className="flex justify-center gap-2">
+                                                <button
+                                                    onClick={() => navigate(`view/${item.id}`)}
+                                                    className="p-2 bg-blue-100 text-blue-600 rounded hover:bg-blue-200"
+                                                    title="View"
+                                                >
+                                                    <LuEye size={14} />
+                                                </button>
+                                                <button
+                                                    onClick={() => navigate(`edit/${item.id}`)}
+                                                    className="p-2 bg-green-100 text-green-600 rounded hover:bg-green-200"
+                                                    title="Edit"
+                                                >
+                                                    <BiEdit size={14} />
+                                                </button>
+                                                <button
+                                                    onClick={() => setDeleteConfirmId(item.id)}
+                                                    className="p-2 bg-red-100 text-red-600 rounded hover:bg-red-200"
+                                                    title="Delete"
+                                                >
+                                                    <LuTrash2 size={14} />
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                );
+                            })}
+                        </tbody>
+                    </table>
+                </div>
+                <PaginationControls />
+            </div>
+        );
+    };
+
+    // Card View
+    const CardView = () => {
+        const start = (pagination.current - 1) * pagination.pageSize;
+        const paginatedData = filteredMaterials.slice(start, start + pagination.pageSize);
+
+        return (
+            <>
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                    {paginatedData.map((item) => (
+                        <motion.div
+                            key={item.id}
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            className="border border-gray-200 rounded-lg bg-white shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden"
+                        >
+                            <div className="p-4">
+                                <div className="flex justify-center mb-3">
+                                    <Avatar src={item.material_image} alt={item.material_name} size={64} />
+                                </div>
+                                <div className="text-center mb-3">
+                                    <h3 className="font-bold text-lg text-gray-900">{item.material_name}</h3>
+                                    <p className="text-sm text-gray-500">{item.material_code}</p>
+                                </div>
+                                <div className="space-y-2 mb-4 text-sm">
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-gray-600">Unit:</span>
+                                        <span className="font-medium">{item.primary_unit}</span>
+                                    </div>
+                                    {item.secondary_unit && (
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-gray-600">Conversion:</span>
+                                            <span className="font-medium">1 {item.primary_unit} = {item.conversion_value} {item.secondary_unit}</span>
+                                        </div>
+                                    )}
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-gray-600">Cost:</span>
+                                        <span className="font-bold text-green-600">{formatCurrency(item.material_cost)}</span>
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-gray-600">Created:</span>
+                                        <span className="text-sm">{formatDate(item.created_at)}</span>
+                                    </div>
+                                </div>
+                                <div className="flex justify-between pt-3 border-t border-gray-200">
+                                    <button
+                                        onClick={() => navigate(`view/${item.id}`)}
+                                        className="p-2 bg-blue-100 text-blue-600 rounded hover:bg-blue-200"
+                                        title="View"
+                                    >
+                                        <LuEye size={14} />
+                                    </button>
+                                    <button
+                                        onClick={() => navigate(`edit/${item.id}`)}
+                                        className="p-2 bg-green-100 text-green-600 rounded hover:bg-green-200"
+                                        title="Edit"
+                                    >
+                                        <BiEdit size={14} />
+                                    </button>
+                                    <button
+                                        onClick={() => setDeleteConfirmId(item.id)}
+                                        className="p-2 bg-red-100 text-red-600 rounded hover:bg-red-200"
+                                        title="Delete"
+                                    >
+                                        <LuTrash2 size={14} />
+                                    </button>
+                                </div>
+                            </div>
+                        </motion.div>
+                    ))}
+                </div>
+                <div className="mt-6">
+                    <PaginationControls />
+                </div>
+            </>
+        );
+    };
 
     return (
         <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
+            className="min-h-screen bg-transparent p-4 md:p-6"
         >
-            <div className="min-h-screen bg-transparent p-4 md:p-6">
-                {/* Header Section */}
-                <div className="mb-8">
-                    <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-                        <div>
-                            <motion.h1
-                                initial={{ opacity: 0, x: -20 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                className="text-3xl font-bold text-gray-900 mb-2 flex items-center gap-3"
-                            >
-                                <div className="p-3 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-xl shadow-sm">
-                                    <LuPackage className="text-2xl text-white" />
-                                </div>
-                                Raw Materials
-                            </motion.h1>
-                            <p className="text-gray-600 text-lg">
-                                Manage and track all raw materials in your inventory
-                            </p>
-                        </div>
+            <DeleteConfirmModal />
 
-                        <div className="flex items-center space-x-3">
-                            <Button
-                                icon={<LuRefreshCw />}
-                                onClick={() => refetch()}
-                                loading={loading}
-                                className="flex items-center space-x-2 h-12 px-4 rounded-xl bg-white hover:bg-gray-50 border border-gray-200 shadow-sm"
-                            >
-                                Refresh
-                            </Button>
-                            <ExportExel
-                                data={exportData}
-                                title="Raw_Materials_Report"
-                                className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-6 py-3 rounded-xl flex items-center space-x-2 font-semibold shadow-sm hover:shadow-md transition-all duration-300 h-12"
-                            >
-                                <LuDownload className="text-lg" />
-                                <span>Export</span>
-                            </ExportExel>
-                            <Button
-                                type="primary"
-                                icon={<LuPlus />}
-                                onClick={() => navigate('/dashboard/raw-materials/create')}
-                                className="h-12 px-6 rounded-xl bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 border-none shadow-sm hover:shadow-md"
-                            >
-                                Add New Material
-                            </Button>
-                        </div>
+            <div className="mx-auto">
+                {/* Header */}
+                <div className="mb-3 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+                    <div>
+                        <motion.h1
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            className="text-2xl font-bold text-gray-900 mb-2 flex items-center gap-3"
+                        >
+                            <div className="p-3 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-xl shadow-sm">
+                                <LuPackage className="text-xl text-white" />
+                            </div>
+                            Raw Materials
+                        </motion.h1>
+                        <p className="text-gray-600 text-sm">Manage and track all raw materials</p>
+                    </div>
+
+                    <div className="flex text-sm items-center gap-2">
+                        <button
+                            onClick={() => refetch()}
+                            disabled={loading || queryLoading}
+                            className="px-4 py-2 border border-gray-300 rounded-md bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 flex items-center gap-2"
+                        >
+                            <LuRefreshCw className={loading || queryLoading ? 'animate-spin' : ''} />
+                            Refresh
+                        </button>
+                        <ExportExel
+                            data={exportData}
+                            title="Raw_Materials_Report"
+                            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center gap-2"
+                        >
+                            <LuDownload />
+                            Export
+                        </ExportExel>
+                        <Link to="/dashboard/raw-materials/create">
+                            <button className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 flex items-center gap-2">
+                                <LuPlus />
+                                New
+                            </button>
+                        </Link>
                     </div>
                 </div>
 
                 {/* Filters and Controls */}
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.1 }}
-                    className="bg-white rounded-2xl shadow-md border border-gray-100 p-6 mb-8"
-                >
+                <div className="bg-white rounded-lg shadow-sm border text-sm border-gray-200 p-4 mb-3">
                     <div className="grid grid-cols-1 lg:grid-cols-8 gap-4">
-                        {/* Search Input */}
+                        {/* Search */}
                         <div className="lg:col-span-4">
-                            <Input
-                                placeholder="Search by name, code, or description..."
-                                prefix={<LuSearch className="text-gray-400" />}
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                className="h-12 rounded-xl"
-                                allowClear
-                                size="large"
-                            />
+                            <div className="relative">
+                                <LuSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                                <input
+                                    type="text"
+                                    placeholder="Search by name, code, or description..."
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                />
+                                {searchTerm && (
+                                    <button
+                                        onClick={() => setSearchTerm('')}
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                                    >
+                                        <LuX />
+                                    </button>
+                                )}
+                            </div>
                         </div>
 
-
+                        {/* Category Filter (if needed) - we can add a select here */}
+                        <div className="lg:col-span-2">
+                            <select
+                                value={selectedCategory}
+                                onChange={(e) => setSelectedCategory(e.target.value)}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            >
+                                <option value="all">All Categories</option>
+                                {/* Add category options dynamically if available */}
+                            </select>
+                        </div>
 
                         {/* View Mode Toggle */}
                         <div className="lg:col-span-2">
-                            <div className="flex items-center gap-2 h-12 px-4 bg-gray-50 rounded-xl border">
-                                <Button
-                                    type={viewMode === 'table' ? 'primary' : 'text'}
-                                    icon={<LuList />}
+                            <div className="flex items-center gap-2 p-1 bg-gray-100 rounded-md border border-gray-300">
+                                <button
                                     onClick={() => setViewMode('table')}
-                                    className="flex-1"
+                                    className={`flex-1 px-3 py-2 rounded-md flex items-center justify-center gap-2 transition-all ${viewMode === 'table' ? 'bg-white shadow-sm text-blue-600 font-semibold' : 'text-gray-600 hover:text-gray-800'
+                                        }`}
                                 >
-                                    Table
-                                </Button>
-                                <Button
-                                    type={viewMode === 'card' ? 'primary' : 'text'}
-                                    icon={<LuGrid3X3 />}
+                                    <LuList />
+                                    <span>Table</span>
+                                </button>
+                                <button
                                     onClick={() => setViewMode('card')}
-                                    className="flex-1"
+                                    className={`flex-1 px-3 py-2 rounded-md flex items-center justify-center gap-2 transition-all ${viewMode === 'card' ? 'bg-white shadow-sm text-blue-600 font-semibold' : 'text-gray-600 hover:text-gray-800'
+                                        }`}
                                 >
-                                    Card
-                                </Button>
-                            </div>
-                        </div>
-
-                        {/* Stats */}
-                        <div className="lg:col-span-2">
-                            <div className="h-12 px-4 bg-blue-50 rounded-xl border border-blue-200 flex items-center justify-center">
-                                <span className="text-blue-700 font-semibold">
-                                    {filteredMaterials.length} materials
-                                </span>
+                                    <LuGrid3X3 />
+                                    <span>Card</span>
+                                </button>
                             </div>
                         </div>
                     </div>
-                </motion.div>
+                </div>
 
-                {/* Content Area */}
-                {viewMode === 'table' ? (
-                    /* Table View */
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.2 }}
-                    >
-                        <Card className="border-0 shadow-md">
-                            <Table
-                                columns={columns}
-                                dataSource={filteredMaterials}
-                                rowKey="id"
-                                loading={loading}
-                                pagination={false}
-                                scroll={{ x: 1200 }}
-                                className="ant-table-striped"
-                                rowClassName={(record) =>
-                                    record.is_deleted === 1 ? 'bg-red-50 opacity-75' : ''
-                                }
-                            />
-                        </Card>
-                    </motion.div>
-                ) : (
-                    /* Card View */
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.2 }}
-                        className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6"
-                    >
-                        {filteredMaterials.map((material) => (
-                            <motion.div
-                                key={material.id}
-                                initial={{ opacity: 0, scale: 0.9 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                transition={{ duration: 0.3 }}
-                            >
-                                <Card
-                                    className="border-0 shadow-sm hover:shadow-md transition-all duration-300 h-full"
-                                >
-                                    <div className="p-4">
-                                        {material.material_image ? <img
-                                            src={material.material_image}
-                                            className="mx-auto bg-gradient-to-r object-contain w-20 h-20 from-blue-100 to-purple-100 border"
-                                        />
-                                            : <LuPackage className="text-2xl text-gray-400" />}
-
-                                    </div>
-                                    <div className="text-center mb-4">
-                                        <h3 className="font-bold text-lg text-gray-900 mb-1">
-                                            {material.material_name}
-                                        </h3>
-                                        <p className="text-sm text-gray-500">{material.material_code}</p>
-                                    </div>
-
-                                    <div className="space-y-3 mb-4">
-                                        {/* <div className="text-sm text-gray-600 line-clamp-2">
-                                            {material.material_description || 'No description'}
-                                        </div> */}
-
-                                        <div className="flex items-center justify-between text-sm">
-                                            <div className="flex items-center gap-1 text-gray-600">
-                                                <LuScale className="w-4 h-4" />
-                                                <span>1{material.primary_unit}</span>
-                                            </div>
-                                            <div className="font-bold text-green-600">
-                                                {material.conversion_value}{material.secondary_unit}
-                                            </div>
-                                        </div>
-
-                                        <div className="flex items-center justify-between text-sm">
-                                            <div className="flex items-center gap-1 text-gray-600">
-                                                <LuCalendar className="w-4 h-4" />
-                                                <span>{formatDate(material.created_at)}</span>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div className="flex border-t border-gray-300 items-center justify-between pt-4">
-                                        <Button
-                                            type="text"
-                                            icon={<LuEye className="w-4 h-4" />}
-                                            onClick={() => navigate(`view/${material.id}`)}
-                                            className="text-blue-600 hover:text-blue-800"
-                                        >
-
-                                        </Button>
-                                        <Button
-                                            type="text"
-                                            icon={<BiEdit className="w-4 h-4" />}
-                                            onClick={() => navigate(`edit/${material.id}`)}
-                                            className="text-green-600 hover:text-green-800"
-                                        >
-
-                                        </Button>
-                                        <Popconfirm
-                                            title="Delete Material"
-                                            description="Are you sure you want to delete this material?"
-                                            onConfirm={() => handleDelete(material.id)}
-                                            okText="Yes"
-                                            cancelText="No"
-                                            okButtonProps={{ danger: true }}
-                                        >
-                                            <Button
-                                                type="text"
-                                                icon={<LuTrash2 className="w-4 h-4" />}
-                                                className="text-red-600 hover:text-red-800"
-                                            >
-
-                                            </Button>
-                                        </Popconfirm>
-                                    </div>
-                                </Card>
-                            </motion.div>
-                        ))}
-                    </motion.div>
-                )}
-
-                {/* Pagination */}
-                {filteredMaterials.length > 0 && (
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.3 }}
-                        className="mt-8"
-                    >
-                        <Card className="border-0 shadow-md">
-                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                                <div className="text-gray-600">
-                                    Showing {((pagination.current - 1) * pagination.pageSize) + 1} to{' '}
-                                    {Math.min(pagination.current * pagination.pageSize, pagination.total)} of{' '}
-                                    {pagination.total} materials
-                                </div>
-                                <Pagination
-                                    current={pagination.current}
-                                    pageSize={pagination.pageSize}
-                                    total={pagination.total}
-                                    onChange={handlePaginationChange}
-                                    showSizeChanger
-                                    pageSizeOptions={pagination.pageSizeOptions}
-                                    showQuickJumper
-                                    showTotal={(total, range) =>
-                                        `${range[0]}-${range[1]} of ${total} items`
-                                    }
-                                    className="ant-pagination-mini"
-                                />
-                            </div>
-                        </Card>
-                    </motion.div>
-                )}
-
-                {/* Empty State */}
-                {!loading && filteredMaterials.length === 0 && (
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ duration: 0.3 }}
-                        className="flex flex-col items-center justify-center py-16"
-                    >
-                        <div className="w-24 h-24 bg-gradient-to-r from-blue-100 to-purple-100 rounded-full flex items-center justify-center mb-6">
-                            <LuPackage className="w-12 h-12 text-gray-400" />
+                {/* Content */}
+                {loading || queryLoading ? (
+                    <div className="flex flex-col items-center justify-center py-16">
+                        <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-4"></div>
+                        <p className="text-gray-600">Loading materials...</p>
+                    </div>
+                ) : filteredMaterials.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-16 border-2 border-dashed border-gray-300 rounded-lg bg-white">
+                        <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mb-4">
+                            <LuPackage className="w-10 h-10 text-blue-400" />
                         </div>
-                        <h3 className="text-xl font-semibold text-gray-700 mb-2">
-                            No Materials Found
-                        </h3>
-                        <p className="text-gray-500 text-center max-w-md mb-6">
+                        <h3 className="text-xl font-semibold text-gray-700 mb-2">No Materials Found</h3>
+                        <p className="text-gray-500 text-xs text-center max-w-md mb-6">
                             {searchTerm || selectedCategory !== 'all' || showDeleted
-                                ? "No materials match your search criteria. Try adjusting your filters."
-                                : "You haven't added any raw materials yet. Start by adding your first material."}
+                                ? 'No materials match your filters. Try adjusting them.'
+                                : 'Start by adding your first raw material.'}
                         </p>
                         {!searchTerm && selectedCategory === 'all' && !showDeleted && (
-                            <Button
-                                type="primary"
-                                icon={<LuPlus />}
-                                onClick={() => navigate('/dashboard/raw-materials/create')}
-                                className="h-12 px-8 rounded-xl bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
-                                size="large"
-                            >
-                                Add Your First Material
-                            </Button>
+                            <Link to="/dashboard/raw-materials/create">
+                                <button className="p-2 bg-green-600 text-white text-sm rounded-md hover:bg-green-700 flex items-center gap-2">
+                                    <LuPlus /> Add Your First Material
+                                </button>
+                            </Link>
                         )}
-                    </motion.div>
-                )}
-
-                {/* Loading State */}
-                {loading && (
-                    <div className="flex flex-col items-center justify-center py-16">
-                        <div className="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-4"></div>
-                        <p className="text-gray-600 font-medium">Loading materials...</p>
                     </div>
+                ) : (
+                    viewMode === 'table' ? <TableView /> : <CardView />
                 )}
             </div>
         </motion.div>

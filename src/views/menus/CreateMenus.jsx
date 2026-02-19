@@ -112,7 +112,7 @@ const CreateMenus = ({ onAdd }) => {
                 <select
                   className="w-full border rounded-sm border-gray-300 text-[13px]"
                   placeholder="Select System Layer"
-                  onChange={(val) => setMenus({ ...menus, menu_type: val })}
+                  onChange={(e) => setMenus({ ...menus, menu_type: e.target.value })}
 
                 >
                   <option value={1}>SideBar Navigation</option>

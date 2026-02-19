@@ -1,56 +1,32 @@
 import React, { useEffect, useState } from 'react';
-import { Badge, Card, Tabs } from 'antd';
+import { Atom } from 'react-loading-indicators';
 import Waste from './waste';
 import OrderOnline from './orderOnline';
 import { useGetAllOrderOnlineQuery, useGetAllWasteQuery } from '../../../app/Features/notificationSlice';
 import { useOutletsContext } from '../../layouts/Management';
 import '../../../public/sounds/notification.mp3';
 import echo from '../../echo';
-import { Atom } from 'react-loading-indicators';
+import { useNavigate } from 'react-router';
 
 const Notification = () => {
     const token = localStorage.getItem('token');
+    const navigator = useNavigate();
     const [activeKey, setActiveKey] = useState('1');
     const { notification, setNotification } = useOutletsContext();
     const { data: dataWaste, isLoading, refetch } = useGetAllWasteQuery(token);
     const { data: dataOrderOnline, isLoading: isLoadingOnline, refetch: refetchOnline } = useGetAllOrderOnlineQuery(token);
-    const [items, setItems] = useState([]);
 
+    // Update notification count when data changes
     useEffect(() => {
-        setNotification(dataWaste?.data?.length + dataOrderOnline?.data?.length);
-        setItems([
-            {
-                label: (
-                    <div className="flex items-center gap-2 px-2">
-                        <span>Order Online</span>
-                        <Badge
-                            count={dataOrderOnline?.data?.length}
-                            color="#1890ff"
-                            className="min-w-[20px]"
-                            style={{ fontSize: '10px', height: '16px', lineHeight: '16px' }}
-                        />
-                    </div>
-                ),
-                key: '1',
-                children: <OrderOnline />,
-            },
-            {
-                label: (
-                    <div className="flex items-center gap-2 px-2">
-                        <span>Waste Items</span>
-                        <Badge
-                            count={dataWaste?.data?.length}
-                            color="#ff4d4f"
-                            className="min-w-[20px]"
-                            style={{ fontSize: '10px', height: '16px', lineHeight: '16px' }}
-                        />
-                    </div>
-                ),
-                key: '2',
-                children: <Waste />,
-            },
-        ]);
+        const total = (dataOrderOnline?.data?.length || 0) + (dataWaste?.data?.length || 0);
+        setNotification(total);
     }, [dataWaste, dataOrderOnline, setNotification]);
+
+    // Tabs configuration
+    const tabs = [
+        { key: '1', label: 'Order Online', count: dataOrderOnline?.data?.length || 0, color: 'blue' },
+        { key: '2', label: 'Waste Items', count: dataWaste?.data?.length || 0, color: 'red' },
+    ];
 
     if (isLoading || isLoadingOnline) {
         return (
@@ -82,7 +58,7 @@ const Notification = () => {
 
                 {/* Stats Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                    <Card className="shadow-sm border-0 hover:shadow-md transition-shadow">
+                    <div className="border border-gray-300 rounded p-4 bg-white hover:bg-gray-50 transition-colors">
                         <div className="flex items-center justify-between">
                             <div>
                                 <p className="text-gray-600 text-sm font-medium">Online Orders</p>
@@ -96,9 +72,9 @@ const Notification = () => {
                                 </svg>
                             </div>
                         </div>
-                    </Card>
+                    </div>
 
-                    <Card className="shadow-sm border-0 hover:shadow-md transition-shadow">
+                    <div className="border border-gray-300 rounded p-4 bg-white hover:bg-gray-50 transition-colors">
                         <div className="flex items-center justify-between">
                             <div>
                                 <p className="text-gray-600 text-sm font-medium">Waste Items</p>
@@ -112,57 +88,52 @@ const Notification = () => {
                                 </svg>
                             </div>
                         </div>
-                    </Card>
+                    </div>
                 </div>
 
-                {/* Tabs Section */}
-                <Card className="shadow-sm border-0">
-                    <Tabs
-                        defaultActiveKey="1"
-                        type="line"
-                        size="large"
-                        onChange={setActiveKey}
-                        items={items}
-                        className="notification-tabs"
-                    />
-                </Card>
+                {/* Tabs */}
+                <div className="border border-gray-300 rounded bg-white">
+                    <div className="flex border-b border-gray-300">
+                        {tabs.map(tab => (
+                            <button
+                                key={tab.key}
+                                onClick={() => setActiveKey(tab.key)}
+                                className={`px-6 py-3 text-sm font-medium flex items-center gap-2 transition-colors relative ${activeKey === tab.key
+                                    ? 'text-blue-600 border-b-2 border-blue-600'
+                                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                                    }`}
+                            >
+                                <span>{tab.label}</span>
+                                {tab.count > 0 && (
+                                    <span className={`inline-flex items-center justify-center px-2 py-0.5 text-xs font-medium rounded-full ${tab.color === 'blue' ? 'bg-blue-100 text-blue-800' : 'bg-red-100 text-red-800'
+                                        }`}>
+                                        {tab.count}
+                                    </span>
+                                )}
+                            </button>
+                        ))}
+                    </div>
+                    <div className="p-4">
+                        {activeKey === '1' ? <OrderOnline /> : <Waste />}
+                    </div>
+                </div>
 
-                {/* Total Notification Badge */}
-                <div className="fixed bottom-6 right-6">
-                    <Badge
-                        count={notification}
-                        size="default"
-                        style={{
-                            backgroundColor: '#52c41a',
-                            boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
-                        }}
-                    >
-                        <div className="w-12 h-12 bg-white rounded-full shadow-lg flex items-center justify-center">
+                {/* Floating Notification Badge */}
+                <div onClick={() => navigator('/dashboard/order-tracking')} className="fixed bottom-6 right-6">
+                    <div className="relative">
+                        <div className="w-12 h-12 bg-white border border-gray-300 rounded-full shadow-sm flex items-center justify-center">
                             <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-5 5v-5zM4.93 4.93l9.07 9.07-9.07 9.07L4.93 4.93z" />
                             </svg>
                         </div>
-                    </Badge>
+                        {notification > 0 && (
+                            <span className="absolute -top-1 -right-1 w-5 h-5 bg-green-500 border-2 border-white rounded-full text-xs text-white font-medium flex items-center justify-center">
+                                {notification}
+                            </span>
+                        )}
+                    </div>
                 </div>
             </div>
-
-            {/* Custom CSS for better tab styling */}
-            <style jsx>{`
-                .notification-tabs .ant-tabs-nav {
-                    margin-bottom: 0;
-                }
-                .notification-tabs .ant-tabs-tab {
-                    padding: 12px 20px;
-                    margin: 0 4px;
-                }
-                .notification-tabs .ant-tabs-tab:hover {
-                    color: #1890ff;
-                }
-                .notification-tabs .ant-tabs-tab-active {
-                    background: #f0f8ff;
-                    border-radius: 6px 6px 0 0;
-                }
-            `}</style>
         </div>
     );
 };

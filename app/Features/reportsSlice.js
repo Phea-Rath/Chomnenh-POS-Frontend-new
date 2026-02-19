@@ -26,6 +26,12 @@ export const reportsApi = createApi({
         getRawMaterialReport: builder.mutation({
             query: ({ itemData, token }) => createData(itemData, '/raw_material_report', token),
         }),
+        getProductionReport: builder.mutation({
+            query: ({ itemData, token }) => createData(itemData, '/production_report', token),
+        }),
+        getProductionByRawReport: builder.mutation({
+            query: ({ itemData, token }) => createData(itemData, '/production_report_raw', token),
+        }),
 
     }),
 });
@@ -36,5 +42,7 @@ export const {
     useGetPurchaseByItemReportMutation,
     useGetPurchaseReportMutation,
     useGetExpanseReportMutation,
-    useGetRawMaterialReportMutation
+    useGetRawMaterialReportMutation,
+    useGetProductionReportMutation,
+    useGetProductionByRawReportMutation
 } = reportsApi;

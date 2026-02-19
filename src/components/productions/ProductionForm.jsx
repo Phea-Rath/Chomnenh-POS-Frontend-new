@@ -69,6 +69,7 @@ const ProductionForm = () => {
     const [currentProduction, setCurrentProduction] = useState(null);
     const [rawMaterialModalVisible, setRawMaterialModalVisible] = useState(false);
     const [selectedItem, setSelectedItem] = useState(null);
+    const [selectedRawMaterialForModal, setSelectedRawMaterialForModal] = useState(null);
     const [seaarchItem, setSearchItem] = useState("");
     const [debounceItem] = useDebounce(seaarchItem, 5000);
     const [seaarchRaw, setSearchRaw] = useState("");
@@ -174,6 +175,11 @@ const ProductionForm = () => {
     // Add raw material
     const handleAddRawMaterial = (values) => {
         const rawMaterial = rawMaterials.find(rm => rm.id === values.raw_material_id);
+        const selectedUnit = values.unit || rawMaterial?.primary_unit;
+        const conversionValue = parseFloat(rawMaterial?.conversion_value) || 1;
+        const quantityInPrimaryUnit = selectedUnit === rawMaterial?.secondary_unit
+            ? parseFloat(values.quantity) / conversionValue
+            : parseFloat(values.quantity);
         const exist = selectedRawMaterials.some(i => i.raw_material_id == values.raw_material_id);
         if (exist) {
             toast.error('Duplicate item');
@@ -183,7 +189,7 @@ const ProductionForm = () => {
             toast.error('Item out stock');
             return;
         }
-        if (rawMaterial.in_stock < values.quantity) {
+        if (rawMaterial.in_stock < quantityInPrimaryUnit) {
             toast.error('Not enough item in stock');
             return;
         }
@@ -194,12 +200,15 @@ const ProductionForm = () => {
             material_name: rawMaterial?.material_name || 'Unknown Material',
             material_code: rawMaterial?.material_code || 'N/A',
             primary_unit: rawMaterial?.primary_unit || 'unit',
-            quantity: parseFloat(values.quantity),
+            secondary_unit: rawMaterial?.secondary_unit || '',
+            selected_unit: selectedUnit,
+            quantity: quantityInPrimaryUnit,
             cost_per_unit: parseFloat(values.cost_per_unit),
-            total: parseFloat(values.quantity) * parseFloat(values.cost_per_unit)
+            total: quantityInPrimaryUnit * parseFloat(values.cost_per_unit)
         };
 
         setSelectedRawMaterials([...selectedRawMaterials, newMaterial]);
+        setSelectedRawMaterialForModal(null);
         setRawMaterialModalVisible(false);
         notification.success({
             message: 'Success',
@@ -307,12 +316,12 @@ const ProductionForm = () => {
             return Promise.reject(new Error('Please enter the cost'));
         }
 
-        const regex = /^\d{1,8}(\.\d{1,2})?$/;
-        if (!regex.test(value.toString())) {
-            return Promise.reject(
-                new Error('Invalid cost format. Maximum 8 digits before decimal and 2 after.')
-            );
-        }
+        // const regex = /^\d{1,8}(\.\d{1,2})?$/;
+        // if (!regex.test(value.toString())) {
+        //     return Promise.reject(
+        //         new Error('Invalid cost format. Maximum 8 digits before decimal and 2 after.')
+        //     );
+        // }
 
         return Promise.resolve();
     };
@@ -359,6 +368,7 @@ const ProductionForm = () => {
 
             const payload = {
                 ...values,
+                total_cost: Number(parseFloat(values.total_cost).toFixed(2)),
                 production_date: values.production_date.format('YYYY-MM-DD'),
                 raw_materials: formattedRawMaterials
             };
@@ -424,11 +434,14 @@ const ProductionForm = () => {
 
     const handleRawMaterialChange = (materialId) => {
         setRawId(materialId);
+        const material = rawMaterials?.find((rm) => rm.id === materialId);
+        setSelectedRawMaterialForModal(material || null);
 
         // reset fields when material changes
         rawMaterialForm.setFieldsValue({
             quantity: undefined,
             cost_per_unit: undefined,
+            unit: material?.primary_unit || undefined,
         });
     };
 
@@ -463,10 +476,19 @@ const ProductionForm = () => {
 
     }
 
-    const handleQuantity = (e) => {
-        if (!e.target.value) return;
-        fetchCost(rawId, Number(e.target.value));
-        console.log(Number(e.target.value));
+    const handleQuantity = () => {
+        const quantity = Number(rawMaterialForm.getFieldValue('quantity'));
+        if (!quantity) return;
+
+        const selectedUnit = rawMaterialForm.getFieldValue('unit');
+        const selectedMaterial = rawMaterials?.find((rm) => rm.id === rawId);
+        const conversionValue = parseFloat(selectedMaterial?.conversion_value) || 1;
+
+        const quantityInPrimaryUnit = selectedUnit === selectedMaterial?.secondary_unit
+            ? quantity / conversionValue
+            : quantity;
+
+        fetchCost(rawId, quantityInPrimaryUnit);
     };
 
 
@@ -995,6 +1017,7 @@ const ProductionForm = () => {
                     open={rawMaterialModalVisible}
                     onCancel={() => {
                         rawMaterialForm.resetFields();
+                        setSelectedRawMaterialForModal(null);
                         setRawMaterialModalVisible(false);
                     }}
                     footer={null}
@@ -1074,6 +1097,34 @@ const ProductionForm = () => {
                                 </Form.Item>
                             </Col>
 
+                            <Col span={12}>
+                                <Row>
+
+                                    <Form.Item
+                                        label="Unit"
+                                        name="unit"
+                                        rules={[
+                                            { required: true, message: 'Please select unit' },
+                                        ]}
+                                    >
+                                        <Select
+                                            className="w-full"
+                                            placeholder="Select unit"
+                                            onSelect={handleQuantity}
+                                            disabled={!selectedRawMaterialForModal}
+                                        >
+                                            {[selectedRawMaterialForModal?.primary_unit, selectedRawMaterialForModal?.secondary_unit]
+                                                .filter(Boolean)
+                                                .filter((value, index, array) => array.indexOf(value) === index)
+                                                .map((unit) => (
+                                                    <Option key={unit} value={unit}>
+                                                        {unit}
+                                                    </Option>
+                                                ))}
+                                        </Select>
+                                    </Form.Item>
+                                </Row>
+                            </Col>
                             {/* COST PER UNIT */}
                             <Col span={12}>
                                 <Row>
@@ -1109,6 +1160,7 @@ const ProductionForm = () => {
                             <Button
                                 onClick={() => {
                                     rawMaterialForm.resetFields();
+                                    setSelectedRawMaterialForModal(null);
                                     setRawMaterialModalVisible(false);
                                 }}
                             >

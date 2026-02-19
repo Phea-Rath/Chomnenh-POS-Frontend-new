@@ -597,8 +597,8 @@ const QuotationList = () => {
             )}
 
             {/* Header */}
-            <div className="mb-8">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+            <div className="mb-3">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-3">
                     <div>
                         <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Quotations</h1>
                         <p className="text-gray-600 mt-1">Manage and track all your quotations</p>
@@ -615,7 +615,7 @@ const QuotationList = () => {
                 </div>
 
                 {/* Search and Filters */}
-                <div className="bg-white rounded-xl p-4 md:p-5 shadow-sm border border-gray-200">
+                <div className="bg-white rounded-xl p-4 md:p-5 shadow-sm border text-sm border-gray-200">
                     <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                         <div className="flex flex-col md:flex-row gap-4">
                             <div className="relative flex-1 min-w-[250px]">
@@ -669,7 +669,7 @@ const QuotationList = () => {
             </div>
 
             {/* Stats Cards */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-3">
                 {statusOptions.map((status) => (
                     <div key={status.value} className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
                         <div className="flex items-center">
@@ -689,7 +689,7 @@ const QuotationList = () => {
 
             {/* Bulk Actions */}
             {selectedQuotations.length > 0 && (
-                <div className="mb-6 bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-xl border border-blue-200">
+                <div className="mb-3 bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-xl border border-blue-200">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                         <div className="flex items-center gap-3">
                             <div className="px-3 py-1 bg-blue-600 text-white rounded-full text-sm font-medium">

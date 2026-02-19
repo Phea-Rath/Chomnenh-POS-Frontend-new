@@ -41,7 +41,7 @@ const ExportExel = ({ data, title }) => {
 
 
     return (
-        <button onClick={handleExport} className="btn bg-[#03C755] text-white ml-5 border-[#00b544]">
+        <button onClick={handleExport} className="btn bg-[#03C755] text-white border-[#00b544]">
             Export Excel
         </button>
     )

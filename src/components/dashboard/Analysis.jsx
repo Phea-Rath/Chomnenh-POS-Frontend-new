@@ -139,7 +139,7 @@ const Analysis = () => {
 
   return (
     <stockChartContext.Provider value={{ apiData }}>
-      <div className="min-h-screen bg-gray-50/50 p-6">
+      <div className="min-h-screen bg-transparent p-6">
         <div className="max-w-7xl mx-auto">
           {/* Header */}
           <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-8">

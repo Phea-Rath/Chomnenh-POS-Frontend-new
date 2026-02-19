@@ -1,31 +1,28 @@
-import React, { useEffect, useRef, useState } from 'react'
-import { IoIosSearch, IoIosGrid, IoIosList } from 'react-icons/io'
-import { FaPlus, FaEdit, FaTrash, FaFolder, FaUser, FaBox, FaTags } from 'react-icons/fa'
-import CreateCategory from '../../views/categorys/CreateCategory'
-import { useOutletsContext } from '../../layouts/Management'
-import UpdateCategory from '../../views/categorys/UpdateCategory'
-import AlertBox from '../../services/AlertBox'
-import { motion } from "framer-motion";
-import { Button, Empty, Skeleton, Space, Typography, Card, Statistic, Input, Tag } from 'antd'
-import { useDeleteCategoryMutation, useGetAllCategoriesQuery } from '../../../app/Features/categoriesSlice'
-import { toast } from 'react-toastify'
-
-const { Title } = Typography;
+import React, { useEffect, useRef, useState } from 'react';
+import { IoIosSearch, IoIosGrid, IoIosList } from 'react-icons/io';
+import { FaPlus, FaEdit, FaTrash, FaFolder, FaUser } from 'react-icons/fa';
+import { motion } from 'framer-motion';
+import { useOutletsContext } from '../../layouts/Management';
+import { useDeleteCategoryMutation, useGetAllCategoriesQuery } from '../../../app/Features/categoriesSlice';
+import { toast } from 'react-toastify';
+import CreateCategory from '../../views/categorys/CreateCategory';
+import UpdateCategory from '../../views/categorys/UpdateCategory';
+import AlertBox from '../../services/AlertBox';
 
 const CategoryList = () => {
   const [category, setCategory] = useState([]);
   const [filteredCategory, setFilteredCategory] = useState([]);
-  const [id, setId] = useState(0)
-  const [alertBox, setAlertBox] = useState(false)
-  const [edit, setEdit] = useState({ id: 1, category_name: "" });
-  const [viewMode, setViewMode] = useState("grid"); // "list" or "grid"
-  const [searchTerm, setSearchTerm] = useState("");
-  const { setLoading, loading, setAlert, setMessage, setAlertStatus } = useOutletsContext();
+  const [id, setId] = useState(0);
+  const [alertBox, setAlertBox] = useState(false);
+  const [edit, setEdit] = useState({ id: 1, category_name: '' });
+  const [viewMode, setViewMode] = useState('grid'); // 'list' or 'grid'
+  const [searchTerm, setSearchTerm] = useState('');
+  const { setLoading, loading } = useOutletsContext();
   const addModalRef = useRef(null);
   const updateModalRef = useRef(null);
   const token = localStorage.getItem('token');
   const { data, isLoading, refetch } = useGetAllCategoriesQuery(token);
-  const [deleteCategory, categoryDel] = useDeleteCategoryMutation();
+  const [deleteCategory] = useDeleteCategoryMutation();
 
   useEffect(() => {
     setCategory(data?.data || []);
@@ -43,192 +40,240 @@ const CategoryList = () => {
     }
   }, [searchTerm, category]);
 
-  // Calculate statistics
-  const calculateStats = () => {
-    const totalCategories = filteredCategory.length;
-    const activeCategories = filteredCategory.length; // Assuming all categories are active
-    const recentCategories = filteredCategory.slice(0, 5).length; // Last 5 categories
+  // Statistics (optional – not used in UI but kept for potential)
+  const calculateStats = () => ({
+    totalCategories: filteredCategory.length,
+    activeCategories: filteredCategory.length,
+    recentCategories: filteredCategory.slice(0, 5).length,
+  });
+  // const stats = calculateStats();
 
-    return {
-      totalCategories,
-      activeCategories,
-      recentCategories
-    };
-  };
-
-  const stats = calculateStats();
-
-  function handleDelete(category_id) {
+  const handleDelete = (category_id) => {
     setAlertBox(true);
     setId(category_id);
-  }
+  };
 
-  function handleCancel() {
-    setAlertBox(false);
-  }
+  const handleCancel = () => setAlertBox(false);
 
-  async function handleConfirm() {
+  const handleConfirm = async () => {
     setAlertBox(false);
     setLoading(true);
     try {
       await deleteCategory({ id, token });
-      if (!categoryDel.error) {
-        refetch();
-        toast.success('Category deleted successfully');
-        setLoading(false);
-      }
+      refetch();
+      toast.success('Category deleted successfully');
     } catch (error) {
-      toast.error(error?.message || error || 'An error occurred while deleting the category');
+      toast.error(error?.message || 'Failed to delete category');
+    } finally {
       setLoading(false);
     }
-  }
+  };
 
-  function onSearch(e) {
-    setSearchTerm(e.target.value);
-  }
+  const onSearch = (e) => setSearchTerm(e.target.value);
 
-  function handleUpdate(category_name, category_id) {
+  const handleUpdate = (category_name, category_id) => {
     updateModalRef.current?.showModal();
-    setEdit(prev => { return { ...prev, name: category_name, id: category_id } });
-  }
+    setEdit({ id: category_id, category_name });
+  };
 
-  const CategoryCard = ({ category, index }) => (
-    <div>
-      <Card
-        className="h-full border-0 shadow-sm hover:shadow-sm transition-all duration-300 bg-gradient-to-br from-white to-purple-50/50 hover:scale-[1.02] cursor-pointer"
-        bodyStyle={{ padding: '20px' }}
+  // Custom components
+  const Button = ({ children, onClick, variant = 'default', icon, disabled, className = '' }) => {
+    const base = 'inline-flex items-center gap-2 px-3 py-1.5 border rounded text-sm font-medium transition-colors';
+    const variants = {
+      default: 'border-gray-300 bg-white hover:bg-gray-100 text-gray-700',
+      primary: 'border-purple-600 bg-purple-600 hover:bg-purple-700 text-white',
+      danger: 'border-red-600 bg-red-600 hover:bg-red-700 text-white',
+      success: 'border-green-600 bg-green-600 hover:bg-green-700 text-white',
+    };
+    return (
+      <button
+        onClick={onClick}
+        disabled={disabled}
+        className={`${base} ${variants[variant]} ${disabled ? 'opacity-50 cursor-not-allowed' : ''} ${className}`}
       >
-        <div className="flex flex-col h-full">
-          {/* Header */}
-          <div className="flex items-center justify-between mb-4">
-            <div className="p-3 bg-purple-100 rounded-xl">
-              <FaFolder className="text-2xl text-purple-600" />
-            </div>
-            <Tag color="purple" className="font-semibold">
-              #{index + 1}
-            </Tag>
-          </div>
+        {icon && <span className="text-sm">{icon}</span>}
+        {children}
+      </button>
+    );
+  };
 
-          {/* Category Name */}
-          <div className="mb-4">
-            <h3 className="text-xl font-bold text-gray-900 mb-2 truncate">
-              {category.category_name}
-            </h3>
-            <div className="flex items-center gap-2 text-sm text-gray-600">
-              <FaUser className="text-gray-400" />
-              <span>Created by: {category.created_by_name}</span>
-            </div>
-          </div>
-
-          {/* Actions */}
-          <div className="mt-auto flex gap-2">
-            <Button
-              type="primary"
-              icon={<FaEdit />}
-              onClick={() => handleUpdate(category.category_name, category.category_id)}
-              className="flex-1 bg-purple-600 hover:bg-purple-700 border-0"
-              size="small"
-            >
-              Edit
-            </Button>
-            <Button
-              danger
-              icon={<FaTrash />}
-              onClick={() => handleDelete(category.category_id)}
-              className="flex-1"
-              size="small"
-            >
-              Delete
-            </Button>
-          </div>
-        </div>
-      </Card>
+  const Input = ({ value, onChange, placeholder, icon }) => (
+    <div className="relative">
+      {icon && <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">{icon}</div>}
+      <input
+        type="text"
+        value={value}
+        onChange={onChange}
+        placeholder={placeholder}
+        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-purple-500 text-sm"
+      />
     </div>
   );
 
-  return (
-    // <motion.div
-    //   initial={{ opacity: 0, y: 20 }}
-    //   animate={{ opacity: 1, y: 0 }}
-    //   exit={{ opacity: 0, y: -20 }}
-    //   transition={{ duration: 0.5 }}
-    // >
-    <div className="min-h-screen bg-transparent p-4 md:p-6">
-      {/* Header Section */}
-      <div className="mb-2">
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-          <div>
-            <motion.h1
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="text-3xl font-bold text-gray-900 mb-2 flex items-center gap-3"
-            >
-              <div className="p-2 bg-purple-100 rounded-lg">
-                <FaFolder className="text-2xl text-purple-600" />
-              </div>
-              Category Management
-            </motion.h1>
-            <p className="text-gray-600 text-lg">
-              Organize your products with categories
-            </p>
-          </div>
+  const Badge = ({ children, color = 'purple' }) => {
+    const colors = {
+      purple: 'bg-purple-100 text-purple-800 border-purple-200',
+      gray: 'bg-gray-100 text-gray-800 border-gray-200',
+    };
+    return (
+      <span className={`inline-flex items-center px-2 py-0.5 rounded border text-xs font-medium ${colors[color]}`}>
+        {children}
+      </span>
+    );
+  };
 
-          <div className="flex items-center space-x-3">
-            <Button
-              icon={<FaPlus />}
-              onClick={() => addModalRef.current?.showModal()}
-              className="flex items-center space-x-2 bg-green-600 hover:bg-green-700 text-white"
-              size="large"
-            >
-              Add Category
-            </Button>
+  const EmptyState = ({ onCreate }) => (
+    <div className="flex flex-col items-center justify-center py-16 border-2 border-dashed border-gray-300 rounded bg-white">
+      <div className="w-20 h-20 bg-purple-100 rounded-full flex items-center justify-center mb-4">
+        <FaFolder className="text-3xl text-purple-400" />
+      </div>
+      <h3 className="text-xl font-semibold text-gray-700 mb-2">No Categories Found</h3>
+      <p className="text-gray-500 text-center max-w-md mb-6">
+        {searchTerm
+          ? 'No categories match your search criteria. Try adjusting your search.'
+          : 'Start by creating your first category.'}
+      </p>
+      {!searchTerm && (
+        <Button onClick={onCreate} variant="success" icon={<FaPlus />}>
+          Create Your First Category
+        </Button>
+      )}
+    </div>
+  );
+
+  const LoadingSkeleton = ({ count = 6, grid = true }) => {
+    if (grid) {
+      return (
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+          {Array(count).fill(0).map((_, i) => (
+            <div key={i} className="border border-gray-200 rounded p-4 animate-pulse">
+              <div className="h-10 w-10 bg-gray-200 rounded mb-4"></div>
+              <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+              <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+              <div className="mt-4 flex gap-2">
+                <div className="h-8 bg-gray-200 rounded flex-1"></div>
+                <div className="h-8 bg-gray-200 rounded flex-1"></div>
+              </div>
+            </div>
+          ))}
+        </div>
+      );
+    }
+    return (
+      <div className="space-y-2">
+        {Array(count).fill(0).map((_, i) => (
+          <div key={i} className="h-12 bg-gray-200 rounded animate-pulse"></div>
+        ))}
+      </div>
+    );
+  };
+
+  // Grid card
+  const CategoryCard = ({ category, index }) => (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.9 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.3, delay: index * 0.05 }}
+      className="border border-gray-200 rounded bg-white hover:shadow-sm transition-shadow"
+    >
+      <div className="p-4">
+        <div className="flex items-center justify-between mb-3">
+          <div className="p-2 bg-purple-100 rounded">
+            <FaFolder className="text-purple-600" />
           </div>
+          <Badge color="purple">#{index + 1}</Badge>
+        </div>
+        <h3 className="text-lg font-semibold text-gray-800 mb-2 truncate">{category.category_name}</h3>
+        <div className="flex items-center gap-1 text-xs text-gray-500 mb-4">
+          <FaUser className="text-gray-400" />
+          <span>Created by: {category.created_by_name}</span>
+        </div>
+        <div className="flex gap-2">
+          <Button
+            onClick={() => handleUpdate(category.category_name, category.category_id)}
+            variant="primary"
+            icon={<FaEdit />}
+            className="flex-1"
+          >
+            Edit
+          </Button>
+          <Button
+            onClick={() => handleDelete(category.category_id)}
+            variant="danger"
+            icon={<FaTrash />}
+            className="flex-1"
+          >
+            Delete
+          </Button>
         </div>
       </div>
+    </motion.div>
+  );
 
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-2 mb-2">
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-          {/* View Toggle and Search */}
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      transition={{ duration: 0.5 }}
+      className="min-h-screen bg-transparent p-4 md:p-6"
+    >
+      {/* Header */}
+      <div className="mb-6 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        <div>
+          <motion.h1
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="text-2xl font-bold text-gray-800 flex items-center gap-3"
+          >
+            <div className="p-2 bg-purple-100 rounded">
+              <FaFolder className="text-purple-600" />
+            </div>
+            Category Management
+          </motion.h1>
+          <p className="text-gray-600 text-sm">Organize your products with categories</p>
+        </div>
+        <Button onClick={() => addModalRef.current?.showModal()} variant="success" icon={<FaPlus />}>
+          Add Category
+        </Button>
+      </div>
+
+      {/* Filters and Controls */}
+      <div className="bg-white border border-gray-200 rounded p-4 mb-6">
+        <div className="flex flex-col lg:flex-row lg:items-center gap-4">
           <div className="flex flex-col sm:flex-row sm:items-center gap-4 flex-1">
-            {/* View Mode Toggle */}
-            <div className="flex bg-gray-100 rounded-xl p-1 border">
+            <div className="flex border border-gray-300 rounded overflow-hidden">
               <button
-                onClick={() => setViewMode("list")}
-                className={`px-4 py-2 rounded-lg transition-all duration-300 flex items-center space-x-2 ${viewMode === "list"
-                  ? "bg-white shadow-sm text-purple-600 font-semibold"
-                  : "text-gray-600 hover:text-gray-800"
+                onClick={() => setViewMode('list')}
+                className={`px-4 py-2 text-sm flex items-center gap-2 ${viewMode === 'list' ? 'bg-purple-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-100'
                   }`}
               >
-                <IoIosList className="text-lg" />
-                <span>List View</span>
+                <IoIosList />
+                List
               </button>
               <button
-                onClick={() => setViewMode("grid")}
-                className={`px-4 py-2 rounded-lg transition-all duration-300 flex items-center space-x-2 ${viewMode === "grid"
-                  ? "bg-white shadow-sm text-purple-600 font-semibold"
-                  : "text-gray-600 hover:text-gray-800"
+                onClick={() => setViewMode('grid')}
+                className={`px-4 py-2 text-sm flex items-center gap-2 ${viewMode === 'grid' ? 'bg-purple-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-100'
                   }`}
               >
-                <IoIosGrid className="text-lg" />
-                <span>Grid View</span>
+                <IoIosGrid />
+                Grid
               </button>
             </div>
-            {/* Search Input */}
             <div className="flex-1 max-w-md">
               <Input
-                placeholder="Search categories..."
-                prefix={<IoIosSearch className="text-gray-400" />}
                 value={searchTerm}
                 onChange={onSearch}
-                className="h-12 rounded-xl border-0 bg-gray-50 shadow-sm"
-                allowClear
-                size="large"
+                placeholder="Search categories..."
+                icon={<IoIosSearch />}
               />
             </div>
           </div>
+          <div className="text-sm text-gray-600">
+            {filteredCategory.length} categor{filteredCategory.length !== 1 ? 'ies' : 'y'} found
+          </div>
         </div>
       </div>
-      {/* </motion.div> */}
 
       {/* Alert Box */}
       <AlertBox
@@ -241,155 +286,88 @@ const CategoryList = () => {
         cancelText="Cancel"
       />
 
-      {/* Content Section */}
-      {/* <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-        > */}
-      <div>
-        {viewMode === "list" ? (
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50 border-b border-gray-200">
-                  <tr>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">#</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Category Name</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Created By</th>
-                    <th className="px-6 py-4 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
+      {/* Content */}
+      {isLoading ? (
+        <LoadingSkeleton count={viewMode === 'grid' ? 12 : 5} grid={viewMode === 'grid'} />
+      ) : filteredCategory.length === 0 ? (
+        <EmptyState onCreate={() => addModalRef.current?.showModal()} />
+      ) : viewMode === 'list' ? (
+        <div className="bg-white border border-gray-200 rounded overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse text-sm">
+              <thead className="bg-gray-100 border-b border-gray-300">
+                <tr>
+                  <th className="px-4 py-3 text-left font-medium text-gray-600">#</th>
+                  <th className="px-4 py-3 text-left font-medium text-gray-600">Category Name</th>
+                  <th className="px-4 py-3 text-left font-medium text-gray-600">Created By</th>
+                  <th className="px-4 py-3 text-right font-medium text-gray-600">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {filteredCategory.map((cat, index) => (
+                  <tr key={cat.category_id} className="hover:bg-gray-50">
+                    <td className="px-4 py-3 text-gray-600">{index + 1}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        <div className="p-1.5 bg-purple-100 rounded">
+                          <FaFolder className="text-purple-600" size={12} />
+                        </div>
+                        <span className="font-medium text-gray-800">{cat.category_name}</span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-gray-600">
+                      <div className="flex items-center gap-1">
+                        <FaUser size={12} className="text-gray-400" />
+                        {cat.created_by_name}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          onClick={() => handleUpdate(cat.category_name, cat.category_id)}
+                          variant="primary"
+                          icon={<FaEdit />}
+                          className="px-3 py-1 text-xs"
+                        >
+                          Edit
+                        </Button>
+                        <Button
+                          onClick={() => handleDelete(cat.category_id)}
+                          variant="danger"
+                          icon={<FaTrash />}
+                          className="px-3 py-1 text-xs"
+                        >
+                          Delete
+                        </Button>
+                      </div>
+                    </td>
                   </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {filteredCategory.map((cat, index) => (
-                    <tr key={cat.category_id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-6 py-4">
-                        <div className="font-semibold text-gray-600">{index + 1}</div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-3">
-                          <div className="p-2 bg-purple-100 rounded-lg">
-                            <FaFolder className="text-purple-600" />
-                          </div>
-                          <span className="font-semibold text-gray-900">{cat.category_name}</span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-2 text-gray-600">
-                          <FaUser className="text-gray-400" />
-                          {cat.created_by_name}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex justify-end gap-2">
-                          <Button
-                            icon={<FaEdit />}
-                            onClick={() => handleUpdate(cat.category_name, cat.category_id)}
-                            className="bg-purple-600 hover:bg-purple-700 text-white"
-                            size="small"
-                          >
-                            Edit
-                          </Button>
-                          <Button
-                            danger
-                            icon={<FaTrash />}
-                            onClick={() => handleDelete(cat.category_id)}
-                            size="small"
-                          >
-                            Delete
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            {isLoading && (
-              <div className="p-6">
-                {[1, 2, 3, 4].map((item) => (
-                  <Skeleton key={item} active paragraph={{ rows: 1 }} className="mb-4" />
                 ))}
-              </div>
-            )}
-            {filteredCategory.length === 0 && !isLoading && (
-              <div className="text-center py-12">
-                <Empty
-                  className="w-full flex flex-col items-center justify-center"
-                  image="https://gw.alipayobjects.com/zos/antfincdn/ZHrcdLPrvN/empty.svg"
-                  description={
-                    <Typography.Text className="text-gray-500">
-                      No categories found
-                    </Typography.Text>
-                  }
-                >
-                  <Button
-                    type="primary"
-                    icon={<FaPlus />}
-                    onClick={() => addModalRef.current?.showModal()}
-                    className="bg-green-600 hover:bg-green-700"
-                  >
-                    Create Your First Category
-                  </Button>
-                </Empty>
-              </div>
-            )}
+              </tbody>
+            </table>
           </div>
-        ) : (
-          // Grid View
-          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 2xl:grid-cols-6 gap-3">
-            {filteredCategory.map((cat, index) => (
-              <CategoryCard key={cat.category_id} category={cat} index={index} />
-            ))}
-          </div>
-        )}
-        {viewMode === "grid" && isLoading && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {[1, 2, 3, 4, 5, 6].map((item) => (
-              <Card key={item} className="border-0 shadow-sm">
-                <Skeleton active paragraph={{ rows: 3 }} />
-              </Card>
-            ))}
-          </div>
-        )}
-        {viewMode === "grid" && filteredCategory.length === 0 && !isLoading && (
-          <div className="text-center py-12">
-            <Empty
-              className="w-full flex flex-col items-center justify-center"
-              image="https://gw.alipayobjects.com/zos/antfincdn/ZHrcdLPrvN/empty.svg"
-              description={
-                <Typography.Text className="text-gray-500">
-                  No categories found
-                </Typography.Text>
-              }
-            >
-              <Button
-                type="primary"
-                icon={<FaPlus />}
-                onClick={() => addModalRef.current?.showModal()}
-                className="bg-green-600 hover:bg-green-700"
-              >
-                Create Your First Category
-              </Button>
-            </Empty>
-          </div>
-        )}
-        {/* </motion.div> */}
-      </div>
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4">
+          {filteredCategory.map((cat, index) => (
+            <CategoryCard key={cat.category_id} category={cat} index={index} />
+          ))}
+        </div>
+      )}
+
       {/* Modals */}
-      <dialog id="my_modal_5" ref={addModalRef} className="modal modal-bottom sm:modal-middle">
-        <div className="modal-box bg-white max-w-2xl">
+      <dialog ref={addModalRef} className="modal">
+        <div className="modal-box bg-white max-w-2xl p-0">
           <CreateCategory data={edit} onAdd={() => addModalRef.current?.close()} />
         </div>
       </dialog>
-      <dialog id="my_modal_5" ref={updateModalRef} className="modal modal-bottom sm:modal-middle">
-        <div className="modal-box bg-white max-w-2xl">
+      <dialog ref={updateModalRef} className="modal">
+        <div className="modal-box bg-white max-w-2xl p-0">
           <UpdateCategory data={edit} onAdd={() => updateModalRef.current?.close()} />
         </div>
       </dialog>
-    </div>
-    // </motion.div>
-  )
-}
+    </motion.div>
+  );
+};
 
-export default CategoryList
+export default CategoryList;

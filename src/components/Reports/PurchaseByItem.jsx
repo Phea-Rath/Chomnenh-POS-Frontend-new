@@ -7,6 +7,7 @@ import { useGetAllUserQuery } from '../../../app/Features/usersSlice';
 import { useGetAllSupplierQuery } from '../../../app/Features/suppliesSlice';
 import { useGetAllItemsQuery } from '../../../app/Features/itemsSlice';
 import { useReactToPrint } from 'react-to-print';
+import { useGetAllRawMaterialQuery } from '../../../app/Features/RawMaterialSlice';
 
 const PurchaseReportByItem = () => {
     const token = localStorage.getItem('token');
@@ -19,16 +20,19 @@ const PurchaseReportByItem = () => {
     };
     const today = new Date();
     const firstDayOfCurrentMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    const { data: raws } = useGetAllRawMaterialQuery({ token, limit: 1000, page: 1, search: '' });
     const [formData, setFormData] = useState({
         created_by: '',
         username: '',
         supplier_id: '',
         supplier_name: '',
+        item_type: 0,
         item_id: '',
         item_name: '',
         start_date: formatDateForInput(firstDayOfCurrentMonth),
         end_date: formatDateForInput(today)
     });
+    const [rawData, setRawData] = useState([]);
     const [users, setUsers] = useState([]);
     const [suppliersData, setSuppliersData] = useState([]);
     const [items, setItems] = useState([]);
@@ -55,7 +59,11 @@ const PurchaseReportByItem = () => {
         if (itemData?.data) {
             setItems(itemData.data);
         }
-    }, [itemData]);
+        if (raws?.data?.data?.length > 0) {
+            setRawData(raws?.data?.data);
+
+        }
+    }, [itemData, raws]);
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -79,6 +87,11 @@ const PurchaseReportByItem = () => {
                     (item) => String(item.item_id ?? item.id) === String(value)
                 );
                 next.item_name = selected?.item_name ?? selected?.name ?? '';
+            }
+            if (name === 'item_type') {
+                const selected = items.find(
+                    (item) => String(item.item_type ?? item.type) === String(value)
+                );
             }
 
             return next;
@@ -156,7 +169,7 @@ const PurchaseReportByItem = () => {
 
     return (
         <div className="min-h-screen bg-transparent p-1 md:p-3">
-            <div className="max-w-7xl mx-auto">
+            <div className=" mx-auto">
                 {/* Header */}
                 <div className="mb-8 ml-2">
                     <h1 className="text-3xl font-bold text-gray-900">Purchase Report By Item</h1>
@@ -204,7 +217,22 @@ const PurchaseReportByItem = () => {
                         </div>
                         <div>
                             <label className="block font-medium text-gray-700 mb-2">
-                                Item
+                                Item Type
+                            </label>
+                            <select
+                                name="item_type"
+                                value={formData.item_type}
+                                onChange={handleInputChange}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            >
+                                <option value={0}>Products</option>
+                                <option value={1}>Raw Materials</option>
+
+                            </select>
+                        </div>
+                        {formData.item_type == 0 ? <div>
+                            <label className="block font-medium text-gray-700 mb-2">
+                                Product
                             </label>
                             <select
                                 name="item_id"
@@ -219,7 +247,25 @@ const PurchaseReportByItem = () => {
                                     </option>
                                 ))}
                             </select>
-                        </div>
+                        </div> :
+                            <div>
+                                <label className="block font-medium text-gray-700 mb-2">
+                                    Raw Material
+                                </label>
+                                <select
+                                    name="item_id"
+                                    value={formData.item_id}
+                                    onChange={handleInputChange}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                >
+                                    <option value="">All Items</option>
+                                    {rawData?.map((item) => (
+                                        <option key={item.id ?? item.id} value={item.id ?? item.id}>
+                                            {item.material_name ?? item.name} ({item.material_code})
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>}
 
                         <div>
                             <label className="block font-medium text-gray-700 mb-2">
@@ -293,6 +339,7 @@ const PurchaseReportByItem = () => {
                                 <li>User: <span className='font-bold'>{formData?.username || 'All'}</span></li>
                                 <li>Supplier: <span className='font-bold'>{formData?.supplier_name || 'All'}</span></li>
                                 <li>Item: <span className='font-bold'>{formData?.item_name || 'All'}</span></li>
+                                <li>Item Type: <span className='font-bold'>{formData?.item_type == 0 ? 'Products' : 'Raw Materials'}</span></li>
                                 <li>Start Date: <span className='font-bold'>{formData.start_date || 'All'}</span></li>
                                 <li>End Date: <span className='font-bold'>{formData.end_date || 'All'}</span></li>
                             </ul>

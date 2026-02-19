@@ -1,487 +1,431 @@
-import React, { useEffect, useRef, useState } from 'react'
-import { IoIosSearch } from 'react-icons/io'
-import { HiOutlineBuildingOffice2 } from 'react-icons/hi2'
-import { TbBuildingWarehouse } from 'react-icons/tb'
-import { MdLocationCity } from 'react-icons/md'
+import React, { useEffect, useRef, useState } from 'react';
+import { IoIosSearch } from 'react-icons/io';
+import { HiOutlineBuildingOffice2 } from 'react-icons/hi2';
+import { TbBuildingWarehouse } from 'react-icons/tb';
+import { MdLocationCity } from 'react-icons/md';
 import { useOutletsContext } from '../../layouts/Management';
 import AlertBox from '../../services/AlertBox';
 import UpdateWarehouses from '../../views/stocks/UpdateWarehouses';
 import CreateWarehouses from '../../views/stocks/CreateWarehouses';
-import { motion } from "framer-motion";
-import { Button, Empty, Skeleton, Tag, Typography, Card, Badge, Tooltip, Modal, Input, Row, Col, Statistic, Progress } from 'antd';
+import { motion } from 'framer-motion';
 import { useGetAllWarehousesQuery, useDeleteWarehouseMutation } from '../../../app/Features/warehousesSlice';
 import { toast } from 'react-toastify';
 import { RiDeleteBin6Line, RiEdit2Line } from 'react-icons/ri';
-import { IoGridOutline, IoListOutline } from 'react-icons/io5'
+import { IoGridOutline, IoListOutline } from 'react-icons/io5';
 
 const Warehouses = () => {
   const [warehouses, setWarehouses] = useState([]);
-  const [id, setId] = useState(0)
-  const [alertBox, setAlertBox] = useState(false)
-  const [edit, setEdit] = useState({ id: 1, name: "", status: 0 });
+  const [filteredWarehouses, setFilteredWarehouses] = useState([]);
+  const [id, setId] = useState(0);
+  const [alertBox, setAlertBox] = useState(false);
+  const [edit, setEdit] = useState({ id: 1, name: '', status: 0 });
   const [viewMode, setViewMode] = useState('table'); // 'table' or 'grid'
   const [searchTerm, setSearchTerm] = useState('');
-  const { setLoading, loading, setAlert, setMessage, setAlertStatus } = useOutletsContext();
+  const { setLoading, loading } = useOutletsContext();
   const addModalRef = useRef(null);
   const updateModalRef = useRef(null);
   const token = localStorage.getItem('token');
-  const { data, isError, isLoading, refetch } = useGetAllWarehousesQuery(token);
-  const [deleteWarehouse, warehouseDel] = useDeleteWarehouseMutation();
+  const { data, isLoading, refetch } = useGetAllWarehousesQuery(token);
+  const [deleteWarehouse] = useDeleteWarehouseMutation();
 
   useEffect(() => {
-    setWarehouses(data?.data || []);
+    const warehouseData = data?.data || [];
+    setWarehouses(warehouseData);
+    setFilteredWarehouses(warehouseData);
   }, [data]);
 
-  // Calculate statistics
+  useEffect(() => {
+    if (searchTerm) {
+      const filtered = warehouses.filter((item) =>
+        item.warehouse_name?.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+      setFilteredWarehouses(filtered);
+    } else {
+      setFilteredWarehouses(warehouses);
+    }
+  }, [searchTerm, warehouses]);
+
+  // Statistics
   const calculateStats = () => {
-    const totalWarehouses = warehouses.length;
-    const activeWarehouses = warehouses.filter(w => w.status === 1).length;
-    const defaultWarehouses = warehouses.filter(w => w.created_by_name === 0).length;
-
-    return {
-      totalWarehouses,
-      activeWarehouses,
-      defaultWarehouses,
-      activePercentage: totalWarehouses > 0 ? Math.round((activeWarehouses / totalWarehouses) * 100) : 0
-    };
+    const totalWarehouses = filteredWarehouses.length;
+    const activeWarehouses = filteredWarehouses.filter((w) => w.status === 'stock').length;
+    const inactiveWarehouses = filteredWarehouses.filter((w) => w.status !== 'stock').length;
+    return { totalWarehouses, activeWarehouses, inactiveWarehouses };
   };
-
   const stats = calculateStats();
 
-  function handleDelete(warehouse_id) {
+  const handleDelete = (warehouse_id) => {
     setAlertBox(true);
     setId(warehouse_id);
-  }
+  };
 
-  function handleCancel() {
+  const handleCancel = () => setAlertBox(false);
+
+  const handleConfirm = async () => {
     setAlertBox(false);
-  }
-
-  async function handleConfirm() {
+    setLoading(true);
     try {
-      setLoading(true);
-      setAlertBox(false);
       const response = await deleteWarehouse({ id, token });
-      if (response?.data.status === 200) {
-        setAlertBox(false);
+      if (response?.data?.status === 200) {
         refetch();
         toast.success(response.data.message || 'Warehouse deleted successfully!');
-        setLoading(false);
       } else {
-        throw new Error(response.error?.data?.message || "Failed to delete warehouse");
+        throw new Error(response.error?.data?.message || 'Failed to delete warehouse');
       }
     } catch (error) {
-      toast.error(error?.message || error || 'An error occurred while deleting the warehouse');
+      toast.error(error?.message || 'An error occurred while deleting the warehouse');
+    } finally {
       setLoading(false);
-      setAlertBox(false);
     }
-  }
+  };
 
-  function onSearch(e) {
-    const value = e.target.value;
-    setSearchTerm(value);
+  const onSearch = (e) => {
+    setSearchTerm(e.target.value);
+  };
 
-    if (value) {
-      const filterWarehouses = data?.data.filter((item) =>
-        item.warehouse_name?.toLowerCase().includes(value.toLowerCase())
-      );
-      setWarehouses(filterWarehouses || []);
-    } else {
-      setWarehouses(data?.data || []);
-    }
-  }
-
-  function handleUpdate(name, id, status) {
+  const handleUpdate = (name, id, status) => {
     updateModalRef.current?.showModal();
-    setEdit(prev => { return { ...prev, name: name, id: id, status } })
-  }
+    setEdit({ id, name, status });
+  };
 
-  // Warehouse Card Component for Grid View
-  const WarehouseCard = ({ warehouse, index }) => {
+  // Custom components
+  const Button = ({ children, onClick, variant = 'default', icon, disabled, className = '' }) => {
+    const base = 'inline-flex items-center gap-2 px-3 py-1.5 border rounded text-sm font-medium transition-colors';
+    const variants = {
+      default: 'border-gray-300 bg-white hover:bg-gray-100 text-gray-700',
+      primary: 'border-blue-600 bg-blue-600 hover:bg-blue-700 text-white',
+      danger: 'border-red-600 bg-red-600 hover:bg-red-700 text-white',
+      success: 'border-green-600 bg-green-600 hover:bg-green-700 text-white',
+    };
     return (
-      <div
+      <button
+        onClick={onClick}
+        disabled={disabled}
+        className={`${base} ${variants[variant]} ${disabled ? 'opacity-50 cursor-not-allowed' : ''} ${className}`}
       >
-        <Card
-          className="h-full border-0 shadow-sm hover:shadow-sm transition-all duration-300 bg-gradient-to-br from-white to-blue-50/50 hover:scale-[1.02] cursor-pointer"
-          bodyStyle={{ padding: '20px' }}
-        >
-          <div className="flex flex-col h-full">
-            {/* Header with Icon and Status */}
-            <div className="flex items-start justify-between mb-4">
-              <div className="flex items-center space-x-3">
-                <div className="p-3 bg-gradient-to-r from-blue-100 to-indigo-100 rounded-xl">
-                  <HiOutlineBuildingOffice2 className="text-2xl text-blue-600" />
-                </div>
-                <div className="flex-1 min-w-0">
-                </div>
+        {icon && <span className="text-sm">{icon}</span>}
+        {children}
+      </button>
+    );
+  };
+
+  const Input = ({ value, onChange, placeholder, icon }) => (
+    <div className="relative">
+      {icon && <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">{icon}</div>}
+      <input
+        type="text"
+        value={value}
+        onChange={onChange}
+        placeholder={placeholder}
+        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm"
+      />
+    </div>
+  );
+
+  const Badge = ({ children, color = 'gray' }) => {
+    const colors = {
+      success: 'bg-green-100 text-green-800 border-green-200',
+      error: 'bg-red-100 text-red-800 border-red-200',
+      warning: 'bg-yellow-100 text-yellow-800 border-yellow-200',
+      blue: 'bg-blue-100 text-blue-800 border-blue-200',
+      gray: 'bg-gray-100 text-gray-800 border-gray-200',
+    };
+    return (
+      <span className={`inline-flex items-center px-2 py-0.5 rounded border text-xs font-medium ${colors[color]}`}>
+        {children}
+      </span>
+    );
+  };
+
+  const StatCard = ({ title, value, icon, color = 'blue' }) => (
+    <div className={`border border-gray-200 rounded p-4 bg-white`}>
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-gray-600 text-sm font-medium">{title}</p>
+          <p className="text-2xl font-bold text-gray-900">{value}</p>
+        </div>
+        <div className={`p-3 bg-${color}-100 rounded text-${color}-600`}>{icon}</div>
+      </div>
+    </div>
+  );
+
+  const EmptyState = ({ onCreate }) => (
+    <div className="flex flex-col items-center justify-center py-16 border-2 border-dashed border-gray-300 rounded bg-white">
+      <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mb-4">
+        <HiOutlineBuildingOffice2 className="text-3xl text-blue-400" />
+      </div>
+      <h3 className="text-xl font-semibold text-gray-700 mb-2">No Warehouses Found</h3>
+      <p className="text-gray-500 text-center max-w-md mb-6">
+        {searchTerm
+          ? 'No warehouses match your search criteria. Try adjusting your search.'
+          : 'Start by creating your first warehouse.'}
+      </p>
+      {!searchTerm && (
+        <Button onClick={onCreate} variant="success" icon={<HiOutlineBuildingOffice2 />}>
+          Create Your First Warehouse
+        </Button>
+      )}
+    </div>
+  );
+
+  const LoadingSkeleton = ({ count = 4, grid = false }) => {
+    if (grid) {
+      return (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {Array(count).fill(0).map((_, i) => (
+            <div key={i} className="border border-gray-200 rounded p-4 animate-pulse">
+              <div className="h-10 w-10 bg-gray-200 rounded mb-4"></div>
+              <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+              <div className="h-3 bg-gray-200 rounded w-1/2 mb-4"></div>
+              <div className="flex gap-2">
+                <div className="h-8 bg-gray-200 rounded flex-1"></div>
+                <div className="h-8 bg-gray-200 rounded flex-1"></div>
               </div>
-              <Tag
-                color={warehouse.status === "stock" ? "success" : "error"}
-                className="font-semibold text-xs"
-              >
-                {warehouse.status === "stock" ? 'Active' : 'Inactive'}
-              </Tag>
             </div>
-
-            {/* Warehouse Info */}
-            <div>
-              <h3 className="font-bold text-gray-900 text-center text-lg mb-2 truncate">
-                {warehouse.warehouse_name}
-              </h3>
-
-            </div>
-
-            {/* Details */}
-            <div className="space-y-3 mb-4">
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <span className="text-sm text-gray-600">Created By</span>
-                <span className="font-semibold text-gray-900">
-                  {warehouse.created_by_name === 0 ? 'System' : `${warehouse.created_by_name}`}
-                </span>
-              </div>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="mt-auto pt-4 border-t border-gray-200">
-              <div className="flex items-center justify-between">
-                <Tooltip title="Edit Warehouse">
-                  <Button
-                    type="primary"
-                    icon={<RiEdit2Line />}
-                    onClick={() => handleUpdate(warehouse.warehouse_name, warehouse.warehouse_id, warehouse.status)}
-                    className="flex items-center justify-center bg-gradient-to-r from-blue-500 to-indigo-600 border-0 hover:from-blue-600 hover:to-indigo-700"
-                  >
-                    Edit
-                  </Button>
-                </Tooltip>
-                <Tooltip title="Delete Warehouse">
-                  <Button
-                    type="default"
-                    danger
-                    icon={<RiDeleteBin6Line />}
-                    onClick={() => handleDelete(warehouse.warehouse_id)}
-                    className="flex items-center justify-center border-red-300 text-red-600 hover:border-red-400 hover:text-red-700"
-                  >
-                    Delete
-                  </Button>
-                </Tooltip>
-              </div>
-            </div>
-          </div>
-        </Card>
+          ))}
+        </div>
+      );
+    }
+    return (
+      <div className="space-y-2">
+        {Array(count).fill(0).map((_, i) => (
+          <div key={i} className="h-12 bg-gray-200 rounded animate-pulse"></div>
+        ))}
       </div>
     );
   };
 
-  return (
-    <div
-    >
-      <section className='p-4 md:p-6 lg:p-8'>
-        <AlertBox
-          isOpen={alertBox}
-          title="Confirm Deletion"
-          message="Are you sure you want to delete this warehouse? This action cannot be undone."
-          onConfirm={handleConfirm}
-          onCancel={handleCancel}
-          confirmText="Delete"
-          cancelText="Cancel"
-        />
-
-        <div>
-          {/* Header Section */}
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 mb-2">
-            <div>
-              <motion.h1
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                className="text-3xl font-bold text-gray-900 mb-2 flex items-center gap-3"
-              >
-                <div className="p-3 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl shadow-sm">
-                  <TbBuildingWarehouse className="text-2xl text-white" />
-                </div>
-                Warehouse Management
-              </motion.h1>
-              <p className="text-gray-600 text-lg">
-                Manage your storage facilities and distribution centers
-              </p>
+  // Grid card component
+  const WarehouseCard = ({ warehouse, index }) => {
+    const isDefault = warehouse.created_by_name === 0;
+    return (
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.3, delay: index * 0.05 }}
+        className="border border-gray-200 rounded bg-white hover:shadow-sm transition-shadow"
+      >
+        <div className="p-4">
+          <div className="flex items-start justify-between mb-3">
+            <div className="p-2 bg-blue-100 rounded">
+              <HiOutlineBuildingOffice2 className="text-blue-600" />
             </div>
-
+            <Badge color={warehouse.status === 'stock' ? 'success' : 'error'}>
+              {warehouse.status === 'stock' ? 'Active' : 'Inactive'}
+            </Badge>
+          </div>
+          <h3 className="font-semibold text-gray-800 text-lg mb-2 truncate">{warehouse.warehouse_name}</h3>
+          <div className="flex items-center gap-1 text-xs text-gray-500 mb-4">
+            <span>Created by: {isDefault ? 'System' : warehouse.created_by_name}</span>
+          </div>
+          <div className="flex gap-2">
             <Button
-              type="primary"
-              size="large"
-              onClick={() => addModalRef.current?.showModal()}
-              className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 border-0 h-12 px-6 shadow-sm"
+              onClick={() => handleUpdate(warehouse.warehouse_name, warehouse.warehouse_id, warehouse.status)}
+              variant="primary"
+              icon={<RiEdit2Line />}
+              className="flex-1"
+              disabled={[1, 2, 3, 4, 5].includes(warehouse.warehouse_id)}
             >
-              + Add New Warehouse
+              Edit
+            </Button>
+            <Button
+              onClick={() => handleDelete(warehouse.warehouse_id)}
+              variant="danger"
+              icon={<RiDeleteBin6Line />}
+              className="flex-1"
+              disabled={[1, 2, 3, 4, 5].includes(warehouse.warehouse_id)}
+            >
+              Delete
             </Button>
           </div>
+        </div>
+      </motion.div>
+    );
+  };
 
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      transition={{ duration: 0.5 }}
+      className="min-h-screen bg-transparent p-4 md:p-6"
+    >
+      <AlertBox
+        isOpen={alertBox}
+        title="Confirm Deletion"
+        message="Are you sure you want to delete this warehouse? This action cannot be undone."
+        onConfirm={handleConfirm}
+        onCancel={handleCancel}
+        confirmText="Delete"
+        cancelText="Cancel"
+      />
 
-          {/* Controls Section */}
-          <div
-            className="bg-white rounded-2xl shadow-sm border border-gray-100 p-2 mb-2"
+      {/* Header */}
+      <div className="mb-6 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        <div>
+          <motion.h1
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="text-2xl font-bold text-gray-800 flex items-center gap-3"
           >
-            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-              {/* View Toggle and Search */}
-              <div className="flex flex-col sm:flex-row sm:items-center gap-4 flex-1">
-                {/* View Mode Toggle */}
-                <div className="flex bg-gray-100 rounded-xl p-1 border">
-                  <button
-                    onClick={() => setViewMode("table")}
-                    className={`px-4 py-2 rounded-lg transition-all duration-300 flex items-center space-x-2 ${viewMode === "table"
-                      ? "bg-white shadow-sm text-blue-600 font-semibold"
-                      : "text-gray-600 hover:text-gray-800"
-                      }`}
-                  >
-                    <IoListOutline className="text-lg" />
-                    <span>Table View</span>
-                  </button>
-                  <button
-                    onClick={() => setViewMode("grid")}
-                    className={`px-4 py-2 rounded-lg transition-all duration-300 flex items-center space-x-2 ${viewMode === "grid"
-                      ? "bg-white shadow-sm text-blue-600 font-semibold"
-                      : "text-gray-600 hover:text-gray-800"
-                      }`}
-                  >
-                    <IoGridOutline className="text-lg" />
-                    <span>Grid View</span>
-                  </button>
-                </div>
+            <div className="p-2 bg-blue-100 rounded">
+              <TbBuildingWarehouse className="text-blue-600" />
+            </div>
+            Warehouse Management
+          </motion.h1>
+          <p className="text-gray-600 text-sm">Manage your storage facilities and distribution centers</p>
+        </div>
+        <Button onClick={() => addModalRef.current?.showModal()} variant="success" icon={<TbBuildingWarehouse />}>
+          Add New Warehouse
+        </Button>
+      </div>
 
-                {/* Search Input */}
-                <div className="flex-1 max-w-md">
-                  <Input
-                    placeholder="Search warehouses by name..."
-                    prefix={<IoIosSearch className="text-gray-400" />}
-                    value={searchTerm}
-                    onChange={onSearch}
-                    className="h-12 rounded-xl border-0 bg-gray-50 shadow-sm"
-                    allowClear
-                    size="large"
-                  />
-                </div>
-              </div>
+      {/* Statistics Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+        <StatCard title="Total Warehouses" value={stats.totalWarehouses} icon={<TbBuildingWarehouse />} color="blue" />
+        <StatCard title="Active" value={stats.activeWarehouses} icon={<MdLocationCity />} color="green" />
+        <StatCard title="Inactive" value={stats.inactiveWarehouses} icon={<HiOutlineBuildingOffice2 />} color="red" />
+      </div>
 
-              {/* Refresh Button */}
-              <Button
-                icon={<IoIosSearch />}
-                onClick={refetch}
-                loading={isLoading}
-                className="flex items-center space-x-2 h-12 px-4"
+      {/* Controls */}
+      <div className="bg-white border border-gray-200 rounded p-4 mb-6">
+        <div className="flex flex-col lg:flex-row lg:items-center gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4 flex-1">
+            <div className="flex border border-gray-300 rounded overflow-hidden">
+              <button
+                onClick={() => setViewMode('table')}
+                className={`px-4 py-2 text-sm flex items-center gap-2 ${viewMode === 'table' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-100'
+                  }`}
               >
-                Refresh
-              </Button>
+                <IoListOutline />
+                Table
+              </button>
+              <button
+                onClick={() => setViewMode('grid')}
+                className={`px-4 py-2 text-sm flex items-center gap-2 ${viewMode === 'grid' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-100'
+                  }`}
+              >
+                <IoGridOutline />
+                Grid
+              </button>
+            </div>
+            <div className="flex-1 max-w-md">
+              <Input
+                value={searchTerm}
+                onChange={onSearch}
+                placeholder="Search warehouses by name..."
+                icon={<IoIosSearch />}
+              />
             </div>
           </div>
+          <Button onClick={refetch} disabled={isLoading} icon={<IoIosSearch />}>
+            Refresh
+          </Button>
         </div>
+      </div>
 
-        {/* Modals */}
-        <dialog id="my_modal_5" ref={addModalRef} className="modal">
-          <div className="modal-box max-w-4xl bg-gradient-to-br from-gray-50 to-white p-0 rounded-2xl overflow-hidden">
-            <div>
-              <CreateWarehouses data={edit} onAdd={() => addModalRef.current?.close()} />
-            </div>
-          </div>
-          <form method="dialog" className="modal-backdrop">
-            <button>close</button>
-          </form>
-        </dialog>
-
-        <dialog id="my_modal_5" ref={updateModalRef} className="modal">
-          <div className="modal-box max-w-4xl bg-gradient-to-br from-gray-50 to-white p-0 rounded-2xl overflow-hidden">
-            <div>
-              <UpdateWarehouses data={edit} onAdd={() => updateModalRef.current?.close()} />
-            </div>
-          </div>
-          <form method="dialog" className="modal-backdrop">
-            <button>close</button>
-          </form>
-        </dialog>
-
-        {/* Content Section */}
-        <div
-        >
-          {viewMode === "table" ? (
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="table w-full">
-                  {/* Table Header */}
-                  <thead className="bg-gradient-to-r from-gray-50 to-blue-50">
-                    <tr>
-                      <th className="text-left py-4 px-6 text-gray-700 font-semibold">No</th>
-                      <th className="text-left py-4 px-6 text-gray-700 font-semibold">Warehouse Name</th>
-                      <th className="text-left py-4 px-6 text-gray-700 font-semibold">Create By</th>
-                      <th className="text-left py-4 px-6 text-gray-700 font-semibold">Status</th>
-                      <th className="text-left py-4 px-6 text-gray-700 font-semibold">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {warehouses.length === 0 && !isLoading ? (
-                      <tr>
-                        <td colSpan={5} className="py-16">
-                          <Empty
-                            className="w-full flex flex-col items-center justify-center"
-                            image={
-                              <div className="text-gray-400 mb-4">
-                                <HiOutlineBuildingOffice2 className="w-16 h-16 mx-auto" />
-                              </div>
-                            }
-                            description={
-                              <div>
-                                <Typography.Text className="text-gray-600 text-lg">
-                                  No warehouses found
-                                </Typography.Text>
-                                <p className="text-gray-500 mt-2">
-                                  Try adding a new warehouse or adjusting your search
-                                </p>
-                              </div>
-                            }
-                          >
-                            <Button
-                              type="primary"
-                              size="large"
-                              onClick={() => addModalRef.current?.showModal()}
-                              className="bg-gradient-to-r from-blue-500 to-indigo-600 border-0"
-                            >
-                              Create New Warehouse
-                            </Button>
-                          </Empty>
-                        </td>
-                      </tr>
-                    ) : (
-                      warehouses.map(({ warehouse_id, warehouse_name, status, created_by_name }, index) => (
-                        <tr key={warehouse_id} className="hover:bg-gray-50 transition-colors border-b border-gray-100">
-                          <td className="py-4 px-6">
-                            <div className="font-semibold text-gray-900">{index + 1}</div>
-                          </td>
-                          <td className="py-4 px-6">
-                            <div className="flex items-center space-x-3">
-                              <div className="p-2 bg-blue-100 rounded-lg">
-                                <HiOutlineBuildingOffice2 className="text-blue-600" />
-                              </div>
-                              <div>
-                                <div className="font-semibold text-gray-900">{warehouse_name}</div>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="py-4 px-6">
-                            {created_by_name === 0 ? (
-                              <Tag color="gold" className="font-semibold">
-                                Default
-                              </Tag>
-                            ) : (
-                              <span className="text-gray-700">{created_by_name}</span>
-                            )}
-                          </td>
-                          <td className="py-4 px-6">
-                            <Tag
-                              color={status === 'stock' ? "success" : "error"}
-                              className="font-semibold"
-                            >
-                              {status === 'stock' ? "Active" : "Inactive"}
-                            </Tag>
-                          </td>
-                          <td className="py-4 px-6">
-                            <div className="flex items-center space-x-2">
-                              <Tooltip title="Edit Warehouse">
-                                <Button
-                                  type="primary"
-                                  disabled={warehouse_id == 3 || warehouse_id == 2 || warehouse_id == 4 || warehouse_id == 1}
-                                  icon={<RiEdit2Line />}
-                                  onClick={() => handleUpdate(warehouse_name, warehouse_id, status)}
-                                  className="flex items-center justify-center bg-gradient-to-r from-blue-500 to-indigo-600 border-0 hover:from-blue-600 hover:to-indigo-700"
-                                  size="small"
-                                >
-                                  Edit
-                                </Button>
-                              </Tooltip>
-                              <Tooltip title="Delete Warehouse">
-                                <Button
-                                  type="default"
-                                  disabled={warehouse_id == 3 || warehouse_id == 2 || warehouse_id == 4 || warehouse_id == 1}
-                                  danger
-                                  icon={<RiDeleteBin6Line />}
-                                  onClick={() => handleDelete(warehouse_id)}
-                                  className="flex items-center justify-center border-red-300 text-red-600 hover:border-red-400 hover:text-red-700"
-                                  size="small"
-                                >
-                                  Delete
-                                </Button>
-                              </Tooltip>
-                            </div>
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-
-                {/* Loading Skeleton */}
-                {isLoading && (
-                  <div className="p-6">
-                    <div className="space-y-4">
-                      {[...Array(4)].map((_, index) => (
-                        <Skeleton key={index} active paragraph={{ rows: 1 }} />
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          ) : (
-            // Grid View
-            <div className="bg-transparent">
-              <Row gutter={[24, 24]}>
-                {warehouses.map((warehouse, index) => (
-                  <Col xs={24} sm={12} md={8} lg={6} key={warehouse.warehouse_id}>
-                    <WarehouseCard warehouse={warehouse} index={index} />
-                  </Col>
-                ))}
-              </Row>
-
-              {warehouses.length === 0 && !isLoading && (
-                <div className="text-center py-20">
-                  <div className="text-gray-400 text-6xl mb-4">
-                    <HiOutlineBuildingOffice2 className="mx-auto w-16 h-16" />
-                  </div>
-                  <h3 className="text-xl font-semibold text-gray-600 mb-2">No warehouses found</h3>
-                  <p className="text-gray-500">
-                    Try adding a new warehouse or adjusting your search
-                  </p>
-                  <Button
-                    type="primary"
-                    size="large"
-                    onClick={() => addModalRef.current?.showModal()}
-                    className="mt-6 bg-gradient-to-r from-blue-500 to-indigo-600 border-0"
-                  >
-                    Create New Warehouse
-                  </Button>
-                </div>
-              )}
-
-              {isLoading && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                  {[...Array(8)].map((_, index) => (
-                    <Card key={index} className="shadow-sm border-0">
-                      <div className="animate-pulse">
-                        <div className="h-48 bg-gray-200 rounded-lg mb-4"></div>
-                        <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-                        <div className="h-3 bg-gray-200 rounded w-1/2 mb-4"></div>
-                        <div className="flex justify-between">
-                          <div className="h-6 bg-gray-200 rounded w-1/4"></div>
-                          <div className="h-8 bg-gray-200 rounded w-1/3"></div>
+      {/* Content */}
+      {isLoading ? (
+        <LoadingSkeleton count={viewMode === 'grid' ? 8 : 5} grid={viewMode === 'grid'} />
+      ) : filteredWarehouses.length === 0 ? (
+        <EmptyState onCreate={() => addModalRef.current?.showModal()} />
+      ) : viewMode === 'table' ? (
+        <div className="bg-white border border-gray-200 rounded overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse text-sm">
+              <thead className="bg-gray-100 border-b border-gray-300">
+                <tr>
+                  <th className="px-4 py-3 text-left font-medium text-gray-600">#</th>
+                  <th className="px-4 py-3 text-left font-medium text-gray-600">Warehouse Name</th>
+                  <th className="px-4 py-3 text-left font-medium text-gray-600">Created By</th>
+                  <th className="px-4 py-3 text-left font-medium text-gray-600">Status</th>
+                  <th className="px-4 py-3 text-right font-medium text-gray-600">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {filteredWarehouses.map((wh, index) => {
+                  const isDefault = wh.created_by_name === 0;
+                  return (
+                    <tr key={wh.warehouse_id} className="hover:bg-gray-50">
+                      <td className="px-4 py-3 text-gray-600">{index + 1}</td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2">
+                          <div className="p-1.5 bg-blue-100 rounded">
+                            <HiOutlineBuildingOffice2 className="text-blue-600" size={14} />
+                          </div>
+                          <span className="font-medium text-gray-800">{wh.warehouse_name}</span>
                         </div>
-                      </div>
-                    </Card>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
+                      </td>
+                      <td className="px-4 py-3">
+                        {isDefault ? (
+                          <Badge color="warning">Default</Badge>
+                        ) : (
+                          <span className="text-gray-600">{wh.created_by_name}</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3">
+                        <Badge color={wh.status === 'stock' ? 'success' : 'error'}>
+                          {wh.status === 'stock' ? 'Active' : 'Inactive'}
+                        </Badge>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            onClick={() => handleUpdate(wh.warehouse_name, wh.warehouse_id, wh.status)}
+                            variant="primary"
+                            icon={<RiEdit2Line />}
+                            className="px-3 py-1 text-xs"
+                            disabled={[1, 2, 3, 4, 5].includes(wh.warehouse_id)}
+                          >
+                            Edit
+                          </Button>
+                          <Button
+                            onClick={() => handleDelete(wh.warehouse_id)}
+                            variant="danger"
+                            icon={<RiDeleteBin6Line />}
+                            className="px-3 py-1 text-xs"
+                            disabled={[1, 2, 3, 4, 5].includes(wh.warehouse_id)}
+                          >
+                            Delete
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </section>
-    </div>
-  )
-}
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {filteredWarehouses.map((wh, index) => (
+            <WarehouseCard key={wh.warehouse_id} warehouse={wh} index={index} />
+          ))}
+        </div>
+      )}
 
-export default Warehouses
+      {/* Modals */}
+      <dialog ref={addModalRef} className="modal">
+        <div className="modal-box max-w-4xl bg-white p-0 rounded overflow-hidden">
+          <CreateWarehouses data={edit} onAdd={() => addModalRef.current?.close()} />
+        </div>
+        <form method="dialog" className="modal-backdrop">
+          <button>close</button>
+        </form>
+      </dialog>
+
+      <dialog ref={updateModalRef} className="modal">
+        <div className="modal-box max-w-4xl bg-white p-0 rounded overflow-hidden">
+          <UpdateWarehouses data={edit} onAdd={() => updateModalRef.current?.close()} />
+        </div>
+        <form method="dialog" className="modal-backdrop">
+          <button>close</button>
+        </form>
+      </dialog>
+    </motion.div>
+  );
+};
+
+export default Warehouses;

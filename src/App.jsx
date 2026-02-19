@@ -89,6 +89,8 @@ import { toast } from "react-toastify";
 import { useEffect } from "react";
 import RawMaterialReport from "./components/Reports/RawMaterialReport";
 import ProfitAnalysis from "./components/Reports/AnalysisProfit";
+import ProductionByRaw from "./components/Reports/ProductionByRaw";
+import ProductionReport from "./components/Reports/ProductionReport";
 
 
 function ProtectedRoute({ children }) {
@@ -344,6 +346,14 @@ const router = createBrowserRouter([
       {
         path: "report/purchase-item",
         element: <PurchaseReportByItem />,
+      },
+      {
+        path: "report/production",
+        element: <ProductionReport />,
+      },
+      {
+        path: "report/production-raw",
+        element: <ProductionByRaw />,
       },
       {
         path: "report/expenses",
