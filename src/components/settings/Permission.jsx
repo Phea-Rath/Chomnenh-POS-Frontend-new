@@ -423,22 +423,27 @@ const Permission = () => {
                                             <tbody className="bg-white divide-y divide-gray-200">
                                                 {buildMenuTree(menuPer).map((parent) => {
                                                     const isExpanded = expandedParents.has(parent.menu_id);
+                                                    const hasChildren = (parent.children?.length || 0) > 0;
                                                     return (
                                                         <React.Fragment key={parent.menu_id}>
                                                             {/* Parent row */}
                                                             <tr className="hover:bg-gray-50 transition-colors">
                                                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                                                                     <div className="flex items-center gap-2">
-                                                                        <button
-                                                                            onClick={() => toggleExpand(parent.menu_id)}
-                                                                            className="text-gray-500 hover:text-gray-700 focus:outline-none"
-                                                                        >
-                                                                            {isExpanded ? (
-                                                                                <FaChevronDown className="w-4 h-4" />
-                                                                            ) : (
-                                                                                <FaChevronRight className="w-4 h-4" />
-                                                                            )}
-                                                                        </button>
+                                                                        {hasChildren ? (
+                                                                            <button
+                                                                                onClick={() => toggleExpand(parent.menu_id)}
+                                                                                className="text-gray-500 hover:text-gray-700 focus:outline-none"
+                                                                            >
+                                                                                {isExpanded ? (
+                                                                                    <FaChevronDown className="w-4 h-4" />
+                                                                                ) : (
+                                                                                    <FaChevronRight className="w-4 h-4" />
+                                                                                )}
+                                                                            </button>
+                                                                        ) : (
+                                                                            <span className="w-4 h-4 inline-block" />
+                                                                        )}
                                                                         <span className="font-bold">{parent.menu_name}</span>
                                                                     </div>
                                                                 </td>
@@ -463,7 +468,8 @@ const Permission = () => {
                                                             </tr>
 
                                                             {/* Child rows (only if expanded) */}
-                                                            {isExpanded &&
+                                                            {hasChildren &&
+                                                                isExpanded &&
                                                                 parent.children?.length > 0 &&
                                                                 parent.children.map((child) => (
                                                                     <tr key={child.menu_id} className="hover:bg-gray-50 transition-colors bg-gray-50/30">
