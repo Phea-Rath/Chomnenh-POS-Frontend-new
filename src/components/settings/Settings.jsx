@@ -27,7 +27,7 @@ const Settings = () => {
 
   useEffect(() => {
     if (data?.data.length != 0) {
-      const perms = data?.data?.filter((i) => i.menu_type == 3);
+      const perms = data?.data?.filter((i) => i.menu_type == 3 || i.menu_type == 0);
       setMenu(perms);
     }
   }, [data, userLogin]);
