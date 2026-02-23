@@ -44,7 +44,7 @@ const Permission = () => {
     useEffect(() => {
         if (user?.data?.length !== 0 && menus?.data?.length !== 0 && permission?.data?.length !== 0) {
             const newUser = user?.data?.filter((i) => i.id != userId && i.role_id !== 2);
-            const newMenu = menus?.data?.filter((i) => i.menu_id != 4);
+            const newMenu = menus?.data?.filter((i) => i.menu_type != 0);
             setNewMenus(newMenu);
             setUsers(newUser);
             setFilteredUsers(newUser);
@@ -135,7 +135,7 @@ const Permission = () => {
     };
 
     const onPermission = async (user_id, isChecked) => {
-        
+
         const allIds = menuPer?.map((m) => m.menu_id) || [];
         setAllperm(isChecked);
         setMenuPer((prev) => prev.map((n) => ({ ...n, enabled: isChecked ? 1 : 0 })));
@@ -144,8 +144,8 @@ const Permission = () => {
         } else {
             removePermission(allIds, user_id);
         }
-        
-        
+
+
     };
 
     const removePermission = async (menu_ids, user_id) => {
