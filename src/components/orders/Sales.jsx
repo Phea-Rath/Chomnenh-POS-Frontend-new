@@ -632,8 +632,7 @@ const Sales = () => {
         discount: item.discount || 0,
         item_name: item.name,
         item_cost: item.cost || 0,
-        item_price: item.original_price,
-        item_wholesale_price: item.wholesale_price || 0,
+        item_price: (orders.sale_type === 'sale' ? item.original_price : item.wholesale_price) || 0,
         expire_date: toDay.toISOString().split("T")[0],
         attributes: attributeData
       };
@@ -1026,8 +1025,8 @@ const Sales = () => {
                           onClick={() => handleOrder(item, item.quantity)}
                           disabled={item.in_stock <= 0}
                           className={`p-2 rounded ${item.in_stock <= 0
-                              ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                              : 'bg-blue-600 text-white hover:bg-blue-700'
+                            ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                            : 'bg-blue-600 text-white hover:bg-blue-700'
                             }`}
                         >
                           {item.in_stock <= 0 ? <TbShoppingCartOff /> : <MdOutlineAddShoppingCart />}
@@ -1201,8 +1200,8 @@ const Sales = () => {
                           <button
                             onClick={() => handleSaleType({ target: { value: 'sale' } })}
                             className={`flex-1 py-1.5 text-sm border rounded ${orders?.sale_type === 'sale'
-                                ? 'bg-blue-600 text-white border-blue-600'
-                                : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                              ? 'bg-blue-600 text-white border-blue-600'
+                              : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
                               }`}
                           >
                             Retail
@@ -1210,8 +1209,8 @@ const Sales = () => {
                           <button
                             onClick={() => handleSaleType({ target: { value: 'wholesale' } })}
                             className={`flex-1 py-1.5 text-sm border rounded ${orders?.sale_type === 'wholesale'
-                                ? 'bg-blue-600 text-white border-blue-600'
-                                : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                              ? 'bg-blue-600 text-white border-blue-600'
+                              : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
                               }`}
                           >
                             Wholesale

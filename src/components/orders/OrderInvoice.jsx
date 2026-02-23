@@ -36,7 +36,7 @@ const OrderInvoice = () => {
   });
 
   return (
-    <div className="min-h-screen bg-gray-100 py-8 px-4">
+    <div className=" bg-transparent py-8 px-4">
       <div className="max-w-4xl mx-auto">
         <button
           onClick={() => navigator(-1)}
@@ -140,7 +140,7 @@ const OrderInvoice = () => {
                   <tr className="bg-gray-100">
                     <th className="border p-3 text-left">Item</th>
                     <th className="border p-3 text-left">Category</th>
-                    <th className="border p-3 text-left">Size</th>
+                    {/* <th className="border p-3 text-left">Brand</th> */}
                     <th className="border p-3 text-right">Quantity</th>
                     <th className="border p-3 text-right">Price</th>
                     <th className="border p-3 text-right">Total</th>
@@ -153,7 +153,7 @@ const OrderInvoice = () => {
                         {item.item_name} ({item.item_code})
                       </td>
                       <td className="border p-3">{item.category_name}</td>
-                      <td className="border p-3">{item.size_name}</td>
+                      {/* <td className="border p-3">{item.brand_name}</td> */}
                       <td className="border p-3 text-right">{item.quantity}</td>
                       <td className="border p-3 text-right">
                         ${parseFloat(item.item_price).toFixed(2)}

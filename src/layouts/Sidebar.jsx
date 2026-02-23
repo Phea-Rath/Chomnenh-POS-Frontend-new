@@ -48,11 +48,11 @@ const Sidebar = () => {
       >
         <div className={`p-2 rounded-xl transition-all duration-300 
           ${isActive ? 'bg-white/50' : 'bg-slate-50 group-hover:bg-white'}`}>
-          <img className={item.menu_icon ? 'w-5 h-5' : ''} src={item.menu_icon} alt="" />
+          {item?.menu_icon && <img className={item?.menu_icon ? 'w-5 h-5' : ''} src={item?.menu_icon} alt="" />}
         </div>
 
         <span className="font-semibold text-[14px] flex-1 tracking-tight">
-          {item.menu_name}
+          {item?.menu_name}
         </span>
 
         {isActive && (

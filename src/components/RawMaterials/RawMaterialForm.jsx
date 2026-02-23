@@ -180,44 +180,8 @@ const RawMaterialForm = () => {
             if (imageFile) {
                 formData.append('material_image', imageFile);
             }
-
-            // Remove secondary unit fields if not using secondary unit
-            if (!hasSecondaryUnit) {
-                formData.delete('secondary_unit');
-                formData.delete('conversion_value');
-                // formData.delete('attrs');
-                // Append attributes - ensure colors are properly formatted
-                const formattedAttributes = [{
-                    name: values.primary_unit,
-                    type: 'number',
-                    value: 1
-                }];
-
-                formData.append("attributes", JSON.stringify(formattedAttributes));
-
-            } else {
-
-                const formattedAttributes = [
-                    {
-                        name: values.primary_unit,
-                        type: 'number',
-                        value: 1
-                    },
-                    {
-                        name: values.secondary_unit,
-                        type: 'number',
-                        value: values.conversion_value
-                    }
-                ];
-                formData.append("attributes", JSON.stringify(formattedAttributes));
-            }
-
-
-
-
             let response;
             if (isEditMode) {
-                formData.append("edit_id", JSON.stringify(id));
                 response = await api.post(`/raw_material/${id}`, formData, {
                     headers: {
                         Authorization: `Bearer ${token}`,

@@ -75,10 +75,15 @@ const Stocks = () => {
   const formatDateTime = (date) =>
     new Date(date).toLocaleString('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 
-  const getTotalItems = (stock) => stock.items?.length || 0;
-  const getTotalQuantity = (stock) => stock.items?.reduce((sum, item) => sum + (item.quantity || 0), 0) || 0;
+  const getStockItems = (stock) => (Array.isArray(stock?.items) ? stock.items : []);
+  const getTotalItems = (stock) => getStockItems(stock).length;
+  const getTotalQuantity = (stock) =>
+    getStockItems(stock).reduce((sum, item) => sum + (Number(item.quantity) || 0), 0);
   const getTotalValue = (stock) =>
-    stock.items?.reduce((sum, item) => sum + (item.quantity || 0) * (item.item_price || 0), 0) || 0;
+    getStockItems(stock).reduce(
+      (sum, item) => sum + (Number(item.quantity) || 0) * (Number(item.item_price) || 0),
+      0
+    );
 
   // Delete handlers
   const handleDelete = (stockId) => {
@@ -122,7 +127,7 @@ const Stocks = () => {
         stock.from_warehouse_name?.toLowerCase().includes(value.toLowerCase()) ||
         stock.to_warehouse_name?.toLowerCase().includes(value.toLowerCase()) ||
         stock.stock_remark?.toLowerCase().includes(value.toLowerCase()) ||
-        stock.items?.some(
+        getStockItems(stock).some(
           (item) =>
             item.item_name?.toLowerCase().includes(value.toLowerCase()) ||
             item.item_code?.toLowerCase().includes(value.toLowerCase())
@@ -173,7 +178,7 @@ const Stocks = () => {
       // Sheet 2: Items Details
       const itemsData = [];
       dataToExport.forEach((stock) => {
-        stock.items?.forEach((item) => {
+        getStockItems(stock).forEach((item) => {
           itemsData.push({
             'Stock Number': stock.stock_no,
             'Stock Type': stock.stock_type_name,

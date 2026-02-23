@@ -15,6 +15,7 @@ window.Echo = new Echo({
 
     // ❗ DO NOT force transports for Reverb
     // enabledTransports: ["wss"], ❌ REMOVE
+
     // wsHost: "127.0.0.1",
     // wsPort: 6001,
     // wssPort: 6001,

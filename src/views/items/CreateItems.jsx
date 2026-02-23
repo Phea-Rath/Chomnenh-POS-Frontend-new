@@ -181,16 +181,6 @@ const ItemForm = () => {
       newErrors.brand_id = 'Brand is required';
     }
 
-    // Check if colors attribute exists
-    const colors = getColorsFromAttributes();
-    if (colors.length === 0) {
-      newErrors.colors = 'At least one color is required';
-    }
-
-    if (existingImages.length === 0 && viewImages.length === 0) {
-      newErrors.images = 'At least one item image is required';
-    }
-
     // Validate other attributes
     attributes.forEach((attr, index) => {
       if (attr.name !== "colors" && (!attr.name || attr.name.trim() === "")) {
@@ -537,7 +527,7 @@ const ItemForm = () => {
               <div className="bg-gray-50 rounded-xl shadow-sm p-6 border-2 border-dashed border-gray-300">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-lg font-semibold text-gray-800">
-                    Product Images <span className="text-red-500">*</span>
+                    Product Images
                   </h2>
                   {(viewImages.length > 0 || existingImages.length > 0) && (
                     <button
@@ -755,7 +745,7 @@ const ItemForm = () => {
                           onChange={(e) => setItem({ ...item, discount: e.target.value })}
                           value={item.discount}
                           type="number"
-                          step="0.01"
+                          step="0.5"
                           min="0"
                           max="100"
                           className={getInputClass('discount')}
@@ -854,7 +844,7 @@ const ItemForm = () => {
                       {/* Color Selection - Integrated with Attributes */}
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Colors <span className="text-red-500">*</span>
+                          Colors
                         </label>
                         <div className="relative w-full" ref={wrapperRef}>
                           <div className={`flex border rounded-lg shadow-sm bg-white ${errors.colors ? 'border-red-500' : 'border-gray-300'

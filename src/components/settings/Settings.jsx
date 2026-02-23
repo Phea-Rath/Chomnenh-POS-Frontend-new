@@ -30,8 +30,6 @@ const Settings = () => {
       const perms = data?.data?.filter((i) => i.menu_type == 3);
       setMenu(perms);
     }
-    console.log(userLogin);
-
   }, [data, userLogin]);
 
   return (
