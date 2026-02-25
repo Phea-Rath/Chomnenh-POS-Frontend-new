@@ -5,7 +5,7 @@ import { toast } from 'react-toastify';
 import * as XLSX from 'xlsx';
 import { useGetAllUserQuery } from '../../../app/Features/usersSlice';
 import { useReactToPrint } from 'react-to-print';
-import { useGetAllExpanseTypesQuery } from '../../../app/Features/expanseTypesSlice';
+import { useGetAllExpanseTypesQuery } from '../../../app/Features/expenseTypesSlice';
 
 const ExpenseReportByUser = () => {
     const token = localStorage.getItem('token');

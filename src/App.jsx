@@ -7,8 +7,8 @@ import Brands from "./components/brands/Brands";
 import Scales from "./components/scales/Scales";
 import Werehouses from "./components/stocks/Werehouses";
 import StockType from "./components/stocks/StockType";
-import Expanses from "./components/expanses/Expanses";
-import ExpansesType from "./components/expanses/ExpansesType";
+import Expanses from "./components/expenses/Expanses";
+import ExpansesType from "./components/expenses/ExpansesType";
 import Sales from "./components/orders/Sales";
 import OrderList from "./components/orders/OrderList";
 import AddInStock from "./views/stocks/AddInStock";
@@ -19,11 +19,11 @@ import RecordStock from "./components/stocks/RecordStock";
 import StockTransition from "./components/stocks/StockTransaction";
 import RecordStockSales from "./components/stocks/RecordStockSales";
 import Analysis from "./components/dashboard/Analysis";
-import PrintExpanse from "./components/expanses/PrintExpanse";
+import PrintExpanse from "./components/expenses/PrintExpanse";
 import LoginForm from "./components/logins/LoginForm";
 import Register from "./components/logins/Register";
 import Settings from "./components/settings/Settings";
-import CreateExpanses from "./views/expanses/CreateExpanses";
+import CreateExpanses from "./views/expenses/CreateExpanses";
 import UpdateOrders from "./views/orders/UpdateOrders";
 import EMenu from "./components/EMenu";
 import RegisterForm from "./components/logins/RegisterForm";
@@ -81,7 +81,6 @@ import ProductionDetail from "./components/productions/ProductionDetail";
 import RawMaterialDetail from "./components/RawMaterials/RawMaterialDetail";
 import { useGetAllOrderQuery, useGetOrderByUserQuery } from "../app/Features/ordersSlice";
 import { useGetAllItemInStockQuery, useGetAllItemsQuery } from "../app/Features/itemsSlice";
-import { useGetAllUserQuery } from "../app/Features/usersSlice";
 import { useGetAllSaleQuery } from "../app/Features/salesSlice";
 import { useGetAllOrderOnlineQuery, useGetAllWasteQuery } from "../app/Features/notificationSlice";
 import Echo from "./echo";
@@ -190,7 +189,7 @@ const router = createBrowserRouter([
         element: <CustomerForm />,
       },
       {
-        path: "expanse",
+        path: "expenses",
         element: <Expanses />,
         children: [
           {
@@ -204,7 +203,7 @@ const router = createBrowserRouter([
         ],
       },
       {
-        path: "expanse-type",
+        path: "expense-type",
         element: <ExpansesType />,
       },
       {
@@ -482,7 +481,7 @@ const router = createBrowserRouter([
     ],
   },
   {
-    path: "/expanse-print/:id",
+    path: "/expense-print/:id",
     element: <PrintExpanse />,
   },
   {

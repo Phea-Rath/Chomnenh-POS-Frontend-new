@@ -1,15 +1,15 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { useParams } from 'react-router';
-import { useGetExpanseByIdQuery } from '../../../app/Features/expansesSlice';
+import { useGetExpanseByIdQuery } from '../../../app/Features/expensesSlice';
 import { toast } from 'react-toastify';
 import handleDownload from '../../services/imageDowload';
 
 const PrintExpanse = () => {
   const [data, setData] = useState({
-    expanse_no: '',
-    expanse_date: '',
-    expanse_by: '',
-    expanse_other: '',
+    expense_no: '',
+    expense_date: '',
+    expense_by: '',
+    expense_other: '',
     amount: '',
     items: []
   });
@@ -42,7 +42,7 @@ const PrintExpanse = () => {
       <div className="button-group">
         <button onClick={() => window.print()}>🖨️ Print</button>
         <button onClick={copyURL}>🔗 Copy URL</button>
-        <button onClick={() => handleDownload(receiptRef, 'jpg', 'Expanse', data?.expanse_no)}>Download</button>
+        <button onClick={() => handleDownload(receiptRef, 'jpg', 'Expanse', data?.expense_no)}>Download</button>
       </div>
 
       <div ref={receiptRef} className="receipt-container">
@@ -52,10 +52,10 @@ const PrintExpanse = () => {
         </div>
 
         <div className="info">
-          <p><span>Expense No:</span> {data?.expanse_no}</p>
-          <p><span>Date:</span> {data?.expanse_date}</p>
-          <p><span>Created By:</span> {data?.expanse_by}</p>
-          <p><span>Description:</span> {data?.expanse_other}</p>
+          <p><span>Expense No:</span> {data?.expense_no}</p>
+          <p><span>Date:</span> {data?.expense_date}</p>
+          <p><span>Created By:</span> {data?.expense_by}</p>
+          <p><span>Description:</span> {data?.expense_other}</p>
         </div>
 
         <table>
@@ -71,7 +71,7 @@ const PrintExpanse = () => {
           <tbody>
             {data?.items?.map((item, index) => (
               <tr key={index}>
-                <td>{item.expanse_type_name}</td>
+                <td>{item.expense_type_name}</td>
                 <td>{item.description}</td>
                 <td>{item.quantity}</td>
                 <td>{item.unit_price}</td>

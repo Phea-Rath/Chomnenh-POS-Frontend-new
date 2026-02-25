@@ -44,7 +44,7 @@ import {
   useGetSaleByWeekQuery,
 } from "../../../app/Features/dashboardsSlice";
 import { BsArrowDownRight, BsArrowUpRight } from "react-icons/bs";
-import { useGetPopularExpansesQuery } from "../../../app/Features/expansesSlice";
+import { useGetPopularExpansesQuery } from "../../../app/Features/expensesSlice";
 import {
   useGetPersentOrderMonthlyQuery,
   useGetPopularOrderQuery,

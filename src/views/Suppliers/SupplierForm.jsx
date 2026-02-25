@@ -210,14 +210,6 @@ const SupplierForm = () => {
         }
         break;
 
-      case 'image':
-        if (!isEditMode && !value) {
-          newFieldErrors.image = 'Supplier image is required';
-        } else {
-          delete newFieldErrors.image;
-        }
-        break;
-
       default:
         break;
     }
@@ -256,12 +248,6 @@ const SupplierForm = () => {
     if (dataForm.supplier_email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(dataForm.supplier_email)) {
       newErrors.supplier_email = "Please enter a valid email address.";
       newFieldErrors.supplier_email = 'Please enter a valid email address';
-    }
-
-    // Image validation for new suppliers
-    if (!isEditMode && !dataForm.image) {
-      newErrors.image = "Supplier image is required for new suppliers.";
-      newFieldErrors.image = 'Supplier image is required';
     }
 
     setFieldErrors(newFieldErrors);
@@ -407,10 +393,8 @@ const SupplierForm = () => {
   const removeImage = () => {
     setViewImage("");
     setFormData(p => ({ ...p, image: null }));
-    if (!isEditMode) {
-      setErrors(prev => ({ ...prev, image: 'Supplier image is required' }));
-      setFieldErrors(prev => ({ ...prev, image: 'Supplier image is required' }));
-    }
+    setErrors(prev => ({ ...prev, image: '' }));
+    setFieldErrors(prev => ({ ...prev, image: '' }));
   };
 
   // Helper function to get input classes with error styling
@@ -475,7 +459,7 @@ const SupplierForm = () => {
               <div className="bg-gray-50 rounded-xl p-6 border-2 border-dashed border-gray-300">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-lg font-semibold text-gray-800">
-                    Supplier Image {!isEditMode && <span className="text-red-500">*</span>}
+                    Supplier Image
                   </h2>
                   {viewImage && (
                     <button
@@ -540,7 +524,6 @@ const SupplierForm = () => {
 
                 <p className="text-xs text-gray-500 mt-3 text-center">
                   Max size 2MB • JPEG, PNG, GIF, WebP
-                  {!isEditMode && <span className="text-red-500 ml-1">* Required</span>}
                 </p>
               </div>
 

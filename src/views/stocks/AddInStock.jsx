@@ -70,7 +70,7 @@ const AddInStock = () => {
     stock_type_id: 2,
     stock_remark: "",
     order_id: null,
-    stock_date: new Date().toISOString().split('T')[0], // Today's date
+    stock_date: '', // Today's date
   });
 
   useEffect(() => {
@@ -98,7 +98,7 @@ const AddInStock = () => {
         stock_type_id: data.stock_type_id || 2,
         stock_remark: data.stock_remark || "",
         order_id: data.order_id || null,
-        stock_date: data.stock_date || new Date().toISOString().split('T')[0],
+        stock_date: data.stock_date || "",
       });
 
       // Set selected items
@@ -108,7 +108,7 @@ const AddInStock = () => {
           id: item.item_id,
           code: item.item_code,
           name: item.item_name,
-          image: item.images[0].image,
+          image: item.images[0]?.image ?? '',
           price: item.item_price,
           brand_name: item.brand_name,
           quantity: item.quantity,
@@ -158,7 +158,7 @@ const AddInStock = () => {
     const newItem = {
       ...finding,
       quantity: 1,
-      expire_date: new Date().toISOString().split('T')[0]
+      expire_date: ''
     };
     setselectItems(prev => [...prev, newItem]);
 
@@ -168,7 +168,7 @@ const AddInStock = () => {
       item_id: value,
       item_cost: 0,
       quantity: 1,
-      expire_date: new Date().toISOString().split('T')[0],
+      expire_date: '',
       attributes: []
     }]);
   }
@@ -611,6 +611,7 @@ const AddInStock = () => {
                                       type="number"
                                       step="any"
                                       value={item?.item_cost ?? ""}
+                                      onWheel={(e) => e.target.blur()}   // 👈 បិទ scroll change
                                       onChange={(e) =>
                                         handleChange(index, "item_cost", false, e.target.value)
                                       }
@@ -624,6 +625,7 @@ const AddInStock = () => {
                                       type="number"
                                       min="1"
                                       value={item.quantity || 1}
+                                      onWheel={(e) => e.target.blur()}   // 👈 បិទ scroll change
                                       onChange={(e) => handleChange(index, 'quantity', false, e.target.value)}
                                       className="w-24 text-center"
                                       size="middle"

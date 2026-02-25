@@ -216,14 +216,6 @@ const CustomerForm = () => {
         }
         break;
 
-      case 'image':
-        if (!isUpdate && !value) {
-          newFieldErrors.image = 'Customer image is required';
-        } else {
-          delete newFieldErrors.image;
-        }
-        break;
-
       default:
         break;
     }
@@ -263,12 +255,6 @@ const CustomerForm = () => {
     if (dataForm.customer_address && dataForm.customer_address.length > 200) {
       newErrors.customer_address = "Address must be less than 200 characters.";
       newFieldErrors.customer_address = 'Address must be less than 200 characters';
-    }
-
-    // Image validation for new customers
-    if (!isUpdate && !dataForm.image) {
-      newErrors.image = "Customer image is required for new customers.";
-      newFieldErrors.image = 'Customer image is required';
     }
 
     setFieldErrors(newFieldErrors);
@@ -427,10 +413,8 @@ const CustomerForm = () => {
   const removeImage = () => {
     setViewImage("");
     setFormData(p => ({ ...p, image: null }));
-    if (!isUpdate) {
-      setErrors(prev => ({ ...prev, image: 'Customer image is required' }));
-      setFieldErrors(prev => ({ ...prev, image: 'Customer image is required' }));
-    }
+    setErrors(prev => ({ ...prev, image: '' }));
+    setFieldErrors(prev => ({ ...prev, image: '' }));
   };
 
   // Helper function to get input classes with error styling
@@ -495,7 +479,7 @@ const CustomerForm = () => {
               <div className="bg-gray-50 rounded-xl p-6 border-2 border-dashed border-gray-300">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-lg font-semibold text-gray-800">
-                    Customer Image {!isUpdate && <span className="text-red-500">*</span>}
+                    Customer Image
                   </h2>
                   {viewImage && (
                     <button
@@ -560,7 +544,6 @@ const CustomerForm = () => {
 
                 <p className="text-xs text-gray-500 mt-3 text-center">
                   Max size 2MB • JPEG, PNG, GIF, WebP
-                  {!isUpdate && <span className="text-red-500 ml-1">* Required</span>}
                 </p>
               </div>
 

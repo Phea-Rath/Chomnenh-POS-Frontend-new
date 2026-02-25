@@ -6,8 +6,8 @@ import { scalesApi } from "./Features/scalesSlice";
 import { colorsApi } from "./Features/colorsSlice";
 import { itemsApi } from "./Features/itemsSlice";
 import { stockTypesApi } from "./Features/stockTypesSlice";
-import { expanseTypesApi } from "./Features/expanseTypesSlice";
-import { expansesApi } from "./Features/expansesSlice";
+import { expenseTypesApi } from "./Features/expenseTypesSlice";
+import { expensesApi } from "./Features/expensesSlice";
 import { warehousesApi } from "./Features/warehousesSlice";
 import { sizesApi } from "./Features/sizesSlice";
 import { stocksApi } from "./Features/stocksSlice";
@@ -40,8 +40,8 @@ export const store = configureStore({
     [colorsApi.reducerPath]: colorsApi.reducer,
     [itemsApi.reducerPath]: itemsApi.reducer,
     [stockTypesApi.reducerPath]: stockTypesApi.reducer,
-    [expanseTypesApi.reducerPath]: expanseTypesApi.reducer,
-    [expansesApi.reducerPath]: expansesApi.reducer,
+    [expenseTypesApi.reducerPath]: expenseTypesApi.reducer,
+    [expensesApi.reducerPath]: expensesApi.reducer,
     [warehousesApi.reducerPath]: warehousesApi.reducer,
     [sizesApi.reducerPath]: sizesApi.reducer,
     [stocksApi.reducerPath]: stocksApi.reducer,
@@ -76,8 +76,8 @@ export const store = configureStore({
       scalesApi.middleware,
       itemsApi.middleware,
       stockTypesApi.middleware,
-      expanseTypesApi.middleware,
-      expansesApi.middleware,
+      expenseTypesApi.middleware,
+      expensesApi.middleware,
       warehousesApi.middleware,
       sizesApi.middleware,
       stocksApi.middleware,

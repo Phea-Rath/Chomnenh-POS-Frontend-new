@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import AlertBox from '../../services/AlertBox';
 import { useOutletsContext } from '../../layouts/Management';
-import { useCreateExpanseTypeMutation, useGetAllExpanseTypesQuery } from '../../../app/Features/expanseTypesSlice';
+import { useCreateExpanseTypeMutation, useGetAllExpanseTypesQuery } from '../../../app/Features/expenseTypesSlice';
 import { toast } from 'react-toastify';
 import {
   Card,
@@ -27,6 +27,7 @@ import {
 } from 'react-icons/fa';
 import { MdOutlineCategory, MdDescription } from 'react-icons/md';
 import { motion } from 'framer-motion';
+import api from '../../services/api';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
@@ -35,8 +36,8 @@ const CreateExpanseTypes = ({ onAdd }) => {
   const token = localStorage.getItem('token');
   const { setLoading } = useOutletsContext();
   const [alertBox, setAlertBox] = useState(false);
-  const [expanse_types, setExpanseTypes] = useState({
-    expanse_type_name: "",
+  const [expense_types, setExpanseTypes] = useState({
+    expense_type_name: "",
     description: "",
     created_by: "",
     status: "active"
@@ -50,7 +51,13 @@ const CreateExpanseTypes = ({ onAdd }) => {
     try {
       setLoading(true);
       setAlertBox(false);
-      const response = await createExpanseType({ itemData: expanse_types, token });
+      // const response = await createExpanseType({ itemData: expense_types, token });
+
+      const response = await api.post("/expense_types", expense_types, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
       if (response.data.status === 200) {
         refetch();
@@ -59,7 +66,7 @@ const CreateExpanseTypes = ({ onAdd }) => {
         toast.success('Expense category created successfully!');
         // Reset form
         form.resetFields();
-        setExpanseTypes({ expanse_type_name: "", description: "", created_by: "", status: "active" });
+        setExpanseTypes({ expense_type_name: "", description: "", created_by: "", status: "active" });
       } else {
         toast.error(response.data.message || 'Failed to create expense category');
         setAlertBox(false);
@@ -72,7 +79,7 @@ const CreateExpanseTypes = ({ onAdd }) => {
   }
 
   function handleSubmit() {
-    if (!expanse_types.expanse_type_name.trim()) {
+    if (!expense_types.expense_type_name.trim()) {
       toast.error('Please enter a category name');
       return;
     }
@@ -86,7 +93,7 @@ const CreateExpanseTypes = ({ onAdd }) => {
   function onExpanseTypeName(e) {
     setExpanseTypes(prev => ({
       ...prev,
-      expanse_type_name: e.target.value,
+      expense_type_name: e.target.value,
       created_by: localStorage.getItem('userId') || "0"
     }));
   }
@@ -147,7 +154,7 @@ const CreateExpanseTypes = ({ onAdd }) => {
                 <Input
                   size="large"
                   placeholder="Enter category name (e.g., Office Supplies, Travel, Marketing)"
-                  value={expanse_types.expanse_type_name}
+                  value={expense_types.expense_type_name}
                   onChange={onExpanseTypeName}
                   prefix={<FaTag className="text-gray-400" />}
                   className="w-full"
@@ -172,7 +179,7 @@ const CreateExpanseTypes = ({ onAdd }) => {
               size="large"
               loading={isLoading}
               className="h-12 flex-1 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 border-0 shadow-lg"
-              disabled={!expanse_types.expanse_type_name.trim()}
+              disabled={!expense_types.expense_type_name.trim()}
             >
               Create Category
             </Button>
@@ -189,7 +196,7 @@ const CreateExpanseTypes = ({ onAdd }) => {
           </div>
 
           {/* Validation Alert */}
-          {!expanse_types.expanse_type_name.trim() && (
+          {!expense_types.expense_type_name.trim() && (
             <Alert
               message="Required Field"
               description="Please enter a category name to continue"

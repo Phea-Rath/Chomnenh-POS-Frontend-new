@@ -150,9 +150,9 @@ const GridCard = ({ item, onEdit, onDelete, onView, formatCurrency, getDiscount 
             {inStock > 0 ? `Stock: ${inStock}` : "Sold Out"}
           </Tag>
         </div>
-        {discount > 0 && (
+        {item.discount > 0 && (
           <div className="absolute top-2 right-0">
-            <Tag color="error" className="rounded-l-md border-none font-bold">-{discount}%</Tag>
+            <Tag color="error" className="rounded-l-md border-none font-bold">{item.discount}% off</Tag>
           </div>
         )}
       </div>

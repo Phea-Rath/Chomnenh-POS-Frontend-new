@@ -202,7 +202,10 @@ const Purchases = () => {
     try {
       setAlertBoxConfirm(false);
       setLoading(true);
-      const res = await confirmPurchase({ id, token });
+      // const res = await confirmPurchase({ id, token });
+      const res = await api.put(`/purchase_confirm/${id}`, null, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       if (res.data.status === 200) {
         salesRefetch();
         stockRefetch();
@@ -536,7 +539,7 @@ const Purchases = () => {
                                 <FaCheck />
                               </button>
                             )}
-                            {item.status === 0 && item.balance !== 0 && (
+                            {item.status === 0 && item.balance != 0 && (
                               <button
                                 onClick={() => {
                                   setShowPaymentModal(true);
@@ -666,7 +669,7 @@ const Purchases = () => {
                             <FaCheck />
                           </button>
                         )}
-                        {item.status === 0 && item.balance !== 0 && (
+                        {item.status === 0 && item.balance != 0 && (
                           <button
                             onClick={() => {
                               setShowPaymentModal(true);

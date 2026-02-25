@@ -32,7 +32,7 @@ const QuotationForm = () => {
     const isEditMode = Boolean(id);
     const [stocktype, setstocktype] = useState([]);
     const [search, setSearch] = useState("");
-    const [debounce] = useDebounce(search, 5000);
+    const [debounce] = useDebounce(search, 500);
     const [alertBox, setAlertBox] = useState(false);
     const [items, setitems] = useState([]);
     const [fielditems, setfielditems] = useState([]);

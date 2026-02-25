@@ -1,68 +1,35 @@
-import React, {
-  createContext,
-  useContext,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
-import { IoIosSearch, IoIosGrid, IoIosList } from "react-icons/io";
-import { MdAttachMoney, MdCalendarToday, MdPerson } from "react-icons/md";
-import AlertBox from "../../services/AlertBox";
-import { useOutletsContext } from "../../layouts/Management";
-import { Link, Outlet, useNavigate } from "react-router";
-import { Button, Empty, Skeleton, Typography, Tag } from "antd";
+import React, { useEffect, useRef, useState } from 'react'
+import { IoIosSearch, IoIosGrid, IoIosList } from 'react-icons/io'
+import { MdCategory, MdPerson } from 'react-icons/md'
+import CreateExpanseTypes from '../../views/expenses/CreateExpanseTypes'
+import AlertBox from '../../services/AlertBox';
+import { useOutletsContext } from '../../layouts/Management';
+import UpdateExpanseType from '../../views/expenses/UpdateExpanseTypes';
+import { Button, Empty, Skeleton, Typography, Tag } from 'antd';
 import { motion } from "framer-motion";
-import {
-  useDeleteExpanseMutation,
-  useGetAllExpansesQuery,
-} from "../../../app/Features/expansesSlice";
-import { useGetAllExpanseTypesQuery } from "../../../app/Features/expanseTypesSlice";
-import { toast } from "react-toastify";
-import ExportExel from "../../services/ExportExel";
+import { useDeleteExpanseTypeMutation, useGetAllExpanseTypesQuery } from '../../../app/Features/expenseTypesSlice';
+import { toast } from 'react-toastify';
 
-const ExpContext = createContext();
-export function useExpContext() {
-  return useContext(ExpContext);
-}
-
-const Expanses = () => {
-  const [expanses, setExpanses] = useState([]);
+const ExpansesType = () => {
+  const [expense_types, setExpanseTypes] = useState([]);
   const [viewMode, setViewMode] = useState('table'); // 'table' or 'grid'
-  const navigator = useNavigate();
-  const [id, setId] = useState(0);
-  const [alertBox, setAlertBox] = useState(false);
+  const [id, setId] = useState(0)
+  const [alertBox, setAlertBox] = useState(false)
   const [edit, setEdit] = useState({ id: 1, name: "" });
-  const {
-    setLoading,
-    loading,
-    setAlert,
-    setMessage,
-    setAlertStatus,
-    reload,
-    setReload,
-  } = useOutletsContext();
-  const ModalRef = useRef(null);
+  const { setLoading, setAlert, setMessage, setAlertStatus, reload, setReload } = useOutletsContext();
+  const addModalRef = useRef(null);
   const updateModalRef = useRef(null);
-  const [expanseType, setExpanseType] = useState([]);
-  const [expanseItems, setExpanseItems] = useState([]);
-  const token = localStorage.getItem("token");
-  const { data, isLoading, isError, refetch } = useGetAllExpansesQuery(token);
-  const [deleteExpanse] = useDeleteExpanseMutation();
-  const expanseTypeContext = useGetAllExpanseTypesQuery(token);
+  const token = localStorage.getItem('token');
+  const { data, isLoading, isError, refetch } = useGetAllExpanseTypesQuery(token);
+  const [deleteExpanseType, expensetypeDel] = useDeleteExpanseTypeMutation();
 
   useEffect(() => {
-    setExpanses(data?.data || []);
-    setExpanseType(expanseTypeContext.data?.data || []);
-  }, [data, expanseTypeContext.data]);
+    setExpanseTypes(data?.data || []);
+  }, [data]);
 
-  async function fetchingExpItem(id) {
-    const expanseItems = expanses?.find((item) => item.expanse_id == id);
-    setExpanseItems(expanseItems.items);
-  }
-
-  function handleDelete(expanse_id) {
+  function handleDelete(expense_type_id) {
     setAlertBox(true);
-    setId(expanse_id);
+    setId(expense_type_id);
   }
 
   function handleCancel() {
@@ -73,18 +40,18 @@ const Expanses = () => {
     try {
       setLoading(true);
       setAlertBox(false);
-      const response = await deleteExpanse({ id, token });
+      const response = await deleteExpanseType({ id, token });;
       if (response.data.status === 200) {
         refetch();
-        toast.success("Expanse deleted successfully");
+        toast.success('Expanse type deleted successfully');
+        setAlertBox(false);
         setLoading(false);
+      } else {
+        toast.error('Failed to delete expense type');
+        setAlertBox(false);
       }
     } catch (error) {
-      toast.error(
-        error?.message ||
-        error ||
-        "An error occurred while deleting the expanse"
-      );
+      toast.error(error?.message || error || 'An error occurred while deleting the expense type');
       setLoading(false);
       setAlertBox(false);
     }
@@ -92,104 +59,62 @@ const Expanses = () => {
 
   function onSearch(event) {
     if (event.target.value) {
-      const filterExpanse = data.data.filter((expanse) =>
-        expanse.code.toLowerCase().includes(event.target.value.toLowerCase())
-      );
-      setExpanses(filterExpanse || []);
+      const filterExpanseType = data.data.filter((item) => item.expense_type_name.toLowerCase().includes(event.target.value.toLowerCase()));
+      setExpanseTypes(filterExpanseType || []);
     } else {
-      setExpanses(data.data || []);
+      setExpanseTypes(data.data || []);
     }
   }
 
-  function onAdd() {
-    ModalRef.current?.close();
+  function handleUpdate(id, name) {
+    updateModalRef.current?.showModal();
+    setEdit(prev => { return { ...prev, name: name, id: id } })
   }
-
-  async function handleUpdate(expanse) {
-    setEdit(expanse);
-    console.log(expanseType);
-    await fetchingExpItem(expanse.expanse_id);
-    await navigator("update");
-    ModalRef.current?.showModal();
-  }
-
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 2
-    }).format(amount);
-  };
-
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
-  };
-
-  const getStatusColor = (amount) => {
-    if (amount > 1000) return 'red';
-    if (amount > 500) return 'orange';
-    return 'green';
-  };
 
   // Grid Card Component
-  const ExpenseCard = ({ expense, index }) => (
+  const ExpenseTypeCard = ({ expenseType, index }) => (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-all duration-200">
       {/* Header */}
-      <div className="flex justify-between items-start mb-4">
-        <div>
-          <h3 className="font-semibold text-gray-900 text-lg mb-1">
-            {expense.expanse_no}
-          </h3>
-          <p className="text-sm text-gray-600">{expense.expanse_supplier || 'No supplier'}</p>
+      <div className="flex items-start gap-3 mb-4">
+        <div className="p-3 bg-blue-100 rounded-lg">
+          <MdCategory className="text-blue-600 text-xl" />
         </div>
-        <Tag color={getStatusColor(expense.amount)} className="rounded-full px-3 py-1">
-          {formatCurrency(expense.amount)}
-        </Tag>
+        <div className="flex-1">
+          <h3 className="font-semibold text-gray-900 text-lg mb-1 truncate">
+            {expenseType.expense_type_name}
+          </h3>
+          <p className="text-sm text-gray-500">Expense Type</p>
+        </div>
       </div>
 
       {/* Details */}
       <div className="space-y-3 mb-4">
         <div className="flex items-center gap-2 text-sm text-gray-600">
           <MdPerson className="text-gray-400" />
-          <span>{expense.expanse_by}</span>
+          <span>Created by: {expenseType.created_by}</span>
         </div>
         <div className="flex items-center gap-2 text-sm text-gray-600">
-          <MdCalendarToday className="text-gray-400" />
-          <span>{formatDate(expense.expanse_date)}</span>
+          <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+          <span>Active</span>
         </div>
-        <div className="flex items-center gap-2 text-sm text-gray-600">
-          <MdAttachMoney className="text-gray-400" />
-          <span className="truncate">{expense.expanse_other || 'No description'}</span>
-        </div>
-      </div>
-
-      {/* Staff */}
-      <div className="flex items-center justify-between mb-4">
-        <Tag color="blue" className="rounded-full px-3 py-1 text-xs">
-          {expense.created_by}
-        </Tag>
       </div>
 
       {/* Actions */}
       <div className="flex gap-2 pt-4 border-t border-gray-100">
-        <Link to="/expanse-print" className="flex-1">
-          <button className="w-full inline-flex items-center justify-center px-3 py-2 border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-600 hover:text-white transition-colors duration-200 text-xs font-semibold">
-            Details
-          </button>
-        </Link>
+        <button
+          className="flex-1 inline-flex items-center justify-center px-3 py-2 border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-600 hover:text-white transition-colors duration-200 text-xs font-semibold"
+        >
+          Details
+        </button>
         <button
           className="flex-1 inline-flex items-center justify-center px-3 py-2 border border-green-600 text-green-600 rounded-lg hover:bg-green-600 hover:text-white transition-colors duration-200 text-xs font-semibold"
-          onClick={() => handleUpdate(expense)}
+          onClick={() => handleUpdate(expenseType.expense_type_id, expenseType.expense_type_name)}
         >
           Edit
         </button>
         <button
           className="flex-1 inline-flex items-center justify-center px-3 py-2 border border-red-600 text-red-600 rounded-lg hover:bg-red-600 hover:text-white transition-colors duration-200 text-xs font-semibold"
-          onClick={() => handleDelete(expense.expanse_id)}
+          onClick={() => handleDelete(expenseType.expense_type_id)}
         >
           Delete
         </button>
@@ -198,22 +123,20 @@ const Expanses = () => {
   );
 
   // Loading Card Skeleton
-  const ExpenseCardSkeleton = () => (
+  const ExpenseTypeCardSkeleton = () => (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
       <div className="animate-pulse">
-        <div className="flex justify-between items-start mb-4">
-          <div className="space-y-2">
-            <div className="h-4 bg-gray-200 rounded w-24"></div>
-            <div className="h-3 bg-gray-200 rounded w-32"></div>
+        <div className="flex items-start gap-3 mb-4">
+          <div className="p-3 bg-gray-200 rounded-lg w-12 h-12"></div>
+          <div className="flex-1 space-y-2">
+            <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+            <div className="h-3 bg-gray-200 rounded w-1/2"></div>
           </div>
-          <div className="h-6 bg-gray-200 rounded w-16"></div>
         </div>
         <div className="space-y-3 mb-4">
           <div className="h-3 bg-gray-200 rounded w-full"></div>
           <div className="h-3 bg-gray-200 rounded w-3/4"></div>
-          <div className="h-3 bg-gray-200 rounded w-5/6"></div>
         </div>
-        <div className="h-6 bg-gray-200 rounded w-20 mb-4"></div>
         <div className="flex gap-2 pt-4 border-t border-gray-100">
           <div className="h-8 bg-gray-200 rounded flex-1"></div>
           <div className="h-8 bg-gray-200 rounded flex-1"></div>
@@ -227,11 +150,11 @@ const Expanses = () => {
     <div
       className="min-h-screen bg-transparent"
     >
-      <section className="px-4 py-6">
+      <section className="px-4 md:px-6 lg:px-8 py-6">
         <AlertBox
           isOpen={alertBox}
           title="Confirm Deletion"
-          message="Are you sure you want to delete this expanse?"
+          message="Are you sure you want to delete this expense type?"
           onConfirm={handleConfirm}
           onCancel={handleCancel}
           confirmText="Delete"
@@ -243,14 +166,13 @@ const Expanses = () => {
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
             <div>
               <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
-                Expense Management
+                Expense Types
               </h1>
-              <p className="text-gray-600">Manage and track all expenses</p>
+              <p className="text-gray-600">Manage and organize your expense categories</p>
             </div>
 
             <div className="flex items-center gap-3">
               {/* View Mode Toggle */}
-              <ExportExel data={expanses} title='Expenses' />
               <div className="flex bg-white rounded-lg border border-gray-200 p-1">
                 <button
                   onClick={() => setViewMode('table')}
@@ -274,16 +196,12 @@ const Expanses = () => {
 
               <button
                 className="btn btn-primary bg-blue-600 hover:bg-blue-700 text-white border-none px-6 py-3 rounded-lg font-semibold transition-colors duration-200 flex items-center gap-2 shadow-md hover:shadow-lg"
-                onClick={async () => {
-                  await navigator("create");
-                  setEdit(null);
-                  ModalRef.current?.showModal();
-                }}
+                onClick={() => addModalRef.current?.showModal()}
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                 </svg>
-                Add New Expense
+                Add New Type
               </button>
             </div>
           </div>
@@ -296,7 +214,7 @@ const Expanses = () => {
                 onChange={onSearch}
                 type="text"
                 className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 transition-colors duration-200"
-                placeholder="Search by expense number..."
+                placeholder="Search by expense type name..."
               />
             </div>
           </div>
@@ -314,25 +232,10 @@ const Expanses = () => {
                       No.
                     </th>
                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      Expense No.
+                      Expense Type Name
                     </th>
                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      Supplier
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      Paid By
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      Date
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      Description
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      Amount
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      Staff
+                      Created By
                     </th>
                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                       Actions
@@ -340,16 +243,16 @@ const Expanses = () => {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {expanses.length === 0 && !isLoading ? (
+                  {expense_types.length === 0 && !isLoading ? (
                     <tr>
-                      <td colSpan={9} className="px-6 py-24">
+                      <td colSpan={4} className="px-6 py-24">
                         <Empty
                           className="w-full flex flex-col items-center justify-center"
                           image="https://gw.alipayobjects.com/zos/antfincdn/ZHrcdLPrvN/empty.svg"
                           imageStyle={{ height: 80 }}
                           description={
                             <Typography.Text className="text-gray-500 text-lg">
-                              No expenses found
+                              No expense types found
                             </Typography.Text>
                           }
                         >
@@ -357,66 +260,41 @@ const Expanses = () => {
                             type="primary"
                             size="large"
                             className="mt-4 bg-blue-600 hover:bg-blue-700 border-none h-11 px-6 rounded-lg font-semibold"
-                            onClick={async () => {
-                              await navigator("create");
-                              ModalRef.current?.showModal();
-                            }}
+                            onClick={() => addModalRef.current?.showModal()}
                           >
-                            Create Your First Expense
+                            Create Your First Type
                           </Button>
                         </Empty>
                       </td>
                     </tr>
                   ) : (
-                    expanses?.map((exp, index) => (
-                      <tr
-                        key={index}
-                        className="hover:bg-gray-50 transition-colors duration-150"
-                      >
+                    expense_types?.map(({ expense_type_id, expense_type_name, created_by }, index) => (
+                      <tr key={index} className="hover:bg-gray-50 transition-colors duration-150">
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                           {index + 1}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-semibold">
-                          {exp.expanse_no}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                          {exp.expanse_supplier || '-'}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                          {exp.expanse_by}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                          {formatDate(exp.expanse_date)}
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-700 max-w-xs truncate">
-                          {exp.expanse_other || 'No description'}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-green-600">
-                          {formatCurrency(exp.amount)}
+                          {expense_type_name}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
                           <Tag color="blue" className="rounded-full px-3 py-1 text-xs">
-                            {exp.created_by}
+                            {created_by}
                           </Tag>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                           <div className="flex items-center gap-2">
-                            <Link to={`/expanse-print/${exp.expanse_id}`} target="_blank">
-                              <button
-                                className="inline-flex items-center px-3 py-1.5 border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-600 hover:text-white transition-colors duration-200 text-xs font-semibold"
-                              >
-                                Details
-                              </button>
-                            </Link>
+                            <button className="inline-flex items-center px-3 py-1.5 border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-600 hover:text-white transition-colors duration-200 text-xs font-semibold">
+                              Details
+                            </button>
                             <button
                               className="inline-flex items-center px-3 py-1.5 border border-green-600 text-green-600 rounded-lg hover:bg-green-600 hover:text-white transition-colors duration-200 text-xs font-semibold"
-                              onClick={() => handleUpdate(exp)}
+                              onClick={() => handleUpdate(expense_type_id, expense_type_name)}
                             >
                               Edit
                             </button>
                             <button
                               className="inline-flex items-center px-3 py-1.5 border border-red-600 text-red-600 rounded-lg hover:bg-red-600 hover:text-white transition-colors duration-200 text-xs font-semibold"
-                              onClick={() => handleDelete(exp.expanse_id)}
+                              onClick={() => handleDelete(expense_type_id)}
                             >
                               Delete
                             </button>
@@ -429,10 +307,7 @@ const Expanses = () => {
               </table>
 
               {/* Loading Skeleton */}
-              <div
-                className={`flex flex-col gap-3 p-6 transition-all duration-500 ${isLoading ? "" : "hidden"
-                  }`}
-              >
+              <div className={`flex flex-col gap-3 p-6 transition-all duration-500 ${isLoading ? "" : "hidden"}`}>
                 {[...Array(5)].map((_, index) => (
                   <div key={index} className="flex items-center gap-4">
                     <Skeleton.Button
@@ -450,7 +325,7 @@ const Expanses = () => {
         ) : (
           /* Grid View */
           <div>
-            {expanses.length === 0 && !isLoading ? (
+            {expense_types.length === 0 && !isLoading ? (
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
                 <Empty
                   className="w-full flex flex-col items-center justify-center"
@@ -458,7 +333,7 @@ const Expanses = () => {
                   imageStyle={{ height: 80 }}
                   description={
                     <Typography.Text className="text-gray-500 text-lg">
-                      No expenses found
+                      No expense types found
                     </Typography.Text>
                   }
                 >
@@ -466,12 +341,9 @@ const Expanses = () => {
                     type="primary"
                     size="large"
                     className="mt-4 bg-blue-600 hover:bg-blue-700 border-none h-11 px-6 rounded-lg font-semibold"
-                    onClick={async () => {
-                      await navigator("create");
-                      ModalRef.current?.showModal();
-                    }}
+                    onClick={() => addModalRef.current?.showModal()}
                   >
-                    Create Your First Expense
+                    Create Your First Type
                   </Button>
                 </Empty>
               </div>
@@ -479,11 +351,11 @@ const Expanses = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {isLoading ? (
                   [...Array(8)].map((_, index) => (
-                    <ExpenseCardSkeleton key={index} />
+                    <ExpenseTypeCardSkeleton key={index} />
                   ))
                 ) : (
-                  expanses?.map((exp, index) => (
-                    <ExpenseCard key={index} expense={exp} index={index} />
+                  expense_types?.map((expenseType, index) => (
+                    <ExpenseTypeCard key={index} expenseType={expenseType} index={index} />
                   ))
                 )}
               </div>
@@ -492,8 +364,8 @@ const Expanses = () => {
         )}
 
         {/* Modals */}
-        <dialog id="my_modal_4" ref={ModalRef} className="modal">
-          <div className="modal-box w-11/12 max-w-6xl bg-white rounded-2xl shadow-xl">
+        <dialog id="my_modal_5" ref={addModalRef} className="modal modal-bottom sm:modal-middle">
+          <div className="modal-box bg-white rounded-2xl shadow-xl max-w-2xl">
             <div className="modal-action">
               <form method="dialog">
                 <button className="btn btn-sm btn-circle btn-ghost absolute right-4 top-4 text-gray-400 hover:text-gray-600">
@@ -501,22 +373,25 @@ const Expanses = () => {
                 </button>
               </form>
             </div>
-            <ExpContext.Provider
-              value={{ expanseType, onAdd, edit, expanseItems }}
-            >
-              <Outlet />
-            </ExpContext.Provider>
+            <CreateExpanseTypes onAdd={() => addModalRef.current?.close()} />
           </div>
         </dialog>
 
-        <dialog id="my_modal_4" ref={updateModalRef} className="modal">
-          <div className="modal-box w-11/12 max-w-6xl bg-white rounded-2xl shadow-xl">
-            {/* Update content */}
+        <dialog id="my_modal_5" ref={updateModalRef} className="modal modal-bottom sm:modal-middle">
+          <div className="modal-box bg-white rounded-2xl shadow-xl max-w-2xl">
+            <div className="modal-action">
+              <form method="dialog">
+                <button className="btn btn-sm btn-circle btn-ghost absolute right-4 top-4 text-gray-400 hover:text-gray-600">
+                  ✕
+                </button>
+              </form>
+            </div>
+            <UpdateExpanseType onAdd={() => updateModalRef.current?.close()} data={edit} />
           </div>
         </dialog>
       </section>
     </div>
-  );
-};
+  )
+}
 
-export default Expanses;
+export default ExpansesType

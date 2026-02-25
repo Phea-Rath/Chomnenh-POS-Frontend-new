@@ -16,6 +16,9 @@ const colors = [
   { main: "pink-500", light: "pink-50", text: "pink-600" },
 ];
 
+const flattenMenus = (menus = []) =>
+  menus.flatMap((menu) => [menu, ...(menu?.menus?.length ? flattenMenus(menu.menus) : [])]);
+
 const Reports = () => {
   const token = localStorage.getItem('token');
   const userId = localStorage.getItem('userId');
@@ -23,12 +26,10 @@ const Reports = () => {
   const { data } = useGetPermissionByIdQuery({ id: userId, token });
 
   useEffect(() => {
-    if (data?.data.length != 0) {
-      const perms = data?.data?.filter(i => i.menu_type == 4);
-      setMenu(perms)
-      console.log(data?.data);
-
-    }
+    const rawMenu = data?.data ?? JSON.parse(localStorage.getItem("menus") || "[]");
+    const allMenus = flattenMenus(rawMenu || []);
+    const perms = allMenus.filter((i) => Number(i.menu_type) === 4);
+    setMenu(perms);
   }, [data])
   return (
     <motion.div

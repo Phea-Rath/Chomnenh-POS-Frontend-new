@@ -210,6 +210,7 @@ const ItemForm = () => {
 
     // Append basic fields
     formData.append("edit_id", id || "");
+    formData.append("item_code", item.code);
     formData.append("item_name", item.name);
     formData.append("item_price", item.price);
     formData.append("item_cost", 0);
@@ -427,6 +428,7 @@ const ItemForm = () => {
         return (
           <input
             type="number"
+            onWheel={(e) => e.target.blur()}   // 👈 បិទ scroll change
             value={Array.isArray(attribute.value) ? attribute.value[0] : attribute.value || ""}
             onChange={(e) => updateAttributeValue(index, e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -675,7 +677,7 @@ const ItemForm = () => {
                         )}
                       </div>
 
-                      {/* <div>
+                      <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                           Item Code
                         </label>
@@ -687,7 +689,7 @@ const ItemForm = () => {
                           placeholder="PRD-00001"
                           data-field="code"
                         />
-                      </div> */}
+                      </div>
 
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -697,7 +699,8 @@ const ItemForm = () => {
                           onChange={(e) => setItem({ ...item, price: e.target.value })}
                           value={item.price}
                           type="number"
-                          step="0.01"
+                          onWheel={(e) => e.target.blur()}   // 👈 បិទ scroll change
+                          step="0.1"
                           min="0"
                           className={getInputClass('price')}
                           placeholder="0.00"
@@ -719,7 +722,8 @@ const ItemForm = () => {
                           onChange={(e) => setItem({ ...item, wholesale_price: e.target.value })}
                           value={item.wholesale_price}
                           type="number"
-                          step="0.01"
+                          onWheel={(e) => e.target.blur()}   // 👈 បិទ scroll change
+                          step="0.1"
                           min="0"
                           className={getInputClass('wholesale_price')}
                           placeholder="0.00"
@@ -745,6 +749,7 @@ const ItemForm = () => {
                           onChange={(e) => setItem({ ...item, discount: e.target.value })}
                           value={item.discount}
                           type="number"
+                          onWheel={(e) => e.target.blur()}   // 👈 បិទ scroll change
                           step="0.5"
                           min="0"
                           max="100"
@@ -968,7 +973,6 @@ const ItemForm = () => {
                             <option value="text">Text</option>
                             <option value="number">Number</option>
                             <option value="boolean">Boolean</option>
-                            <option value="select">Select</option>
                           </select>
                         </div>
                         <div className="flex-1">

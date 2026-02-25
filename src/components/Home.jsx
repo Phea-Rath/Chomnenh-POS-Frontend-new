@@ -28,6 +28,9 @@ const colorSchemes = [
   { bg: "bg-rose-50", icon: "text-rose-600", tag: "bg-rose-100", border: "hover:border-rose-200" },
 ];
 
+const flattenMenus = (menus = []) =>
+  menus.flatMap((menu) => [menu, ...(menu?.menus?.length ? flattenMenus(menu.menus) : [])]);
+
 const Home = () => {
   const token = localStorage.getItem("token");
   const userId = localStorage.getItem("userId");
@@ -36,9 +39,8 @@ const Home = () => {
 
   useEffect(() => {
     const rawMenu = data?.data ?? JSON.parse(localStorage.getItem("menus") || "[]");
-    if (rawMenu?.length > 0) {
-      setMenu(rawMenu.filter((i) => i.menu_type == 2));
-    }
+    const allMenus = flattenMenus(rawMenu || []);
+    setMenu(allMenus.filter((i) => Number(i.menu_type) === 2));
   }, [data]);
 
   const renderIcon = (iconName) => {

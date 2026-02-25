@@ -232,7 +232,8 @@ const CreatePurchase = () => {
       }
 
       if (Number(formData.total_paid) > Number(formData.total_amount)) {
-        newErrors.payments = "Total paid cannot exceed total amount.";
+        // newErrors.payments = "Total paid cannot exceed total amount.";
+        setFormData(prev => ({ ...prev, total_paid: prev.total_amount, balance: 0 }));
       }
     }
 
@@ -441,14 +442,28 @@ const CreatePurchase = () => {
       };
 
       if (isEditMode) {
-        await api.put(`/purchase/${purchaseId}`, payload, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        if (itemType != 0) {
+          await api.put(`/purchase_raw/${purchaseId}`, payload, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+        } else {
+          await api.put(`/purchase/${purchaseId}`, payload, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+        }
+
         toast.success("Purchase updated successfully!");
       } else {
-        await api.post("/purchase", payload, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        if (itemType != 0) {
+          await api.post("/purchase_raw", payload, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+        } else {
+          await api.post("/purchase", payload, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+        }
+
         toast.success("Purchase created successfully!");
       }
 
@@ -803,6 +818,7 @@ const CreatePurchase = () => {
                         type="number"
                         name="tax_rate"
                         value={formData.tax_rate}
+                        onWheel={(e) => e.target.blur()}   // 👈 បិទ scroll change
                         onChange={(e) => handleInputChange('tax_rate', e.target.value)}
                         placeholder="Tax Rate %"
                         className={`w-full ${fieldErrors.tax_rate ? 'border-red-500' : ''}`}
@@ -827,11 +843,12 @@ const CreatePurchase = () => {
                         type="number"
                         name="shipping_fee"
                         value={formData.shipping_fee}
+                        onWheel={(e) => e.target.blur()}   // 👈 បិទ scroll change
                         onChange={(e) => handleInputChange('shipping_fee', e.target.value)}
                         placeholder="Shipping Fee"
                         className={`w-full ${fieldErrors.shipping_fee ? 'border-red-500' : ''}`}
                         min="0"
-                        step="0.01"
+                        step="0.1"
                       />
                       {fieldErrors.shipping_fee && (
                         <div className="text-red-500 text-sm mt-1">{fieldErrors.shipping_fee}</div>
@@ -1058,6 +1075,7 @@ const CreatePurchase = () => {
                       <Input
                         type="number"
                         value={quantity}
+                        onWheel={(e) => e.target.blur()}   // 👈 បិទ scroll change
                         onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
                         size="large"
                         min="1"
@@ -1071,6 +1089,7 @@ const CreatePurchase = () => {
                       <Input
                         type="number"
                         value={itemCost}
+                        onWheel={(e) => e.target.blur()}   // 👈 បិទ scroll change
                         onChange={(e) => setItemCost(parseFloat(e.target.value) || 0)}
                         size="large"
                         min="0"
@@ -1169,6 +1188,7 @@ const CreatePurchase = () => {
                 <Input
                   type="number"
                   value={paymentAmount}
+                  onWheel={(e) => e.target.blur()}   // 👈 បិទ scroll change
                   onChange={(e) => setPaymentAmount(parseFloat(e.target.value) || 0)}
                   size="large"
                   min="0"

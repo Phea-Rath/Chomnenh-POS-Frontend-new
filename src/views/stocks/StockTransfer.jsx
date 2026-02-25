@@ -517,6 +517,7 @@ const StockTransfer = () => {
                                       min="1"
                                       max={Number(item.stock.in_stock)}
                                       placeholder="0"
+                                      onWheel={(e) => e.target.blur()}
                                       className="w-20 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-center"
                                       name="quantity"
                                       onChange={(e) => {

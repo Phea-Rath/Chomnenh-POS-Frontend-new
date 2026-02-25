@@ -2,13 +2,13 @@ import React, { useEffect, useState } from "react";
 import AlertBox from "../../services/AlertBox";
 import { useOutletsContext } from "../../layouts/Management";
 import { useNavigate, useParams } from "react-router";
-import { useExpContext } from "../../components/expanses/Expanses";
+import { useExpContext } from "../../components/expenses/Expanses";
 import {
   useCreateExpanseMutation,
   useGetAllExpansesQuery,
   useGetExpanseByIdQuery,
   useUpdateExpanseMutation
-} from "../../../app/Features/expansesSlice";
+} from "../../../app/Features/expensesSlice";
 import { toast } from "react-toastify";
 import {
   FaTrash,
@@ -29,9 +29,9 @@ import api from "../../services/api";
 
 const CreateExpanses = () => {
 
-  const [expanse_type, setexpanse_type] = useState([]);
-  const { expanseType, onAdd, edit: existingExpanse } = useExpContext();
-  const isEditMode = !!existingExpanse?.expanse_id;
+  const [expense_type, setexpense_type] = useState([]);
+  const { expenseType, onAdd, edit: existingExpanse } = useExpContext();
+  const isEditMode = !!existingExpanse?.expense_id;
   const [expType, setexpType] = useState([]);
   const today = new Date();
   const navigator = useNavigate();
@@ -47,16 +47,16 @@ const CreateExpanses = () => {
   } = useOutletsContext();
   const [alertBox, setAlertBox] = useState(false);
   const token = localStorage.getItem("token");
-  const [expanse, setexpanse] = useState({
-    expanse_supplier: "",
-    expanse_by: "",
-    expanse_date: expDate,
-    expanse_other: "",
+  const [expense, setexpense] = useState({
+    expense_supplier: "",
+    expense_by: "",
+    expense_date: expDate,
+    expense_other: "",
     amount: 0,
     items: [],
   });
 
-  // Get existing expanse data for edit mode
+  // Get existing expense data for edit mode
   // const { data: existingExpanse, isLoading: isLoadingExpanse } = useGetExpanseByIdQuery(
   //   { id, token },
   //   { skip: !isEditMode }
@@ -65,40 +65,40 @@ const CreateExpanses = () => {
 
 
   const { refetch } = useGetAllExpansesQuery(token);
-  const [createExpanse, expanseCreated] = useCreateExpanseMutation();
-  const [updateExpanse, expanseUpdated] = useUpdateExpanseMutation();
+  const [createExpanse, expenseCreated] = useCreateExpanseMutation();
+  const [updateExpanse, expenseUpdated] = useUpdateExpanseMutation();
 
   useEffect(() => {
-    setexpType(expanseType);
-  }, [expanseType]);
+    setexpType(expenseType);
+  }, [expenseType]);
 
   useEffect(() => {
     if (isEditMode && existingExpanse) {
       const expenseData = existingExpanse;
 
       // Set main expense data
-      setexpanse({
-        expanse_supplier: expenseData.expanse_supplier || "",
-        expanse_by: expenseData.expanse_by || "",
-        expanse_date: expenseData.expanse_date || expDate,
-        expanse_other: expenseData.expanse_other || "",
+      setexpense({
+        expense_supplier: expenseData.expense_supplier || "",
+        expense_by: expenseData.expense_by || "",
+        expense_date: expenseData.expense_date || expDate,
+        expense_other: expenseData.expense_other || "",
         amount: expenseData.amount || 0,
         items: expenseData.items || [],
       });
 
       // Set expense items
       if (expenseData.items && Array.isArray(expenseData.items)) {
-        setexpanse_type(expenseData.items);
+        setexpense_type(expenseData.items);
       }
     }
   }, [existingExpanse, isEditMode]);
 
   function onSelectExptype(e) {
-    if (e.target.value === "Pick a expanse type") return;
+    if (e.target.value === "Pick a expense type") return;
 
     const selectedTypeId = e.target.value;
-    const finding = expanseType.find(
-      (exp) => exp.expanse_type_id == selectedTypeId
+    const finding = expenseType.find(
+      (exp) => exp.expense_type_id == selectedTypeId
     );
 
     if (!finding) return;
@@ -113,41 +113,42 @@ const CreateExpanses = () => {
       sub_total: 0
     };
 
-    setexpanse_type((prev) => {
+    setexpense_type((prev) => {
       return [...prev, newItem];
     });
 
-    e.target.value = "Pick a expanse type";
+    e.target.value = "Pick a expense type";
   }
 
   function handleRemove(index) {
-    const removedItem = expanse_type[index];
-    setexpanse_type((prev) => prev.filter((_, idx) => idx !== index));
+    const removedItem = expense_type[index];
+    setexpense_type((prev) => prev.filter((_, idx) => idx !== index));
   }
 
   function handleSubmit() {
-    if (expanse_type.length === 0) {
+    if (expense_type.length === 0) {
       toast.error("Please add at least one expense item");
       return;
     }
 
-    if (!expanse.expanse_supplier.trim()) {
+    if (!expense.expense_supplier.trim()) {
       toast.error("Please enter supplier name");
       return;
     }
 
-    if (!expanse.expanse_by.trim()) {
+    if (!expense.expense_by.trim()) {
       toast.error("Please enter who paid for this expense");
       return;
     }
 
-    const amount = expanse_type.reduce(
+    const amount = expense_type.reduce(
       (init, exp) => Number(exp.sub_total || 0) + init,
       0
     );
 
-    setexpanse(prev => ({ ...prev, amount: amount, items: expanse_type }));
-    setAlertBox(true);
+    setexpense(prev => ({ ...prev, amount: amount, items: expense_type }));
+    // setAlertBox(true);
+    handleConfirm();
   }
 
   function handleCancel() {
@@ -161,13 +162,23 @@ const CreateExpanses = () => {
 
       let response;
       if (isEditMode) {
-        response = await updateExpanse({
-          id: existingExpanse?.expanse_id,
-          itemData: expanse,
-          token
+        // response = await updateExpanse({
+        //   id: existingExpanse?.expense_id,
+        //   itemData: expense,
+        //   token
+        // });
+        response = await api.put(`/expense_masters/${existingExpanse?.expense_id}`, expense, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         });
       } else {
-        response = await createExpanse({ itemData: expanse, token });
+        // response = await createExpanse({ itemData: expense, token });
+        response = await api.post("/expense_masters", expense, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
       }
 
       if (response.data.status === 200) {
@@ -175,7 +186,7 @@ const CreateExpanses = () => {
         toast.success(isEditMode ? "Expense updated successfully" : "Expense created successfully");
         setLoading(false);
         onAdd();
-        navigator("/dashboard/expanse");
+        navigator("/dashboard/expenses");
       }
     } catch (error) {
       toast.error(
@@ -189,7 +200,7 @@ const CreateExpanses = () => {
   }
 
   const handleChange = (index, field, value) => {
-    setexpanse_type((prev) => {
+    setexpense_type((prev) => {
       const updated = [...prev];
       updated[index] = {
         ...updated[index],
@@ -205,12 +216,12 @@ const CreateExpanses = () => {
   };
 
   const calculateTotal = () => {
-    return expanse_type.reduce((sum, item) => sum + (parseFloat(item.sub_total) || 0), 0);
+    return expense_type.reduce((sum, item) => sum + (parseFloat(item.sub_total) || 0), 0);
   };
 
   const handleIncreaseQuantity = (index) => {
 
-    setexpanse_type(prev =>
+    setexpense_type(prev =>
       prev.map((item, i) => {
         if (i !== index) return item;
 
@@ -226,11 +237,11 @@ const CreateExpanses = () => {
     );
 
   };
-  console.log(expanse_type);
+  console.log(expense_type);
 
 
   const handleDecreaseQuantity = (index) => {
-    setexpanse_type(prev =>
+    setexpense_type(prev =>
       prev.map((item, i) => {
         if (i !== index) return item;
 
@@ -248,16 +259,16 @@ const CreateExpanses = () => {
 
   // Reset form
   const handleReset = () => {
-    setexpanse({
-      expanse_supplier: "",
-      expanse_by: "",
-      expanse_date: expDate,
-      expanse_other: "",
+    setexpense({
+      expense_supplier: "",
+      expense_by: "",
+      expense_date: expDate,
+      expense_other: "",
       amount: 0,
       items: [],
     });
-    setexpanse_type([]);
-    setexpType(expanseType || []);
+    setexpense_type([]);
+    setexpType(expenseType || []);
   };
 
   // if (isEditMode) {
@@ -330,11 +341,11 @@ const CreateExpanses = () => {
                   </label>
                   <input
                     type="text"
-                    value={expanse.expanse_supplier}
+                    value={expense.expense_supplier}
                     onChange={(e) => {
-                      setexpanse((prev) => ({
+                      setexpense((prev) => ({
                         ...prev,
-                        expanse_supplier: e.target.value
+                        expense_supplier: e.target.value
                       }));
                     }}
                     placeholder="Enter supplier name"
@@ -350,11 +361,11 @@ const CreateExpanses = () => {
                   </label>
                   <input
                     type="text"
-                    value={expanse.expanse_by}
+                    value={expense.expense_by}
                     onChange={(e) => {
-                      setexpanse((prev) => ({
+                      setexpense((prev) => ({
                         ...prev,
-                        expanse_by: e.target.value
+                        expense_by: e.target.value
                       }));
                     }}
                     placeholder="Enter payer name"
@@ -370,11 +381,11 @@ const CreateExpanses = () => {
                   </label>
                   <input
                     type="date"
-                    value={expanse.expanse_date}
+                    value={expense.expense_date}
                     onChange={(e) => {
-                      setexpanse((prev) => ({
+                      setexpense((prev) => ({
                         ...prev,
-                        expanse_date: e.target.value || expDate
+                        expense_date: e.target.value || expDate
                       }));
                     }}
                     className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all duration-200"
@@ -387,11 +398,11 @@ const CreateExpanses = () => {
                     Notes & Description
                   </label>
                   <textarea
-                    value={expanse.expanse_other}
+                    value={expense.expense_other}
                     onChange={(e) => {
-                      setexpanse((prev) => ({
+                      setexpense((prev) => ({
                         ...prev,
-                        expanse_other: e.target.value
+                        expense_other: e.target.value
                       }));
                     }}
                     placeholder="Enter additional notes or description..."
@@ -411,7 +422,7 @@ const CreateExpanses = () => {
                     </span>
                   </div>
                   <div className="text-sm text-gray-500">
-                    {expanse_type.length} item{expanse_type.length !== 1 ? 's' : ''} added
+                    {expense_type.length} item{expense_type.length !== 1 ? 's' : ''} added
                   </div>
                 </div>
 
@@ -439,17 +450,17 @@ const CreateExpanses = () => {
 
                 <div className="relative w-full sm:w-auto min-w-[250px]">
                   <select
-                    defaultValue={"Pick a expanse type"}
+                    defaultValue={"Pick a expense type"}
                     onChange={onSelectExptype}
                     className="w-full px-4 py-3 pl-10 rounded-lg border border-gray-300 focus:border-green-500 focus:ring-2 focus:ring-green-100 bg-white appearance-none"
                     disabled={expType.length === 0}
                   >
-                    <option disabled value="Pick a expanse type">
+                    <option disabled value="Pick a expense type">
                       {expType.length === 0 ? "All types added" : "+ Add Expense Type"}
                     </option>
-                    {expType?.map(({ expanse_type_id, expanse_type_name }) => (
-                      <option key={expanse_type_id} value={expanse_type_id}>
-                        {expanse_type_name}
+                    {expType?.map(({ expense_type_id, expense_type_name }) => (
+                      <option key={expense_type_id} value={expense_type_id}>
+                        {expense_type_name}
                       </option>
                     ))}
                   </select>
@@ -464,7 +475,7 @@ const CreateExpanses = () => {
                 </div>
               </div>
 
-              {expanse_type.length === 0 ? (
+              {expense_type.length === 0 ? (
                 <div className="text-center py-12 border-2 border-dashed border-gray-300 rounded-xl bg-gray-50">
                   <div className="text-gray-400 mb-4">
                     <FaList className="w-16 h-16 mx-auto opacity-40" />
@@ -504,8 +515,8 @@ const CreateExpanses = () => {
                         </tr>
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-200">
-                        {expanse_type.map((exp, index) => (
-                          <tr key={`${exp.expanse_type_id}-${index}`} className="hover:bg-gray-50 transition-colors">
+                        {expense_type.map((exp, index) => (
+                          <tr key={`${exp.expense_type_id}-${index}`} className="hover:bg-gray-50 transition-colors">
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 font-medium">
                               {index + 1}
                             </td>
@@ -515,7 +526,7 @@ const CreateExpanses = () => {
                                   <FaList className="w-4 h-4 text-blue-600" />
                                 </div>
                                 <span className="font-medium text-gray-900">
-                                  {exp.expanse_type_name}
+                                  {exp.expense_type_name}
                                 </span>
                               </div>
                             </td>
@@ -543,6 +554,7 @@ const CreateExpanses = () => {
                                   type="number"
                                   min="1"
                                   value={exp.quantity || 1}
+                                  onWheel={(e) => e.target.blur()}   // 👈 បិទ scroll change
                                   onChange={(e) =>
                                     handleChange(index, "quantity", e.target.value)
                                   }
@@ -563,6 +575,7 @@ const CreateExpanses = () => {
                                 </span>
                                 <input
                                   type="number"
+                                  onWheel={(e) => e.target.blur()}   // 👈 បិទ scroll change
                                   min="0"
                                   step="0.01"
                                   value={exp.unit_price || ""}
@@ -633,7 +646,7 @@ const CreateExpanses = () => {
               <div className="flex gap-3">
                 <form method="dialog">
                   <button
-                    onClick={() => navigator("/dashboard/expanse")}
+                    onClick={() => navigator("/dashboard/expense")}
                     className="inline-flex items-center gap-2 px-6 py-3 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 transition-all duration-200 font-medium"
                   >
                     <FaTimes className="w-4 h-4" />
@@ -642,8 +655,8 @@ const CreateExpanses = () => {
                 </form>
                 <button
                   onClick={handleSubmit}
-                  disabled={expanse_type.length === 0 || !expanse.expanse_supplier || !expanse.expanse_by}
-                  className={`inline-flex items-center gap-2 px-8 py-3 rounded-lg font-medium transition-all duration-200 ${expanse_type.length === 0 || !expanse.expanse_supplier || !expanse.expanse_by
+                  disabled={expense_type.length === 0 || !expense.expense_supplier || !expense.expense_by}
+                  className={`inline-flex items-center gap-2 px-8 py-3 rounded-lg font-medium transition-all duration-200 ${expense_type.length === 0 || !expense.expense_supplier || !expense.expense_by
                     ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
                     : isEditMode
                       ? 'bg-gradient-to-r from-yellow-500 to-yellow-600 text-white hover:from-yellow-600 hover:to-yellow-700 shadow-sm hover:shadow-sm transform hover:-translate-y-0.5'

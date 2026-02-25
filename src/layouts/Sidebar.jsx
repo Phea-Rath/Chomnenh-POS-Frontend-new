@@ -93,11 +93,11 @@ const Sidebar = () => {
         <div className="px-6 mb-2">
           <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-4">Menu</span>
         </div>
-        {menu.map((item) => <CustomNavLink key={item.menu_id} item={item} />)}
+        {menu?.filter(m => m.menu_name.toLowerCase() != 'setting').map((item) => <CustomNavLink key={item.menu_id} item={item} />)}
       </div>
 
       {/* Footer / Settings */}
-      <div className="p-6 mt-auto border-t border-slate-50">
+      {menu?.some(m => m.menu_name.toLowerCase() == 'setting') && <div className="p-6 mt-auto border-t border-slate-50">
         <Link
           to="/dashboard/setting"
           onClick={() => setSidebar(false)}
@@ -108,7 +108,7 @@ const Sidebar = () => {
           </div>
           <span className="font-bold text-sm">Settings</span>
         </Link>
-      </div>
+      </div>}
     </div>
   );
 

@@ -7,31 +7,31 @@ import {
   deleteData,
 } from "../api";
 import { url } from "../api";
-export const expansesApi = createApi({
-  reducerPath: "expanses",
+export const expensesApi = createApi({
+  reducerPath: "expenses",
   baseQuery: fetchBaseQuery({
     baseUrl: url,
   }),
   endpoints: (builder) => ({
     getAllExpanses: builder.query({
-      query: (token) => queryData("/expanse_masters", token),
+      query: (token) => queryData("/expense_masters", token),
     }),
     getPopularExpanses: builder.query({
-      query: (token) => queryData("/popular_expanse", token),
+      query: (token) => queryData("/popular_expense", token),
     }),
     getExpanseById: builder.query({
-      query: ({ id, token }) => queryDataById(id, "/expanse_masters", token),
+      query: ({ id, token }) => queryDataById(id, "/expense_masters", token),
     }),
     createExpanse: builder.mutation({
       query: ({ itemData, token }) =>
-        createData(itemData, "/expanse_masters", token),
+        createData(itemData, "/expense_masters", token),
     }),
     updateExpanse: builder.mutation({
       query: ({ id, itemData, token }) =>
-        updateData(id, itemData, "/expanse_masters", token),
+        updateData(id, itemData, "/expense_masters", token),
     }),
     deleteExpanse: builder.mutation({
-      query: ({ id, token }) => deleteData(id, "/expanse_masters", token),
+      query: ({ id, token }) => deleteData(id, "/expense_masters", token),
     }),
   }),
 });
@@ -43,4 +43,4 @@ export const {
   useUpdateExpanseMutation,
   useDeleteExpanseMutation,
   useGetPopularExpansesQuery,
-} = expansesApi;
+} = expensesApi;
