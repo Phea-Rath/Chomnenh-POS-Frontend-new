@@ -10,12 +10,11 @@ import {
 import { useGetAllUserQuery } from '../../../app/Features/usersSlice';
 import { useGetAllMenuQuery } from '../../../app/Features/menusSlice';
 import {
-    useGetAllPermissionQuery,
     useGetPermissionByIdQuery,
 } from '../../../app/Features/permissionSlice';
 import { toast } from 'react-toastify';
 import api from '../../services/api';
-import { Select, Input } from 'antd';
+import { Select, Input, Tag } from 'antd';
 import { IoArrowBack } from 'react-icons/io5';
 import { useNavigate } from 'react-router';
 
@@ -32,19 +31,22 @@ const Permission = () => {
     const { data: menus } = useGetAllMenuQuery(token);
     const [menuPer, setMenuPer] = useState([]);
     const [newMenus, setNewMenus] = useState([]);
-    const { data: permission, refetch } = useGetAllPermissionQuery(token);
-    const { refetch: showPermission } = useGetPermissionByIdQuery({
-        id: userId,
-        token,
-    });
+    const { data: permissionByUser, refetch: refetchPermissionByUser } = useGetPermissionByIdQuery(
+        { id: selectUser?.id || userId, token },
+        { skip: !token }
+    );
 
     // --- NEW: state for expandable rows (Excel style) ---
     const [expandedParents, setExpandedParents] = useState(new Set());
 
+    const flattenMenus = (items = []) =>
+        items.flatMap((item) => [item, ...(item?.menus?.length ? flattenMenus(item.menus) : [])]);
+
     useEffect(() => {
-        if (user?.data?.length !== 0 && menus?.data?.length !== 0 && permission?.data?.length !== 0) {
+        if (user?.data?.length !== 0 && menus?.data?.length !== 0) {
             const newUser = user?.data?.filter((i) => i.id != userId && i.role_id !== 2);
-            const newMenu = menus?.data?.filter((i) => i.menu_type != 0);
+            const allMenu = flattenMenus(menus?.data || []);
+            const newMenu = allMenu?.filter((i) => Number(i.menu_type) !== 0);
             setNewMenus(newMenu);
             setUsers(newUser);
             setFilteredUsers(newUser);
@@ -52,24 +54,66 @@ const Permission = () => {
                 handleUser(newUser[0]?.id);
             }
         }
-    }, [user, menus, permission]);
+    }, [user, menus]);
+
+    useEffect(() => {
+        if (selectUser?.id && newMenus?.length > 0) {
+            checkPermission(selectUser.id);
+        }
+    }, [permissionByUser, selectUser, newMenus]);
 
     const buildMenuTree = (flatMenus) => {
         const map = {};
         const tree = [];
 
         flatMenus?.forEach((item) => {
-            map[item.menu_id] = { ...item, children: [] };
+            const menuId = Number(item.menu_id);
+            map[menuId] = { ...item, children: [] };
         });
 
         flatMenus?.forEach((item) => {
-            if (item.parent_menu && map[item.parent_menu]) {
-                map[item.parent_menu].children.push(map[item.menu_id]);
+            const menuId = Number(item.menu_id);
+            const parentId =
+                item.parent_menu === null || item.parent_menu === ''
+                    ? null
+                    : Number(item.parent_menu);
+            if (parentId !== null && map[parentId]) {
+                map[parentId].children.push(map[menuId]);
             } else {
-                tree.push(map[item.menu_id]);
+                tree.push(map[menuId]);
             }
         });
-        return tree;
+
+        const sortTree = (nodes) =>
+            nodes
+                .sort((a, b) => Number(a.order_menu || 0) - Number(b.order_menu || 0))
+                .map((node) => ({
+                    ...node,
+                    children: sortTree(node.children || []),
+                }));
+
+        return sortTree(tree);
+    };
+
+    const collectExpandableIds = (nodes) => {
+        let ids = [];
+        nodes.forEach((node) => {
+            if (node.children?.length > 0) {
+                ids.push(node.menu_id);
+                ids = ids.concat(collectExpandableIds(node.children));
+            }
+        });
+        return ids;
+    };
+
+    console.log('PermissionByUser:', menuPer);
+
+    const getDescendantIds = (menuId, items) => {
+        const children = items.filter((m) => Number(m.parent_menu) === Number(menuId));
+        return children.reduce(
+            (acc, child) => [...acc, child.menu_id, ...getDescendantIds(child.menu_id, items)],
+            []
+        );
     };
 
     useEffect(() => {
@@ -88,11 +132,10 @@ const Permission = () => {
     const handleUser = (id) => {
         const user = users?.find((u) => u.id == id);
         setSelectUser(user);
-        checkPermission(id);
     };
 
     const checkPermission = (id) => {
-        const userPermission = permission?.data.filter((i) => i.user_id == id) || [];
+        const userPermission = flattenMenus(permissionByUser?.data || []);
         const PermId = userPermission.map((i) => i.menu_id);
 
         const perms = newMenus?.map((menu) => {
@@ -111,8 +154,8 @@ const Permission = () => {
             }
         });
 
-        const permSelectUser = permission?.data?.filter((i) => i.user_id === Number(id));
-        permSelectUser?.length == newMenus?.length ? setAllperm(true) : setAllperm(false);
+        const enabledCount = perms?.filter((i) => i.enabled === 1)?.length || 0;
+        setAllperm(enabledCount === newMenus?.length && newMenus?.length > 0);
         setMenuPer(perms);
 
         // --- NEW: initialise all parents as expanded ---
@@ -154,7 +197,8 @@ const Permission = () => {
                 headers: { Authorization: `Bearer ${token}` },
             });
             toast.success('Permission removed');
-            refetch();
+            refetchPermissionByUser();
+            refectUser();
         }
         catch (error) {
             toast.error('Failed to remove permission');
@@ -170,7 +214,8 @@ const Permission = () => {
                 { headers: { Authorization: `Bearer ${token}` } }
             );
             toast.success('Permission added');
-            refetch();
+            refetchPermissionByUser();
+            refectUser();
         } catch (error) {
             toast.error('Failed to add permission');
         }
@@ -324,7 +369,7 @@ const Permission = () => {
                                                         : 'bg-gray-100 text-gray-800'
                                                         }`}
                                                 >
-                                                    {employee.status}
+                                                    {employee.status ? <Tag color="success">Active</Tag> : <Tag color="default">Inactive</Tag>}
                                                 </span>
                                             </div>
                                         </div>
