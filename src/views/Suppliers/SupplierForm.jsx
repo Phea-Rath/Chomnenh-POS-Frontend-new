@@ -184,29 +184,12 @@ const SupplierForm = () => {
         }
         break;
 
-      case 'supplier_address':
-        if (!value || value.trim() === '') {
-          newFieldErrors.supplier_address = 'Supplier address is required';
-        } else if (value.length < 5) {
-          newFieldErrors.supplier_address = 'Supplier address must be at least 5 characters';
-        } else {
-          delete newFieldErrors.supplier_address;
-        }
-        break;
 
       case 'supplier_tel':
         if (value && !/^[\+]?[0-9\s\-\(\)]{8,15}$/.test(value)) {
           newFieldErrors.supplier_tel = 'Please enter a valid phone number (8-15 digits)';
         } else {
           delete newFieldErrors.supplier_tel;
-        }
-        break;
-
-      case 'supplier_email':
-        if (value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
-          newFieldErrors.supplier_email = 'Please enter a valid email address';
-        } else {
-          delete newFieldErrors.supplier_email;
         }
         break;
 
@@ -230,24 +213,10 @@ const SupplierForm = () => {
       newFieldErrors.supplier_name = 'Supplier name must be at least 2 characters';
     }
 
-    if (!dataForm.supplier_address || dataForm.supplier_address.trim() === '') {
-      newErrors.supplier_address = "Supplier address is required.";
-      newFieldErrors.supplier_address = 'Supplier address is required';
-    } else if (dataForm.supplier_address.length < 5) {
-      newErrors.supplier_address = "Supplier address must be at least 5 characters.";
-      newFieldErrors.supplier_address = 'Supplier address must be at least 5 characters';
-    }
-
     // Phone validation
     if (dataForm.supplier_tel && !/^[\+]?[0-9\s\-\(\)]{8,15}$/.test(dataForm.supplier_tel)) {
       newErrors.supplier_tel = "Please enter a valid phone number (8-15 digits).";
       newFieldErrors.supplier_tel = 'Please enter a valid phone number (8-15 digits)';
-    }
-
-    // Email validation
-    if (dataForm.supplier_email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(dataForm.supplier_email)) {
-      newErrors.supplier_email = "Please enter a valid email address.";
-      newFieldErrors.supplier_email = 'Please enter a valid email address';
     }
 
     setFieldErrors(newFieldErrors);
@@ -619,7 +588,6 @@ const SupplierForm = () => {
                       value={dataForm.supplier_address}
                       onChange={handleInputChange}
                       className={`${getInputClass('supplier_address')} resize-none`}
-                      required
                       rows={3}
                       placeholder="Enter complete supplier address or use location service"
                     />

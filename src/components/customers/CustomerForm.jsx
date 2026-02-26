@@ -191,15 +191,6 @@ const CustomerForm = () => {
           delete newFieldErrors.customer_name;
         }
         break;
-
-      case 'customer_email':
-        if (value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
-          newFieldErrors.customer_email = 'Please enter a valid email address';
-        } else {
-          delete newFieldErrors.customer_email;
-        }
-        break;
-
       case 'customer_tel':
         if (value && !/^[\+]?[0-9\s\-\(\)]{8,15}$/.test(value)) {
           newFieldErrors.customer_tel = 'Please enter a valid phone number (8-15 digits)';
@@ -208,13 +199,6 @@ const CustomerForm = () => {
         }
         break;
 
-      case 'customer_address':
-        if (value && value.length > 200) {
-          newFieldErrors.customer_address = 'Address must be less than 200 characters';
-        } else {
-          delete newFieldErrors.customer_address;
-        }
-        break;
 
       default:
         break;
@@ -239,22 +223,10 @@ const CustomerForm = () => {
       newFieldErrors.customer_name = 'Customer name must be less than 100 characters';
     }
 
-    // Email validation
-    if (dataForm.customer_email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(dataForm.customer_email)) {
-      newErrors.customer_email = "Please enter a valid email address.";
-      newFieldErrors.customer_email = 'Please enter a valid email address';
-    }
-
     // Phone validation
     if (dataForm.customer_tel && !/^[\+]?[0-9\s\-\(\)]{8,15}$/.test(dataForm.customer_tel)) {
       newErrors.customer_tel = "Please enter a valid phone number (8-15 digits).";
       newFieldErrors.customer_tel = 'Please enter a valid phone number (8-15 digits)';
-    }
-
-    // Address validation
-    if (dataForm.customer_address && dataForm.customer_address.length > 200) {
-      newErrors.customer_address = "Address must be less than 200 characters.";
-      newFieldErrors.customer_address = 'Address must be less than 200 characters';
     }
 
     setFieldErrors(newFieldErrors);

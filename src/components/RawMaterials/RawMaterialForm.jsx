@@ -357,9 +357,6 @@ const RawMaterialForm = () => {
                                                     {
                                                         validator: async (_, value) => {
                                                             if (!value) return Promise.resolve();
-                                                            if (!/^[a-zA-Z0-9\s\-_/().]+$/.test(value)) {
-                                                                return Promise.reject(new Error('Name contains invalid characters'));
-                                                            }
                                                             return Promise.resolve();
                                                         }
                                                     }
@@ -382,9 +379,6 @@ const RawMaterialForm = () => {
                                                     {
                                                         validator: async (_, value) => {
                                                             if (!value) return Promise.resolve();
-                                                            if (!/^[A-Za-z0-9_-]+$/.test(value)) {
-                                                                return Promise.reject(new Error('Code allows letters, numbers, _ and - only'));
-                                                            }
                                                             return Promise.resolve();
                                                         }
                                                     }
