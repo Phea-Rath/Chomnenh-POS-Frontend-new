@@ -1282,7 +1282,8 @@ const Sales = () => {
                           className="px-2 py-1 border border-gray-300 rounded text-sm bg-white"
                         >
                           <option value="paid">Paid</option>
-                          <option value="cod">In debt</option>
+                          <option value="cod">COD</option>
+                          <option value="credit">Credit</option>
                         </select>
                       </div>
 

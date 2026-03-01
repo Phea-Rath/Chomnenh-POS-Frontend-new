@@ -293,7 +293,7 @@ const StockTransfer = () => {
         </div>
 
         <form onSubmit={handleSubmit}>
-          <div className="bg-transparent rounded-xl border border-gray-200 overflow-hidden">
+          <div className="bg-transparent rounded-xl overflow-hidden">
 
             <div>
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
