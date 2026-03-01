@@ -213,7 +213,7 @@ const StockTransferList = () => {
   const handleDelete = async (id) => {
     if (!window.confirm('Are you sure you want to delete this transfer?')) return;
     try {
-      const res = await api.delete(`stock_transfer/${id}`, {
+      const res = await api.delete(`stock_masters/${id}`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
       });
       if (res.data.status === 200) {

@@ -55,6 +55,7 @@ import { toast } from "react-toastify";
 const { Title, Text, Paragraph } = Typography;
 
 const StockTransferDetail = () => {
+    const asArray = (value) => (Array.isArray(value) ? value : []);
     const { id } = useParams();
     const [loading, setLoading] = useState(true);
     const [data, setData] = useState(null);
@@ -133,9 +134,9 @@ const StockTransferDetail = () => {
 
     // Calculate total values
     const getTotalValues = () => {
-        if (!data || !data.items) return { quantity: 0, value: 0, cost: 0 };
+        if (!data) return { quantity: 0, value: 0, cost: 0 };
 
-        const totals = data.items.reduce(
+        const totals = asArray(data?.items).reduce(
             (acc, item) => {
                 const quantity = Number(item.quantity) || 0;
                 const price = Number(item.item_price) || 0;
@@ -276,7 +277,7 @@ const StockTransferDetail = () => {
                                 <Col xs={12} sm={6}>
                                     <Statistic
                                         title="Total Items"
-                                        value={data.items?.length || 0}
+                                        value={asArray(data?.items).length}
                                         prefix={<LuPackage className="text-blue-500" />}
                                         valueStyle={{ color: '#3b82f6' }}
                                     />
@@ -391,7 +392,7 @@ const StockTransferDetail = () => {
                                 </div>
                                 <div className="text-center p-3 bg-blue-50 rounded">
                                     <div className="text-2xl font-bold text-blue-600">
-                                        {data.items?.length || 0}
+                                        {asArray(data?.items).length}
                                     </div>
                                     <div className="text-sm text-blue-700">Unique Items</div>
                                 </div>
@@ -407,7 +408,7 @@ const StockTransferDetail = () => {
                             <div className="flex items-center gap-2 justify-between">
                                 <div className="flex items-center gap-2">
                                     <LuPackage className="text-blue-600" />
-                                    <span>Transferred Items ({data.items?.length || 0})</span>
+                                    <span>Transferred Items ({asArray(data?.items).length})</span>
                                 </div>
                                 <Tag color="blue">{totals.quantity} total units</Tag>
                             </div>
@@ -416,7 +417,7 @@ const StockTransferDetail = () => {
                     >
                         <List
                             itemLayout="vertical"
-                            dataSource={data.items || []}
+                            dataSource={asArray(data?.items)}
                             renderItem={(item, index) => (
                                 <List.Item
                                     key={item.detail_id}
@@ -476,11 +477,11 @@ const StockTransferDetail = () => {
                                                     </div>
                                                 )}
 
-                                                {item.attributes && item.attributes.length > 0 && (
+                                                {asArray(item?.attributes).length > 0 && (
                                                     <div className="mt-2">
                                                         <Text type="secondary">Attributes:</Text>
                                                         <div className="flex flex-wrap gap-1 mt-1">
-                                                            {item.attributes.map((attr, idx) => (
+                                                            {asArray(item?.attributes).map((attr) => (
                                                                 <Tag key={attr.id} color="cyan" className="text-xs">
                                                                     {attr.name}: {Array.isArray(attr.value)
                                                                         ? attr.value.map(v => v.value).join(', ')
@@ -586,7 +587,7 @@ const StockTransferDetail = () => {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {data.items?.map((item, index) => (
+                                    {asArray(data?.items).map((item, index) => (
                                         <tr key={item.detail_id}>
                                             <td className="border p-2">{index + 1}</td>
                                             <td className="border p-2 font-mono">{item.item_code}</td>
@@ -620,7 +621,7 @@ const StockTransferDetail = () => {
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="border p-4">
                                     <h3 className="font-bold mb-2">ITEMS SUMMARY</h3>
-                                    <p><strong>Total Items:</strong> {data.items?.length || 0}</p>
+                                    <p><strong>Total Items:</strong> {asArray(data?.items).length}</p>
                                     <p><strong>Total Quantity:</strong> {totals.quantity} units</p>
                                     <p><strong>Total Value:</strong> {formatCurrency(totals.value)}</p>
                                     <p><strong>Total Cost:</strong> {formatCurrency(totals.cost)}</p>

@@ -628,7 +628,7 @@ const Sales = () => {
       return {
         item_id: item.id,
         quantity: item.quantity,
-        price: item.price / item.quantity, // Price per unit
+        total_price: item.price / item.quantity, // Price per unit
         discount: item.discount || 0,
         item_name: item.name,
         item_cost: item.cost || 0,

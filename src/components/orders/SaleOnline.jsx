@@ -321,9 +321,15 @@ const Sales = () => {
     if (savedOrders) {
       const parsed = JSON.parse(savedOrders);
       setOrders(parsed);
-      setOrderCount(parsed.items?.length || 0);
+      const itemCount = parsed.items?.reduce((sum, curr) => sum + (curr.quantity || 0), 0) || 0;
+      setOrderCount(itemCount);
     }
   }, []);
+
+  useEffect(() => {
+    const itemCount = orders?.items?.reduce((sum, curr) => sum + (curr.quantity || 0), 0) || 0;
+    setOrderCount(itemCount);
+  }, [orders?.items]);
 
   useEffect(() => {
     if (categoryContext.data?.data) {
@@ -338,11 +344,9 @@ const Sales = () => {
       }));
 
       setAllItems(newItems);
-      setItemsSech(newItems);
     }
   }, [items, categoryContext?.data]);
 
-  localStorage.setItem("orderItems", JSON.stringify(initialOrder));
   // Helper function to calculate price based on sale type and discount
   const getItemPrice = (item, saleType = "sale") => {
     if (saleType === "sale") {
@@ -385,6 +389,10 @@ const Sales = () => {
 
       return { name: attr.name, value: displayValue, iconType, isColor };
     });
+  };
+
+  const getItemStock = (item) => {
+    return Number(item?.in_stock ?? item?.stock?.in_stock ?? 0);
   };
 
   const onFilterCategory = (catId) => {
@@ -459,21 +467,23 @@ const Sales = () => {
   };
 
   useEffect(() => {
-    if (categoryContext.data?.data) {
-      setCategory(categoryContext.data.data);
-    }
+    const keyword = (search || "").trim().toLowerCase();
 
-    if (saleItemContext?.data?.data) {
-      const newItems = saleItemContext.data.data.map((item) => ({
-        ...item,
-        quantity: 1,
-        displayAttributes: parseAttributesForDisplay(item.attributes)
-      }));
+    const filtered = allItems.filter((item) => {
+      const passCategory =
+        selectedCategory === "all" || String(item.category_id) === String(selectedCategory);
 
-      setAllItems(newItems);
-      setItemsSech(newItems);
-    }
-  }, [saleItemContext?.data, categoryContext?.data]);
+      if (!passCategory) return false;
+      if (!keyword) return true;
+
+      return (
+        item.name?.toLowerCase().includes(keyword) ||
+        item.code?.toLowerCase().includes(keyword)
+      );
+    });
+
+    setItemsSech(filtered);
+  }, [allItems, selectedCategory, search]);
 
   // Barcode scanner effect
   useEffect(() => {
@@ -559,6 +569,17 @@ const Sales = () => {
       return;
     }
 
+    if (!item) {
+      toast.error("Item not found");
+      return;
+    }
+
+    const availableStock = getItemStock(item);
+    if (availableStock <= 0) {
+      toast.error("Out of stock");
+      return;
+    }
+
     // Generate unique key for item based on ID and all attributes
     const attributeKey = item.attributes
       ? JSON.stringify(item.attributes.map(attr => ({
@@ -570,10 +591,14 @@ const Sales = () => {
     const selectionKey = `${item.id}-${attributeKey}`;
 
     const sameOrder = orders?.items?.find(
-      (orderItem) => orderItem.id === item.id
+      (orderItem) => orderItem.selectionKey === selectionKey
     );
 
     if (sameOrder) {
+      if (sameOrder.quantity + Number(quantity) > availableStock) {
+        toast.error("Not enough stock available");
+        return;
+      }
       // Item already exists, increment qty
       setOrders((prev) => {
         const updatedItems = prev.items.map((orderItem) => {
@@ -641,7 +666,7 @@ const Sales = () => {
             displayAttributes: item.displayAttributes,
             selectionKey: selectionKey,
             stock_in: item?.stock_in,
-            in_stock: item?.in_stock,
+            in_stock: availableStock,
             wholesale_price: item.wholesale_price,
             wholesale_price_discount: item.wholesale_price_discount,
             price_discount: item.price_discount,
@@ -680,10 +705,6 @@ const Sales = () => {
         return results;
       });
     }
-    // Update order count
-    const storedOrder = JSON.parse(localStorage.getItem("orderItems") || "{}");
-    const newCount = storedOrder.items?.reduce((sum, curr) => sum + (curr.quantity || 0), 0) || 0;
-    setOrderCount(newCount);
   }
 
   function handleQtyPlus(id, selectionKey) {
@@ -694,6 +715,12 @@ const Sales = () => {
 
 
     if (!findItem) return;
+
+    const availableStock = getItemStock(findItem);
+    if (findItem.quantity >= availableStock) {
+      toast.error("Not enough stock available");
+      return;
+    }
 
     setOrders((prev) => {
       const updatedItems = prev.items.map((item) => {
@@ -734,9 +761,6 @@ const Sales = () => {
       return results;
     });
 
-    const storedOrder = JSON.parse(localStorage.getItem("orderItems") || "{}");
-    const newCount = storedOrder.items?.reduce((sum, curr) => sum + (curr.quantity || 0), 0) || 0;
-    setOrderCount(newCount);
   }
 
   function handleQty(id, selectionKey) {
@@ -787,9 +811,6 @@ const Sales = () => {
       return results;
     });
 
-    const storedOrder = JSON.parse(localStorage.getItem("orderItems") || "{}");
-    const newCount = storedOrder.items?.reduce((sum, curr) => sum + (curr.quantity || 0), 0) || 0;
-    setOrderCount(newCount);
   }
 
   function handleDelete(id, selectionKey) {
@@ -830,10 +851,6 @@ const Sales = () => {
       localStorage.setItem("orderItems", JSON.stringify(results));
       return results;
     });
-
-    const storedOrder = JSON.parse(localStorage.getItem("orderItems") || "{}");
-    const newCount = storedOrder.items?.reduce((sum, curr) => sum + (curr.quantity || 0), 0) || 0;
-    setOrderCount(newCount);
 
   }
 
@@ -952,15 +969,8 @@ const Sales = () => {
 
   function onSearch(e) {
     const value = e.target.value;
-    if (value) {
-      const filterItem = allItems?.filter((item) =>
-        item.name?.toLowerCase().includes(value.toLowerCase()) ||
-        item.code?.toLowerCase().includes(value.toLowerCase())
-      );
-      setItemsSech(filterItem || []);
-    } else {
-      setItemsSech(allItems);
-    }
+    setSearch(value);
+    setCurrentPage(1);
   }
 
 
@@ -1076,7 +1086,7 @@ const Sales = () => {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="min-h-screen bg-gray-200 p-3"
+      className="min-h-screen bg-gray-300 p-3"
     >
       <section className="px-2">
         <AlertBox
@@ -1106,6 +1116,7 @@ const Sales = () => {
               <Input
                 value={search}
                 onChange={onSearch}
+                className="text-black"
                 placeholder="Search products by name or code..."
                 icon={
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1127,17 +1138,19 @@ const Sales = () => {
                 </Badge>
               </Link>
             )}
-            <Badge count={orderCount} color="blue">
-              <Button onClick={showDrawer} variant="primary" icon={<PiShoppingCartBold />} className="h-10 w-10 p-0" />
-            </Badge>
+            <div className=" fixed top-4 right-4 z-50">
+              <Badge count={orderCount} color="blue">
+                <Button onClick={showDrawer} variant="primary" icon={<PiShoppingCartBold />} className="h-10 w-10 p-0" />
+              </Badge>
+            </div>
           </div>
         </div>
 
         {/* Category Filter Buttons */}
-        <div className="flex flex-wrap gap-2 mb-6">
+        <div className="flex gap-2 mb-6 overflow-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <button
             onClick={() => onFilterCategory('all')}
-            className={`px-4 py-2 rounded-full text-sm font-medium border transition-colors ${selectedCategory === 'all'
+            className={`px-4 rounded-full text-xs font-medium border transition-colors ${selectedCategory === 'all'
               ? 'bg-blue-600 text-white border-blue-600'
               : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'
               }`}
@@ -1148,7 +1161,7 @@ const Sales = () => {
             <button
               key={cat.category_id}
               onClick={() => onFilterCategory(cat.category_id)}
-              className={`px-4 py-2 rounded-full text-sm font-medium border transition-colors ${selectedCategory === cat.category_id
+              className={`px-4 rounded-full text-xs font-medium border transition-colors ${selectedCategory === cat.category_id
                 ? 'bg-blue-600 text-white border-blue-600'
                 : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'
                 }`}
@@ -1175,7 +1188,7 @@ const Sales = () => {
               </Button>
             </div>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-2 sm:gap-4">
               {itemsSech.map((item) => (
                 <motion.div
                   key={item.id}
@@ -1212,12 +1225,12 @@ const Sales = () => {
                           <h3 className="font-bold text-gray-800 text-sm line-clamp-1">{item.name}</h3>
                           <p className="text-xs text-gray-500 font-mono">{item.code}</p>
                         </div>
-                        <div className="text-right">
+                        {/* <div className="text-right">
                           <div className="text-xs text-gray-600">Wholesale</div>
                           <div className="text-sm font-medium text-blue-600">
                             ${getItemPrice(item, 'wholesale').toFixed(2)}
                           </div>
-                        </div>
+                        </div> */}
                       </div>
 
                       <div className="flex items-center justify-between">
@@ -1233,10 +1246,10 @@ const Sales = () => {
                         </div>
                         <Button
                           onClick={() => handleOrder(item, 1)}
-                          disabled={item.in_stock <= 0}
-                          variant={item.in_stock <= 0 ? 'default' : 'primary'}
+                          disabled={getItemStock(item) <= 0}
+                          variant={getItemStock(item) <= 0 ? 'default' : 'primary'}
                           size="sm"
-                          icon={item.in_stock <= 0 ? <TbShoppingCartOff /> : <MdOutlineAddShoppingCart />}
+                          icon={getItemStock(item) <= 0 ? <TbShoppingCartOff /> : <MdOutlineAddShoppingCart />}
                           className="!p-2"
                         />
                       </div>

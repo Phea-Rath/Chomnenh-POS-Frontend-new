@@ -404,7 +404,7 @@ const RecordStockSale = () => {
                 <TableHeader label="Product" field="item_name" sortConfig={sortConfig} onSort={handleSort} />
                 <TableHeader label="Category" field="category_name" sortConfig={sortConfig} onSort={handleSort} />
                 <TableHeader label="Brand" field="brand_name" sortConfig={sortConfig} onSort={handleSort} />
-                <TableHeader label="Attributes" />
+                {/* <TableHeader label="Attributes" /> */}
                 <TableHeader
                   label="Amount Sold"
                   field="amount_sold"
@@ -471,7 +471,7 @@ const RecordStockSale = () => {
                       </span>
                     </td>
                     <td className="p-3 text-gray-700">{item.brand_name}</td>
-                    <td className="p-3">{getAttributesDisplay(item.attributes)}</td>
+                    {/* <td className="p-3">{getAttributesDisplay(item.attributes)}</td> */}
                     <td className="p-3 text-right">
                       <div className="font-semibold text-green-600">{formatCurrency(item.amount_sold)}</div>
                       <div className="text-xs text-gray-500">Revenue</div>

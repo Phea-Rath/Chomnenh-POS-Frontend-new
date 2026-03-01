@@ -70,7 +70,7 @@ const AddInStock = () => {
     stock_type_id: 2,
     stock_remark: "",
     order_id: null,
-    stock_date: '', // Today's date
+    stock_date: dayjs().format('YYYY-MM-DD'), // Today's date
   });
 
   useEffect(() => {
@@ -374,7 +374,7 @@ const AddInStock = () => {
         </div>
 
         <form onSubmit={handleSubmit}>
-          <div className="bg-transparent border border-gray-200 overflow-hidden">
+          <div className="bg-transparent overflow-hidden">
             {/* Header */}
 
             <div>
@@ -583,9 +583,9 @@ const AddInStock = () => {
                                       />
                                       <div>
                                         <div className="font-medium text-gray-900">{item.name}</div>
-                                        <div className="text-sm text-gray-500">{item.code}</div>
+                                        <div className="text-xs text-gray-500">{item.code}</div>
                                         <div className="text-xs text-gray-400 mt-1">
-                                          <Tag color="blue" size="small">{item.brand_name}</Tag>
+                                          <Tag color="blue" size="small">{item.category_name}</Tag>
                                           <Tag color="green" size="small">${item.price}</Tag>
                                         </div>
                                       </div>

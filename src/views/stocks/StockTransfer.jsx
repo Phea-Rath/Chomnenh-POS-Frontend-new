@@ -12,6 +12,7 @@ import api from '../../services/api';
 import { useDebounce } from 'use-debounce';
 
 const StockTransfer = () => {
+  const asArray = (value) => (Array.isArray(value) ? value : []);
   const navigator = useNavigate();
   const [stocktype, setstocktype] = useState([]);
   const [alertBox, setAlertBox] = useState(false);
@@ -50,13 +51,14 @@ const StockTransfer = () => {
   const [updateStock] = useUpdateStockMutation(token);
 
   useEffect(() => {
-    setitems(itemsRes.data?.data || []);
-    const newStockType = stockRes.data?.data?.filter(item => item.stock_type_id !== 5);
+    setitems(asArray(itemsRes.data?.data));
+    const newStockType = asArray(stockRes.data?.data).filter(item => item.stock_type_id !== 5);
     setstocktype(newStockType || []);
-    const newWare = warehouseRes.data?.data?.filter(
+    const allWarehouses = asArray(warehouseRes.data?.data);
+    const newWare = allWarehouses.filter(
       item => item.warehouse_id !== 2 && item.warehouse_id !== 3 && item.warehouse_id !== 4
     );
-    const toWare = warehouseRes.data?.data?.filter(
+    const toWare = allWarehouses.filter(
       item => item.warehouse_id !== 2 && item.warehouse_id !== 3 && item.warehouse_id !== 4 && item.warehouse_id !== 1
     );
     setwarehouses(newWare || []);
@@ -82,16 +84,16 @@ const StockTransfer = () => {
       }));
 
       // Map items into selectItems format
-      const mappedItems = (stock.items || []).map(it => ({
+      const mappedItems = asArray(stock?.items).map(it => ({
         ...it,
         item_id: it.item_id,
         quantity: it.quantity,
         expire_date: it.expire_date,
         item_name: it.item_name,
-        barcode: it.item_code || it.barcode,
+        item_code: it.item_code,
+        barcode: it.barcode,
         size_name: it.size_name || '',
-        // set a safe in_stock value to avoid validation errors in UI
-        stock: { in_stock: Number(it.quantity) }
+        stock: { in_stock: Number(it.stock?.in_stock) + (Number(it.quantity) || 0) } // Adjust stock to include current quantity for editing
       }));
 
       setselectItems(mappedItems);
@@ -108,7 +110,7 @@ const StockTransfer = () => {
       });
 
       // Adjust warehouse selects to reflect current from/to
-      const toWare = warehouseRes.data?.data?.filter(
+      const toWare = asArray(warehouseRes.data?.data).filter(
         item => item.warehouse_id !== 2 && item.warehouse_id !== 3 && item.warehouse_id !== 4 && item.warehouse_id !== stock.from_warehouse
       );
       settoWarehouseSelect(toWare || []);
@@ -264,6 +266,9 @@ const StockTransfer = () => {
 
 
   }
+
+  console.log('selectItems', selectItems);
+
 
   return (
     <section className='p-6 bg-transparent min-h-screen'>
@@ -467,9 +472,6 @@ const StockTransfer = () => {
                                 NO.
                               </th>
                               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                CODE
-                              </th>
-                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 NAME
                               </th>
                               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -489,23 +491,15 @@ const StockTransfer = () => {
                                 <td className="px-4 py-3 text-sm font-medium text-gray-900">
                                   {index + 1}
                                 </td>
-                                <td className="px-4 py-3 text-sm font-mono text-gray-600">
-                                  {item.barcode}
-                                </td>
                                 <td className="px-4 py-3">
                                   <div className="flex items-center gap-3">
-                                    {/* <div
-                                      style={{ backgroundColor: item.color_pick }}
-                                      className="h-4 w-4 rounded-full border border-gray-300"
-                                    /> */}
+
                                     <div>
-                                      <div className="text-sm font-medium text-gray-900">
+                                      <div className=" text-gray-900">
                                         {item.item_name}
                                       </div>
-                                      <div className="flex items-center gap-2 mt-1">
-                                        <Tag color="blue" className="text-xs">
-                                          {item.size_name}
-                                        </Tag>
+                                      <div className="flex items-center text-sm font-medium text-gray-500 gap-2 mt-1">
+                                        {item.barcode}
                                       </div>
                                     </div>
                                   </div>

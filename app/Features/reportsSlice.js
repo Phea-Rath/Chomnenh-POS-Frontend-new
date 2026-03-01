@@ -21,7 +21,7 @@ export const reportsApi = createApi({
             query: ({ itemData, token }) => createData(itemData, '/purchase_report', token),
         }),
         getExpanseReport: builder.mutation({
-            query: ({ itemData, token }) => createData(itemData, '/expanse_report', token),
+            query: ({ itemData, token }) => createData(itemData, '/expense_report', token),
         }),
         getRawMaterialReport: builder.mutation({
             query: ({ itemData, token }) => createData(itemData, '/raw_material_report', token),

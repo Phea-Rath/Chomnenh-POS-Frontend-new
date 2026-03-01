@@ -19,15 +19,15 @@ const ExpenseReportByUser = () => {
     const today = new Date();
     const firstDayOfCurrentMonth = new Date(today.getFullYear(), today.getMonth(), 1);
     const [formData, setFormData] = useState({
-        expanse_by: '',
+        expense_by: '',
         username: '',
-        expanse_type_id: '',
-        expanse_type_name: '',
+        expense_type_id: '',
+        expense_type_name: '',
         start_date: formatDateForInput(firstDayOfCurrentMonth),
         end_date: formatDateForInput(today)
     });
     const [users, setUsers] = useState([]);
-    const [expanseTypes, setExpanseTypes] = useState([]);
+    const [expenseTypes, setExpanseTypes] = useState([]);
     const { data: userData } = useGetAllUserQuery(token);
     const { data: expenseTypeData } = useGetAllExpanseTypesQuery(token);
 
@@ -54,14 +54,14 @@ const ExpenseReportByUser = () => {
                 ...prev,
                 [name]: value
             };
-            if (name === 'expanse_by') {
+            if (name === 'expense_by') {
                 next.username = value || '';
             }
-            if (name === 'expanse_type_id') {
-                const selected = expanseTypes.find(
-                    (type) => String(type.expanse_type_id) === String(value)
+            if (name === 'expense_type_id') {
+                const selected = expenseTypes.find(
+                    (type) => String(type.expense_type_id) === String(value)
                 );
-                next.expanse_type_name = selected?.expanse_type_name || '';
+                next.expense_type_name = selected?.expense_type_name || '';
             }
             return next;
         });
@@ -145,8 +145,8 @@ const ExpenseReportByUser = () => {
                                 Expense By
                             </label>
                             <select
-                                name="expanse_by"
-                                value={formData.expanse_by}
+                                name="expense_by"
+                                value={formData.expense_by}
                                 onChange={handleInputChange}
                                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                             >
@@ -163,15 +163,15 @@ const ExpenseReportByUser = () => {
                                 Expense Type By
                             </label>
                             <select
-                                name="expanse_type_id"
-                                value={formData.expanse_type_id}
+                                name="expense_type_id"
+                                value={formData.expense_type_id}
                                 onChange={handleInputChange}
                                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                             >
                                 <option value="">All Types</option>
-                                {expanseTypes?.map((type) => (
-                                    <option key={type.expanse_type_id} value={type.expanse_type_id}>
-                                        {type.expanse_type_name}
+                                {expenseTypes?.map((type) => (
+                                    <option key={type.expense_type_id} value={type.expense_type_id}>
+                                        {type.expense_type_name}
                                     </option>
                                 ))}
                             </select>
@@ -246,7 +246,7 @@ const ExpenseReportByUser = () => {
                         <div className="overflow-x-auto print:overflow-visible print:p-10" ref={tableRef}>
                             <ul className='px-5 flex justify-between text-left text-xs font-medium mb-5 text-gray-500 uppercase tracking-wider'>
                                 <li>User:   <span className='font-bold'>{formData?.username || 'All'}</span></li>
-                                <li>Type: <span className='font-bold'>{formData.expanse_type_name || 'All'}</span></li>
+                                <li>Type: <span className='font-bold'>{formData.expense_type_name || 'All'}</span></li>
                                 <li>Start Date: <span className='font-bold'>{formData.start_date || 'All'}</span></li>
                                 <li>End Date: <span className='font-bold'>{formData.end_date || 'All'}</span></li>
                             </ul>
@@ -283,19 +283,19 @@ const ExpenseReportByUser = () => {
                                     {reportData?.map((item, index) => (
                                         <tr key={index} className="hover:bg-gray-50 !text-xs">
                                             <td className="border border-gray-300 px-6 py-4 whitespace-nowrap font-medium text-gray-900">
-                                                {item.expanse_no}
+                                                {item.expense_no}
                                             </td>
                                             <td className="border border-gray-300 px-6 py-4 whitespace-nowrap text-gray-500">
-                                                {new Date(item.expanse_date).toLocaleDateString()}
+                                                {new Date(item.expense_date).toLocaleDateString()}
                                             </td>
                                             <td className="border border-gray-300 px-6 py-4 whitespace-nowrap text-gray-500">
-                                                {item.expanse_by}
+                                                {item.expense_by}
                                             </td>
                                             <td className="border border-gray-300 px-6 py-4 whitespace-nowrap text-gray-500">
-                                                {item.expanse_supplier}
+                                                {item.expense_supplier}
                                             </td>
                                             <td className="border border-gray-300 px-6 py-4 whitespace-nowrap text-gray-500">
-                                                {item.expanse_type_name}
+                                                {item.expense_type_name}
                                             </td>
                                             <td className="border border-gray-300 px-6 py-4 whitespace-nowrap text-gray-500">
                                                 {item.quantity}

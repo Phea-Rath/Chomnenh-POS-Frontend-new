@@ -137,13 +137,13 @@ const SaleReportByItem = () => {
             (acc, item) => ({
                 quantity: acc.quantity + (Number(item.quantity) || 0),
                 item_price: acc.item_price + (Number(item.item_price) || 0),
-                price: acc.price + (Number(item.price) || 0),
+                total_price: acc.total_price + (Number(item.total_price) || 0),
                 order_discount: acc.order_discount + (Number(item.order_discount) || 0),
             }),
             {
                 quantity: 0,
                 item_price: 0,
-                price: 0,
+                total_price: 0,
                 order_discount: 0,
             }
         );
@@ -349,7 +349,7 @@ const SaleReportByItem = () => {
                                                 {formatCurrency(item.item_price)}
                                             </td>
                                             <td className="border border-gray-300 px-6 py-4 whitespace-nowrap  font-medium text-green-600">
-                                                {formatCurrency(item.price)}
+                                                {formatCurrency(item.total_price)}
                                             </td>
                                         </tr>
                                     ))}
@@ -361,7 +361,7 @@ const SaleReportByItem = () => {
                                             <td className="border border-gray-300 px-6 py-4">{totals.quantity}</td>
                                             <td className="border border-gray-300 px-6 py-4">{formatCurrency(totals.order_discount)}</td>
                                             <td className="border border-gray-300 px-6 py-4">{formatCurrency(totals.item_price)}</td>
-                                            <td className="border border-gray-300 px-6 py-4 text-green-600">{formatCurrency(totals.price)}</td>
+                                            <td className="border border-gray-300 px-6 py-4 text-green-600">{formatCurrency(totals.total_price)}</td>
                                         </tr>
                                     )}
                                 </tbody>
@@ -376,7 +376,7 @@ const SaleReportByItem = () => {
                                         <div>
                                             <span className=" font-medium text-gray-700">Total Sales: </span>
                                             <span className=" text-green-600 font-medium">
-                                                {formatCurrency(reportData.reduce((sum, item) => sum + (Number(item.price) || 0), 0))}
+                                                {formatCurrency(reportData.reduce((sum, item) => sum + (Number(item.total_price) || 0), 0))}
                                             </span>
                                         </div>
                                         <div>
