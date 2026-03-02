@@ -40,14 +40,22 @@ const CreateMenus = ({ onAdd }) => {
 
   async function handleConfirm() {
     try {
-      setLoading(true);
 
+      const type = {
+        1: 'sidebar',
+        2: 'dashboard',
+        3: 'setting',
+        4: 'reports',
+      }
+      setLoading(true);
+      const parentMenu = data?.menus?.find(menu => menu.menu_name === type[menus.menu_type])?.menu_id || null;
       // Use FormData if sending an image file to the backend
       const formData = new FormData();
       formData.append('menu_name', menus.menu_name);
       formData.append('menu_type', menus.menu_type);
       formData.append('menu_path', menus.menu_path);
       formData.append('order_menu', menus.order_menu);
+      formData.append('menu_icon', menus.menu_icon); // The actual file
       formData.append('menu_icon', menus.menu_icon); // The actual file
       formData.append('created_by', 0);
 

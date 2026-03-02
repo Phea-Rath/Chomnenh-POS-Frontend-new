@@ -154,7 +154,7 @@ const CreatePurchase = () => {
       };
 
       fetchPurchase();
-    } else {
+    } else if (pathname.includes('purchase-raws') && isEditMode && purchaseId && token) {
       const fetchPurchase = async () => {
         try {
           setLoading(true);

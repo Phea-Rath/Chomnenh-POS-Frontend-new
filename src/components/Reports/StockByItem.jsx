@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { FiDownload, FiPrinter, FiFilter, FiCalendar } from 'react-icons/fi';
-import { useGetStockByRawReportMutation } from '../../../app/Features/reportsSlice';
+import { useGetStockByItemReportMutation } from '../../../app/Features/reportsSlice';
 import { useGetAllUserQuery } from '../../../app/Features/usersSlice';
 import { useGetAllStockTypesQuery } from '../../../app/Features/stockTypesSlice';
 import { useGetAllItemsQuery } from '../../../app/Features/itemsSlice';
@@ -10,7 +10,7 @@ import { useReactToPrint } from 'react-to-print';
 
 const StockByItem = () => {
     const token = localStorage.getItem('token');
-    const [getStockByItem] = useGetStockByRawReportMutation();
+    const [getStockByItem] = useGetStockByItemReportMutation();
 
     const formatDateForInput = (date) => {
         const year = date.getFullYear();
