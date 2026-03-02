@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
+import { useDebounce } from "use-debounce";
 import { IoIosSearch, IoIosList, IoIosGrid } from "react-icons/io";
 import { Link } from "react-router";
 import AlertBox from "../../services/AlertBox";
@@ -52,37 +53,45 @@ const Purchases = () => {
   const [alertBoxConfirm, setAlertBoxConfirm] = useState(false);
   const [viewMode, setViewMode] = useState("list");
   const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearch] = useDebounce(searchTerm, 500);
   const [statusFilter, setStatusFilter] = useState("all");
   const [dateRange, setDateRange] = useState({ start: null, end: null }); // { start: dayjs, end: dayjs }
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
   const { refetch: salesRefetch } = useGetAllSaleQuery(token);
   const { refetch: stockRefetch } = useGetAllStockQuery(token);
   const { setLoading, loading } = useOutletsContext();
-  const { data, isLoading, refetch } = useGetAllPurchaseQuery(token);
+  const queryParams = useMemo(() => ({
+    token,
+    limit: itemsPerPage,
+    page: currentPage,
+    search: debouncedSearch,
+  }), [token, itemsPerPage, currentPage, debouncedSearch]);
+
+  const { data, isLoading, refetch } = useGetAllPurchaseQuery(queryParams);
   const [deletePurchase] = useDeletePurchaseMutation();
   const [cancelPurchase] = useCancelPurchaseMutation();
   const [uncancelPurchase] = useUncancelPurchaseMutation();
   const [confirmPurchase] = useConfirmPurchaseMutation();
 
   useEffect(() => {
-    setPurchases(data?.data || []);
-    setFilteredPurchases(data?.data || []);
+    const items = data?.data || [];
+    setPurchases(items);
+    setFilteredPurchases(items);
   }, [data?.data]);
 
+  // run filters when base list or non-search criteria change
   useEffect(() => {
     applyFilters();
-  }, [purchases, searchTerm, statusFilter, dateRange]);
+  }, [purchases, statusFilter, dateRange]);
+
+  // reset page when debounced search changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedSearch]);
 
   const applyFilters = () => {
     let result = [...purchases];
-
-    // Search filter
-    if (searchTerm) {
-      result = result.filter(
-        (purchase) =>
-          purchase.purchase_no.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          purchase.supplier_name.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
 
     // Status filter
     if (statusFilter !== "all") {
@@ -121,6 +130,18 @@ const Purchases = () => {
     };
   };
   const stats = calculateStats();
+
+  const totalPages = data?.pagination?.last_page || 1;
+  const totalItems = data?.pagination?.total || 0;
+  const perPage = data?.pagination?.per_page || itemsPerPage;
+  const startIndex = totalItems === 0 ? 0 : (currentPage - 1) * perPage + 1;
+  const endIndex = Math.min(currentPage * perPage, totalItems);
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
 
   // Handlers for purchase actions
   function handlePurchase(purchase_id, btn) {
@@ -710,6 +731,33 @@ const Purchases = () => {
             <div className="text-center py-12 text-gray-500">
               <FaBox className="mx-auto text-4xl mb-4 text-gray-300" />
               <p className="text-lg">No purchases found</p>
+            </div>
+          )}
+
+          {!isLoading && filteredPurchases.length > 0 && (
+            <div className="mt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-1">
+              <p className="text-sm text-gray-600">
+                Showing {startIndex}-{endIndex} of {totalItems}
+              </p>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1}
+                  className="px-3 py-1.5 border border-gray-300 rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                >
+                  Previous
+                </button>
+                <span className="text-sm text-gray-700">
+                  Page {currentPage} of {totalPages}
+                </span>
+                <button
+                  onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                  disabled={currentPage === totalPages}
+                  className="px-3 py-1.5 border border-gray-300 rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                >
+                  Next
+                </button>
+              </div>
             </div>
           )}
         </motion.div>

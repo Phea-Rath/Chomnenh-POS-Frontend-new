@@ -97,7 +97,7 @@ const GuestOrderTracking = () => {
             dataIndex: 'price',
             key: 'price',
             align: 'right',
-            render: (price) => <span className="font-semibold">${price.toFixed(2)}</span>
+            render: (price) => <span className="font-semibold">${parseFloat(price).toFixed(2)}</span>
         },
         {
             title: 'Total',

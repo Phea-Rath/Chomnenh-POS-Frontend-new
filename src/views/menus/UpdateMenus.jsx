@@ -20,7 +20,8 @@ const UpdateMenus = ({ onAdd, dataMenu }) => {
     menu_name: "",
     menu_type: "",
     menu_icon: "",
-    menu_path: ""
+    menu_path: "",
+    order_menu: 0,
   });
 
   const token = localStorage.getItem('token');
@@ -36,7 +37,8 @@ const UpdateMenus = ({ onAdd, dataMenu }) => {
         menu_name: dataMenu.name || "",
         menu_type: dataMenu.type || "",
         menu_icon: dataMenu.icon || "",
-        menu_path: dataMenu.path || ""
+        menu_path: dataMenu.path || "",
+        order_menu: dataMenu.order_menu ?? 0,
       });
       if (typeof dataMenu.icon === 'string' && dataMenu.icon.startsWith('http')) {
         setIconPreview(dataMenu.icon);
@@ -64,6 +66,7 @@ const UpdateMenus = ({ onAdd, dataMenu }) => {
       formData.append('menu_name', menus.menu_name);
       formData.append('menu_type', menus.menu_type);
       formData.append('menu_path', menus.menu_path);
+      formData.append('order_menu', menus.order_menu);
       // Only append if it's a new file; otherwise, the backend keeps existing
       if (menus.menu_icon instanceof File) {
         formData.append('menu_icon', menus.menu_icon);
@@ -155,6 +158,18 @@ const UpdateMenus = ({ onAdd, dataMenu }) => {
                 prefix={<FaLink className="text-slate-300 mr-1" />}
                 value={menus.menu_path}
                 onChange={(e) => setMenus({ ...menus, menu_path: e.target.value })}
+                className="rounded border-[#d2d2d7] text-[13px]"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-bold text-slate-600 uppercase ml-1">សៀវភៅតម្រៀប (Order Index)</label>
+              <Input
+                size="small"
+                type="number"
+                min={0}
+                value={menus.order_menu}
+                onChange={(e) => setMenus({ ...menus, order_menu: Number(e.target.value) })}
                 className="rounded border-[#d2d2d7] text-[13px]"
               />
             </div>

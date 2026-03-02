@@ -15,10 +15,16 @@ export const purchasesApi = createApi({
   }),
   endpoints: (builder) => ({
     getAllPurchase: builder.query({
-      query: (token) => queryData("/purchase", token),
+      query: ({ token, limit, page, search }) => queryData(`/purchase?limit=${limit}&page=${page}&search=${search}`, token),
+    }),
+    getAllPurchaseRaw: builder.query({
+      query: ({ token, limit, page, search }) => queryData(`/purchase_raw_list?limit=${limit}&page=${page}&search=${search}`, token),
     }),
     getPurchaseById: builder.query({
       query: ({ id, token }) => queryDataById(id, "/purchase", token),
+    }),
+    getPurchaseRawById: builder.query({
+      query: ({ id, token }) => queryDataById(id, "/purchase_raw", token),
     }),
     createPurchase: builder.mutation({
       query: ({ itemData, token }) => createData(itemData, "/purchase", token),
@@ -40,8 +46,14 @@ export const purchasesApi = createApi({
     confirmPurchase: builder.mutation({
       query: ({ id, token }) => cancelData(id, "/purchase_confirm", token),
     }),
+    confirmPurchaseRaw: builder.mutation({
+      query: ({ id, token }) => cancelData(id, "/purchase_confirm_raw", token),
+    }),
     deletePurchase: builder.mutation({
       query: ({ id, token }) => deleteData(id, "/purchase", token),
+    }),
+    deletePurchaseRaw: builder.mutation({
+      query: ({ id, token }) => deleteData(id, "/purchase_raw", token),
     }),
   }),
 });
@@ -56,4 +68,7 @@ export const {
   useConfirmPurchaseMutation,
   useUncancelPurchaseMutation,
   usePaymentPurchaseMutation,
+  useGetAllPurchaseRawQuery,
+  useConfirmPurchaseRawMutation,
+  useDeletePurchaseRawMutation,
 } = purchasesApi;

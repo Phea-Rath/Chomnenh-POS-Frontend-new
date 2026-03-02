@@ -1108,7 +1108,6 @@ const Sales = () => {
                                 <div className="text-sm font-bold text-green-600">
                                   ${(item.price / item.quantity).toFixed(2)}
                                 </div>
-                                <div className="text-xs text-gray-500">each</div>
                               </div>
                             </div>
 

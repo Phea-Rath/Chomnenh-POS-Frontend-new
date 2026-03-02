@@ -90,6 +90,9 @@ import RawMaterialReport from "./components/Reports/RawMaterialReport";
 import ProfitAnalysis from "./components/Reports/AnalysisProfit";
 import ProductionByRaw from "./components/Reports/ProductionByRaw";
 import ProductionReport from "./components/Reports/ProductionReport";
+import StockReport from "./components/Reports/StockReport";
+import StockByItem from "./components/Reports/StockByItem";
+import PurchaseRawList from "./components/Purchases/PurchaseRawList";
 
 
 function ProtectedRoute({ children }) {
@@ -367,11 +370,27 @@ const router = createBrowserRouter([
         element: <ProfitAnalysis />,
       },
       {
+        path: "report/stocks",
+        element: <StockReport />,
+      },
+      {
+        path: "report/stock-by-item",
+        element: <StockByItem />,
+      },
+      {
         path: "purchases",
         element: <Purchases />,
       },
       {
+        path: "purchase-raw",
+        element: <PurchaseRawList />,
+      },
+      {
         path: "add-purchase",
+        element: <CreatePurchase />,
+      },
+      {
+        path: "purchase-raws",
         element: <CreatePurchase />,
       },
       {
@@ -379,7 +398,15 @@ const router = createBrowserRouter([
         element: <CreatePurchase />,
       },
       {
+        path: "purchase-raws/update/:id",
+        element: <CreatePurchase />,
+      },
+      {
         path: "purchases/receipt/:id",
+        element: <PurchaseReceipt />,
+      },
+      {
+        path: "purchase-raw/receipt-raw/:id",
         element: <PurchaseReceipt />,
       },
 

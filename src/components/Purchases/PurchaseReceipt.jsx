@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useParams, useNavigate } from "react-router";
+import { useParams, useNavigate, useLocation } from "react-router";
 import { FaPrint, FaFileExcel, FaArrowLeft } from "react-icons/fa";
 import { useReactToPrint } from "react-to-print";
 import * as XLSX from "xlsx";
@@ -10,6 +10,9 @@ import { useGetUserProfileQuery } from "../../../app/Features/usersSlice";
 
 const PurchaseReceipt = () => {
   const { id } = useParams();
+  const { pathname } = useLocation();
+  console.log(pathname.split('/')[3]);
+
   const navigate = useNavigate();
   const token = localStorage.getItem("token");
   const proId = localStorage.getItem("profileId");
@@ -40,7 +43,7 @@ const PurchaseReceipt = () => {
       setLoading(true);
       try {
         // Fetch purchase
-        const purchaseResponse = await api.get(`/purchase/${id}`, {
+        const purchaseResponse = await api.get(`${pathname.split('/')[3] == 'receipt' ? '/purchase/' : '/purchase_raw/'}${id}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         const purchaseData = purchaseResponse.data.data;
@@ -308,7 +311,7 @@ const PurchaseReceipt = () => {
                 <thead>
                   <tr className="bg-gray-50">
                     <th className="border border-gray-300 px-4 py-2 text-left font-medium">ល.រ</th>
-                    <th className="border border-gray-300 px-4 py-2 text-left font-medium">ទំនិញ</th>
+                    <th className="border border-gray-300 px-4 py-2 text-left font-medium">{pathname.split('/')[3] === 'receipt-raw' ? 'វត្ថុធាតុដើម' : 'ទំនិញ'}</th>
                     <th className="border border-gray-300 px-4 py-2 text-left font-medium">បរិមាណ</th>
                     <th className="border border-gray-300 px-4 py-2 text-left font-medium">តម្លៃ</th>
                     <th className="border border-gray-300 px-4 py-2 text-left font-medium">សរុប</th>
@@ -319,7 +322,7 @@ const PurchaseReceipt = () => {
                     <tr key={index} className="hover:bg-gray-50">
                       <td className="border border-gray-300 px-4 py-3 text-center">{index + 1}</td>
                       <td className="border border-gray-300 px-4 py-3">
-                        <div className="font-medium">{item.item_name}</div>
+                        <div className="font-medium">{pathname.split('/')[3] === 'receipt-raw' ? item.material_name : item.item_name}</div>
                         {item.item_code && (
                           <div className="text-sm text-gray-500">កូដ: {item.item_code}</div>
                         )}

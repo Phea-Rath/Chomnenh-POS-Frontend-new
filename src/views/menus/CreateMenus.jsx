@@ -18,7 +18,8 @@ const CreateMenus = ({ onAdd }) => {
     menu_name: "",
     menu_type: "",
     menu_icon: null, // Changed to null for file object
-    menu_path: ""
+    menu_path: "",
+    order_menu: 0, // numeric order for display
   });
 
   const token = localStorage.getItem('token');
@@ -46,6 +47,7 @@ const CreateMenus = ({ onAdd }) => {
       formData.append('menu_name', menus.menu_name);
       formData.append('menu_type', menus.menu_type);
       formData.append('menu_path', menus.menu_path);
+      formData.append('order_menu', menus.order_menu);
       formData.append('menu_icon', menus.menu_icon); // The actual file
       formData.append('created_by', 0);
 
@@ -130,6 +132,18 @@ const CreateMenus = ({ onAdd }) => {
                 prefix={<FaLink className="text-slate-300 mr-1" />}
                 placeholder="/management/dashboard"
                 onChange={(e) => setMenus({ ...menus, menu_path: e.target.value })}
+                className="rounded border-[#d2d2d7] text-[13px]"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-bold text-slate-700 uppercase ml-1">សៀវភៅតម្រៀប (Order Index)</label>
+              <Input
+                size="small"
+                type="number"
+                min={0}
+                value={menus.order_menu}
+                onChange={(e) => setMenus({ ...menus, order_menu: Number(e.target.value) })}
                 className="rounded border-[#d2d2d7] text-[13px]"
               />
             </div>

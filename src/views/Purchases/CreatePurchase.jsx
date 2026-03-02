@@ -22,7 +22,7 @@ import { useGetAllItemsQuery } from "../../../app/Features/itemsSlice";
 import api from "../../services/api";
 import { useGetAllSupplierQuery } from "../../../app/Features/suppliesSlice";
 import { toast } from "react-toastify";
-import { useNavigate, useParams } from "react-router";
+import { useLocation, useNavigate, useParams } from "react-router";
 import { useGetAllPurchaseQuery } from "../../../app/Features/purchasesSlice";
 import { DatePicker, Input, Select, Card, Badge, Tag, Divider, Radio } from "antd";
 const { Option } = Select;
@@ -56,8 +56,9 @@ const CreatePurchase = () => {
 
   const navigator = useNavigate();
   const token = localStorage.getItem("token");
+  const { pathname } = useLocation();
   const [items, setItems] = useState([]);
-  const [itemType, setValue4] = useState(0);
+  const [itemType, setValue4] = useState(pathname.includes('purchase-raws') ? 1 : 0);
   const [suppliers, setSuppliers] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredItems, setFilteredItems] = useState([]);
@@ -78,7 +79,7 @@ const CreatePurchase = () => {
     new Date().toISOString().split("T")[0]
   );
   const [loading, setLoading] = useState(false);
-  const { refetch } = useGetAllPurchaseQuery(token);
+  const { refetch } = useGetAllPurchaseQuery({ token, limit: 10, page: 1, search: "" });
   const [errors, setErrors] = useState({});
   const [fieldErrors, setFieldErrors] = useState({});
 
@@ -109,7 +110,7 @@ const CreatePurchase = () => {
   }, [searchTerm, items, rawMaterials]);
 
   useEffect(() => {
-    if (isEditMode && purchaseId && token) {
+    if (isEditMode && purchaseId && token && !pathname.includes('purchase-raws')) {
       const fetchPurchase = async () => {
         try {
           setLoading(true);
@@ -138,6 +139,50 @@ const CreatePurchase = () => {
               name: detail.item_name,
               code: detail.item_code,
               image: detail.images?.[0]?.image || null,
+            })),
+            payments: purchase.payments.map((p) => ({
+              amount: parseFloat(p.amount),
+              paid_at: p.paid_at.split(" ")[0],
+            })),
+          });
+
+          setLoading(false);
+        } catch (err) {
+          toast.error("Failed to load purchase data.");
+          console.error(err);
+        }
+      };
+
+      fetchPurchase();
+    } else {
+      const fetchPurchase = async () => {
+        try {
+          setLoading(true);
+          const response = await api.get(`/purchase_raw/${purchaseId}`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+
+          const purchase = response.data.data;
+
+          setFormData({
+            supplier_id: purchase.supplier_id || "",
+            purchase_date: purchase.purchase_date,
+            sub_total: parseFloat(purchase.sub_total) || 0,
+            tax_rate: parseFloat(purchase.tax_rate) || 0,
+            tax_amount: parseFloat(purchase.tax_amount) || 0,
+            shipping_fee: parseFloat(purchase.shipping_fee) || 0,
+            total_amount: parseFloat(purchase.total_amount) || 0,
+            total_paid: parseFloat(purchase.total_paid) || 0,
+            balance: parseFloat(purchase.balance) || 0,
+            status: purchase.status === 1 ? 'Completed' : purchase.status === 2 ? 'Cancelled' : 'Pending',
+            items: purchase.details.map((detail) => ({
+              item_id: detail.id,
+              quantity: parseFloat(detail.quantity),
+              item_cost: parseFloat(detail.item_cost),
+              attributes: detail.attributes || [],
+              name: detail.material_name,
+              code: detail.material_code,
+              image: detail.material_image || null,
             })),
             payments: purchase.payments.map((p) => ({
               amount: parseFloat(p.amount),
@@ -468,7 +513,7 @@ const CreatePurchase = () => {
       }
 
       refetch();
-      navigator("/dashboard/purchases");
+      navigator(`${pathname.includes('purchase-raws') ? '/dashboard/purchase-raw' : '/dashboard/purchases'}`);
     } catch (err) {
       const errorMessage = err.response?.data?.message || `Error ${isEditMode ? 'updating' : 'creating'} purchase.`;
       setErrors({ general: errorMessage });
@@ -966,13 +1011,13 @@ const CreatePurchase = () => {
               </div>
 
               <div className="mb-6">
-                <Radio.Group
+                {/* <Radio.Group
                   options={options}
                   onChange={onChangeItemType}
                   value={itemType}
                   optionType="button"
                   buttonStyle="solid"
-                />
+                /> */}
                 {itemType == 0 ? <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-60 overflow-y-auto p-2">
                   {filteredItems.map((item) => (
                     <div

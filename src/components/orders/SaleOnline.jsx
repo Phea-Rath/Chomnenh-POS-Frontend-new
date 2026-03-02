@@ -876,7 +876,7 @@ const Sales = () => {
       return {
         item_id: item.id,
         quantity: item.quantity,
-        price: item.price / item.quantity, // Price per unit
+        total_price: item.price / item.quantity, // Price per unit
         discount: item.discount || 0,
         item_name: item.name,
         item_cost: item.cost || 0,
@@ -1138,7 +1138,7 @@ const Sales = () => {
                 </Badge>
               </Link>
             )}
-            <div className=" fixed top-4 right-4 z-50">
+            <div className=" fixed top-25 right-4 z-50">
               <Badge count={orderCount} color="blue">
                 <Button onClick={showDrawer} variant="primary" icon={<PiShoppingCartBold />} className="h-10 w-10 p-0" />
               </Badge>
@@ -1263,7 +1263,7 @@ const Sales = () => {
 
         {/* Pagination */}
         {itemsSech?.length > 0 && (
-          <div className="mt-8 flex justify-center">
+          <div className="mt-8 flex text-black justify-center">
             <Pagination
               current={currentPage}
               total={totalItems}
@@ -1280,7 +1280,7 @@ const Sales = () => {
             <span>Order Summary</span>
             {orderCount > 0 && <Badge count={orderCount} color="blue" className="ml-2" />}
           </div>
-        } width={450}>
+        } width={350}>
           <div className="space-y-4 max-h-[50vh] overflow-y-auto pr-1">
             {orders?.items?.length === 0 ? (
               <div className="text-center py-12">
@@ -1290,10 +1290,10 @@ const Sales = () => {
               </div>
             ) : (
               orders?.items?.map((item, index) => (
-                <div key={`${item.id}-${index}`} className="relative bg-gray-50 rounded-lg p-3 border border-gray-200">
+                <div key={`${item.id}-${index}`} className="relative border border-gray-200 rounded p-3 bg-gray-50">
                   <button
                     onClick={() => handleDelete(item.id, index)}
-                    className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full text-xs flex items-center justify-center hover:bg-red-600"
+                    className="absolute -top-0 -right-2 w-5 h-5 font-extrabold text-red-500 rounded-full text-xs hover:text-red-600 flex items-center justify-center"
                   >
                     ✕
                   </button>
@@ -1319,7 +1319,6 @@ const Sales = () => {
                           <div className="text-sm font-bold text-green-600">
                             ${(item.price / item.quantity).toFixed(2)}
                           </div>
-                          <div className="text-xs text-gray-500">each</div>
                         </div>
                       </div>
                       <div className="flex items-center justify-between mt-2">
@@ -1348,12 +1347,12 @@ const Sales = () => {
           </div>
 
           {orders?.items?.length > 0 && (
-            <div className="mt-6 space-y-4">
+            <div className="mt-6 space-y-4 text-black">
               <Divider />
 
               <div className="space-y-2">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Subtotal</span>
+                  <span className="text-gray-600 text-xs">Subtotal</span>
                   <span className="font-bold">${currencyFormat(orders?.order_subtotal)}</span>
                 </div>
                 {calculateTotalDiscount() > 0 && (
@@ -1364,25 +1363,10 @@ const Sales = () => {
                     <span className="font-bold">-${currencyFormat(calculateTotalDiscount())}</span>
                   </div>
                 )}
-                <div className="flex items-center justify-between">
-                  <label className="text-gray-600">វិធីសាស្រ្តបង់ប្រាក់</label>
-                  <Select
-                    value={orders?.order_payment_method || 'cash'}
-                    onChange={(e) => setOrders(prev => {
-                      const newOrders = { ...prev, order_payment_method: e.target.value };
-                      localStorage.setItem('orderItems', JSON.stringify(newOrders));
-                      return newOrders;
-                    })}
-                  >
-                    <option value="cash">សាច់ប្រាក់</option>
-                    <option value="bank">ធនាគារ</option>
-                  </Select>
-                </div>
-
-                {orders?.sale_type === 'sale' && (
+                {(
                   <>
                     <div className="flex items-center justify-between gap-4">
-                      <label className="text-gray-600">លេខទូរស័ព្ទអ្នកទទួល</label>
+                      <label className="text-gray-600 text-xs">លេខទូរស័ព្ទអ្នកទទួល</label>
                       <Input
                         value={orders?.order_tel || ''}
                         onChange={(e) => {
@@ -1400,7 +1384,7 @@ const Sales = () => {
                       />
                     </div>
                     <div>
-                      <label className="block text-gray-600 mb-1">អាស័យដ្ឋានអតិថិជន</label>
+                      <label className="block text-gray-600 mb-1 text-xs">អាស័យដ្ឋានអតិថិជន</label>
                       <Textarea
                         value={orders?.order_address || ''}
                         onChange={(e) => {
@@ -1485,7 +1469,7 @@ const Sales = () => {
             <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
               <FaUser className="text-green-500" /> Sign In Account
             </h3>
-            <div className="space-y-4">
+            <div className="space-y-4 text-gray-700">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
                 <Input
