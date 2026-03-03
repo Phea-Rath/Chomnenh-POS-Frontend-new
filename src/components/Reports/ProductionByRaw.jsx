@@ -280,8 +280,8 @@ const ProductionByRaw = () => {
                                 <tbody className="bg-white divide-y divide-gray-200">
                                     {reportData?.map((item, index) => (
                                         <tr key={index} className="hover:bg-gray-50 !text-xs">
-                                            <td className="border border-gray-300 px-6 py-4 whitespace-nowrap font-medium text-gray-900">{item.barcode}</td>
-                                            <td className="border border-gray-300 px-6 py-4 whitespace-nowrap text-gray-500">{item.item_name}</td>
+                                            <td className="border border-gray-300 px-6 py-4 whitespace-nowrap font-medium text-gray-900">{item.material_code}</td>
+                                            <td className="border border-gray-300 px-6 py-4 whitespace-nowrap text-gray-500">{item.material_name}</td>
                                             <td className="border border-gray-300 px-6 py-4 whitespace-nowrap text-gray-500">{formatCurrency(item.cost_per_unit)}</td>
                                             <td className="border border-gray-300 px-6 py-4 whitespace-nowrap text-gray-500">{formatCurrency(item.total_cost)}</td>
                                             <td className="border border-gray-300 px-6 py-4 whitespace-nowrap text-gray-500">{formatNumber(item.quantity)}{item.primary_unit}</td>
