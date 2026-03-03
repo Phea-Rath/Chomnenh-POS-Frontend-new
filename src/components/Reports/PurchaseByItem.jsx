@@ -352,12 +352,12 @@ const PurchaseReportByItem = () => {
                                         <th className="border border-gray-300 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Item Name
                                         </th>
-                                        <th className="border border-gray-300 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        {formData?.item_type == 0 && <th className="border border-gray-300 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Category
-                                        </th>
-                                        <th className="border border-gray-300 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        </th>}
+                                        {formData?.item_type == 0 && <th className="border border-gray-300 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Brand
-                                        </th>
+                                        </th>}
                                         <th className="border border-gray-300 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Quantity
                                         </th>
@@ -393,12 +393,12 @@ const PurchaseReportByItem = () => {
                                             <td className="border border-gray-300 px-6 py-4 whitespace-nowrap text-gray-500">
                                                 {item.item_name}
                                             </td>
-                                            <td className="border border-gray-300 px-6 py-4 whitespace-nowrap text-gray-500">
+                                            {formData?.item_type == 0 && <td className="border border-gray-300 px-6 py-4 whitespace-nowrap text-gray-500">
                                                 {item.category_name}
-                                            </td>
-                                            <td className="border border-gray-300 px-6 py-4 whitespace-nowrap text-gray-500">
+                                            </td>}
+                                            {formData?.item_type == 0 && <td className="border border-gray-300 px-6 py-4 whitespace-nowrap text-gray-500">
                                                 {item.brand_name}
-                                            </td>
+                                            </td>}
                                             <td className="border border-gray-300 px-6 py-4 whitespace-nowrap text-gray-500">
                                                 {item.quantity}
                                             </td>
@@ -428,7 +428,7 @@ const PurchaseReportByItem = () => {
                                     {/* Row Totals */}
                                     {reportData.length > 0 && (
                                         <tr className="bg-gray-100 font-bold">
-                                            <td className="border border-gray-300 px-6 py-4 text-right" colSpan={4}>Total</td>
+                                            <td className="border border-gray-300 px-6 py-4 text-right" colSpan={formData?.item_type == 0 ? 4 : 2}>Total</td>
                                             <td className="border border-gray-300 px-6 py-4">{totals.quantity}</td>
                                             <td className="border border-gray-300 px-6 py-4">{formatCurrency(totals.item_price)}</td>
                                             <td className="border border-gray-300 px-6 py-4">{formatCurrency(totals.subtotal)}</td>

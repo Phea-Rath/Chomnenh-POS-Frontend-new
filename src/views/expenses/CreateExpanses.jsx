@@ -160,6 +160,14 @@ const CreateExpanses = () => {
       setLoading(true);
       setAlertBox(false);
 
+      const payload = {
+        expense_supplier: expense.expense_supplier,
+        expense_by: expense.expense_by,
+        expense_date: expense.expense_date,
+        expense_other: expense.expense_other,
+        amount: expense.amount,
+        items: expense_type,
+      };
       let response;
       if (isEditMode) {
         // response = await updateExpanse({
@@ -167,14 +175,15 @@ const CreateExpanses = () => {
         //   itemData: expense,
         //   token
         // });
-        response = await api.put(`/expense_masters/${existingExpanse?.expense_id}`, expense, {
+
+        response = await api.put(`/expense_masters/${existingExpanse?.expense_id}`, payload, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         });
       } else {
         // response = await createExpanse({ itemData: expense, token });
-        response = await api.post("/expense_masters", expense, {
+        response = await api.post("/expense_masters", payload, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -646,7 +655,7 @@ const CreateExpanses = () => {
               <div className="flex gap-3">
                 <form method="dialog">
                   <button
-                    onClick={() => navigator("/dashboard/expense")}
+                    onClick={() => navigator("/dashboard/expenses")}
                     className="inline-flex items-center gap-2 px-6 py-3 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 transition-all duration-200 font-medium"
                   >
                     <FaTimes className="w-4 h-4" />

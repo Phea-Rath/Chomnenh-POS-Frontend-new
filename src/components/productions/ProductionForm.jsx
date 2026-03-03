@@ -1142,9 +1142,11 @@ const ProductionForm = () => {
                                             min={0.01}
                                             step={0.01}
                                             precision={2}
+                                            readOnly
+                                            prefix={<LuDollarSign className="text-gray-400" />}
                                             disabled={costLoading}
                                             formatter={(value) =>
-                                                `$ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+                                                `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')
                                             }
                                             parser={(value) =>
                                                 value.replace(/\$\s?|(,*)/g, '')

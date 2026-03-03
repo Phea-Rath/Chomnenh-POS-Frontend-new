@@ -56,7 +56,6 @@ const Production = () => {
     const [sortConfig, setSortConfig] = useState({ field: null, order: null }); // for table sorting
     const [expandedRows, setExpandedRows] = useState({}); // for expandable materials in table
     const [deleteConfirmId, setDeleteConfirmId] = useState(null); // for custom delete confirmation
-
     const [debouncedSearch] = useDebounce(searchTerm, 500);
     const { data, refetch, isLoading: queryLoading } = useGetAllProductionQuery({
         limit: pagination.pageSize,

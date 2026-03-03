@@ -14,7 +14,7 @@ import {
     FaArrowLeft
 } from 'react-icons/fa';
 import { GiReceiveMoney } from 'react-icons/gi';
-import { MdCancel, MdDeliveryDining, MdIncompleteCircle, MdPadding, MdWheelchairPickup } from 'react-icons/md';
+import { MdCancel, MdDeliveryDining, MdIncompleteCircle, MdOutlineDownload, MdPadding, MdWheelchairPickup } from 'react-icons/md';
 import { toast } from 'react-toastify';
 import api from '../../services/api';
 import AlertBox from '../../services/AlertBox';
@@ -25,6 +25,7 @@ import Echo from '../../echo';
 import { Button, Modal, Table, Tag, Divider } from 'antd';
 import { GrRefresh } from 'react-icons/gr';
 import { IoArrowUndoCircle, IoArrowUndoCircleOutline } from 'react-icons/io5';
+import handleDownload from '../../services/imageDowload';
 
 const GuestOrderTracking = () => {
     const navigate = useNavigate();
@@ -42,7 +43,8 @@ const GuestOrderTracking = () => {
     // State for Item Details Modal
     const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
     const [viewingOrder, setViewingOrder] = useState(null);
-
+    const [isReceiptModalOpen, setIsReceiptModalOpen] = useState(false);
+    const receiptRef = React.useRef();
     useEffect(() => {
         setOrders(data?.data);
     }, [data]);
@@ -57,12 +59,33 @@ const GuestOrderTracking = () => {
 
     const handleOpenDetails = (order) => {
         setViewingOrder(order);
+        setIsReceiptModalOpen(false);
         setIsDetailsModalOpen(true);
     };
 
     const handleCloseDetails = () => {
         setIsDetailsModalOpen(false);
+        setIsReceiptModalOpen(false);
         setViewingOrder(null);
+    };
+
+    const handleOpenReceipt = () => {
+        setIsReceiptModalOpen(true);
+    };
+
+    const handleCloseReceipt = () => {
+        setIsReceiptModalOpen(false);
+    };
+
+    const formatReceiptDate = (dateString) => {
+        const date = new Date(dateString);
+        return date.toLocaleDateString("en-US", {
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+        });
     };
 
     // Columns for the Items Table inside Modal
@@ -172,6 +195,9 @@ const GuestOrderTracking = () => {
                 open={isDetailsModalOpen}
                 onCancel={handleCloseDetails}
                 footer={[
+                    <Button key="receipt" onClick={handleOpenReceipt}>
+                        Show Receipt
+                    </Button>,
                     <Button key="close" onClick={handleCloseDetails} type="primary">
                         Close
                     </Button>
@@ -218,6 +244,127 @@ const GuestOrderTracking = () => {
                                     <span className="text-blue-600">${viewingOrder.order_total.toFixed(2)}</span>
                                 </div>
                             </div>
+                        </div>
+                    </div>
+                )}
+            </Modal>
+
+            <Modal
+                title={
+                    <div className="flex items-center gap-2 text-lg">
+                        <FaDollarSign className="text-blue-500" />
+                        <span>Order Receipt</span>
+                        <Button icon={<MdOutlineDownload className="text-lg !text-green-500" />} key="download" onClick={() => handleDownload(receiptRef, 'jpg', 'receipt-preorder', viewingOrder.order_no)} >
+                        </Button>
+                    </div>
+                }
+                open={isReceiptModalOpen}
+                onCancel={handleCloseReceipt}
+                footer={[
+                    <Button key="close" onClick={handleCloseReceipt} type="primary">
+                        Close
+                    </Button>
+
+                ]}
+                width={420}
+                centered
+            >
+                {viewingOrder && (
+                    <div ref={receiptRef} className="bg-white px-5 rounded-lg shadow-sm max-w-md text-xs mx-auto">
+                        <div className="text-center mb-6 border-b pb-4">
+                            <h1 className="text-2xl font-bold">E-Store</h1>
+                            <p className="text-black">ORDER RECEIPT</p>
+                            <p className="text-black">Thank you for your purchase!</p>
+                        </div>
+
+                        <div className="mb-6">
+                            <div className="flex justify-between mb-2">
+                                <span className="font-semibold">Order Number:</span>
+                                <span>{viewingOrder.order_no}</span>
+                            </div>
+                            <div className="flex justify-between mb-2">
+                                <span className="font-semibold">Order Date:</span>
+                                <span>{formatReceiptDate(viewingOrder.order_date)}</span>
+                            </div>
+                            <div className="flex justify-between mb-2">
+                                <span className="font-semibold">Payment Method:</span>
+                                <span className="capitalize">{viewingOrder.order_payment_method || "N/A"}</span>
+                            </div>
+                            <div className="flex justify-between">
+                                <span className="font-semibold">Payment Status:</span>
+                                <span className="capitalize">{viewingOrder.order_payment_status || "N/A"}</span>
+                            </div>
+                        </div>
+
+                        <div className="mb-6 border-t pt-4">
+                            <h2 className="font-bold mb-2">CUSTOMER INFORMATION</h2>
+                            <div className="mb-1">
+                                <span className="font-semibold">Name:</span> {viewingOrder.customer_name}
+                            </div>
+                            <div className="mb-1">
+                                <span className="font-semibold">Phone:</span> {viewingOrder.order_tel}
+                            </div>
+                            <div>
+                                <span className="font-semibold">Address:</span> {viewingOrder.order_address}
+                            </div>
+                        </div>
+
+                        <div className="mb-6 border-t pt-4">
+                            <h2 className="font-bold mb-3">ORDER ITEMS</h2>
+                            <table className="w-full">
+                                <thead>
+                                    <tr className="border-b">
+                                        <th className="text-left pb-2">Item</th>
+                                        <th className="text-right pb-2">Qty</th>
+                                        <th className="text-right pb-2">Price</th>
+                                        <th className="text-right pb-2">Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {viewingOrder.items?.map((item, index) => (
+                                        <tr key={`${item.item_code}-${index}`} className="border-b">
+                                            <td className="py-2">
+                                                <div>{item.item_name}</div>
+                                                <div className="text-black">
+                                                    {item.size_name && `Size: ${item.size_name}`}
+                                                </div>
+                                            </td>
+                                            <td className="text-center py-2">{item.quantity}</td>
+                                            <td className="text-right py-2">${parseFloat(item.price).toFixed(2)}</td>
+                                            <td className="text-right py-2">
+                                                ${(item.price * item.quantity).toFixed(2)}
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div className="border-t pt-4">
+                            <div className="flex justify-between mb-2">
+                                <span className="font-semibold">Subtotal:</span>
+                                <span>${parseFloat(viewingOrder.order_subtotal).toFixed(2)}</span>
+                            </div>
+                            {viewingOrder.order_discount > 0 && (
+                                <div className="flex justify-between mb-2">
+                                    <span className="font-semibold">Discount ($):</span>
+                                    <span className="text-red-600">-${parseFloat(viewingOrder.order_discount).toFixed(2)}</span>
+                                </div>
+                            )}
+                            <div className="flex justify-between mb-2">
+                                <span className="font-semibold">Delivery Fee:</span>
+                                <span>${parseFloat(viewingOrder.delivery_fee || 0).toFixed(2)}</span>
+                            </div>
+                            <div className="flex justify-between font-bold text-lg border-t pt-2 mt-2">
+                                <span>TOTAL:</span>
+                                <span>${parseFloat(viewingOrder.order_total).toFixed(2)}</span>
+                            </div>
+                        </div>
+
+                        <div className="text-center mt-8 pt-4 border-t text-black text-sm">
+                            <p>For questions about this order, please contact us</p>
+                            <p className="mt-1">Thank you for your business!</p>
+                            <p className="mt-2 text-xs">Receipt ID: {viewingOrder.order_no}</p>
                         </div>
                     </div>
                 )}
@@ -331,14 +478,14 @@ const GuestOrderTracking = () => {
                                     View Item Details
                                 </button>
 
-                                {!order.is_cancelled && order.status === 1 && (
+                                {/* {!order.is_cancelled && order.status === 1 && (
                                     <button
                                         onClick={() => handleCancelOrder(order)}
                                         className="w-full bg-red-50 text-red-600 py-2 rounded-lg font-medium hover:bg-red-100 transition"
                                     >
                                         Cancel Order
                                     </button>
-                                )}
+                                )} */}
                             </div>
                         </div>
                     );

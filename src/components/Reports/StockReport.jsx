@@ -266,7 +266,7 @@ const StockReport = () => {
                                         <th className="border border-gray-300 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">From Warehouse</th>
                                         <th className="border border-gray-300 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">To Warehouse</th>
                                         <th className="border border-gray-300 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
-                                        <th className="border border-gray-300 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Exchange Rate</th>
+                                        {/* <th className="border border-gray-300 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Exchange Rate</th> */}
                                         <th className="border border-gray-300 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created By</th>
                                         <th className="border border-gray-300 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Remark</th>
                                     </tr>
@@ -292,9 +292,9 @@ const StockReport = () => {
                                             <td className="border border-gray-300 px-6 py-4 whitespace-nowrap text-gray-500">
                                                 {formatNumber(item.quantity)}
                                             </td>
-                                            <td className="border border-gray-300 px-6 py-4 whitespace-nowrap text-gray-500">
+                                            {/* <td className="border border-gray-300 px-6 py-4 whitespace-nowrap text-gray-500">
                                                 {formatRate(item.exchange_rate)}
-                                            </td>
+                                            </td> */}
                                             <td className="border border-gray-300 px-6 py-4 whitespace-nowrap text-gray-500">
                                                 {item.created_by_name || '-'}
                                             </td>

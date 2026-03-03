@@ -248,7 +248,7 @@ const Dashboard = () => {
   const [timeRange, setTimeRange] = useState(["month", "week", "day", "hour"]);
   const [revenueChart, setRevenueChart] = useState([]);
   const [purchaseChart, setPurchaseChart] = useState([]);
-  const [expanseChart, setExpanseChart] = useState([]);
+  const [expenseChart, setExpanseChart] = useState([]);
   const [profitChart, setProfitChart] = useState([]);
   const [profitByMonth, setProfitByMonth] = useState([]);
   const [profit, setProfit] = useState({
@@ -262,7 +262,7 @@ const Dashboard = () => {
     persent: 0,
   });
   const [sales, setSales] = useState({ thisYear: 0, lastYear: 0, persent: 0 });
-  const [expanses, setExpanses] = useState({
+  const [expenses, setExpanses] = useState({
     thisYear: 0,
     lastYear: 0,
     persent: 0,
@@ -276,10 +276,10 @@ const Dashboard = () => {
   const { data: saleByWeek } = useGetSaleByWeekQuery(token);
   const { data: saleByDay } = useGetSaleByDayQuery(token);
   const { data: saleByHour } = useGetSaleByHourQuery(token);
-  const { data: expanseByMonth } = useGetExpanseByMonthQuery(token);
-  const { data: expanseByWeek } = useGetExpanseByWeekQuery(token);
-  const { data: expanseByDay } = useGetExpanseByDayQuery(token);
-  const { data: expanseByHour } = useGetExpanseByHourQuery(token);
+  const { data: expenseByMonth } = useGetExpanseByMonthQuery(token);
+  const { data: expenseByWeek } = useGetExpanseByWeekQuery(token);
+  const { data: expenseByDay } = useGetExpanseByDayQuery(token);
+  const { data: expenseByHour } = useGetExpanseByHourQuery(token);
   const { data: popularExpanses } = useGetPopularExpansesQuery(token);
   const { data: popularSales } = useGetPopularOrderQuery(token);
   const { data: orderPersentMonthly } = useGetPersentOrderMonthlyQuery(token);
@@ -308,13 +308,13 @@ const Dashboard = () => {
         (initial, current) => initial + parseFloat(current.lastYearPrice),
         0
       ) || 0;
-    const expanseThisYear =
-      expanseByMonth?.data.reduce(
+    const expenseThisYear =
+      expenseByMonth?.data.reduce(
         (initial, current) => initial + parseFloat(current.thisYear),
         0
       ) || 0;
-    const expanseLastYear =
-      expanseByMonth?.data.reduce(
+    const expenseLastYear =
+      expenseByMonth?.data.reduce(
         (initial, current) => initial + parseFloat(current.lastYear),
         0
       ) || 0;
@@ -330,40 +330,40 @@ const Dashboard = () => {
       persent: definePersents(saleThisYear, saleLastYear),
     });
     setExpanses({
-      thisYear: expanseThisYear,
-      lastYear: expanseLastYear,
-      persent: definePersents(expanseThisYear, expanseLastYear),
+      thisYear: expenseThisYear,
+      lastYear: expenseLastYear,
+      persent: definePersents(expenseThisYear, expenseLastYear),
     });
     setProfit({
-      thisYear: saleThisYear - expanseThisYear - purchaseThisYear,
-      lastYear: saleLastYear - expanseLastYear - purchaseLastYear,
+      thisYear: saleThisYear - expenseThisYear - purchaseThisYear,
+      lastYear: saleLastYear - expenseLastYear - purchaseLastYear,
       persent: definePersents(
-        saleThisYear - expanseThisYear - purchaseThisYear,
-        saleLastYear - expanseLastYear - purchaseLastYear
+        saleThisYear - expenseThisYear - purchaseThisYear,
+        saleLastYear - expenseLastYear - purchaseLastYear
       ),
     });
-  }, [purchaseByMonth, saleByMonth, profitByMonth, expanseByMonth]);
+  }, [purchaseByMonth, saleByMonth, profitByMonth, expenseByMonth]);
 
   useEffect(() => {
     setRevenueChart(saleByWeek?.data || []);
     setPurchaseChart(purchaseByDay?.data || []);
-    setExpanseChart(expanseByHour?.data || []);
-    if (expanseByMonth) {
+    setExpanseChart(expenseByHour?.data || []);
+    if (expenseByMonth) {
       setProfitChart(() => {
         const profit =
           saleByMonth?.data.map((item, idx) => {
             const purchaseItem = purchaseByMonth?.data[idx];
-            const expanseItem = expanseByMonth?.data[idx];
+            const expenseItem = expenseByMonth?.data[idx];
             return {
               name: item.name,
               thisYear:
                 item.thisYearPrice -
                 purchaseItem.thisYearPrice -
-                expanseItem.thisYear,
+                expenseItem.thisYear,
               lastYear:
                 item.lastYearPrice -
                 (purchaseItem.lastYearPrice || 0) -
-                (expanseItem.lastYear || 0),
+                (expenseItem.lastYear || 0),
             };
           }) || [];
         setProfitByMonth(profit);
@@ -373,8 +373,8 @@ const Dashboard = () => {
   }, [
     saleByWeek,
     purchaseByDay,
-    expanseByHour,
-    expanseByMonth,
+    expenseByHour,
+    expenseByMonth,
     purchaseByMonth,
     saleByMonth,
   ]);
@@ -572,25 +572,25 @@ const Dashboard = () => {
       else if (range === "month") setPurchaseChart(purchaseByMonth?.data || []);
     }
     if (index === 3) {
-      if (range === "hour") setExpanseChart(expanseByHour?.data || []);
-      else if (range === "day") setExpanseChart(expanseByDay?.data || []);
-      else if (range === "week") setExpanseChart(expanseByWeek?.data || []);
-      else if (range === "month") setExpanseChart(expanseByMonth?.data || []);
+      if (range === "hour") setExpanseChart(expenseByHour?.data || []);
+      else if (range === "day") setExpanseChart(expenseByDay?.data || []);
+      else if (range === "week") setExpanseChart(expenseByWeek?.data || []);
+      else if (range === "month") setExpanseChart(expenseByMonth?.data || []);
     }
     if (index === 0) {
       // Profit chart
       if (range === "hour") {
         const profitData = saleByHour?.data.map((item, idx) => {
           const purchaseItem = purchaseByHour?.data[idx] || { todayPrice: 0 };
-          const expanseItem = expanseByHour?.data[idx] || { today: 0 };
+          const expenseItem = expenseByHour?.data[idx] || { today: 0 };
           return {
             name: item.name,
             today:
-              item.todayPrice - purchaseItem.todayPrice - expanseItem.today,
+              item.todayPrice - purchaseItem.todayPrice - expenseItem.today,
             yesterday:
               item.yesterdayPrice -
               (purchaseItem.yesterdayPrice || 0) -
-              (expanseItem.yesterday || 0),
+              (expenseItem.yesterday || 0),
           };
         });
         setProfitChart(profitData || []);
@@ -600,17 +600,17 @@ const Dashboard = () => {
       if (range === "day") {
         const profitData = saleByDay?.data.map((item, idx) => {
           const purchaseItem = purchaseByDay?.data[idx];
-          const expanseItem = expanseByDay?.data[idx];
+          const expenseItem = expenseByDay?.data[idx];
           return {
             name: item.name,
             thisWeek:
               item.thisWeekPrice -
               purchaseItem.thisWeekPrice -
-              expanseItem.thisWeek,
+              expenseItem.thisWeek,
             Weekend:
               item.WeekendPrice -
               (purchaseItem.WeekendPrice || 0) -
-              (expanseItem.Weekend || 0),
+              (expenseItem.Weekend || 0),
           };
         });
         setProfitChart(profitData || []);
@@ -619,17 +619,17 @@ const Dashboard = () => {
       if (range === "week") {
         const profitData = saleByWeek?.data.map((item, idx) => {
           const purchaseItem = purchaseByWeek?.data[idx];
-          const expanseItem = expanseByWeek?.data[idx];
+          const expenseItem = expenseByWeek?.data[idx];
           return {
             name: item.name,
             thisMonth:
               item.thisMonthPrice -
               purchaseItem.thisMonthPrice -
-              expanseItem.thisMonth,
+              expenseItem.thisMonth,
             lastMonth:
               item.lastMonthPrice -
               (purchaseItem.lastMonthPrice || 0) -
-              (expanseItem.lastMonth || 0),
+              (expenseItem.lastMonth || 0),
           };
         });
         setProfitChart(profitData || []);
@@ -638,17 +638,17 @@ const Dashboard = () => {
       if (range === "month") {
         const profitData = saleByMonth?.data.map((item, idx) => {
           const purchaseItem = purchaseByMonth?.data[idx];
-          const expanseItem = expanseByMonth?.data[idx];
+          const expenseItem = expenseByMonth?.data[idx];
           return {
             name: item.name,
             thisYear:
               item.thisYearPrice -
               purchaseItem.thisYearPrice -
-              expanseItem.thisYear,
+              expenseItem.thisYear,
             lastYear:
               item.lastYearPrice -
               (purchaseItem.lastYearPrice || 0) -
-              (expanseItem.lastYear || 0),
+              (expenseItem.lastYear || 0),
           };
         });
         setProfitChart(profitData || []);
@@ -751,14 +751,14 @@ const Dashboard = () => {
               <RiMoneyDollarCircleFill className="text-5xl text-red-500" />
             </div>
             <p className="text-xl flex items-end">
-              ${(expanses.thisYear || 0).toFixed(2)}
-              {expanses.thisYear < expanses.lastYear ? (
+              ${(expenses.thisYear || 0).toFixed(2)}
+              {expenses.thisYear < expenses.lastYear ? (
                 <span className="text-red-500 text-base flex items-center ml-2">
-                  {expanses.persent}% <BsArrowDownRight />
+                  {expenses.persent}% <BsArrowDownRight />
                 </span>
               ) : (
                 <span className="text-green-500 text-base flex items-center ml-2">
-                  {expanses.persent}% <BsArrowUpRight className="ml-2" />
+                  {expenses.persent}% <BsArrowUpRight className="ml-2" />
                 </span>
               )}
             </p>
@@ -766,7 +766,7 @@ const Dashboard = () => {
           <div className="h-10 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart
-                data={expanseByMonth?.data || dataAreaCard}
+                data={expenseByMonth?.data || dataAreaCard}
                 margin={{
                   top: 0,
                   right: 0,
@@ -776,7 +776,7 @@ const Dashboard = () => {
               >
                 <Area
                   type="monotone"
-                  dataKey={`${Object.keys(expanseByMonth?.data[0] || {})[1]}`}
+                  dataKey={`${Object.keys(expenseByMonth?.data[0] || {})[1]}`}
                   stackId="1"
                   stroke="#ff4d00"
                   fill="#ff7400"
@@ -1203,21 +1203,21 @@ const Dashboard = () => {
             </div>
           </div>
           <ResponsiveContainer width="100%" height="100%">
-            <RadarChart cx="50%" cy="50%" outerRadius="80%" data={expanseChart}>
+            <RadarChart cx="50%" cy="50%" outerRadius="80%" data={expenseChart}>
               <PolarGrid />
               <PolarAngleAxis dataKey="name" />
               <PolarRadiusAxis angle={30} domain={[0, 150]} />
               <Tooltip />
               <Radar
-                name={`${Object.keys(expanseChart[0] || {})[1]}`}
-                dataKey={`${Object.keys(expanseChart[0] || {})[1]}`}
+                name={`${Object.keys(expenseChart[0] || {})[1]}`}
+                dataKey={`${Object.keys(expenseChart[0] || {})[1]}`}
                 stroke="#8884d8"
                 fill="#8884d8"
                 fillOpacity={0.6}
               />
               <Radar
-                name={`${Object.keys(expanseChart[0] || {})[2]}`}
-                dataKey={`${Object.keys(expanseChart[0] || {})[2]}`}
+                name={`${Object.keys(expenseChart[0] || {})[2]}`}
+                dataKey={`${Object.keys(expenseChart[0] || {})[2]}`}
                 stroke="#82ca9d"
                 fill="#82ca9d"
                 fillOpacity={0.6}

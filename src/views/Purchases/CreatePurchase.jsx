@@ -23,7 +23,7 @@ import api from "../../services/api";
 import { useGetAllSupplierQuery } from "../../../app/Features/suppliesSlice";
 import { toast } from "react-toastify";
 import { useLocation, useNavigate, useParams } from "react-router";
-import { useGetAllPurchaseQuery } from "../../../app/Features/purchasesSlice";
+import { useGetAllPurchaseQuery, useGetAllPurchaseRawQuery } from "../../../app/Features/purchasesSlice";
 import { DatePicker, Input, Select, Card, Badge, Tag, Divider, Radio } from "antd";
 const { Option } = Select;
 import dayjs from "dayjs";
@@ -82,6 +82,7 @@ const CreatePurchase = () => {
   const { refetch } = useGetAllPurchaseQuery({ token, limit: 10, page: 1, search: "" });
   const [errors, setErrors] = useState({});
   const [fieldErrors, setFieldErrors] = useState({});
+  const { refetch: refetchRawMaterials } = useGetAllPurchaseRawQuery({ token, limit: 10, page: 1, search: "" });
 
   const onChangeItemType = ({ target: { value } }) => {
     console.log('radio4 checked', value);
@@ -491,10 +492,12 @@ const CreatePurchase = () => {
           await api.put(`/purchase_raw/${purchaseId}`, payload, {
             headers: { Authorization: `Bearer ${token}` },
           });
+          refetchRawMaterials();
         } else {
           await api.put(`/purchase/${purchaseId}`, payload, {
             headers: { Authorization: `Bearer ${token}` },
           });
+          refetch();
         }
 
         toast.success("Purchase updated successfully!");
@@ -503,16 +506,17 @@ const CreatePurchase = () => {
           await api.post("/purchase_raw", payload, {
             headers: { Authorization: `Bearer ${token}` },
           });
+
+          refetchRawMaterials();
         } else {
           await api.post("/purchase", payload, {
             headers: { Authorization: `Bearer ${token}` },
           });
+          refetch();
         }
 
         toast.success("Purchase created successfully!");
       }
-
-      refetch();
       navigator(`${pathname.includes('purchase-raws') ? '/dashboard/purchase-raw' : '/dashboard/purchases'}`);
     } catch (err) {
       const errorMessage = err.response?.data?.message || `Error ${isEditMode ? 'updating' : 'creating'} purchase.`;

@@ -48,16 +48,16 @@ export const dashboardsApi = createApi({
       query: (token) => queryData("/purchase_by_hour", token),
     }),
     getExpanseByMonth: builder.query({
-      query: (token) => queryData("/expanse_by_month", token),
+      query: (token) => queryData("/expense_by_month", token),
     }),
     getExpanseByWeek: builder.query({
-      query: (token) => queryData("/expanse_by_week", token),
+      query: (token) => queryData("/expense_by_week", token),
     }),
     getExpanseByDay: builder.query({
-      query: (token) => queryData("/expanse_by_day", token),
+      query: (token) => queryData("/expense_by_day", token),
     }),
     getExpanseByHour: builder.query({
-      query: (token) => queryData("/expanse_by_hour", token),
+      query: (token) => queryData("/expense_by_hour", token),
     }),
   }),
 });

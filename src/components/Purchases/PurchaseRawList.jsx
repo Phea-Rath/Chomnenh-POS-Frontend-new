@@ -41,6 +41,7 @@ import { FaXmark } from "react-icons/fa6";
 import dayjs from "dayjs";
 import api from "../../services/api";
 import ExportExel from "../../services/ExportExel"; // Assume this is custom and doesn't use AntD
+import { useGetAllRawMaterialQuery } from "../../../app/Features/RawMaterialSlice";
 
 const PurchaseRawList = () => {
     const [purchases, setPurchases] = useState([]);
@@ -71,6 +72,7 @@ const PurchaseRawList = () => {
         search: debouncedSearch,
     }), [token, itemsPerPage, currentPage, debouncedSearch]);
 
+    const { refetch: refetchRawMaterials } = useGetAllRawMaterialQuery({ limit: 10, page: 1, search: "", token });
     const { data, isLoading, refetch } = useGetAllPurchaseRawQuery(queryParams);
     const [deletePurchase] = useDeletePurchaseRawMutation();
     const [cancelPurchase] = useCancelPurchaseMutation();
@@ -232,7 +234,7 @@ const PurchaseRawList = () => {
                 headers: { Authorization: `Bearer ${token}` },
             });
             if (res.data.status === 200) {
-                salesRefetch();
+                refetchRawMaterials();
                 stockRefetch();
                 refetch();
                 toast.success("Confirmed purchase successfully!");
@@ -366,7 +368,7 @@ const PurchaseRawList = () => {
                             <div className="p-2 bg-blue-100 rounded-lg">
                                 <FaShoppingCart className="text-2xl text-blue-600" />
                             </div>
-                            Purchase Management
+                            Purchase Raw Materials Management
                         </motion.h1>
                         <p className="text-gray-600 text-sm">Manage and track your purchase orders</p>
                     </div>
