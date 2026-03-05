@@ -60,7 +60,7 @@ const RawMaterials = () => {
 
     // Update data when query returns
     useEffect(() => {
-        const data = raw?.data?.data || [];
+        const data = raw?.data || [];
 
         setPagination(prev => ({
             ...prev,
@@ -388,7 +388,7 @@ const RawMaterials = () => {
 
         return (
             <>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                     {paginatedData.map((item) => (
                         <motion.div
                             key={item.id}

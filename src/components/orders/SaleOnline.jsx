@@ -1138,9 +1138,9 @@ const Sales = () => {
                 </Badge>
               </Link>
             )}
-            <div className=" fixed top-25 right-4 z-50">
-              <Badge count={orderCount} color="blue">
-                <Button onClick={showDrawer} variant="primary" icon={<PiShoppingCartBold />} className="h-10 w-10 p-0" />
+            <div className=" fixed bottom-25 right-4 z-50">
+              <Badge count={orderCount} color="red" offset={[-5, 5]} >
+                <Button onClick={showDrawer} variant="primary" icon={<PiShoppingCartBold />} className="h-10 w-10 p-0 bg-green-500" />
               </Badge>
             </div>
           </div>
@@ -1161,7 +1161,7 @@ const Sales = () => {
             <button
               key={cat.category_id}
               onClick={() => onFilterCategory(cat.category_id)}
-              className={`px-4 rounded-full text-xs font-medium border transition-colors ${selectedCategory === cat.category_id
+              className={`px-4 py-1 rounded-full text-xs font-medium border transition-colors ${selectedCategory === cat.category_id
                 ? 'bg-blue-600 text-white border-blue-600'
                 : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'
                 }`}

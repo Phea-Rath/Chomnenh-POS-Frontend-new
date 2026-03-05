@@ -52,6 +52,8 @@ const AddInStock = () => {
   const [createStock] = useCreateStockMutation();
   const [updateStock] = useUpdateStockMutation();
   const [attributes, setAttribute] = useState([]);
+  const { refetch: refetchItems } = useGetAllItemsQuery({ limit: 10, page: 1, search: '', token });
+  const { refetch: refetchSales } = useGetAllSaleQuery({ limit: 10, page: 1, search: '', token });
 
   // Get stock data for edit mode
   const { data: stockData, refetch: refetchStock } = useGetStockByIdQuery(
@@ -285,6 +287,8 @@ const AddInStock = () => {
         refetch();
         if (isEditMode) refetchStock();
         saleItemContext.refetch();
+        refetchItems();
+        refetchSales();
         wasteRefetch();
         setLoading(false);
         toast.success(

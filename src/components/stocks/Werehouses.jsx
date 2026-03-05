@@ -224,7 +224,7 @@ const Warehouses = () => {
               variant="primary"
               icon={<RiEdit2Line />}
               className="flex-1"
-              disabled={[1, 2, 3, 4, 5].includes(warehouse.warehouse_id)}
+              disabled={[1, 2, 3, 4].includes(warehouse.warehouse_id)}
             >
               Edit
             </Button>
@@ -233,7 +233,7 @@ const Warehouses = () => {
               variant="danger"
               icon={<RiDeleteBin6Line />}
               className="flex-1"
-              disabled={[1, 2, 3, 4, 5].includes(warehouse.warehouse_id)}
+              disabled={[1, 2, 3, 4].includes(warehouse.warehouse_id)}
             >
               Delete
             </Button>
@@ -376,7 +376,7 @@ const Warehouses = () => {
                             variant="primary"
                             icon={<RiEdit2Line />}
                             className="px-3 py-1 text-xs"
-                            disabled={[1, 2, 3, 4, 5].includes(wh.warehouse_id)}
+                            disabled={[1, 2, 3, 4].includes(wh.warehouse_id)}
                           >
                             Edit
                           </Button>
@@ -385,7 +385,7 @@ const Warehouses = () => {
                             variant="danger"
                             icon={<RiDeleteBin6Line />}
                             className="px-3 py-1 text-xs"
-                            disabled={[1, 2, 3, 4, 5].includes(wh.warehouse_id)}
+                            disabled={[1, 2, 3, 4].includes(wh.warehouse_id)}
                           >
                             Delete
                           </Button>
