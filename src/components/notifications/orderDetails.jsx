@@ -106,7 +106,7 @@ const OrderDetails = () => {
             if (res?.data.status === 200) {
                 refetch();
                 toast.success('🎉 Order received successfully!');
-                navigator('/dashboard/notification');
+                navigator('/notification');
             }
         } catch (error) {
             toast.error(error?.message || 'Failed to receive order.');
@@ -131,7 +131,7 @@ const OrderDetails = () => {
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex items-center justify-between py-4">
                         <div className="flex items-center gap-4">
-                            <Link to="/dashboard/notification">
+                            <Link to="/notification">
                                 <button className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">
                                     <FaArrowLeft className="w-4 h-4" />
                                     <span className="font-medium">Back</span>

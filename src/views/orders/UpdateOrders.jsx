@@ -519,7 +519,7 @@ const UpdateOrders = () => {
         orderContext.refetch();
         refetch();
         toast.success(orderRes.data.message || "Order updated successfully");
-        navigator("/dashboard/order-list");
+        navigator("/order-list");
       }
     } catch (error) {
       toast.error(
@@ -563,7 +563,7 @@ const UpdateOrders = () => {
             </div>
             <div className="flex items-center gap-3">
               <Link
-                to="/dashboard/order-list"
+                to="/order-list"
                 className="px-4 py-2 bg-gray-200 text-gray-800 font-medium rounded-lg hover:bg-gray-300 transition-colors"
               >
                 Back to Orders
@@ -1023,7 +1023,7 @@ const UpdateOrders = () => {
                     Update Order
                   </button>
                   <Link
-                    to="/dashboard/order-list"
+                    to="/order-list"
                     className="block w-full px-6 py-4 bg-gradient-to-r from-gray-100 to-gray-200 text-gray-800 font-semibold text-center rounded-lg hover:from-gray-200 hover:to-gray-300 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-offset-2"
                   >
                     Cancel

@@ -576,7 +576,7 @@ const StockTransferList = () => {
       <LuTruck className="text-5xl text-gray-400 mx-auto mb-4" />
       <h3 className="text-xl font-semibold text-gray-700 mb-2">No Transfer Records Found</h3>
       <p className="text-gray-500 mb-6">Try adjusting your filters or create a new transfer</p>
-      <Link to="/dashboard/transfer-stock">
+      <Link to="/transfer-stock">
         <button className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2 mx-auto">
           <LuPlus /> Create Transfer
         </button>
@@ -635,7 +635,7 @@ const StockTransferList = () => {
             >
               <LuDownload /> {!isMobile && (exportLoading ? 'Exporting...' : 'Export')}
             </button>
-            <Link to="/dashboard/transfer-stock">
+            <Link to="/transfer-stock">
               <button className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 flex items-center gap-2">
                 <LuPlus /> {!isMobile && 'New Transfer'}
               </button>
@@ -747,7 +747,7 @@ const StockTransferList = () => {
 
         {/* Mobile FAB */}
         {isMobile && (
-          <Link to="/dashboard/transfer-stock">
+          <Link to="/transfer-stock">
             <button className="fixed bottom-6 right-6 z-40 w-14 h-14 bg-green-600 text-white rounded-full shadow-lg flex items-center justify-center hover:bg-green-700">
               <LuPlus size={24} />
             </button>

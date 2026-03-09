@@ -35,7 +35,7 @@ const Header = () => {
           </button>
 
           <Link
-            to="/dashboard/analystic"
+            to="/home"
             className="flex items-center gap-2 hover:opacity-80 transition-opacity"
           >
             <div className="">
@@ -58,7 +58,7 @@ const Header = () => {
         <div className="flex items-center gap-4">
           {/* Notification Bell */}
           {uId != 1 && <Link
-            to="/dashboard/notification"
+            to="/notification"
             className="relative p-2 hover:bg-gray-100 rounded-lg transition-colors"
           >
             <Badge
@@ -104,7 +104,7 @@ const Header = () => {
             >
               <li>
                 <Link
-                  to={"/dashboard/profile/" + profile?.profile_id}
+                  to={"/user_detail/" + localStorage.getItem("userId")}
                   className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-gray-100 text-gray-700 transition-colors"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

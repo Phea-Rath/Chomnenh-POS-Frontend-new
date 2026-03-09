@@ -99,7 +99,7 @@ const Waste = () => {
                                 {item.waste_quantity} wasted
                             </span>
                             <button
-                                onClick={() => navigate('/dashboard/detail-waste/' + item.item_id)}
+                                onClick={() => navigate('/detail-waste/' + item.item_id)}
                                 className="px-4 py-2 border border-gray-300 text-gray-700 rounded hover:bg-gray-100 text-sm font-medium transition-colors"
                             >
                                 More

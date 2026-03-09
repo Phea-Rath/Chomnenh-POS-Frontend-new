@@ -106,17 +106,17 @@ const DeliverList = () => {
 
     // Handle edit
     const handleEdit = (deliverId) => {
-        navigate(`/dashboard/deliver/edit/${deliverId}`);
+        navigate(`/deliver/edit/${deliverId}`);
     };
 
     // Handle view details
     const handleViewDetails = (deliverId) => {
-        navigate(`/dashboard/deliver/${deliverId}`);
+        navigate("/delivers");
     };
 
     // Handle create new deliver
     const handleCreate = () => {
-        navigate("/dashboard/deliver/create");
+        navigate("/deliver/create");
     };
 
     // Get initials for avatar

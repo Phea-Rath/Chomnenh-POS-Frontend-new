@@ -279,7 +279,7 @@ const ItemForm = () => {
         saleContext.refetch();
         toast.success(response.data.message || `Item ${isEditMode ? 'updated' : 'created'} successfully`);
         setLoading(false);
-        navigator("/dashboard/list");
+        navigator("/list");
         // }
       }
     } catch (error) {
@@ -1009,7 +1009,7 @@ const ItemForm = () => {
             <button
               type="button"
               className="px-6 py-3 border border-gray-300 flex gap-2 items-center text-gray-700 rounded-lg hover:bg-gray-50 transition-all duration-200 cursor-pointer font-medium"
-              onClick={() => navigator("/dashboard/list")}
+              onClick={() => navigator("/list")}
               disabled={loading}
             >
               <FaTimes />

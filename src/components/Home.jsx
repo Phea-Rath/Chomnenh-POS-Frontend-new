@@ -8,7 +8,7 @@ import { motion } from "framer-motion";
 import { TbReportAnalytics } from "react-icons/tb";
 import { BiSolidPurchaseTag } from "react-icons/bi";
 import { IoIosPeople } from "react-icons/io";
-import { useGetPermissionByIdQuery } from "../../app/Features/permissionSlice";
+import { useGetMenuHomeQuery, useGetPermissionByIdQuery } from "../../app/Features/permissionSlice";
 import { useEffect, useState } from "react";
 import { FaTruckFast } from "react-icons/fa6";
 import { CgTrack } from "react-icons/cg";
@@ -33,14 +33,14 @@ const flattenMenus = (menus = []) =>
 
 const Home = () => {
   const token = localStorage.getItem("token");
-  const userId = localStorage.getItem("userId");
-  const { data } = useGetPermissionByIdQuery({ id: userId, token });
+  const { data } = useGetMenuHomeQuery(token);
   const [menu, setMenu] = useState([]);
 
   useEffect(() => {
     const rawMenu = data?.data ?? JSON.parse(localStorage.getItem("menus") || "[]");
     const allMenus = flattenMenus(rawMenu || []);
-    setMenu(allMenus.filter((i) => Number(i.menu_type) === 2));
+    const perms = allMenus.filter(i => i.active === 1);
+    setMenu(perms);
   }, [data]);
 
   const renderIcon = (iconName) => {

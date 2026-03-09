@@ -78,7 +78,7 @@ const RoleForm = () => {
         toast.success("Role created successfully!");
       }
       refetch();
-      navigate("/dashboard/roles"); // Redirect to role list
+      navigate("/roles"); // Redirect to role list
     } catch (err) {
       setError(
         err.response?.data?.message ||
@@ -138,7 +138,7 @@ const RoleForm = () => {
           {/* Submit and Cancel Buttons */}
           <div className="flex justify-end space-x-4">
             <Link
-              to="/dashboard/roles"
+              to="/roles"
               className="p-2 border border-gray-300 flex gap-2 items-center text-gray-700 rounded-md hover:bg-gray-100 transition-all duration-300 cursor-pointer"
             >
               <FaTimes /> Cancel

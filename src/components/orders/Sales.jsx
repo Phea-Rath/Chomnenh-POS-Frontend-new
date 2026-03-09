@@ -677,8 +677,8 @@ const Sales = () => {
 
         // Navigate to receipt/invoice
         const path = payload.sale_type === "sale"
-          ? `/dashboard/order-list/receipt/${orderRes.data.data.order_id}`
-          : `/dashboard/order-list/invoice/${orderRes.data.data.order_id}`;
+          ? `/order-list/receipt/${orderRes.data.data.order_id}`
+          : `/order-list/invoice/${orderRes.data.data.order_id}`;
         navigate(path);
       } else {
         throw new Error(orderRes.data.message || "Failed to create order");
@@ -861,7 +861,7 @@ const Sales = () => {
             </div>
 
             <div className="flex items-center gap-3">
-              <Link to="/dashboard/order-list">
+              <Link to="/order-list">
                 <button className="inline-flex items-center gap-2 px-4 py-2 border border-green-600 bg-green-600 text-white rounded hover:bg-green-700 text-sm font-medium">
                   <LuListChecks />
                   View Orders
@@ -943,7 +943,7 @@ const Sales = () => {
                 <h3 className="text-lg font-semibold text-gray-700 mb-2">No products found</h3>
                 <p className="text-gray-500 text-sm mb-6">Try adjusting your search or filter criteria</p>
                 <button
-                  onClick={() => navigate("/dashboard/add-to-stock")}
+                  onClick={() => navigate("/add-to-stock")}
                   className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm font-medium"
                 >
                   Add Products to Stock

@@ -393,7 +393,7 @@ const UserProfilePage = () => {
                             {filteredUsers?.data?.length > 0 && <Card className="shadow-lg border-0 overflow-hidden">
                                 {/* Profile Stats */}
                                 <div className="px-6">
-                                    {filteredUsers?.data?.map((employee, index) => employee?.id != id && (
+                                    {filteredUsers?.data?.filter(e => e.role_name != 'guest')?.map((employee, index) => employee?.id != id && (
                                         <div
                                             key={employee.id}
                                             className={`flex items-center p-4 transition-all duration-200 border-b border-gray-100 last:border-b-0 hover:bg-gray-50`}

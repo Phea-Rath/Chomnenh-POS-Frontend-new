@@ -24,7 +24,7 @@ const LoginForm = () => {
 
   const onOtpSubmit = (otp) => {
     console.log("Login Successful", otp);
-    navigate("/dashboard/analystic");
+    navigate("/dashboard");
   };
 
 
@@ -57,7 +57,7 @@ const LoginForm = () => {
         if (res.status == 200) {
           localStorage.setItem('menus', JSON.stringify(res?.data.data));
           toast.success("Login successful");
-          id == 1 ? navigate('/dashboard/analystic') : navigate("/dashboard");
+          id == 1 ? navigate('/dashboard') : navigate("/dashboard");
         }
       }
     } catch (err) {
@@ -188,7 +188,7 @@ const LoginForm = () => {
                   Forgot Password?
                 </Link>
                 <Link
-                  to="/signup"
+                  to="/register"
                   className="text-gray-600 hover:text-gray-800 transition-colors duration-200"
                 >
                   Don't have an account?
@@ -224,11 +224,11 @@ const LoginForm = () => {
         <div className="mt-8 pt-6 border-t border-gray-200">
           <p className="text-center text-xs text-gray-500">
             By continuing, you agree to our{" "}
-            <Link to="/terms" className="text-blue-600 hover:text-blue-700 font-medium">
+            <Link to="/" className="text-blue-600 hover:text-blue-700 font-medium">
               Terms of Service
             </Link>{" "}
             and{" "}
-            <Link to="/privacy" className="text-blue-600 hover:text-blue-700 font-medium">
+            <Link to="/" className="text-blue-600 hover:text-blue-700 font-medium">
               Privacy Policy
             </Link>
           </p>

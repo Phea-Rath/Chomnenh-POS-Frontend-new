@@ -5,7 +5,7 @@ import { HiHome, HiShoppingBag, HiCog, HiLogout } from "react-icons/hi";
 import { useOutletsContext } from "./Management";
 import { motion } from "framer-motion";
 import { useGetUserLoginQuery, useGetUserProfileQuery } from "../../app/Features/usersSlice";
-import { useGetPermissionByIdQuery } from "../../app/Features/permissionSlice";
+import { useGetMenuSidebarQuery, useGetPermissionByIdQuery } from "../../app/Features/permissionSlice";
 
 const { Title, Text } = Typography;
 
@@ -21,14 +21,17 @@ const Sidebar = () => {
   const proId = localStorage.getItem("profileId");
 
   const { data: profile } = useGetUserProfileQuery({ id: proId, token });
-  const { data: permData } = useGetPermissionByIdQuery({ id: userId, token });
+  const { data: permData } = useGetMenuSidebarQuery(token);
 
   useEffect(() => {
-    const menuData = JSON.parse(localStorage.getItem("menus")) ?? permData?.data;
+    const menuData = permData?.data;
+    console.log(menuData);
+
     if (menuData?.length) {
 
-      const menus = menuData?.filter((i) => i.menu_type == 1 || (i.menu_type == 0 && i.menu_id != 4));
-      setMenu(menus);
+
+      const perms = menuData.filter(i => i.active === 1);
+      setMenu(perms);
     }
   }, [permData]);
 
@@ -68,7 +71,7 @@ const Sidebar = () => {
 
 
       {/* Profile Card Simplified */}
-      <div className="m-6 p-4 bg-slate-200 rounded-[2rem] flex items-center gap-3 border border-slate-100">
+      <Link to={'/profile/' + proId}><div className="m-6 p-4 bg-slate-200 rounded-[2rem] flex items-center gap-3 border border-slate-100">
         <Badge dot color="#10B981" offset={[-5, 35]}>
           <Avatar
             size={45}
@@ -86,7 +89,7 @@ const Sidebar = () => {
             {"Company"}
           </p>
         </div>
-      </div>
+      </div></Link>
 
       {/* Navigation */}
       <div className="flex-1 overflow-y-auto custom-scrollbar">
@@ -99,7 +102,7 @@ const Sidebar = () => {
       {/* Footer / Settings */}
       {menu?.some(m => m.menu_name.toLowerCase() == 'setting') && <div className="p-6 mt-auto border-t border-slate-50">
         <Link
-          to="/dashboard/setting"
+          to={menu?.find(m => m.menu_name.toLowerCase() == 'setting').menu_path}
           onClick={() => setSidebar(false)}
           className="flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-500 hover:bg-red-50 hover:text-red-600 transition-all duration-300"
         >

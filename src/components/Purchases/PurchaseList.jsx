@@ -377,7 +377,7 @@ const Purchases = () => {
               Refresh
             </button>
             <ExportExel data={filteredPurchases} title="Purchase" />
-            <Link to="/dashboard/add-purchase">
+            <Link to="add">
               <button className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 flex items-center gap-2">
                 <FaPlus />
                 New Purchase

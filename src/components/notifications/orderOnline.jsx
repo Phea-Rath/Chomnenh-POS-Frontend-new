@@ -110,7 +110,7 @@ const OrderOnline = () => {
                                     {totalQuantity} quantity
                                 </span>
                                 <button
-                                    onClick={() => navigate('/dashboard/order-tracking')}
+                                    onClick={() => navigate('/home/order-tracking')}
                                     className="px-4 py-2 border border-blue-600 text-blue-600 rounded hover:bg-blue-50 text-sm font-medium transition-colors"
                                 >
                                     Order Tracking

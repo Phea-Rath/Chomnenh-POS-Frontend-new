@@ -501,7 +501,7 @@ const RawMaterials = () => {
                             <LuDownload />
                             Export
                         </ExportExel>
-                        <Link to="/dashboard/raw-materials/create">
+                        <Link to="/raw-materials/create">
                             <button className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 flex items-center gap-2">
                                 <LuPlus />
                                 New
@@ -589,7 +589,7 @@ const RawMaterials = () => {
                                 : 'Start by adding your first raw material.'}
                         </p>
                         {!searchTerm && selectedCategory === 'all' && !showDeleted && (
-                            <Link to="/dashboard/raw-materials/create">
+                            <Link to="/raw-materials/create">
                                 <button className="p-2 bg-green-600 text-white text-sm rounded-md hover:bg-green-700 flex items-center gap-2">
                                     <LuPlus /> Add Your First Material
                                 </button>

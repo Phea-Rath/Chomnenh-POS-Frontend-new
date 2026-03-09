@@ -92,7 +92,7 @@ const ProductionForm = () => {
         console.log(itemData);
 
         setItems(itemData?.data);
-        setRawMaterials(rawData?.data?.data);
+        setRawMaterials(rawData?.data);
     }, [itemData, rawData]);
 
 
@@ -147,7 +147,7 @@ const ProductionForm = () => {
         } catch (error) {
             console.error('Error fetching production:', error);
             toast.error('Failed to load production data. Please try again.');
-            // navigate('/dashboard/production');
+            // navigate('/home/production');
         } finally {
             setLoading(false);
         }
@@ -397,7 +397,7 @@ const ProductionForm = () => {
                     : 'Production record created successfully!',
                 );
                 refetch();
-                navigate('/dashboard/production');
+                navigate(-1);
             }
         } catch (error) {
             console.error('Error saving production:', error);
@@ -506,7 +506,7 @@ const ProductionForm = () => {
                             <Button
                                 type="text"
                                 icon={<LuArrowLeft />}
-                                onClick={() => navigate('/dashboard/production')}
+                                onClick={() => navigate(-1)}
                                 className="mb-4 text-gray-600 hover:text-gray-800"
                             >
                                 Back to Production
@@ -792,7 +792,7 @@ const ProductionForm = () => {
                                             <Button
                                                 type="default"
                                                 icon={<LuArrowLeft />}
-                                                onClick={() => navigate('/dashboard/production')}
+                                                onClick={() => navigate(-1)}
                                                 className="h-12 px-6 rounded-lg"
                                                 size="large"
                                             >
@@ -1067,7 +1067,7 @@ const ProductionForm = () => {
                                                 </div>
                                             </div>
                                             <Tag color="blue" className="ml-auto">
-                                                {material.in_stock}
+                                                {Number(material.in_stock)?.toFixed(0)}
                                             </Tag>
                                         </div>
                                     </Option>

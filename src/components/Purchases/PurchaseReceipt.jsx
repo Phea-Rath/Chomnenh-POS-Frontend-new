@@ -185,7 +185,7 @@ const PurchaseReceipt = () => {
           </div>
           <h3 className="text-lg font-semibold text-gray-900 mb-2">កំហុស</h3>
           <p className="text-gray-600 mb-4">{error}</p>
-          <Button type="primary" onClick={() => navigate("/dashboard/purchases")}>
+          <Button type="primary" onClick={() => navigate(-1)}>
             <FaArrowLeft className="mr-2" />
             ត្រឡប់ទៅកាន់បញ្ជីទិញទំនិញ
           </Button>
@@ -202,7 +202,7 @@ const PurchaseReceipt = () => {
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
               <button
-                onClick={() => navigate("/dashboard/purchases")}
+                onClick={() => navigate(-1)}
                 className="flex items-center text-blue-600 hover:text-blue-800 mb-2"
               >
                 <FaArrowLeft className="mr-2" />

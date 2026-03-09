@@ -7,9 +7,9 @@ import {
     LuScale,
     LuTag,
     LuImage,
-    LuCircleCheck,
-    LuCircleX,
-    LuRefreshCw
+    LuClipboardCheck,
+    LuRefreshCw,
+    LuInfo
 } from 'react-icons/lu';
 import {
     Form,
@@ -19,14 +19,15 @@ import {
     Upload,
     Select,
     InputNumber,
-    Switch,
     Alert,
     Spin,
     Divider,
     Row,
     Col,
     Tag,
-    notification
+    notification,
+    Statistic,
+    Tooltip
 } from 'antd';
 import { motion } from 'framer-motion';
 import { useNavigate, useParams } from 'react-router';
@@ -48,7 +49,6 @@ const RawMaterialForm = () => {
     const [imageFile, setImageFile] = useState(null);
     const [imageUrl, setImageUrl] = useState('');
     const [imagePreview, setImagePreview] = useState('');
-    const [hasSecondaryUnit, setHasSecondaryUnit] = useState(false);
     const [formErrors, setFormErrors] = useState({});
     const [currentMaterial, setCurrentMaterial] = useState(null);
 
@@ -58,6 +58,7 @@ const RawMaterialForm = () => {
         { skip: !isEditMode }
     );
 
+    const materialName = Form.useWatch('material_name', form);
     const primaryUnit = Form.useWatch('primary_unit', form);
     const secondaryUnit = Form.useWatch('secondary_unit', form);
     const conversionValue = Form.useWatch('conversion_value', form);
@@ -82,14 +83,10 @@ const RawMaterialForm = () => {
     ];
 
     useEffect(() => {
-        if (!isEditMode) {
-            return;
-        }
+        if (!isEditMode) return;
 
         const material = data?.data;
-        if (!material) {
-            return;
-        }
+        if (!material) return;
 
         setCurrentMaterial(material);
         form.setFieldsValue({
@@ -99,8 +96,6 @@ const RawMaterialForm = () => {
             secondary_unit: material.secondary_unit || undefined,
             conversion_value: material.conversion_value ? parseFloat(material.conversion_value) : undefined
         });
-
-        setHasSecondaryUnit(Boolean(material.secondary_unit));
 
         if (material.material_image) {
             setImageUrl(material.material_image);
@@ -142,43 +137,21 @@ const RawMaterialForm = () => {
     };
 
     const validateSecondaryUnit = async (_, value) => {
-        if (!hasSecondaryUnit) {
-            return Promise.resolve();
-        }
-        if (!value) {
-            return Promise.reject(new Error('Please select secondary unit'));
-        }
-        if (value === form.getFieldValue('primary_unit')) {
+        if (value && value === form.getFieldValue('primary_unit')) {
             return Promise.reject(new Error('Secondary unit must be different from primary unit'));
         }
         return Promise.resolve();
     };
 
     const validateConversion = async (_, value) => {
-        if (!hasSecondaryUnit) {
-            return Promise.resolve();
-        }
-        if (value === undefined || value === null || value === '') {
+        const hasSecondary = form.getFieldValue('secondary_unit');
+        if (hasSecondary && (value === undefined || value === null || value === '')) {
             return Promise.reject(new Error('Please enter conversion value'));
         }
-        if (Number(value) <= 0) {
+        if (value !== undefined && value !== null && value !== '' && Number(value) <= 0) {
             return Promise.reject(new Error('Conversion value must be greater than 0'));
         }
         return Promise.resolve();
-    };
-
-    const handleSecondaryToggle = (checked) => {
-        setHasSecondaryUnit(checked);
-        if (!checked) {
-            form.setFieldsValue({
-                secondary_unit: undefined,
-                conversion_value: undefined
-            });
-            form.setFields([
-                { name: 'secondary_unit', errors: [] },
-                { name: 'conversion_value', errors: [] }
-            ]);
-        }
     };
 
     const handleSubmit = async (values) => {
@@ -209,18 +182,12 @@ const RawMaterialForm = () => {
             if (response.status === 200) {
                 refetch();
                 toast.success(isEditMode ? 'Material updated successfully!' : 'Material created successfully!');
-                navigate('/dashboard/raw-materials');
+                navigate(-1);
             }
         } catch (error) {
             const apiErrors = error?.response?.data?.errors || {};
             if (Object.keys(apiErrors).length) {
                 setFormErrors(apiErrors);
-                form.setFields(
-                    Object.entries(apiErrors).map(([name, messages]) => ({
-                        name,
-                        errors: Array.isArray(messages) ? messages : [String(messages)]
-                    }))
-                );
                 toast.error('Please fix the highlighted fields.');
             } else {
                 toast.error(error?.response?.data?.message || 'Failed to save material. Please try again.');
@@ -228,26 +195,6 @@ const RawMaterialForm = () => {
         } finally {
             setSaving(false);
         }
-    };
-
-    const handleSubmitFailed = ({ errorFields }) => {
-        if (!errorFields?.length) {
-            return;
-        }
-        toast.error('Please complete all required fields correctly.');
-        const firstError = errorFields[0]?.name;
-        if (firstError) {
-            form.scrollToField(firstError, { behavior: 'smooth', block: 'center' });
-        }
-    };
-
-    const handleReset = () => {
-        form.resetFields();
-        setImageFile(null);
-        setImageUrl('');
-        setImagePreview('');
-        setHasSecondaryUnit(false);
-        setFormErrors({});
     };
 
     if (isEditMode && materialLoading) {
@@ -263,41 +210,42 @@ const RawMaterialForm = () => {
 
     return (
         <motion.div
-            initial={{ opacity: 0, y: 14 }}
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.35 }}
+            transition={{ duration: 0.5 }}
         >
-            <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-cyan-50 p-3 sm:p-4 lg:p-6">
-                <div className="mb-6 sm:mb-8">
-                    <div className="flex flex-col gap-4 sm:gap-5 lg:flex-row lg:items-start lg:justify-between">
+            <div className="min-h-screen bg-transparent p-4 md:p-6">
+                {/* Header */}
+                <div className="mb-8">
+                    <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
                         <div>
                             <Button
                                 type="text"
                                 icon={<LuArrowLeft />}
-                                onClick={() => navigate('/dashboard/raw-materials')}
-                                className="mb-3 pl-0 text-gray-600 hover:text-gray-800"
+                                onClick={() => navigate(-1)}
+                                className="mb-4 text-gray-600 hover:text-gray-800 p-0"
                             >
                                 Back to Materials
                             </Button>
-                            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 flex items-center gap-3">
-                                <div className={`p-2.5 ${isEditMode ? 'bg-amber-100' : 'bg-emerald-100'} rounded-xl`}>
-                                    <LuPackage className={`text-xl sm:text-2xl ${isEditMode ? 'text-amber-700' : 'text-emerald-700'}`} />
+                            <h1 className="text-3xl font-bold text-gray-900 mb-2 flex items-center gap-3">
+                                <div className={`p-3 ${isEditMode ? 'bg-amber-100' : 'bg-emerald-100'} rounded-xl`}>
+                                    <LuPackage className={`text-2xl ${isEditMode ? 'text-amber-600' : 'text-emerald-600'}`} />
                                 </div>
                                 {isEditMode ? 'Edit Raw Material' : 'Create New Raw Material'}
                             </h1>
-                            <p className="text-gray-600 mt-2 text-sm sm:text-base">
+                            <p className="text-gray-600">
                                 {isEditMode
-                                    ? 'Update the material information below.'
-                                    : 'Fill in the details to add a new raw material to inventory.'}
+                                    ? 'Update the material information below'
+                                    : 'Fill in the details to add a new raw material to inventory'}
                             </p>
                         </div>
 
                         {isEditMode && currentMaterial && (
-                            <div className="flex items-center gap-2 sm:gap-3">
-                                <Tag color="blue" className="text-xs sm:text-sm py-1 px-2.5 sm:px-3">
+                            <div className="flex items-center gap-3">
+                                <Tag color="blue" className="text-sm py-1 px-3">
                                     ID: {currentMaterial.id}
                                 </Tag>
-                                <Tag color={currentMaterial.is_deleted === 1 ? 'red' : 'green'} className="text-xs sm:text-sm py-1 px-2.5 sm:px-3">
+                                <Tag color={currentMaterial.is_deleted === 1 ? 'red' : 'green'} className="text-sm py-1 px-3">
                                     {currentMaterial.is_deleted === 1 ? 'Deleted' : 'Active'}
                                 </Tag>
                             </div>
@@ -309,18 +257,13 @@ const RawMaterialForm = () => {
                     form={form}
                     layout="vertical"
                     onFinish={handleSubmit}
-                    onFinishFailed={handleSubmitFailed}
                     size="large"
                     scrollToFirstError
-                    onValuesChange={() => {
-                        if (Object.keys(formErrors).length) {
-                            setFormErrors({});
-                        }
-                    }}
                 >
-                    <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 sm:gap-6">
-                        <div className="xl:col-span-2">
-                            <Card className="border-0 shadow-sm rounded-2xl">
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        {/* Main Form Content */}
+                        <div className="lg:col-span-2 space-y-6">
+                            <Card className="border-0 shadow-xl rounded-2xl">
                                 {Object.keys(formErrors).length > 0 && (
                                     <Alert
                                         type="error"
@@ -329,7 +272,7 @@ const RawMaterialForm = () => {
                                             <ul className="mt-2 space-y-1">
                                                 {Object.entries(formErrors).map(([field, errors]) => (
                                                     <li key={field} className="text-sm">
-                                                        <strong>{field}:</strong> {Array.isArray(errors) ? errors.join(', ') : String(errors)}
+                                                        <strong>{field.replace(/_/g, ' ')}:</strong> {Array.isArray(errors) ? errors.join(', ') : String(errors)}
                                                     </li>
                                                 ))}
                                             </ul>
@@ -340,32 +283,24 @@ const RawMaterialForm = () => {
                                 )}
 
                                 <section>
-                                    <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                                        <LuTag className="text-sky-600" />
+                                    <h3 className="text-lg font-semibold text-gray-800 mb-6 flex items-center gap-2">
+                                        <LuTag className="text-blue-500" />
                                         Basic Information
                                     </h3>
 
-                                    <Row gutter={[16, 4]}>
+                                    <Row gutter={24}>
                                         <Col xs={24} md={12}>
                                             <Form.Item
                                                 label="Material Name"
                                                 name="material_name"
                                                 rules={[
                                                     { required: true, message: 'Please enter material name' },
-                                                    { min: 2, message: 'Name must be at least 2 characters' },
-                                                    { max: 255, message: 'Name cannot exceed 255 characters' },
-                                                    {
-                                                        validator: async (_, value) => {
-                                                            if (!value) return Promise.resolve();
-                                                            return Promise.resolve();
-                                                        }
-                                                    }
+                                                    { min: 2, message: 'Name must be at least 2 characters' }
                                                 ]}
                                             >
                                                 <Input
                                                     placeholder="e.g., Water, Sugar, Flour"
                                                     prefix={<LuPackage className="text-gray-400" />}
-                                                    allowClear
                                                 />
                                             </Form.Item>
                                         </Col>
@@ -374,86 +309,64 @@ const RawMaterialForm = () => {
                                             <Form.Item
                                                 label="Material Code"
                                                 name="material_code"
-                                                rules={[
-                                                    { max: 80, message: 'Code cannot exceed 80 characters' },
-                                                    {
-                                                        validator: async (_, value) => {
-                                                            if (!value) return Promise.resolve();
-                                                            return Promise.resolve();
-                                                        }
-                                                    }
-                                                ]}
+                                                rules={[{ max: 80, message: 'Code cannot exceed 80 characters' }]}
                                             >
-                                                <Input placeholder="Optional code (e.g., RM-SUGAR-001)" allowClear />
+                                                <Input
+                                                    placeholder="Optional code (e.g., RM-SUGAR-001)"
+                                                    prefix={<LuTag className="text-gray-400" />}
+                                                />
                                             </Form.Item>
                                         </Col>
                                     </Row>
                                 </section>
 
-                                <Divider className="my-3 sm:my-5" />
+                                <Divider className="my-8" />
 
-                                <section className="border border-gray-200 p-3 sm:p-4 rounded-xl bg-gray-50/40">
-                                    <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                                        <LuScale className="text-violet-600" />
-                                        Units and Conversion
-                                    </h3>
-
-                                    <Row gutter={[16, 4]}>
-                                        <Col xs={24} md={12}>
-                                            <Form.Item
-                                                label="Primary Unit"
-                                                name="primary_unit"
-                                                rules={[{ required: true, message: 'Please select primary unit' }]}
-                                            >
-                                                <Select
-                                                    placeholder="Select primary unit"
-                                                    suffixIcon={<LuScale className="text-gray-400" />}
-                                                    showSearch
-                                                    optionFilterProp="children"
-                                                >
-                                                    {unitOptions.map((unit) => (
-                                                        <Option key={unit.value} value={unit.value}>
-                                                            {unit.label}
-                                                        </Option>
-                                                    ))}
-                                                </Select>
-                                            </Form.Item>
-                                        </Col>
-                                    </Row>
-
-                                    <div className="mb-4">
-                                        <div className="flex items-center justify-between rounded-lg border border-gray-200 px-3 py-2 bg-white">
-                                            <label className="text-gray-700 font-medium text-sm sm:text-base">
-                                                Add Secondary Unit Conversion
-                                            </label>
-                                            <Switch
-                                                checked={hasSecondaryUnit}
-                                                onChange={handleSecondaryToggle}
-                                                checkedChildren={<LuCircleCheck className="w-3 h-3" />}
-                                                unCheckedChildren={<LuCircleX className="w-3 h-3" />}
-                                            />
-                                        </div>
+                                <section>
+                                    <div className="flex items-center justify-between mb-6">
+                                        <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                                            <LuScale className="text-violet-500" />
+                                            Units & Conversion
+                                        </h3>
+                                        <Tooltip title="Setting a secondary unit allows for automatic unit conversion in production.">
+                                            <LuInfo className="text-gray-400 cursor-help" />
+                                        </Tooltip>
                                     </div>
 
-                                    {hasSecondaryUnit && (
-                                        <Row gutter={[16, 8]}>
+                                    <div className="bg-gray-50/50 p-6 rounded-2xl border border-gray-100">
+                                        <Row gutter={24}>
                                             <Col xs={24} md={8}>
                                                 <Form.Item
-                                                    label="Secondary Unit"
+                                                    label="Primary Unit"
+                                                    name="primary_unit"
+                                                    rules={[{ required: true, message: 'Please select primary unit' }]}
+                                                >
+                                                    <Select
+                                                        placeholder="Select unit"
+                                                        suffixIcon={<LuScale className="text-gray-400" />}
+                                                        showSearch
+                                                    >
+                                                        {unitOptions.map((unit) => (
+                                                            <Option key={unit.value} value={unit.value}>{unit.label}</Option>
+                                                        ))}
+                                                    </Select>
+                                                </Form.Item>
+                                            </Col>
+
+                                            <Col xs={24} md={8}>
+                                                <Form.Item
+                                                    label="Secondary Unit (Optional)"
                                                     name="secondary_unit"
-                                                    dependencies={['primary_unit']}
                                                     rules={[{ validator: validateSecondaryUnit }]}
                                                 >
                                                     <Select
-                                                        placeholder="Select secondary unit"
+                                                        placeholder="Select unit"
                                                         suffixIcon={<LuScale className="text-gray-400" />}
                                                         showSearch
-                                                        optionFilterProp="children"
+                                                        allowClear
                                                     >
                                                         {unitOptions.map((unit) => (
-                                                            <Option key={unit.value} value={unit.value}>
-                                                                {unit.label}
-                                                            </Option>
+                                                            <Option key={unit.value} value={unit.value}>{unit.label}</Option>
                                                         ))}
                                                     </Select>
                                                 </Form.Item>
@@ -463,8 +376,8 @@ const RawMaterialForm = () => {
                                                 <Form.Item
                                                     label="Conversion Value"
                                                     name="conversion_value"
-                                                    dependencies={['secondary_unit']}
                                                     rules={[{ validator: validateConversion }]}
+                                                    disabled={!secondaryUnit}
                                                 >
                                                     <InputNumber
                                                         placeholder="e.g., 1000"
@@ -475,119 +388,144 @@ const RawMaterialForm = () => {
                                                     />
                                                 </Form.Item>
                                             </Col>
-
-                                            <Col xs={24} md={8}>
-                                                <div className="h-full md:pt-8">
-                                                    <div className="text-sm text-gray-600 bg-white p-3 rounded-lg border border-gray-200">
-                                                        <div className="font-medium mb-1">Conversion Preview:</div>
-                                                        {primaryUnit && secondaryUnit && conversionValue ? (
-                                                            <div className="text-green-600">
-                                                                1 {primaryUnit} = {conversionValue} {secondaryUnit}
-                                                            </div>
-                                                        ) : (
-                                                            <div className="text-gray-500">Enter values to see conversion</div>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            </Col>
                                         </Row>
-                                    )}
-                                </section>
-                            </Card>
-                        </div>
 
-                        <div className="xl:col-span-1">
-                            <Card className="border-0 shadow-sm rounded-2xl xl:sticky xl:top-4">
-                                <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                                    <LuImage className="text-pink-600" />
-                                    Material Image
-                                </h3>
-
-                                <Form.Item>
-                                    <div className="space-y-4">
-                                        <Upload
-                                            name="material_image"
-                                            listType="picture-card"
-                                            className="w-full [&_.ant-upload]:!w-full [&_.ant-upload]:!h-56"
-                                            showUploadList={false}
-                                            beforeUpload={beforeUpload}
-                                            accept="image/*"
-                                        >
-                                            {imagePreview ? (
-                                                <div className="relative w-full h-full">
-                                                    <img
-                                                        src={imagePreview}
-                                                        alt="Material preview"
-                                                        className="w-full h-full object-contain rounded-lg bg-gray-50"
-                                                    />
-                                                    <Button
-                                                        type="text"
-                                                        icon={<DeleteOutlined />}
-                                                        className="absolute top-2 right-2 bg-white/90 hover:bg-white"
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            handleRemoveImage();
-                                                        }}
-                                                    />
-                                                </div>
-                                            ) : (
-                                                <div className="text-center px-4">
-                                                    <LuUpload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                                                    <div className="text-sm font-medium text-gray-700">Upload image</div>
-                                                    <div className="text-xs text-gray-500 mt-1">Max 2MB, JPG/PNG/WebP</div>
-                                                </div>
-                                            )}
-                                        </Upload>
-
-                                        <div className="text-sm text-gray-600 bg-gray-50 rounded-lg p-3">
-                                            <p className="font-medium mb-1">Image Guidelines</p>
-                                            <p>Use square images for best preview. Upload is optional.</p>
-                                        </div>
-
-                                        {imageUrl && (
-                                            <div className="p-3 bg-blue-50 rounded-lg">
-                                                <p className="text-sm text-blue-700">Current image URL</p>
-                                                <p className="text-xs text-blue-600 truncate mt-1">{imageUrl}</p>
+                                        {primaryUnit && secondaryUnit && conversionValue > 0 && (
+                                            <div className="mt-4 p-4 bg-violet-50 rounded-xl border border-violet-100 flex items-center justify-center gap-2 text-violet-700 font-medium">
+                                                <span>1 {primaryUnit}</span>
+                                                <LuScale className="w-4 h-4 opacity-50" />
+                                                <span>{conversionValue} {secondaryUnit}</span>
                                             </div>
                                         )}
                                     </div>
-                                </Form.Item>
+                                </section>
+                            </Card>
+
+                            <Card className="border-0 shadow-xl rounded-2xl">
+                                <div className="flex flex-col sm:flex-row gap-4 justify-end">
+                                    <Button
+                                        type="default"
+                                        icon={<LuArrowLeft />}
+                                        onClick={() => navigate(-1)}
+                                        className="h-12 px-6 rounded-xl"
+                                    >
+                                        Cancel
+                                    </Button>
+
+                                    <Button
+                                        type="default"
+                                        icon={<LuRefreshCw />}
+                                        onClick={() => form.resetFields()}
+                                        className="h-12 px-6 rounded-xl"
+                                    >
+                                        Reset
+                                    </Button>
+
+                                    <Button
+                                        type="primary"
+                                        icon={<LuSave />}
+                                        htmlType="submit"
+                                        loading={saving}
+                                        className="h-12 px-8 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 border-none shadow-lg shadow-blue-200"
+                                    >
+                                        {saving ? 'Saving...' : isEditMode ? 'Update Material' : 'Create Material'}
+                                    </Button>
+                                </div>
                             </Card>
                         </div>
-                    </div>
 
-                    <div className="pt-4 sm:pt-6">
-                        <Card className="border-0 shadow-sm rounded-2xl">
-                            <div className="flex flex-col sm:flex-row gap-3 justify-end">
-                                <Button
-                                    type="default"
-                                    icon={<LuArrowLeft />}
-                                    onClick={() => navigate('/dashboard/raw-materials')}
-                                    className="h-11 sm:h-12 px-6 rounded-lg w-full sm:w-auto"
-                                >
-                                    Cancel
-                                </Button>
+                        {/* Sidebar */}
+                        <div className="space-y-6">
+                            {/* Summary Card */}
+                            <Card className="border-0 shadow-xl rounded-2xl overflow-hidden">
+                                <div className="p-4 bg-gray-50 border-b border-gray-100">
+                                    <h3 className="font-semibold text-gray-800 flex items-center gap-2">
+                                        <LuPackage className="text-blue-500" />
+                                        Summary
+                                    </h3>
+                                </div>
+                                <div className="p-6 space-y-6">
+                                    <Statistic
+                                        title="Material Name"
+                                        value={materialName || 'Not set'}
+                                        valueStyle={{ fontSize: '1.25rem', fontWeight: 600 }}
+                                    />
 
-                                <Button
-                                    type="default"
-                                    icon={<LuRefreshCw />}
-                                    onClick={handleReset}
-                                    className="h-11 sm:h-12 px-6 rounded-lg w-full sm:w-auto"
-                                >
-                                    Reset Form
-                                </Button>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <Statistic
+                                            title="Primary Unit"
+                                            value={primaryUnit || 'N/A'}
+                                            valueStyle={{ fontSize: '1rem' }}
+                                        />
+                                        <Statistic
+                                            title="Conversion"
+                                            value={conversionValue || 0}
+                                            suffix={secondaryUnit || ''}
+                                            valueStyle={{ fontSize: '1rem' }}
+                                        />
+                                    </div>
 
-                                <Button
-                                    type="primary"
-                                    icon={<LuSave />}
-                                    htmlType="submit"
-                                    loading={saving}
-                                    className="h-11 sm:h-12 px-8 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 border-none w-full sm:w-auto"
-                                >
-                                    {saving ? 'Saving...' : isEditMode ? 'Update Material' : 'Create Material'}
-                                </Button>
-                            </div>
-                        </Card>
+                                    {imagePreview && (
+                                        <div className="mt-4">
+                                            <p className="text-sm text-gray-500 mb-2">Image Preview</p>
+                                            <img
+                                                src={imagePreview}
+                                                alt="Preview"
+                                                className="w-full h-40 object-contain rounded-xl bg-gray-50 border border-gray-100"
+                                            />
+                                        </div>
+                                    )}
+                                </div>
+                            </Card>
+
+                            {/* Image Upload Card */}
+                            <Card className="border-0 shadow-xl rounded-2xl overflow-hidden">
+                                <div className="p-4 bg-gray-50 border-b border-gray-100">
+                                    <h3 className="font-semibold text-gray-800 flex items-center gap-2">
+                                        <LuImage className="text-pink-500" />
+                                        Material Image
+                                    </h3>
+                                </div>
+                                <div className="p-6">
+                                    <Upload
+                                        name="material_image"
+                                        listType="picture-card"
+                                        className="w-full [&_.ant-upload]:!w-full [&_.ant-upload]:!h-48"
+                                        showUploadList={false}
+                                        beforeUpload={beforeUpload}
+                                        accept="image/*"
+                                    >
+                                        {imagePreview ? (
+                                            <div className="relative w-full h-full p-2">
+                                                <img
+                                                    src={imagePreview}
+                                                    alt="Preview"
+                                                    className="w-full h-full object-contain rounded-lg"
+                                                />
+                                                <Button
+                                                    type="primary"
+                                                    danger
+                                                    shape="circle"
+                                                    icon={<DeleteOutlined />}
+                                                    size="small"
+                                                    className="absolute top-2 right-2 shadow-md"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleRemoveImage();
+                                                    }}
+                                                />
+                                            </div>
+                                        ) : (
+                                            <div className="text-center">
+                                                <LuUpload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                                                <div className="text-sm font-medium text-gray-700">Upload Image</div>
+                                                <div className="text-xs text-gray-500 mt-1">PNG, JPG up to 2MB</div>
+                                            </div>
+                                        )}
+                                    </Upload>
+                                </div>
+                            </Card>
+                        </div>
                     </div>
                 </Form>
             </div>

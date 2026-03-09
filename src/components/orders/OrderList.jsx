@@ -256,7 +256,7 @@ const OrderList = () => {
               </Tooltip>
             </div>
 
-            <Link to="/dashboard/orders">
+            <Link to="/orders">
               <button className="btn btn-success bg-green-600 border-green-600 hover:bg-green-700 text-white font-semibold px-6 py-2 rounded-lg transition-all duration-200">
                 Add New Order
               </button>
@@ -616,7 +616,7 @@ const OrderList = () => {
                 </div>
               }
             >
-              <Link to="/dashboard/orders">
+              <Link to="/orders">
                 <Button type="primary" size="large" icon={<FaShoppingBag />}>
                   Create First Order
                 </Button>

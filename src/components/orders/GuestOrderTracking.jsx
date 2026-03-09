@@ -11,7 +11,9 @@ import {
     FaCreditCard,
     FaBoxOpen,
     FaTruck,
-    FaArrowLeft
+    FaArrowLeft,
+    FaPlus,
+    FaShapes
 } from 'react-icons/fa';
 import { GiReceiveMoney } from 'react-icons/gi';
 import { MdCancel, MdDeliveryDining, MdIncompleteCircle, MdOutlineDownload, MdPadding, MdWheelchairPickup } from 'react-icons/md';
@@ -26,6 +28,7 @@ import { Button, Modal, Table, Tag, Divider } from 'antd';
 import { GrRefresh } from 'react-icons/gr';
 import { IoArrowUndoCircle, IoArrowUndoCircleOutline } from 'react-icons/io5';
 import handleDownload from '../../services/imageDowload';
+import { FaCartShopping } from 'react-icons/fa6';
 
 const GuestOrderTracking = () => {
     const navigate = useNavigate();
@@ -372,7 +375,7 @@ const GuestOrderTracking = () => {
 
             {/* Header */}
             <div className="flex justify-between items-center mb-6">
-                <h1 className="text-2xl font-bold flex items-center gap-2">
+                <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
                     <IoArrowUndoCircleOutline className='!text-md text-red-500' onClick={() => navigate(-1)} />
                     <FaShoppingBag className="text-blue-600" /> Tracking
                 </h1>
@@ -380,6 +383,27 @@ const GuestOrderTracking = () => {
             </div>
 
             {/* Orders Grid */}
+            {orders?.length <= 0 || !orders && <div className="flex flex-col h-full md:items-center justify-center gap-4 mb-6">
+
+                <div className="p-2 bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg">
+                    <FaCartShopping className="text-white text-2xl" />
+                </div>
+                <h1 className="text-2xl md:text-3xl font-bold text-gray-800 flex items-center gap-3">
+                    Order Tracking Management
+                </h1>
+                <p className="text-gray-600 mt-2">
+                    Manage all your orders services in one place
+                </p>
+
+
+                <button
+                    onClick={() => navigate(-1)}
+                    className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-0.5 font-medium"
+                >
+                    <FaPlus className="w-5 h-5" />
+                    Order Now
+                </button>
+            </div>}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 {orders?.map((order) => {
                     const statusBadge = getStatusBadge(order);

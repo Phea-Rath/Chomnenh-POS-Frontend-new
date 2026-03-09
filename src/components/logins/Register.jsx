@@ -127,7 +127,7 @@ const Register = () => {
           </div>
 
           <button
-            onClick={() => navigator('/dashboard/register')}
+            onClick={() => navigator('/register')}
             className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 shadow-md hover:shadow-lg transition-all duration-300 transform hover:-translate-y-0.5 font-medium"
           >
             <IoPersonAddOutline className="w-5 h-5" />
@@ -187,7 +187,7 @@ const Register = () => {
             </p>
             {data?.length === 0 && (
               <button
-                onClick={() => navigator('/dashboard/register')}
+                onClick={() => navigator('/register')}
                 className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 shadow-md hover:shadow-lg transition-all duration-300 font-medium"
               >
                 <IoPersonAddOutline className="w-5 h-5" />
@@ -256,7 +256,7 @@ const Register = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <div className="flex items-center gap-2">
-                          <Link to={'/dashboard/user_detail/' + id}>
+                          <Link to={'/user_detail/' + id}>
                             <button className="inline-flex items-center gap-2 px-3 py-2 text-sm text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors">
                               <IoEyeOutline className="w-4 h-4" />
                               View & Edit
@@ -310,7 +310,7 @@ const Register = () => {
 
                   <div className="flex items-center justify-between pt-3 border-t border-gray-100">
                     <div className="flex gap-2">
-                      <Link to={'/dashboard/user_detail/' + id}>
+                      <Link to={'/user_detail/' + id}>
                         <button className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg">
                           <IoEyeOutline className="w-5 h-5" />
                         </button>

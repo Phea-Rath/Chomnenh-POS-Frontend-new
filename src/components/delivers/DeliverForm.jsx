@@ -171,7 +171,7 @@ const DeliverForm = () => {
                 deliver_name: "",
             });
             localStorage.setItem("isUpdate", 0);
-            navigate('/dashboard/delivers');
+            navigate('/delivers');
             localStorage.setItem("deliverEdit", null);
         } catch (err) {
             const errorMessage = err?.data?.message || err?.message || "Operation failed";

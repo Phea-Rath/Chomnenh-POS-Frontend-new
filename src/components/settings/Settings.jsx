@@ -6,7 +6,7 @@ import { BsPersonRolodex } from "react-icons/bs";
 import { BsMenuButtonWideFill } from "react-icons/bs";
 import { FcCurrencyExchange } from "react-icons/fc";
 import ExchangeRate from "../ExchangeRate";
-import { useGetPermissionByIdQuery } from "../../../app/Features/permissionSlice";
+import { useGetMenuSettingQuery, useGetPermissionByIdQuery } from "../../../app/Features/permissionSlice";
 import { useGetUserLoginQuery } from "../../../app/Features/usersSlice";
 
 const colors = [
@@ -26,12 +26,11 @@ const Settings = () => {
   const userId = localStorage.getItem("userId");
   const [menu, setMenu] = useState([]);
   const { data: userLogin } = useGetUserLoginQuery(token);
-  const { data } = useGetPermissionByIdQuery({ id: userId, token });
+  const { data } = useGetMenuSettingQuery(token);
 
   useEffect(() => {
-    const rawMenu = data?.data ?? JSON.parse(localStorage.getItem("menus") || "[]");
-    const allMenus = flattenMenus(rawMenu || []);
-    const perms = allMenus.filter((i) => Number(i.menu_type) === 3 || Number(i.menu_type) === 0);
+    const allMenus = flattenMenus(data?.data || []);
+    const perms = allMenus.filter((i) => i.active === 1);
     setMenu(perms);
   }, [data, userLogin]);
 

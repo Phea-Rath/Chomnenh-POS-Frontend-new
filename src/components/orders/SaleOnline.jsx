@@ -929,8 +929,8 @@ const Sales = () => {
 
         // Navigate to receipt/invoice
         // const path = payload.sale_type === "sale"
-        //   ? `/dashboard/order-list/receipt/${orderRes.data.data.order_id}`
-        //   : `/dashboard/order-list/invoice/${orderRes.data.data.order_id}`;
+        //   ? `/order-list/receipt/${orderRes.data.data.order_id}`
+        //   : `/order-list/invoice/${orderRes.data.data.order_id}`;
         navigate('order-tracking');
       } else {
         throw new Error(orderRes.data.message || "Failed to create order");
@@ -1183,7 +1183,7 @@ const Sales = () => {
               <p className="text-gray-500 max-w-md mx-auto mb-6">
                 Try adjusting your search or filter criteria
               </p>
-              <Button onClick={() => navigate('/dashboard/add-to-stock')} variant="primary">
+              <Button onClick={() => navigate('/add-to-stock')} variant="primary">
                 Add Products to Stock
               </Button>
             </div>

@@ -186,7 +186,7 @@ const RegisterForm = () => {
         refetch();
         toast.success(response.data.message || "User created successfully");
         setLoading(false);
-        navigator("/dashboard/users");
+        navigator("/users");
       }
     } catch (error) {
       toast.error(
@@ -539,7 +539,7 @@ const RegisterForm = () => {
                     Create User
                   </button>
                   <button
-                    onClick={() => navigator("/dashboard/users")}
+                    onClick={() => navigator(-1)}
                     className="flex-1 px-6 py-3 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors"
                   >
                     Cancel

@@ -16,6 +16,18 @@ export const permissionsApi = createApi({
         createPermission: builder.mutation({
             query: ({ itemData, token }) => createData(itemData, '/permission', token),
         }),
+        getMenuHome: builder.query({
+            query: (token) => queryData('/menu-home', token),
+        }),
+        getMenuReport: builder.query({
+            query: (token) => queryData('/menu-report', token),
+        }),
+        getMenuSidebar: builder.query({
+            query: (token) => queryData('/menu-sidebar', token),
+        }),
+        getMenuSetting: builder.query({
+            query: (token) => queryData('/menu-setting', token),
+        }),
         // updatePermission: builder.mutation({
         //     query: ({ id, itemData, token }) => updateData(id, itemData, '/permission', token),
         // }),
@@ -30,5 +42,9 @@ export const {
     useGetPermissionByIdQuery,
     useCreatePermissionMutation,
     useUpdatePermissionMutation,
-    useDeletePermissionMutation
+    useDeletePermissionMutation,
+    useGetMenuHomeQuery,
+    useGetMenuReportQuery,
+    useGetMenuSidebarQuery,
+    useGetMenuSettingQuery,
 } = permissionsApi;

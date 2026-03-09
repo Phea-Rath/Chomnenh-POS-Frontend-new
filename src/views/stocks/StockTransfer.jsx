@@ -188,7 +188,7 @@ const StockTransfer = () => {
 
         if (isUpdate) {
           // Navigate to detail view after update
-          navigator(`/dashboard/stock-transfer-list/detail/${form.stock_id || id}`);
+          navigator(`/stock-transfer-list/detail/${form.stock_id || id}`);
         } else {
           setForm({
             item_id: '',
@@ -199,7 +199,7 @@ const StockTransfer = () => {
             stock_type_id: '',
             note: ''
           });
-          navigator('/dashboard/stock-transfer-list');
+          navigator('/stock-transfer-list');
         }
       } else {
         throw new Error(response.data.message);
@@ -435,7 +435,7 @@ const StockTransfer = () => {
                       </svg>
                       <span>{loading ? (isUpdate ? 'Updating...' : 'Creating...') : (isUpdate ? 'Update Transfer' : 'Create Transfer')}</span>
                     </button>
-                    <Link to="/dashboard/stock-transfer-list" className="flex-1">
+                    <Link to="/stock-transfer-list" className="flex-1">
                       <button
                         type="button"
                         className="w-full bg-gray-500 hover:bg-gray-600 text-white py-2.5 px-4 rounded-md font-medium transition-colors duration-200 shadow-sm"

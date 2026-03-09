@@ -117,7 +117,7 @@ const router = createBrowserRouter([
     errorElement: <ErrorPage />,
   },
   {
-    path: "/dashboard",
+    path: "",
     element: (
       <ProtectedRoute>
         <Management />
@@ -126,11 +126,11 @@ const router = createBrowserRouter([
     errorElement: <ErrorPage />,
     children: [
       {
-        path: "",
+        path: "/home",
         element: <Home />,
       },
       {
-        path: "analystic",
+        path: "/dashboard",
         index: 1,
         element: <Dashboard />,
       },
@@ -139,60 +139,60 @@ const router = createBrowserRouter([
         element: <ExchangeRateForm />,
       },
       {
-        path: "list",
+        path: "/list",
         element: <ListItem />,
       },
       {
-        path: "list/create",
+        path: "/list/create",
         element: <CreateItems />,
       },
       {
-        path: "list/update/:id",
+        path: "/list/update/:id",
         element: <CreateItems />,
       },
       {
-        path: "list/detail/:id",
+        path: "/list/detail/:id",
         element: <ItemDetails />,
       },
       {
-        path: "list/import",
+        path: "/list/import",
         element: <ImportItems />,
       },
       {
-        path: "category",
+        path: "/category",
         element: <CategoryList />,
       },
       {
-        path: "brand",
+        path: "/brand",
         element: <Brands />,
       },
       {
-        path: "scale",
+        path: "/scale",
         element: <Scales />,
       },
       {
-        path: "werehouse",
+        path: "/werehouse",
         element: <Werehouses />,
       },
       {
-        path: "stock-type",
+        path: "/stock-type",
         element: <StockType />,
       },
       //customers
       {
-        path: "customers",
+        path: "/customers",
         element: <CustomerList />,
       },
       {
-        path: "customers/create",
+        path: "/customers/create",
         element: <CustomerForm />,
       },
       {
-        path: "customers/edit/:id",
+        path: "/customers/edit/:id",
         element: <CustomerForm />,
       },
       {
-        path: "expenses",
+        path: "/home/expenses",
         element: <Expanses />,
         children: [
           {
@@ -206,302 +206,302 @@ const router = createBrowserRouter([
         ],
       },
       {
-        path: "expense-type",
+        path: "/expense-type",
         element: <ExpansesType />,
       },
       {
-        path: "setting",
+        path: "/setting",
         element: <Settings />,
       },
       {
-        path: "orders",
+        path: "/orders",
         element: <Sales />,
       },
       {
-        path: "order-tracking",
+        path: "/home/order-tracking",
         element: <OrderTracking />,
       },
       {
-        path: "order-list/edit/:id",
+        path: "/order-list/edit/:id",
         element: <UpdateOrders />,
       },
       {
-        path: "order-list/receipt/:id",
+        path: "/order-list/receipt/:id",
         element: <OrderReceipt />,
       },
       {
-        path: "order-list/invoice/:id",
+        path: "/order-list/invoice/:id",
         element: <OrderInvoice />,
       },
       {
-        path: "order-list",
+        path: "/order-list",
         element: <OrderList />,
       },
       {
-        path: "stock-list",
+        path: "/home/stock-list",
         element: <Stocks />,
       },
       {
-        path: "add-to-stock",
+        path: "/add-to-stock",
         element: <AddInStock />,
       },
       {
-        path: "stock-list/detail/:id",
+        path: "/stock-list/detail/:id",
         element: <StockDetail />,
       },
       {
-        path: "stock-list/update/:id",
+        path: "/stock-list/update/:id",
         element: <AddInStock />,
       },
       {
-        path: "stock-transfer-list",
+        path: "/home/stock-transfer-list",
         element: <StockTransferList />,
       },
       {
-        path: "stock-transfer-list/detail/:id",
+        path: "/stock-transfer-list/detail/:id",
         element: <StockTransferDetail />,
       },
       {
-        path: "stock-transfer-list/update/:id",
+        path: "/stock-transfer-list/update/:id",
         element: <StockTransfer />,
       },
       {
-        path: "transfer-stock",
+        path: "/transfer-stock",
         element: <StockTransfer />,
       },
       {
-        path: "record-stock",
+        path: "/home/record-stock",
         element: <RecordStock />,
       },
       {
-        path: "record-stock-sale",
+        path: "/home/record-stock-sale",
         element: <RecordStockSales />,
       },
       {
-        path: "stock-transition",
+        path: "/home/stock-transition",
         element: <StockTransition />,
       },
       {
-        path: "analyze-stock",
+        path: "/home/analyze-stock",
         element: <Analysis />,
       },
       {
-        path: "e-menu",
+        path: "/home/e-menu",
         element: <EMenu />,
       },
       {
-        path: "code-scanner",
+        path: "/code-scanner",
         element: <CodeScanner />,
       },
       {
-        path: "notification",
+        path: "/notification",
         element: <Notification />,
       },
       {
-        path: "detail-notification/:id",
+        path: "/detail-notification/:id",
         element: <OrderDetails />,
       },
       {
-        path: "detail-waste/:id",
+        path: "/detail-waste/:id",
         element: <WasteItemDetail />,
       },
       {
-        path: "users",
+        path: "/setting/users",
         element: <Register />,
       },
       {
-        path: "user_detail/:id",
+        path: "/user_detail/:id",
         element: <UserDetails />,
       },
       {
-        path: "profile/:id",
+        path: "/profile/:id",
         element: <UserProfile />,
       },
       {
-        path: "register",
+        path: "/register",
         element: <RegisterForm />,
       },
       {
-        path: "permission",
+        path: "/setting/permission",
         element: <Permission />,
       },
       {
-        path: "menus",
+        path: "/setting/menus",
         element: <Menus />,
       },
       {
-        path: "report",
+        path: "/report",
         element: <Reports />,
       },
       {
-        path: "report/sales",
+        path: "/report/sales",
         element: <SaleReportByCustomer />,
       },
       {
-        path: "report/sales_item",
+        path: "/report/sales_item",
         element: <SaleReportByItem />,
       },
       {
-        path: "report/purchases",
+        path: "/report/purchases",
         element: <PurchaseReport />,
       },
       {
-        path: "report/purchase-item",
+        path: "/report/purchase-item",
         element: <PurchaseReportByItem />,
       },
       {
-        path: "report/production",
+        path: "/report/production",
         element: <ProductionReport />,
       },
       {
-        path: "report/production-raw",
+        path: "/report/production-raw",
         element: <ProductionByRaw />,
       },
       {
-        path: "report/expenses",
+        path: "/report/expenses",
         element: <ExpenseReportByUser />,
       },
       {
-        path: "report/raw-materials",
+        path: "/report/raw-materials",
         element: <RawMaterialReport />,
       },
       {
-        path: "report/analysis-profit",
+        path: "/report/analysis-profit",
         element: <ProfitAnalysis />,
       },
       {
-        path: "report/stocks",
+        path: "/report/stocks",
         element: <StockReport />,
       },
       {
-        path: "report/stock-by-item",
+        path: "/report/stock-by-item",
         element: <StockByItem />,
       },
       {
-        path: "purchases",
+        path: "/home/purchases",
         element: <Purchases />,
       },
       {
-        path: "purchase-raw",
+        path: "/home/purchase-raw",
         element: <PurchaseRawList />,
       },
       {
-        path: "add-purchase",
+        path: "/home/purchases/add",
         element: <CreatePurchase />,
       },
       {
-        path: "purchase-raws",
+        path: "/home/purchase-raw/add",
         element: <CreatePurchase />,
       },
       {
-        path: "purchases/update/:id",
+        path: "/home/purchases/update/:id",
         element: <CreatePurchase />,
       },
       {
-        path: "purchase-raws/update/:id",
+        path: "/home/purchase-raw/update/:id",
         element: <CreatePurchase />,
       },
       {
-        path: "purchases/receipt/:id",
+        path: "/home/purchases/receipt/:id",
         element: <PurchaseReceipt />,
       },
       {
-        path: "purchase-raw/receipt-raw/:id",
+        path: "/purchase-raw/receipt-raw/:id",
         element: <PurchaseReceipt />,
       },
 
       {
-        path: "suppliers",
+        path: "/suppliers",
         element: <SupplierList />,
       },
       {
-        path: "suppliers",
+        path: "/suppliers",
         element: <SupplierList />,
       },
       {
-        path: "suppliers/create",
+        path: "/suppliers/create",
         element: <SupplierForm />,
       },
       {
-        path: "suppliers/edit/:id",
+        path: "/suppliers/edit/:id",
         element: <SupplierForm />,
       },
       //roles
       {
-        path: "roles",
+        path: "/roles",
         element: <RoleList />,
       },
       {
-        path: "roles/create",
+        path: "/roles/create",
         element: <RoleForm />,
       },
       {
-        path: "roles/edit/:id",
+        path: "/roles/edit/:id",
         element: <RoleForm />,
       },
       {
-        path: "quotations/create",
+        path: "/home/quotations/create",
         element: <QuotationForm />,
       },
       {
-        path: "quotations/edit/:id",
+        path: "/home/quotations/edit/:id",
         element: <QuotationForm />,
       },
       {
-        path: "quotations",
+        path: "/home/quotations",
         element: <QuotationList />,
       },
       {
-        path: "quotations/detail/:id",
+        path: "/home/quotations/detail/:id",
         element: <QuotationDetail />,
       },
       {
-        path: "quotations/receipt/:id",
+        path: "/home/quotations/receipt/:id",
         element: <QuotationReceipt />,
       },
       {
-        path: "deliver/create",
+        path: "/deliver/create",
         element: <DeliverForm />,
       },
       {
-        path: "deliver/edit/:id",
+        path: "/deliver/edit/:id",
         element: <DeliverForm />,
       },
       {
-        path: "delivers",
+        path: "/delivers",
         element: <DeliverList />,
       },
       {
-        path: "raw-materials",
+        path: "/raw-materials",
         element: <RawMaterials />,
       },
       {
-        path: "raw-materials/create",
+        path: "/raw-materials/create",
         element: <RawMaterialForm />,
       },
 
       {
-        path: "raw-materials/edit/:id",
+        path: "/raw-materials/edit/:id",
         element: <RawMaterialForm />,
       },
       {
-        path: "raw-materials/view/:id",
+        path: "/raw-materials/view/:id",
         element: <RawMaterialDetail />,
       },
       {
-        path: "production",
+        path: "/home/production",
         element: <Production />,
       },
       {
-        path: "production/create/",
+        path: "/home/production/create/",
         element: <ProductionForm />,
       },
       {
-        path: "production/edit/:id",
+        path: "/home/production/edit/:id",
         element: <ProductionForm />,
       },
       {
-        path: "production/view/:id",
+        path: "/home/production/view/:id",
         element: <ProductionDetail />,
       },
 

@@ -434,7 +434,7 @@ const Dashboard = () => {
         </div>
 
         {/* Settings Button */}
-        <Link to="/dashboard/setting" className="block">
+        <Link to="/setting" className="block">
           <div className="group relative">
             <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg blur opacity-25 group-hover:opacity-75 transition duration-300"></div>
             <button className="relative w-full flex items-center justify-between bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg px-6 py-4 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-300">

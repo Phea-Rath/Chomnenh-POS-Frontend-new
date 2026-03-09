@@ -58,7 +58,7 @@ const CreatePurchase = () => {
   const token = localStorage.getItem("token");
   const { pathname } = useLocation();
   const [items, setItems] = useState([]);
-  const [itemType, setValue4] = useState(pathname.includes('purchase-raws') ? 1 : 0);
+  const [itemType, setValue4] = useState(pathname.includes('purchase-raw') ? 1 : 0);
   const [suppliers, setSuppliers] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredItems, setFilteredItems] = useState([]);
@@ -92,7 +92,7 @@ const CreatePurchase = () => {
   useEffect(() => {
     setSuppliers(supplierData?.data || []);
     setItems(itemData?.data || []);
-    setRawMaterials(rawData?.data?.data || []);
+    setRawMaterials(rawData?.data || []);
   }, [itemData, supplierData, rawData]);
 
   useEffect(() => {
@@ -107,11 +107,13 @@ const CreatePurchase = () => {
         item.material_name?.toLowerCase().includes(searchTerm.toLowerCase().trim()) ||
         item.material_code?.toLowerCase().includes(searchTerm.toLowerCase().trim())
     );
+    console.log(rawMaterials);
+
     setFilteredRaw(filteredRaw);
   }, [searchTerm, items, rawMaterials]);
 
   useEffect(() => {
-    if (isEditMode && purchaseId && token && !pathname.includes('purchase-raws')) {
+    if (isEditMode && purchaseId && token && !pathname.includes('purchase-raw')) {
       const fetchPurchase = async () => {
         try {
           setLoading(true);
@@ -155,7 +157,7 @@ const CreatePurchase = () => {
       };
 
       fetchPurchase();
-    } else if (pathname.includes('purchase-raws') && isEditMode && purchaseId && token) {
+    } else if (pathname.includes('purchase-raw') && isEditMode && purchaseId && token) {
       const fetchPurchase = async () => {
         try {
           setLoading(true);
@@ -517,7 +519,7 @@ const CreatePurchase = () => {
 
         toast.success("Purchase created successfully!");
       }
-      navigator(`${pathname.includes('purchase-raws') ? '/dashboard/purchase-raw' : '/dashboard/purchases'}`);
+      navigator(-1);
     } catch (err) {
       const errorMessage = err.response?.data?.message || `Error ${isEditMode ? 'updating' : 'creating'} purchase.`;
       setErrors({ general: errorMessage });

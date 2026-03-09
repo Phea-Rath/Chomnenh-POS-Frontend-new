@@ -426,7 +426,7 @@ const Production = () => {
                                                         <LuEye size={14} />
                                                     </button>
                                                     <button
-                                                        onClick={() => navigate(`/dashboard/production/edit/${item.id}`)}
+                                                        onClick={() => navigate(`/home/production/edit/${item.id}`)}
                                                         disabled={item.is_deleted === 1}
                                                         className={`p-2 rounded ${item.is_deleted === 1 ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-green-100 text-green-600 hover:bg-green-200'}`}
                                                         title="Edit"
@@ -566,7 +566,7 @@ const Production = () => {
                                         <LuEye size={14} />
                                     </button>
                                     <button
-                                        onClick={() => navigate(`/dashboard/production/edit/${item.id}`)}
+                                        onClick={() => navigate(`/home/production/edit/${item.id}`)}
                                         disabled={item.is_deleted === 1}
                                         className={`p-2 rounded ${item.is_deleted === 1 ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-green-100 text-green-600 hover:bg-green-200'}`}
                                         title="Edit"
@@ -644,7 +644,7 @@ const Production = () => {
                             <LuDownload />
                             Export Excel
                         </ExportExcel>
-                        <Link to="/dashboard/production/create">
+                        <Link to="/home/production/create">
                             <button className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 flex items-center gap-2">
                                 <LuPlus />
                                 New Production
@@ -761,7 +761,7 @@ const Production = () => {
                                 : "Start by creating your first production batch."}
                         </p>
                         {!searchTerm && statusFilter === 'all' && !showDeleted && !dateRange.start && (
-                            <Link to="/dashboard/production/create">
+                            <Link to="/home/production/create">
                                 <button className="px-6 py-3 bg-green-600 text-white rounded-md hover:bg-green-700 flex items-center gap-2">
                                     <LuPlus /> Create First Production
                                 </button>

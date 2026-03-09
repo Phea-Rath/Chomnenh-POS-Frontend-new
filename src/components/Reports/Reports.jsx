@@ -5,7 +5,7 @@ import { TbReportAnalytics } from "react-icons/tb";
 import { useEffect, useState } from "react"
 import { TbReportMoney } from "react-icons/tb";
 import { TbReportMedical } from "react-icons/tb";
-import { useGetPermissionByIdQuery } from "../../../app/Features/permissionSlice";
+import { useGetMenuReportQuery, useGetPermissionByIdQuery } from "../../../app/Features/permissionSlice";
 
 const colors = [
   { main: "yellow-500", light: "yellow-50", text: "yellow-600" },
@@ -21,14 +21,13 @@ const flattenMenus = (menus = []) =>
 
 const Reports = () => {
   const token = localStorage.getItem('token');
-  const userId = localStorage.getItem('userId');
   const [menu, setMenu] = useState([]);
-  const { data } = useGetPermissionByIdQuery({ id: userId, token });
+  const { data } = useGetMenuReportQuery(token);
 
   useEffect(() => {
     const rawMenu = data?.data ?? JSON.parse(localStorage.getItem("menus") || "[]");
     const allMenus = flattenMenus(rawMenu || []);
-    const perms = allMenus.filter((i) => Number(i.menu_type) === 4);
+    const perms = allMenus.filter(i => i.active === 1);
     setMenu(perms);
   }, [data])
   return (

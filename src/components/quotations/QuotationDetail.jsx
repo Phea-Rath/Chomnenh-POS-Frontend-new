@@ -102,7 +102,7 @@ const QuotationDetail = () => {
     };
 
     const handleConvertToInvoice = () => {
-        navigate('/invoices/create', { state: { quotation } });
+        navigate('/orders', { state: { quotation } });
     };
 
     const handleDuplicate = () => {
@@ -142,14 +142,14 @@ const QuotationDetail = () => {
 
 
                     <button
-                        onClick={() => navigator(`/dashboard/quotations/receipt/${id}`)}
+                        onClick={() => navigator(`/home/quotations/receipt/${id}`)}
                         className="flex items-center px-3 py-1.5 border border-gray-300 rounded bg-white hover:bg-gray-100 text-sm"
                     >
                         <FaPrint className="mr-1" size={12} />
                         Print
                     </button>
 
-                    <button onClick={() => navigator(`/dashboard/quotations/edit/${id}`)} className="flex items-center px-3 py-1.5 border border-gray-300 rounded bg-white hover:bg-gray-100 text-sm">
+                    <button onClick={() => navigator(`/home/quotations/edit/${id}`)} className="flex items-center px-3 py-1.5 border border-gray-300 rounded bg-white hover:bg-gray-100 text-sm">
                         <FaEdit className="mr-1" size={12} />
                         Edit
                     </button>

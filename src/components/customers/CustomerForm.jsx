@@ -348,7 +348,7 @@ const CustomerForm = () => {
         village_id: null,
       });
       localStorage.setItem("isUpdate", 0);
-      navigate('/dashboard/customers');
+      navigate('/customers');
       localStorage.setItem("itemEdit", null);
     } catch (err) {
       const errorMessage = err?.data?.message || err?.message || "Operation failed";

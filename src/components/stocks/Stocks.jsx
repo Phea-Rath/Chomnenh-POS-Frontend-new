@@ -416,7 +416,7 @@ const Stocks = () => {
           : 'No stock records match your search criteria'}
       </p>
       {stocks.length === 0 && (
-        <Link to="/dashboard/add-to-stock">
+        <Link to="/add-to-stock">
           <button className="mt-6 px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-lg hover:from-blue-700 hover:to-purple-700 flex items-center gap-2 mx-auto">
             <FaPlus /> Create First Stock Record
           </button>
@@ -495,7 +495,7 @@ const Stocks = () => {
               {exportLoading ? 'Exporting...' : 'Export Excel'}
             </button>
 
-            <Link to="/dashboard/add-to-stock">
+            <Link to="/add-to-stock">
               <button className="px-6 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white font-semibold rounded-lg hover:from-green-600 hover:to-green-700 flex items-center gap-2 shadow-lg">
                 <FaPlus />
                 Add New Stock
