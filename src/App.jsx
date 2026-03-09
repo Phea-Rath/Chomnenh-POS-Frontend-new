@@ -428,15 +428,15 @@ const router = createBrowserRouter([
       },
       //roles
       {
-        path: "/roles",
+        path: "/setting/roles",
         element: <RoleList />,
       },
       {
-        path: "/roles/create",
+        path: "/setting/roles/create",
         element: <RoleForm />,
       },
       {
-        path: "/roles/edit/:id",
+        path: "/setting/roles/edit/:id",
         element: <RoleForm />,
       },
       {
