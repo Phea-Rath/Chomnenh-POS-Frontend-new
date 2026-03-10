@@ -242,15 +242,15 @@ const router = createBrowserRouter([
         element: <Stocks />,
       },
       {
-        path: "/add-to-stock",
+        path: "/home/stock-list/add",
         element: <AddInStock />,
       },
       {
-        path: "/stock-list/detail/:id",
+        path: "/home/stock-list/detail/:id",
         element: <StockDetail />,
       },
       {
-        path: "/stock-list/update/:id",
+        path: "/home/stock-list/update/:id",
         element: <AddInStock />,
       },
       {

@@ -170,7 +170,7 @@ const StockDetail = () => {
                 <FaPrint className="w-5 h-5" />
               </button>
             </Tooltip>
-            <button onClick={() => navigator(`/stock-list/update/${id}`)} className="px-5 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors flex items-center gap-2">
+            <button onClick={() => navigator(`/home/stock-list/update/${id}`)} className="px-5 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors flex items-center gap-2">
               <FaEdit className="w-4 h-4" />
               Edit Stock
             </button>

@@ -294,7 +294,7 @@ const AddInStock = () => {
         toast.success(
           response.data.message || `Stock ${isEditMode ? 'updated' : 'created'} successfully`
         );
-        navigator("/stock-list");
+        navigator(-1);
       } else {
         throw new Error(response.data.message);
       }
@@ -525,7 +525,7 @@ const AddInStock = () => {
                       {isEditMode ? <FaSave /> : <MdLocalShipping />}
                       {isEditMode ? 'Update Stock' : 'Create Stock'}
                     </button>
-                    <Link to="/stock-list" className="flex-1">
+                    <Link to={-1} className="flex-1">
                       <button
                         type="button"
                         className="w-full bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 text-white py-3 px-4 rounded-xl font-medium transition-all duration-200 flex items-center justify-center gap-2"

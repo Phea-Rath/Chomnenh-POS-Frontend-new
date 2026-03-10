@@ -495,7 +495,7 @@ const Stocks = () => {
               {exportLoading ? 'Exporting...' : 'Export Excel'}
             </button>
 
-            <Link to="/add-to-stock">
+            <Link to="add">
               <button className="px-6 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white font-semibold rounded-lg hover:from-green-600 hover:to-green-700 flex items-center gap-2 shadow-lg">
                 <FaPlus />
                 Add New Stock

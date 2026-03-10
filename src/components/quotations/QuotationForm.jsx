@@ -535,6 +535,8 @@ const QuotationForm = () => {
                                                 </label>
                                                 <Input
                                                     type="number"
+                                                    min={1}
+                                                    onWheel={(e) => e.target.blur()}   // 👈 បិទ scroll change
                                                     value={form.credit_term || ""}
                                                     onChange={(e) => {
                                                         const term = Number(e.target.value || 0);
@@ -569,6 +571,7 @@ const QuotationForm = () => {
                                                     <InputNumber
                                                         type="number"
                                                         name='delivery_fee'
+                                                        onWheel={(e) => e.target.blur()}
                                                         value={form.delivery_fee}
                                                         onChange={(value) => {
                                                             setForm(prev => ({ ...prev, delivery_fee: value }));
@@ -588,6 +591,7 @@ const QuotationForm = () => {
                                                         step="0.01"
                                                         name='tax'
                                                         value={form.tax}
+                                                        onWheel={(e) => e.target.blur()}
                                                         onChange={(value) => {
                                                             setForm(prev => ({ ...prev, tax: value }));
                                                             calculateForm(selectItems, { ...form, tax: value });
@@ -752,6 +756,7 @@ const QuotationForm = () => {
                                                                             step="0.01"
                                                                             min="0"
                                                                             value={item.price}
+                                                                            onWheel={(e) => e.target.blur()}
                                                                             onChange={(value) => handleChange(index, "price", value)}
                                                                             className="w-24"
                                                                         />
@@ -762,6 +767,7 @@ const QuotationForm = () => {
                                                                             min="1"
                                                                             max={item?.in_stock}
                                                                             value={item.quantity}
+                                                                            onWheel={(e) => e.target.blur()}
                                                                             onChange={(value) => handleChange(index, 'quantity', value)}
                                                                             className="w-24"
                                                                         />
@@ -773,6 +779,7 @@ const QuotationForm = () => {
                                                                             min="0"
                                                                             max="100"
                                                                             value={item.discount}
+                                                                            onWheel={(e) => e.target.blur()}
                                                                             onChange={(value) => handleChange(index, "discount", value)}
                                                                             className="w-24"
                                                                         // formatter={value => `${value}%`}
