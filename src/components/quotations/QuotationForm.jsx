@@ -44,7 +44,9 @@ const QuotationForm = () => {
     const { refetch } = useGetAllQuoteQuery(token);
     const stockRes = useGetAllStockTypesQuery(token);
     const navigator = useNavigate();
-    const itemsRes = useGetAllSaleQuery({ token, limit: 10, page: 1, search: debounce });
+    const [currentPage, setCurrentPage] = useState(1);
+    const [limit, setLimit] = useState(10);
+    const itemsRes = useGetAllSaleQuery({ token, limit, page: currentPage, search: debounce });
     const { data: customers } = useGetAllCustomerQuery(token);
     const warehouseRes = useGetAllWarehousesQuery(token);
 
@@ -73,10 +75,18 @@ const QuotationForm = () => {
 
     useEffect(() => {
 
-        setfielditems(itemsRes.data?.data || []);
         setitems(itemsRes.data?.data || []);
         setAllItems(itemsRes.data?.data || []);
     }, [stockRes.data, itemsRes.data, warehouseRes.data]);
+
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [debounce]);
+
+    useEffect(() => {
+        const selectedIds = new Set(selectItems.map((item) => item.id));
+        setfielditems(items.filter((item) => !selectedIds.has(item.id)));
+    }, [items, selectItems]);
 
     // Load existing stock data when in edit mode
     useEffect(() => {
@@ -308,7 +318,7 @@ const QuotationForm = () => {
                 toast.success(
                     response.data.message || `Quote ${isEditMode ? 'updated' : 'created'} successfully`
                 );
-                navigator("/home/quotations");
+                navigator(-1);
             } else {
                 throw new Error(response.data.message);
             }
@@ -364,6 +374,14 @@ const QuotationForm = () => {
             </div>
         );
     };
+
+    const onScrollFetch = (e) => {
+        const target = e.target;
+        const nearBottom = target.scrollHeight - target.scrollTop - target.clientHeight < 100;
+        if (nearBottom && itemsRes?.data?.pagination?.total > items?.length) {
+            setLimit(prev => prev + 10);
+        }
+    }
 
     // Calculate totals for display
     useEffect(() => {
@@ -425,6 +443,7 @@ const QuotationForm = () => {
                                         </label>
                                         <Select
                                             onSelect={onSelectItem}
+                                            onPopupScroll={onScrollFetch}
                                             onSearch={(value) => setSearch(value)}
                                             showSearch
                                             style={{ width: '100%' }}

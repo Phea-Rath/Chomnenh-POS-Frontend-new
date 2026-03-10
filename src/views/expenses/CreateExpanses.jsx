@@ -195,7 +195,7 @@ const CreateExpanses = () => {
         toast.success(isEditMode ? "Expense updated successfully" : "Expense created successfully");
         setLoading(false);
         onAdd();
-        navigator("/expenses");
+        navigator(-1);
       }
     } catch (error) {
       toast.error(
@@ -655,7 +655,7 @@ const CreateExpanses = () => {
               <div className="flex gap-3">
                 <form method="dialog">
                   <button
-                    onClick={() => navigator("/expenses")}
+                    onClick={() => navigator(-1)}
                     className="inline-flex items-center gap-2 px-6 py-3 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 transition-all duration-200 font-medium"
                   >
                     <FaTimes className="w-4 h-4" />

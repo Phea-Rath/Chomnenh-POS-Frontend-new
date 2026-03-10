@@ -42,6 +42,7 @@ import dayjs from "dayjs";
 import api from "../../services/api";
 import ExportExel from "../../services/ExportExel"; // Assume this is custom and doesn't use AntD
 import { useGetAllRawMaterialQuery } from "../../../app/Features/RawMaterialSlice";
+import { BiEdit, BiTrash } from "react-icons/bi";
 
 const PurchaseRawList = () => {
     const [purchases, setPurchases] = useState([]);
@@ -74,7 +75,7 @@ const PurchaseRawList = () => {
 
     const { refetch: refetchRawMaterials } = useGetAllRawMaterialQuery({ limit: 10, page: 1, search: "", token });
     const { data, isLoading, refetch } = useGetAllPurchaseRawQuery(queryParams);
-    const [deletePurchase] = useDeletePurchaseRawMutation();
+    const [deletePurchaseRaw] = useDeletePurchaseRawMutation();
     const [cancelPurchase] = useCancelPurchaseMutation();
     const [uncancelPurchase] = useUncancelPurchaseMutation();
     const [confirmPurchase] = useConfirmPurchaseRawMutation();
@@ -181,7 +182,7 @@ const PurchaseRawList = () => {
         try {
             setAlertBox(false);
             setLoading(true);
-            const res = await deletePurchase({ id, token });
+            const res = await deletePurchaseRaw({ id, token });
             if (res.data.status === 200) {
                 refetch();
                 toast.success("Deleted purchase successfully!");
@@ -566,7 +567,7 @@ const PurchaseRawList = () => {
                                                                 <FaCheck />
                                                             </button>
                                                         )}
-                                                        {item.status === 0 && item.balance != 0 && (
+                                                        {item.balance != 0 && (
                                                             <button
                                                                 onClick={() => {
                                                                     setShowPaymentModal(true);
@@ -574,7 +575,7 @@ const PurchaseRawList = () => {
                                                                     setId(item.purchase_id);
                                                                     setPaymentDate(new Date().toISOString().split("T")[0]);
                                                                 }}
-                                                                className="px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm"
+                                                                className="px-3 rounded-2xl border border-blue-600 hover:text-white text-blue-500 hover:bg-blue-700 text-xs"
                                                             >
                                                                 Pay
                                                             </button>
@@ -585,10 +586,14 @@ const PurchaseRawList = () => {
                                                             </button>
                                                         </Link>
                                                         <Link to={`update/${item.purchase_id}`}>
-                                                            <button className="px-3 py-2 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 text-sm">
-                                                                Edit
+                                                            <button className="px-3 py-2 bg-gray-100 text-blue-700 rounded hover:bg-gray-200 text-sm">
+                                                                <BiEdit />
                                                             </button>
                                                         </Link>
+
+                                                        <button onClick={() => { setAlertBox(true); setId(item.purchase_id) }} className="px-3 py-2 bg-gray-100 text-red-700 rounded hover:bg-gray-200 text-sm">
+                                                            <BiTrash />
+                                                        </button>
                                                     </div>
                                                 </td>
                                             </tr>
@@ -723,7 +728,7 @@ const PurchaseRawList = () => {
                                                         <FaCheck />
                                                     </button>
                                                 )}
-                                                {item.status === 0 && item.balance != 0 && (
+                                                {item.balance != 0 && (
                                                     <button
                                                         onClick={() => {
                                                             setShowPaymentModal(true);
@@ -731,7 +736,7 @@ const PurchaseRawList = () => {
                                                             setId(item.purchase_id);
                                                             setPaymentDate(new Date().toISOString().split("T")[0]);
                                                         }}
-                                                        className="px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm"
+                                                        className="px-3 rounded-2xl border border-blue-600 hover:text-white text-blue-500 hover:bg-blue-700 text-xs"
                                                     >
                                                         Pay
                                                     </button>
@@ -742,10 +747,14 @@ const PurchaseRawList = () => {
                                                     </button>
                                                 </Link>
                                                 <Link to={`update/${item.purchase_id}`}>
-                                                    <button className="px-3 py-2 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 text-sm">
-                                                        Edit
+                                                    <button className="px-3 py-2 bg-gray-100 text-blue-700 rounded hover:bg-gray-200 text-sm">
+                                                        <BiEdit />
                                                     </button>
                                                 </Link>
+
+                                                <button onClick={() => { setAlertBox(true); setId(item.purchase_id) }} className="px-3 py-2 bg-gray-100 text-red-700 rounded hover:bg-gray-200 text-sm">
+                                                    <BiTrash />
+                                                </button>
                                             </div>
                                         </div>
                                     </motion.div>

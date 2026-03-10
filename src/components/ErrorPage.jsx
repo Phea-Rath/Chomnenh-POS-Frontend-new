@@ -1,9 +1,12 @@
 import React from 'react';
-import { Result, Button, Typography, Space, Card, Row, Col } from 'antd';
+import { Button, Typography, Space, Card, Row, Col, Tooltip } from 'antd';
 import { useNavigate, useRouteError } from 'react-router';
+import { motion } from 'framer-motion';
 import {
     HiHome,
     HiRefresh,
+    HiArrowLeft,
+    HiOutlineSupport,
     HiExclamationCircle,
     HiServer,
     HiWifi,
@@ -14,7 +17,6 @@ import {
     BsLightningCharge
 } from 'react-icons/bs';
 import {
-    MdOutlineSentimentDissatisfied,
     MdOutlineSearchOff
 } from 'react-icons/md';
 
@@ -27,275 +29,295 @@ const ErrorPage = ({ errorType = '404' }) => {
     // Error configurations
     const errorConfigs = {
         '404': {
-            icon: <MdOutlineSearchOff className="error-icon" />,
-            title: "Page Not Found",
-            subtitle: "Oops! The page you're looking for has vanished into the digital void.",
-            description: "The page you are trying to access doesn't exist or has been moved. Don't worry, even the best explorers get lost sometimes.",
-            gradient: "from-purple-500 to-pink-500",
-            emoji: "🔍",
+            icon: <MdOutlineSearchOff />,
+            title: "Lost in Space?",
+            subtitle: "The page you're looking for has drifted into the void.",
+            description: "We searched every corner of our digital universe but couldn't find this page. It might have been moved or deleted.",
+            gradient: "from-indigo-500 via-purple-500 to-pink-400",
+            glowColor: "rgba(99, 102, 241, 0.2)",
+            emoji: "🔭",
             suggestions: [
-                "Check the URL for typos",
-                "Navigate back to our homepage",
-                "Use the search function to find what you need"
+                "Verify the URL path is correct",
+                "Try searching for related products",
+                "Start fresh from the homepage"
             ]
         },
         '500': {
-            icon: <HiServer className="error-icon" />,
-            title: "Server Error",
-            subtitle: "Our servers are taking a coffee break. They'll be back soon!",
-            description: "Something went wrong on our end. Our team has been notified and is working to fix the issue.",
-            gradient: "from-red-500 to-orange-500",
-            emoji: "⚡",
+            icon: <HiServer />,
+            title: "System Overload",
+            subtitle: "Our servers are experiencing some turbulence.",
+            description: "A technical glitch occurred on our end. Our engineering team has been dispatched to investigate and fix the issue.",
+            gradient: "from-rose-500 via-red-500 to-orange-400",
+            glowColor: "rgba(244, 63, 94, 0.2)",
+            emoji: "⚙️",
             suggestions: [
-                "Refresh the page in a few moments",
-                "Check your internet connection",
-                "Try clearing your browser cache"
+                "Wait a minute and refresh",
+                "Clear your browser cache",
+                "Report this if it persists"
             ]
         },
         '403': {
-            icon: <HiShieldExclamation className="error-icon" />,
-            title: "Access Denied",
-            subtitle: "This area is for authorized personnel only.",
-            description: "You don't have permission to access this page. If you believe this is an error, please contact your administrator.",
-            gradient: "from-blue-500 to-cyan-500",
-            emoji: "🔒",
+            icon: <HiShieldExclamation />,
+            title: "Access Restricted",
+            subtitle: "You've reached a high-security zone.",
+            description: "Your current permissions don't allow access to this area. Please sign in with appropriate credentials or contact an admin.",
+            gradient: "from-blue-600 via-cyan-500 to-teal-400",
+            glowColor: "rgba(37, 99, 235, 0.2)",
+            emoji: "🔐",
             suggestions: [
-                "Check your login credentials",
-                "Contact your system administrator",
-                "Verify your user permissions"
+                "Switch to an authorized account",
+                "Verify your login status",
+                "Contact technical support"
             ]
         },
         'offline': {
-            icon: <HiWifi className="error-icon" />,
-            title: "You're Offline",
-            subtitle: "No internet connection detected",
-            description: "It seems you've lost connection to the internet. Please check your network and try again.",
-            gradient: "from-gray-500 to-slate-600",
-            emoji: "📶",
+            icon: <HiWifi />,
+            title: "Signal Lost",
+            subtitle: "You're currently navigating offline.",
+            description: "It looks like your connection has dropped. Please check your network settings and try reconnecting.",
+            gradient: "from-slate-600 via-gray-500 to-zinc-400",
+            glowColor: "rgba(71, 85, 105, 0.2)",
+            emoji: "📡",
             suggestions: [
-                "Check your WiFi or mobile data",
-                "Restart your router",
-                "Try using a different network"
+                "Check your Wi-Fi or mobile data",
+                "Toggle Airplane mode on and off",
+                "Refresh once you're back online"
             ]
         },
         'generic': {
-            icon: <HiExclamationCircle className="error-icon" />,
-            title: "Something Went Wrong",
-            subtitle: "An unexpected error occurred",
-            description: "We apologize for the inconvenience. Our team has been notified and is working on a fix.",
-            gradient: "from-yellow-500 to-amber-500",
+            icon: <HiExclamationCircle />,
+            title: "Unexpected Event",
+            subtitle: "Something didn't go as planned.",
+            description: "We've encountered an unknown error. Don't worry, your data is safe, but we need to restart the current operation.",
+            gradient: "from-amber-500 via-yellow-500 to-orange-300",
+            glowColor: "rgba(245, 158, 11, 0.2)",
             emoji: "🚧",
             suggestions: [
-                "Refresh the page",
-                "Go back to the previous page",
-                "Contact support if the issue persists"
+                "Reload the current page",
+                "Go back to the previous screen",
+                "Contact us for assistance"
             ]
         }
     };
 
-    const config = errorConfigs[errorType] || errorConfigs.generic;
-
-    const handleGoHome = () => {
-        navigate('/');
+    const getErrorType = () => {
+        if (error?.status) return error.status.toString();
+        if (errorType && errorType !== '404') return errorType;
+        if (error?.message === 'Network Error') return 'offline';
+        return '404';
     };
 
-    const handleRefresh = () => {
-        window.location.reload();
+    const activeErrorType = getErrorType();
+    const config = errorConfigs[activeErrorType] || errorConfigs.generic;
+
+    const containerVariants = {
+        hidden: { opacity: 0, y: 20 },
+        visible: {
+            opacity: 1,
+            y: 0,
+            transition: {
+                duration: 0.6,
+                staggerChildren: 0.1
+            }
+        }
     };
 
-    const handleGoBack = () => {
-        navigate(-1);
+    const itemVariants = {
+        hidden: { opacity: 0, y: 10 },
+        visible: { opacity: 1, y: 0 }
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-4">
-            <div className="max-w-4xl w-full">
-                {/* Animated Background Elements */}
-                <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                    <div className="absolute -top-40 -right-40 w-80 h-80 bg-purple-200 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse"></div>
-                    <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-yellow-200 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse animation-delay-2000"></div>
-                    <div className="absolute top-40 left-1/2 w-80 h-80 bg-blue-200 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse animation-delay-4000"></div>
-                </div>
-
-                <div className="relative">
-                    {/* Main Error Card */}
-                    <Card
-                        className="modern-error-card border-0 shadow-2xl backdrop-blur-sm bg-white/90"
-                        styles={{
-                            body: {
-                                padding: 0
-                            }
-                        }}
-                    >
-                        <Row gutter={[0, 0]} className="min-h-[600px]">
-                            {/* Left Section - Visual & Actions */}
-                            <Col xs={24} lg={12} className="p-8 flex flex-col justify-between">
-                                <div>
-                                    {/* Error Icon */}
-                                    <div className={`w-32 h-32 bg-gradient-to-br ${config.gradient} rounded-3xl flex items-center justify-center shadow-2xl mb-8 mx-auto`}>
-                                        <div className="text-5xl text-white">
-                                            {config.icon}
-                                        </div>
-                                    </div>
-
-                                    {/* Error Code & Title */}
-                                    <div className="text-center mb-6">
-                                        <div className="flex items-center justify-center space-x-3 mb-4">
-                                            <span className="text-6xl font-black bg-gradient-to-br bg-clip-text text-transparent bg-gradient-to-r from-gray-800 to-gray-600">
-                                                {errorType}
-                                            </span>
-                                            <span className="text-4xl">{config.emoji}</span>
-                                        </div>
-                                        <Title level={2} className="!mb-2 !text-gray-800 font-bold">
-                                            {config.title}
-                                        </Title>
-                                        <Text className="text-lg text-gray-600 font-medium">
-                                            {config.subtitle}
-                                        </Text>
-                                    </div>
-
-                                    {/* Action Buttons */}
-                                    <Space direction="vertical" className="w-full" size="middle">
-                                        <Button
-                                            type="primary"
-                                            size="large"
-                                            icon={<HiHome className="text-lg" />}
-                                            onClick={handleGoHome}
-                                            className="h-12 w-full rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-r from-blue-600 to-purple-600 border-0"
-                                        >
-                                            Go Home
-                                        </Button>
-
-                                        <Button
-                                            size="large"
-                                            icon={<HiRefresh className="text-lg" />}
-                                            onClick={handleRefresh}
-                                            className="h-12 w-full rounded-xl font-semibold border-2 border-gray-300 hover:border-blue-500 hover:text-blue-600 transition-all duration-300"
-                                        >
-                                            Refresh Page
-                                        </Button>
-
-                                        <Button
-                                            type="text"
-                                            size="large"
-                                            onClick={handleGoBack}
-                                            className="h-10 w-full rounded-xl font-medium text-gray-600 hover:text-blue-600 transition-all duration-300"
-                                        >
-                                            ← Go Back
-                                        </Button>
-                                    </Space>
-                                </div>
-
-                                {/* Support Contact */}
-                                <div className="text-center mt-8 pt-6 border-t border-gray-200">
-                                    <Text className="text-gray-500 text-sm">
-                                        Need immediate help?{' '}
-                                        <a href="mailto:support@estore.com" className="text-blue-600 hover:text-blue-700 font-medium">
-                                            Contact Support
-                                        </a>
-                                    </Text>
-                                </div>
-                            </Col>
-
-                            {/* Right Section - Details & Suggestions */}
-                            <Col xs={24} lg={12} className="bg-gradient-to-br from-slate-50 to-blue-50 p-8 border-l border-gray-200">
-                                <div className="h-full flex flex-col">
-                                    {/* Description */}
-                                    <div className="mb-8">
-                                        <div className="flex items-center space-x-2 mb-4">
-                                            <BsLightningCharge className="text-2xl text-yellow-500" />
-                                            <Title level={4} className="!mb-0 !text-gray-800">
-                                                What happened?
-                                            </Title>
-                                        </div>
-                                        <Paragraph className="text-gray-600 text-lg leading-relaxed">
-                                            {config.description}
-                                        </Paragraph>
-                                    </div>
-
-                                    {/* Quick Fixes */}
-                                    <div className="mb-8">
-                                        <div className="flex items-center space-x-2 mb-4">
-                                            <BsRocketTakeoff className="text-2xl text-green-500" />
-                                            <Title level={4} className="!mb-0 !text-gray-800">
-                                                Quick Fixes
-                                            </Title>
-                                        </div>
-                                        <Space direction="vertical" className="w-full" size="small">
-                                            {config.suggestions.map((suggestion, index) => (
-                                                <div
-                                                    key={index}
-                                                    className="flex items-center space-x-3 p-3 bg-white rounded-xl border border-gray-200 hover:border-blue-300 transition-all duration-300 hover:shadow-md"
-                                                >
-                                                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                                                    <Text className="text-gray-700">{suggestion}</Text>
-                                                </div>
-                                            ))}
-                                        </Space>
-                                    </div>
-
-                                    {/* Technical Details (for developers) */}
-                                    {error && process.env.NODE_ENV === 'development' && (
-                                        <div className="mt-auto">
-                                            <div className="bg-red-50 border border-red-200 rounded-xl p-4">
-                                                <Text className="text-red-800 text-sm font-mono break-all">
-                                                    {error.toString()}
-                                                </Text>
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {/* Status Indicator */}
-                                    <div className="mt-6 pt-6 border-t border-gray-200">
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center space-x-2">
-                                                <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-                                                <Text className="text-gray-600 text-sm">System Status: Operational</Text>
-                                            </div>
-                                            <Text className="text-gray-400 text-sm">ESTORE v1.2.0</Text>
-                                        </div>
-                                    </div>
-                                </div>
-                            </Col>
-                        </Row>
-                    </Card>
-
-                    {/* Decorative Elements */}
-                    <div className="absolute -top-4 -right-4 w-8 h-8 bg-yellow-400 rounded-full shadow-lg"></div>
-                    <div className="absolute -bottom-4 -left-4 w-6 h-6 bg-blue-400 rounded-full shadow-lg"></div>
-                    <div className="absolute top-1/2 -right-6 w-4 h-4 bg-green-400 rounded-full shadow-lg"></div>
-                </div>
-
-                {/* Additional Help Section */}
-                <div className="text-center mt-8">
-                    <Text className="text-gray-500">
-                        While you're here, check out our{' '}
-                        <a href="/help" className="text-blue-600 hover:text-blue-700 font-medium">
-                            Help Center
-                        </a>{' '}
-                        or browse our{' '}
-                        <a href="/products" className="text-blue-600 hover:text-blue-700 font-medium">
-                            Featured Products
-                        </a>
-                    </Text>
-                </div>
+        <div className="min-h-screen relative overflow-hidden bg-slate-50 flex items-center justify-center p-6">
+            {/* Animated Light Mesh Background */}
+            <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                <motion.div 
+                    animate={{ 
+                        scale: [1, 1.2, 1],
+                        rotate: [0, 45, 0],
+                        x: [0, 50, 0],
+                        y: [0, 30, 0]
+                    }}
+                    transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+                    className="absolute -top-[10%] -right-[10%] w-[60%] h-[60%] rounded-full bg-purple-100/50 blur-[120px]"
+                />
+                <motion.div 
+                    animate={{ 
+                        scale: [1, 1.3, 1],
+                        rotate: [0, -30, 0],
+                        x: [0, -40, 0],
+                        y: [0, 50, 0]
+                    }}
+                    transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
+                    className="absolute -bottom-[10%] -left-[10%] w-[50%] h-[50%] rounded-full bg-blue-100/50 blur-[120px]"
+                />
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-5"></div>
             </div>
 
-            {/* <style jsx>{`
-        .modern-error-card {
-          border-radius: 24px;
-          overflow: hidden;
-        }
-        .error-icon {
-          font-size: 4rem;
-        }
-        .animation-delay-2000 {
-          animation-delay: 2s;
-        }
-        .animation-delay-4000 {
-          animation-delay: 4s;
-        }
-      `}</style> */}
+            <motion.div
+                variants={containerVariants}
+                initial="hidden"
+                animate="visible"
+                className="relative z-10 max-w-5xl w-full"
+            >
+                <Card 
+                    className="overflow-hidden border-0 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.1)] bg-white/80 backdrop-blur-xl rounded-[2.5rem]"
+                    styles={{ body: { padding: 0 } }}
+                >
+                    <Row align="stretch">
+                        {/* Visual Section */}
+                        <Col xs={24} lg={11} className="relative overflow-hidden p-12 flex flex-col items-center justify-center bg-slate-50/50 border-r border-slate-100">
+                            <motion.div
+                                initial={{ scale: 0.8, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                transition={{ duration: 0.8, type: "spring" }}
+                                className="relative mb-12"
+                            >
+                                {/* Large Glowing Error Code */}
+                                <div className="absolute inset-0 blur-[60px] opacity-30 flex items-center justify-center">
+                                    <span className={`text-[12rem] font-black text-transparent bg-gradient-to-r ${config.gradient} bg-clip-text`}>
+                                        {activeErrorType}
+                                    </span>
+                                </div>
+                                <span className="relative text-[10rem] font-black leading-none tracking-tighter text-slate-200/50 select-none">
+                                    {activeErrorType}
+                                </span>
+                                
+                                {/* Floating Icon */}
+                                <motion.div
+                                    animate={{ y: [0, -20, 0] }}
+                                    transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                                    className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 rounded-3xl bg-gradient-to-br ${config.gradient} shadow-2xl flex items-center justify-center text-6xl text-white`}
+                                >
+                                    {config.icon}
+                                </motion.div>
+                            </motion.div>
+
+                            <motion.div variants={itemVariants} className="text-center">
+                                <Title level={1} className="!text-slate-900 !mb-2 !text-5xl font-bold tracking-tight">
+                                    {config.title}
+                                </Title>
+                                <Text className="text-slate-500 text-xl font-medium block mb-8">
+                                    {config.subtitle} {config.emoji}
+                                </Text>
+                            </motion.div>
+
+                            {/* Main Actions */}
+                            <motion.div variants={itemVariants} className="w-full max-w-xs space-y-4">
+                                <Button
+                                    type="primary"
+                                    size="large"
+                                    block
+                                    icon={<HiHome className="text-xl" />}
+                                    onClick={() => navigate('/')}
+                                    className="h-14 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 border-0 shadow-lg shadow-blue-200 hover:scale-[1.02] active:scale-[0.98] transition-all font-semibold"
+                                >
+                                    Back to Home
+                                </Button>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <Button
+                                        size="large"
+                                        icon={<HiRefresh />}
+                                        onClick={() => window.location.reload()}
+                                        className="h-12 rounded-xl bg-white border-slate-200 text-slate-600 hover:text-blue-600 hover:border-blue-400 transition-all shadow-sm"
+                                    >
+                                        Reload
+                                    </Button>
+                                    <Button
+                                        size="large"
+                                        icon={<HiArrowLeft />}
+                                        onClick={() => navigate(-1)}
+                                        className="h-12 rounded-xl bg-white border-slate-200 text-slate-600 hover:text-blue-600 hover:border-blue-400 transition-all shadow-sm"
+                                    >
+                                        Go Back
+                                    </Button>
+                                </div>
+                            </motion.div>
+                        </Col>
+
+                        {/* Details Section */}
+                        <Col xs={24} lg={13} className="p-12 flex flex-col bg-white">
+                            <motion.div variants={itemVariants} className="mb-10">
+                                <div className="flex items-center gap-3 mb-6">
+                                    <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center text-amber-500 text-2xl">
+                                        <BsLightningCharge />
+                                    </div>
+                                    <Title level={3} className="!text-slate-800 !mb-0 font-semibold">Diagnosis</Title>
+                                </div>
+                                <Paragraph className="text-slate-600 text-lg leading-relaxed">
+                                    {config.description}
+                                </Paragraph>
+                            </motion.div>
+
+                            <motion.div variants={itemVariants} className="mb-10">
+                                <div className="flex items-center gap-3 mb-6">
+                                    <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-500 text-2xl">
+                                        <BsRocketTakeoff />
+                                    </div>
+                                    <Title level={3} className="!text-slate-800 !mb-0 font-semibold">Quick Fixes</Title>
+                                </div>
+                                <div className="space-y-3">
+                                    {config.suggestions.map((item, idx) => (
+                                        <div key={idx} className="group flex items-center gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-100 hover:bg-white hover:border-blue-200 hover:shadow-md transition-all">
+                                            <div className="w-2 h-2 rounded-full bg-blue-500 group-hover:scale-150 transition-transform"></div>
+                                            <Text className="text-slate-700 font-medium">{item}</Text>
+                                        </div>
+                                    ))}
+                                </div>
+                            </motion.div>
+
+                            <div className="mt-auto pt-8 border-t border-slate-100">
+                                <div className="flex items-center justify-between">
+                                    <Space size="large">
+                                        <Tooltip title="Talk to support">
+                                            <a href="mailto:support@estore.com" className="flex items-center gap-2 text-blue-600 hover:text-blue-700 transition-colors font-medium">
+                                                <HiOutlineSupport className="text-xl" />
+                                                Support
+                                            </a>
+                                        </Tooltip>
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                                            <Text className="text-slate-500 text-xs uppercase tracking-widest font-bold">Systems Online</Text>
+                                        </div>
+                                    </Space>
+                                    <Text className="text-slate-400 font-mono text-xs">BUILD_v1.2.4_STABLE</Text>
+                                </div>
+                            </div>
+
+                            {/* Technical Stack (Dev Only) */}
+                            {error && process.env.NODE_ENV === 'development' && (
+                                <motion.div 
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    className="mt-6 p-4 rounded-xl bg-red-50 border border-red-100"
+                                >
+                                    <Text className="text-red-500 font-mono text-xs break-all">
+                                        [ERR_TRACE]: {error.toString()}
+                                    </Text>
+                                </motion.div>
+                            )}
+                        </Col>
+                    </Row>
+                </Card>
+
+                {/* Footer Links */}
+                <motion.div variants={itemVariants} className="mt-8 flex justify-center gap-8">
+                    {['Help Center', 'Status Page', 'Documentation', 'Privacy'].map((link) => (
+                        <a key={link} href={`/${link.toLowerCase().replace(' ', '-')}`} className="text-slate-400 hover:text-slate-600 transition-colors text-sm font-medium">
+                            {link}
+                        </a>
+                    ))}
+                </motion.div>
+            </motion.div>
+
+            {/* Global Overrides for Ant Design in light mode */}
+            <style>{`
+                .ant-typography { color: inherit !important; }
+                .ant-card { background: transparent !important; }
+                .ant-btn-primary { 
+                    box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.2), 0 4px 6px -2px rgba(37, 99, 235, 0.1);
+                }
+            `}</style>
         </div>
     );
 };

@@ -28,7 +28,6 @@ import { useGetQuoteByIdQuery } from '../../../app/Features/quoteSlice';
 
 const QuotationDetail = () => {
     const { id } = useParams();
-    const navigator = useNavigate();
     const token = localStorage.getItem('token');
     const { data, refetch } = useGetQuoteByIdQuery({ id, token });
     const navigate = useNavigate();

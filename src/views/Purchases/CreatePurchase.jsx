@@ -72,8 +72,10 @@ const CreatePurchase = () => {
   const [paymentAmount, setPaymentAmount] = useState(0);
   const [rawMaterials, setRawMaterials] = useState([]);
   const [debouncedSearch] = useDebounce(searchTerm, 500);
-  const { data: itemData } = useGetAllItemsQuery({ token, limit: 10, page: 1, search: debouncedSearch });
-  const { data: rawData } = useGetAllRawMaterialQuery({ token, limit: 10, page: 1, search: debouncedSearch });
+  const [currentPage, setCurrentPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const { data: itemData } = useGetAllItemsQuery({ token, limit, page: currentPage, search: debouncedSearch });
+  const { data: rawData } = useGetAllRawMaterialQuery({ token, limit, page: currentPage, search: debouncedSearch });
   const { data: supplierData } = useGetAllSupplierQuery(token);
   const [paymentDate, setPaymentDate] = useState(
     new Date().toISOString().split("T")[0]
@@ -94,6 +96,10 @@ const CreatePurchase = () => {
     setItems(itemData?.data || []);
     setRawMaterials(rawData?.data || []);
   }, [itemData, supplierData, rawData]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedSearch, itemType]);
 
   useEffect(() => {
     const filtered = items.filter(
@@ -526,6 +532,16 @@ const CreatePurchase = () => {
       toast.error(errorMessage);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const onScrollFetch = (e) => {
+    const target = e.target;
+    const nearBottom = target.scrollHeight - target.scrollTop - target.clientHeight < 100;
+    const total = itemType == 0 ? itemData?.pagination?.total : rawData?.pagination?.total;
+    const currentLength = itemType == 0 ? items?.length : rawMaterials?.length;
+    if (nearBottom && total > currentLength) {
+      setLimit(prev => prev + 10);
     }
   };
 
@@ -1024,7 +1040,7 @@ const CreatePurchase = () => {
                   optionType="button"
                   buttonStyle="solid"
                 /> */}
-                {itemType == 0 ? <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-60 overflow-y-auto p-2">
+                {itemType == 0 ? <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-60 overflow-y-auto p-2" onScroll={onScrollFetch}>
                   {filteredItems.map((item) => (
                     <div
                       key={item.id}
@@ -1069,7 +1085,7 @@ const CreatePurchase = () => {
                       </div>
                     </div>
                   ))}
-                </div> : <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-60 overflow-y-auto p-2">
+                </div> : <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-60 overflow-y-auto p-2" onScroll={onScrollFetch}>
                   {filteredRaw.map((item) => (
                     <div
                       key={item.id}

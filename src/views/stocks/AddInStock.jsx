@@ -46,7 +46,8 @@ const AddInStock = () => {
   const [searchItem, setSearchItem] = useState('');
   const [debouncedSearch] = useDebounce(searchItem, 500);
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsRes = useGetAllItemsQuery({ limit: 10, page: currentPage, search: debouncedSearch, token });
+  const [limit, setLimit] = useState(10);
+  const itemsRes = useGetAllItemsQuery({ limit: limit, page: currentPage, search: debouncedSearch, token });
   const saleItemContext = useGetAllSaleQuery(token);
   const warehouseRes = useGetAllWarehousesQuery(token);
   const [createStock] = useCreateStockMutation();
@@ -76,8 +77,8 @@ const AddInStock = () => {
   });
 
   useEffect(() => {
-    setfielditems(itemsRes.data?.data || []);
     setitems(itemsRes.data?.data || []);
+
     setAllItems(itemsRes?.data?.data || []);
     const newWare = warehouseRes.data?.data?.filter(
       (item) =>
@@ -87,6 +88,11 @@ const AddInStock = () => {
     );
     settoWarehouse(newWare || []);
   }, [stockRes.data, itemsRes.data, warehouseRes.data]);
+
+  useEffect(() => {
+    const selectedIds = new Set(selectItems.map((item) => item.id));
+    setfielditems(items.filter((item) => !selectedIds.has(item.id)));
+  }, [items, selectItems]);
 
   // Load existing stock data when in edit mode
   useEffect(() => {
@@ -134,6 +140,12 @@ const AddInStock = () => {
       }
     }
   }, [isEditMode, stockData]);
+
+  const hiddenExistItem = () => {
+    console.log(selectItems);
+    console.log(fielditems);
+
+  }
 
   function onSelectItem(value) {
     const finding = items.find((exp) => exp.id == value);
@@ -351,6 +363,14 @@ const AddInStock = () => {
       </div>);
   };
 
+  const onScrollFetch = (e) => {
+    const target = e.target;
+    const nearBottom = target.scrollHeight - target.scrollTop - target.clientHeight < 100;
+    if (nearBottom && itemsRes?.data?.pagination?.total > items?.length) {
+      setLimit(prev => prev + 10);
+    }
+  }
+
   return (
     <section className="px-6 py-6 bg-transparent min-h-screen">
       <AlertBox
@@ -392,6 +412,7 @@ const AddInStock = () => {
                     </label>
                     <Select
                       onSelect={onSelectItem}
+                      onPopupScroll={onScrollFetch}
                       showSearch
                       onSearch={(value) => setSearchItem(value)}
                       style={{ width: '100%' }}

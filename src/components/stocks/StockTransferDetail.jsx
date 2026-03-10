@@ -209,7 +209,7 @@ const StockTransferDetail = () => {
             <div className="mb-6">
                 <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
                     <div className="flex items-center gap-3">
-                        <Link to="/stock-transfer-list">
+                        <Link to={-1}>
                             <Button icon={<LuArrowLeft />} type="text" className="hover:bg-gray-100">
                                 Back to Stocks
                             </Button>

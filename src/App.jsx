@@ -258,11 +258,11 @@ const router = createBrowserRouter([
         element: <StockTransferList />,
       },
       {
-        path: "/stock-transfer-list/detail/:id",
+        path: "/home/stock-transfer-list/detail/:id",
         element: <StockTransferDetail />,
       },
       {
-        path: "/stock-transfer-list/update/:id",
+        path: "/home/stock-transfer-list/update/:id",
         element: <StockTransfer />,
       },
       {
@@ -406,7 +406,7 @@ const router = createBrowserRouter([
         element: <PurchaseReceipt />,
       },
       {
-        path: "/purchase-raw/receipt-raw/:id",
+        path: "/home/purchase-raw/receipt-raw/:id",
         element: <PurchaseReceipt />,
       },
 
