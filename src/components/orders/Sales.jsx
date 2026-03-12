@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { AiTwotoneDelete } from "react-icons/ai";
 import { LuListChecks } from "react-icons/lu";
 import { Link, useNavigate } from "react-router";
@@ -17,6 +17,7 @@ import {
   Tooltip,
   Typography,
   Pagination,
+  Modal,
 } from "antd";
 import { PiShoppingCartBold } from "react-icons/pi";
 import { motion } from "framer-motion";
@@ -38,6 +39,7 @@ import { MdOutlineAddShoppingCart } from "react-icons/md";
 import { TbShoppingCartOff } from "react-icons/tb";
 import { useGetAllWasteQuery } from "../../../app/Features/notificationSlice";
 import { useDebounce } from "use-debounce";
+import { QRCodeCanvas } from "qrcode.react";
 
 // const { Option } = Select;
 
@@ -73,6 +75,15 @@ const Sales = () => {
   const navigate = useNavigate();
   const [payment, setPayment] = useState("paid");
   const [alertBox, setAlertBox] = useState(false);
+  const [qrModalOpen, setQrModalOpen] = useState(false);
+  const [qrLoading, setQrLoading] = useState(false);
+  const [qrValue, setQrValue] = useState("");
+  const [qrMd5, setQrMd5] = useState("");
+  const [qrCountdown, setQrCountdown] = useState(0);
+  const [qrStatus, setQrStatus] = useState("idle");
+  const qrCountdownRef = useRef(null);
+  const qrVerifyRef = useRef(null);
+  const qrStatusRef = useRef("idle");
   const [allItems, setAllItems] = useState([]);
   const [itemsSech, setItemsSech] = useState([]);
   const [messageApi, contextHolder] = message.useMessage();
@@ -692,8 +703,122 @@ const Sales = () => {
     }
   }
 
+  const clearQrTimers = () => {
+    if (qrCountdownRef.current) {
+      clearInterval(qrCountdownRef.current);
+      qrCountdownRef.current = null;
+    }
+    if (qrVerifyRef.current) {
+      clearInterval(qrVerifyRef.current);
+      qrVerifyRef.current = null;
+    }
+  };
+
+  const setQrStatusSafe = (status) => {
+    qrStatusRef.current = status;
+    setQrStatus(status);
+  };
+
+  const closeQrModal = () => {
+    clearQrTimers();
+    setQrStatusSafe("idle");
+    setQrCountdown(0);
+    setQrMd5("");
+    setQrValue("");
+    setQrModalOpen(false);
+  };
+
+  const startQrCountdown = () => {
+    setQrCountdown(60);
+    qrCountdownRef.current = setInterval(() => {
+      setQrCountdown((prev) => {
+        if (prev <= 1) {
+          clearQrTimers();
+          setQrStatusSafe("expired");
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+
+  const startQrVerify = (md5Hash) => {
+    qrVerifyRef.current = setInterval(async () => {
+      if (qrStatusRef.current !== "waiting") return;
+      try {
+        const res = await api.get(`/verify-payment/${md5Hash}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        const isPaid =
+          res?.data?.status === "PAID" ||
+          res?.data?.responseCode === 0 ||
+          res?.data?.raw?.responseCode === 0 ||
+          res?.data?.raw?.status?.code === 0;
+
+        if (isPaid) {
+          clearQrTimers();
+          setQrStatusSafe("paid");
+          Modal.success({
+            title: "Payment Success",
+            content: "Payment received. The order will be created.",
+            onOk: () => {
+              closeQrModal();
+              handleConfirm();
+            },
+          });
+        }
+      } catch (error) {
+        // Ignore transient errors during polling
+      }
+    }, 3000);
+  };
+
+  const startQrFlow = (md5Hash) => {
+    clearQrTimers();
+    setQrMd5(md5Hash);
+    setQrStatusSafe("waiting");
+    startQrCountdown();
+    startQrVerify(md5Hash);
+  };
+
+  useEffect(() => {
+    return () => {
+      clearQrTimers();
+    };
+  }, []);
+
   async function handleSubmit() {
-    setAlertBox(true);
+    try {
+      setQrLoading(true);
+      const rate = exchangeRate?.data?.usd_to_khr || null;
+      const amount = rate ? Math.round(orders.order_total * rate) : orders.order_total;
+      const currency = rate ? "KHR" : "USD";
+
+      if (!amount || amount <= 0) {
+        throw new Error("Invalid order amount");
+      }
+
+      const res = await api.get("/get-qrcode", {
+        params: { amount, currency },
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const qrString = res?.data?.qr || "";
+      const md5Hash = res?.data?.md5 || "";
+
+      if (!qrString || !md5Hash) {
+        throw new Error("QR code not available");
+      }
+      setQrValue(qrString);
+      setQrModalOpen(true);
+      startQrFlow(md5Hash);
+    } catch (error) {
+      toast.error(
+        error.response?.data?.message || error.message || "Failed to get QR code"
+      );
+    } finally {
+      setQrLoading(false);
+    }
   }
 
   function onFilterCategory(e) {
@@ -851,6 +976,49 @@ const Sales = () => {
           confirmText="Confirm"
           cancelText="Cancel"
         />
+        <Modal
+          open={qrModalOpen}
+          onCancel={closeQrModal}
+          centered
+          title="Scan QR Code to Pay"
+          footer={[
+            <Button key="cancel" onClick={closeQrModal}>
+              Close
+            </Button>,
+            <Button
+              key="confirm"
+              type="primary"
+              disabled={qrStatus !== "paid"}
+              onClick={() => {
+                closeQrModal();
+                handleConfirm();
+              }}
+            >
+              Confirm Order
+            </Button>,
+          ]}
+        >
+          <div className="flex flex-col items-center gap-4 py-4">
+            {qrLoading ? (
+              <div className="text-sm text-gray-500">Loading QR...</div>
+            ) : qrValue ? (
+              <QRCodeCanvas value={qrValue} size={220} />
+            ) : (
+              <div className="text-sm text-red-500">QR code not available</div>
+            )}
+            {qrStatus === "waiting" && (
+              <div className="text-sm text-gray-600">
+                Time left: <span className="font-semibold">{qrCountdown}s</span>
+              </div>
+            )}
+            {qrStatus === "expired" && (
+              <div className="text-sm text-red-500">QR expired. Please try again.</div>
+            )}
+            <div className="text-xs text-gray-500 text-center">
+              Scan to complete the payment. The order will be created after payment success.
+            </div>
+          </div>
+        </Modal>
 
         {/* Header Section */}
         <div className="mb-3">

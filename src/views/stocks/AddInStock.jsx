@@ -94,6 +94,13 @@ const AddInStock = () => {
     setfielditems(items.filter((item) => !selectedIds.has(item.id)));
   }, [items, selectItems]);
 
+  useEffect(() => {
+    const total = itemsRes?.data?.pagination?.total || 0;
+    if (fielditems.length < 5 && total > items.length) {
+      setLimit(prev => prev + 10);
+    }
+  }, [fielditems.length, items.length, itemsRes?.data?.pagination?.total]);
+
   // Load existing stock data when in edit mode
   useEffect(() => {
     if (isEditMode && stockData?.data) {
@@ -649,7 +656,7 @@ const AddInStock = () => {
                                     <Input
                                       type="number"
                                       min="1"
-                                      value={item.quantity || 1}
+                                      value={item.quantity}
                                       onWheel={(e) => e.target.blur()}   // 👈 បិទ scroll change
                                       onChange={(e) => handleChange(index, 'quantity', false, e.target.value)}
                                       className="w-24 text-center"

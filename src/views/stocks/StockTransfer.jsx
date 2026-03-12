@@ -29,9 +29,7 @@ const StockTransfer = () => {
   const [debouncedSearch] = useDebounce(searchTerm, 500);
   const { refetch } = useGetAllStockQuery(token);
   const stockRes = useGetAllStockTypesQuery(token);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [limit, setLimit] = useState(10);
-  const itemsRes = useGetItemsByStockQuery({ token, limit, page: currentPage, search: debouncedSearch });
+  const itemsRes = useGetItemsByStockQuery({ token, limit: 10, page: 1, search: debouncedSearch });
   const warehouseRes = useGetAllWarehousesQuery(token);
   const [createStock] = useCreateStockMutation(token);
 
@@ -68,16 +66,6 @@ const StockTransfer = () => {
     settoWarehouse(newWare || []);
     settoWarehouseSelect(toWare || []);
   }, [stockRes.data, itemsRes.data, warehouseRes.data]);
-
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [debouncedSearch]);
-
-  useEffect(() => {
-    if (!form.from_warehouse) {
-      setfielditems(asArray(itemsRes.data?.data));
-    }
-  }, [itemsRes.data, form.from_warehouse]);
 
   // Populate form and items when loading in update mode
   useEffect(() => {
@@ -234,14 +222,6 @@ const StockTransfer = () => {
     });
   }
 
-  const onScrollFetch = (e) => {
-    const target = e.target;
-    const nearBottom = target.scrollHeight - target.scrollTop - target.clientHeight < 100;
-    if (nearBottom && itemsRes?.data?.pagination?.total > items?.length) {
-      setLimit(prev => prev + 10);
-    }
-  }
-
   const options = [];
   for (let i = 0; i < fielditems.length; i++) {
     options.push({
@@ -333,7 +313,6 @@ const StockTransfer = () => {
                       style={{ width: '100%' }}
                       placeholder="Search and select items..."
                       onChange={onSelectItem}
-                      onPopupScroll={onScrollFetch}
                       onSearch={(value) => setSearchTerm(value)}
                       options={options}
                       showSearch

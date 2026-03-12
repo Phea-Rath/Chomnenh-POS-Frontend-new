@@ -416,7 +416,7 @@ const Stocks = () => {
           : 'No stock records match your search criteria'}
       </p>
       {stocks.length === 0 && (
-        <Link to="/add-to-stock">
+        <Link to="add">
           <button className="mt-6 px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-lg hover:from-blue-700 hover:to-purple-700 flex items-center gap-2 mx-auto">
             <FaPlus /> Create First Stock Record
           </button>

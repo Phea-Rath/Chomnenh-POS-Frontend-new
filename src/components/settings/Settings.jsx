@@ -29,7 +29,17 @@ const Settings = () => {
   const { data } = useGetMenuSettingQuery(token);
 
   useEffect(() => {
-    const allMenus = flattenMenus(data?.data || []);
+    let storedMenus = [];
+    const storedMenusRaw = localStorage.getItem("menus-setting");
+    if (storedMenusRaw) {
+      try {
+        storedMenus = JSON.parse(storedMenusRaw);
+      } catch {
+        storedMenus = [];
+      }
+    }
+
+    const allMenus = flattenMenus(data?.data ?? storedMenus ?? []);
     const perms = allMenus.filter((i) => i.active === 1);
     setMenu(perms);
   }, [data, userLogin]);

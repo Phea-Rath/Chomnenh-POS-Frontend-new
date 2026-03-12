@@ -24,12 +24,20 @@ const Sidebar = () => {
   const { data: permData } = useGetMenuSidebarQuery(token);
 
   useEffect(() => {
-    const menuData = permData?.data;
+    let storedMenus = [];
+    const storedMenusRaw = localStorage.getItem("menus-sidebar");
+    if (storedMenusRaw) {
+      try {
+        storedMenus = JSON.parse(storedMenusRaw);
+      } catch {
+        storedMenus = [];
+      }
+    }
+
+    const menuData = permData?.data ?? storedMenus ?? [];
     console.log(menuData);
 
     if (menuData?.length) {
-
-
       const perms = menuData.filter(i => i.active === 1);
       setMenu(perms);
     }

@@ -37,7 +37,17 @@ const Home = () => {
   const [menu, setMenu] = useState([]);
 
   useEffect(() => {
-    const rawMenu = data?.data ?? JSON.parse(localStorage.getItem("menus") || "[]");
+    let storedMenus = [];
+    const storedMenusRaw = localStorage.getItem("menus-home");
+    if (storedMenusRaw) {
+      try {
+        storedMenus = JSON.parse(storedMenusRaw);
+      } catch {
+        storedMenus = [];
+      }
+    }
+
+    const rawMenu = data?.data ?? storedMenus ?? [];
     const allMenus = flattenMenus(rawMenu || []);
     const perms = allMenus.filter(i => i.active === 1);
     setMenu(perms);

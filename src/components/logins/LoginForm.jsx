@@ -6,7 +6,7 @@ import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useGetUserLoginQuery } from "../../../app/Features/usersSlice";
 import { useGetAllMenuQuery } from "../../../app/Features/menusSlice";
-import { useGetPermissionByIdQuery } from "../../../app/Features/permissionSlice";
+import { useGetMenuHomeQuery, useGetMenuReportQuery, useGetMenuSettingQuery, useGetMenuSidebarQuery, useGetPermissionByIdQuery } from "../../../app/Features/permissionSlice";
 import logo from '../../assets/logo.jpg';
 
 // Placeholder logo (you can replace this with your actual logo URL)
@@ -18,7 +18,10 @@ const LoginForm = () => {
   const [loading, setLoading] = useState(false);
   const [Id, setId] = useState(0);
   const { refetch, isLoading } = useGetUserLoginQuery(localStorage.getItem('token'));
-  // const { data: menus, refetch: refetchMenu, isLoading: loadMenu } = useGetPermissionByIdQuery({ id: Id, token: localStorage.getItem('token') });
+  const { refetch: refetchSidebar, data: sidebar } = useGetMenuSidebarQuery(localStorage.getItem('token'));
+  const { refetch: refetchSetting, data: setting } = useGetMenuSettingQuery(localStorage.getItem('token'));
+  const { refetch: refetchReport, data: report } = useGetMenuReportQuery(localStorage.getItem('token'));
+  const { refetch: refetchHome, data: home } = useGetMenuHomeQuery(localStorage.getItem('token'));
   const [alert, setAlert] = useState({ message: "", show: false });
   const [login, setLogin] = useState({ phone_number: "", password: "" });
 
@@ -42,9 +45,14 @@ const LoginForm = () => {
         token,
         user: { profile_id, id },
       } = response.data;
-      refetch();
+
 
       if (response.status === 200) {
+        refetchSidebar();
+        refetch();
+        refetchHome();
+        refetchReport();
+        refetchSetting();
         const res = await api.get(`/permission/${id}`, {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -56,6 +64,10 @@ const LoginForm = () => {
         localStorage.setItem("token", token);
         if (res.status == 200) {
           localStorage.setItem('menus', JSON.stringify(res?.data.data));
+          localStorage.setItem('menus-sidebar', JSON.stringify(sidebar?.data));
+          localStorage.setItem('menus-home', JSON.stringify(home?.data));
+          localStorage.setItem('menus-report', JSON.stringify(report?.data));
+          localStorage.setItem('menus-setting', JSON.stringify(setting?.data));
           toast.success("Login successful");
           id == 1 ? navigate('/dashboard') : navigate("/dashboard");
         }

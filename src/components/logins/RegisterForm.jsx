@@ -186,7 +186,7 @@ const RegisterForm = () => {
         refetch();
         toast.success(response.data.message || "User created successfully");
         setLoading(false);
-        navigator("/users");
+        navigator(-1);
       }
     } catch (error) {
       toast.error(
