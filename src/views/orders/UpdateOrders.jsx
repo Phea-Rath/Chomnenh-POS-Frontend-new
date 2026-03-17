@@ -13,12 +13,14 @@ import {
 } from "../../../app/Features/stocksSlice";
 import api from "../../services/api";
 import { message, Select, Tag, Card, Badge, Tooltip, Avatar } from "antd";
-import { useGetAllItemInStockQuery } from "../../../app/Features/itemsSlice";
+import { useGetAllItemInStockQuery, useGetAllItemsQuery } from "../../../app/Features/itemsSlice";
 import { toast } from "react-toastify";
 import { useGetAllCustomerQuery } from "../../../app/Features/customersSlice";
 import { FaPercent, FaTag, FaPalette, FaRuler, FaWeight } from "react-icons/fa";
 import { motion } from "framer-motion";
 import { GiSugarCane } from "react-icons/gi";
+import { useDebounce } from "use-debounce";
+import { FaBox } from "react-icons/fa";
 
 const UpdateOrders = () => {
   const navigator = useNavigate();
@@ -30,10 +32,14 @@ const UpdateOrders = () => {
   const [selectedItems, setSelectedItems] = useState([]);
   const { setLoading } = useOutletsContext();
   const token = localStorage.getItem("token");
+  const [searchItem, setSearchItem] = useState('');
+  const [debouncedSearch] = useDebounce(searchItem, 500);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [limit, setLimit] = useState(10);
 
   // API hooks
   const orderContext = useGetAllOrderQuery(token);
-  const allItemInStock = useGetAllSaleQuery(token);
+  const allItemInStock = useGetAllSaleQuery({ limit: limit, page: currentPage, search: debouncedSearch, token });
   const stockData = useGetAllStockQuery(token);
   const {
     data: orderData,
@@ -137,6 +143,8 @@ const UpdateOrders = () => {
   // Initialize data when loaded
   useEffect(() => {
     setItems(allItemInStock?.data?.data || []);
+    console.log(allItemInStock?.data?.data);
+
     refetch();
     if (!orderLoading && orderData?.data) {
       const order = orderData.data;
@@ -191,6 +199,22 @@ const UpdateOrders = () => {
     allItemInStock,
     customers,
   ]);
+
+  // Reset pagination on search
+  useEffect(() => {
+    setCurrentPage(1);
+    setLimit(10);
+  }, [debouncedSearch]);
+
+
+  // Handle scroll fetch for infinite pagination
+  const onScrollFetch = (e) => {
+    const target = e.target;
+    const nearBottom = target.scrollHeight - target.scrollTop - target.clientHeight < 100;
+    if (nearBottom && allItemInStock?.data?.pagination?.total > items?.length) {
+      setLimit(prev => prev + 10);
+    }
+  };
 
 
   // Handle item selection
@@ -581,6 +605,8 @@ const UpdateOrders = () => {
                     <h3 className="text-lg font-semibold text-gray-700 mb-2">Add Items to Order</h3>
                     <Select
                       onSelect={handleSelectItem}
+                      onSearch={(value) => setSearchItem(value)}
+                      onPopupScroll={onScrollFetch}
                       showSearch
                       style={{ width: "100%" }}
                       placeholder="Search and select items to add..."

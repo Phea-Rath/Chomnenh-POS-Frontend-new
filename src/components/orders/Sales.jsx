@@ -40,6 +40,10 @@ import { TbShoppingCartOff } from "react-icons/tb";
 import { useGetAllWasteQuery } from "../../../app/Features/notificationSlice";
 import { useDebounce } from "use-debounce";
 import { QRCodeCanvas } from "qrcode.react";
+import bakong from "../../assets/bakong.png"
+import handleDownload from "../../services/imageDowload";
+import * as qrService from "../../services/qrPaymentService";
+
 
 // const { Option } = Select;
 
@@ -73,6 +77,7 @@ const Sales = () => {
   });
 
   const navigate = useNavigate();
+  const qrPaymentRef = useRef();
   const [payment, setPayment] = useState("paid");
   const [alertBox, setAlertBox] = useState(false);
   const [qrModalOpen, setQrModalOpen] = useState(false);
@@ -87,6 +92,7 @@ const Sales = () => {
   const [allItems, setAllItems] = useState([]);
   const [itemsSech, setItemsSech] = useState([]);
   const [messageApi, contextHolder] = message.useMessage();
+  const [modal, modalContextHolder] = Modal.useModal();
   const [Category, setCategory] = useState([]);
   const [orders, setOrders] = useState(localOrderItems || initialOrder);
   const [search, setSearch] = useState('');
@@ -617,6 +623,8 @@ const Sales = () => {
     });
   }
 
+
+
   async function handleConfirm() {
     const toDay = new Date();
 
@@ -729,7 +737,7 @@ const Sales = () => {
   };
 
   const startQrCountdown = () => {
-    setQrCountdown(60);
+    setQrCountdown(300); // 5 minutes (300 seconds)
     qrCountdownRef.current = setInterval(() => {
       setQrCountdown((prev) => {
         if (prev <= 1) {
@@ -788,15 +796,19 @@ const Sales = () => {
     };
   }, []);
 
-  async function handleSubmit() {
+  const handleShowQr = async () => {
     try {
       setQrLoading(true);
+      // Logic: if status is paid, use total. If not paid (cod/credit), use the 'payment' field (current amount paid).
+      const rawAmount = orders.order_payment_status === "paid" ? orders.order_total : orders.payment;
+
       const rate = exchangeRate?.data?.usd_to_khr || null;
-      const amount = rate ? Math.round(orders.order_total * rate) : orders.order_total;
+      const amount = rate ? Math.round(rawAmount * rate) : rawAmount;
       const currency = rate ? "KHR" : "USD";
 
       if (!amount || amount <= 0) {
-        throw new Error("Invalid order amount");
+        toast.warning("Payment amount must be greater than 0 for QR payment");
+        return;
       }
 
       const res = await api.get("/get-qrcode", {
@@ -819,7 +831,85 @@ const Sales = () => {
     } finally {
       setQrLoading(false);
     }
+  };
+
+  async function handleSubmit() {
+    if (orders.items.length === 0) {
+      toast.error("Cart is empty");
+      return;
+    }
+
+    modal.confirm({
+      title: 'Order Processing Options',
+      zIndex: 3000,
+      icon: <PiShoppingCartBold className="text-indigo-600 text-2xl" />,
+      content: (
+        <div className="py-2">
+          <p className="text-gray-600 mb-4">How would you like to proceed with this order?</p>
+          <div className="space-y-3">
+            <div className="p-3 bg-indigo-50 rounded-lg border border-indigo-100">
+              <span className="font-bold text-indigo-700 block">QR Payment</span>
+              <span className="text-xs text-indigo-500">Display QR code for customer to scan and pay now.</span>
+            </div>
+            <div className="p-3 bg-gray-50 rounded-lg border border-gray-100">
+              <span className="font-bold text-gray-700 block">Direct Report</span>
+              <span className="text-xs text-gray-500">Confirm order immediately without QR flow.</span>
+            </div>
+          </div>
+        </div>
+      ),
+      okText: 'QR Payment',
+      cancelText: 'Direct Report',
+      centered: true,
+      width: 450,
+      okButtonProps: { className: 'bg-indigo-600 hover:bg-indigo-700' },
+      onOk: () => {
+        handleShowQr();
+      },
+      onCancel: (e) => {
+        // If they didn't just close the modal via 'X' or ESC, show the confirmation for direct report
+        if (e.triggerCancel) return;
+        setAlertBox(true);
+      },
+    });
   }
+
+  const downloadQR = () => {
+    handleDownload(qrPaymentRef, "png", `order-qr-${Date.now()}`);
+  };
+
+  const sendQrToTelegram = async () => {
+    try {
+      setQrLoading(true);
+      const rawAmount = orders.order_payment_status === "paid" ? orders.order_total : orders.payment;
+      const rate = exchangeRate?.data?.usd_to_khr || null;
+      const amount = rate ? Math.round(rawAmount * rate) : rawAmount;
+      const currency = rate ? "KHR" : "USD";
+
+      // Capture QR Image from canvas inside the ref
+      const canvas = qrPaymentRef.current?.querySelector("canvas");
+      const qrImage = canvas ? canvas.toDataURL("image/png") : null;
+
+      if (!qrImage) {
+        throw new Error("Could not capture QR image");
+      }
+
+      await api.post("/send-qr-to-telegram", {
+        qr_string: qrValue,
+        amount,
+        currency,
+        qr_image: qrImage
+      }, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      toast.success("QR Photo sent to Telegram");
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to send QR to Telegram");
+    } finally {
+      setQrLoading(false);
+    }
+  };
 
   function onFilterCategory(e) {
     const value = e.target.value;
@@ -967,6 +1057,7 @@ const Sales = () => {
     >
       <section className="p-3">
         {contextHolder}
+        {modalContextHolder}
         <AlertBox
           isOpen={alertBox}
           title="Confirm Order"
@@ -980,43 +1071,103 @@ const Sales = () => {
           open={qrModalOpen}
           onCancel={closeQrModal}
           centered
-          title="Scan QR Code to Pay"
+          zIndex={3000}
+          width={400}
           footer={[
-            <Button key="cancel" onClick={closeQrModal}>
-              Close
-            </Button>,
-            <Button
-              key="confirm"
-              type="primary"
-              disabled={qrStatus !== "paid"}
-              onClick={() => {
-                closeQrModal();
-                handleConfirm();
-              }}
-            >
-              Confirm Order
-            </Button>,
-          ]}
-        >
-          <div className="flex flex-col items-center gap-4 py-4">
-            {qrLoading ? (
-              <div className="text-sm text-gray-500">Loading QR...</div>
-            ) : qrValue ? (
-              <QRCodeCanvas value={qrValue} size={220} />
-            ) : (
-              <div className="text-sm text-red-500">QR code not available</div>
-            )}
-            {qrStatus === "waiting" && (
-              <div className="text-sm text-gray-600">
-                Time left: <span className="font-semibold">{qrCountdown}s</span>
+            <div className="flex flex-col gap-2 w-full p-4 border-t border-gray-100" key="footer-group">
+              <div className="flex gap-2 w-full">
+                <Button key="download" className="flex-1 h-10 font-bold border-red-600 text-red-600 hover:bg-red-50" onClick={downloadQR}>
+                  Download
+                </Button>
+                <Button key="telegram" className="flex-1 h-10 font-bold border-blue-500 text-blue-500 hover:bg-blue-50" onClick={sendQrToTelegram} loading={qrLoading}>
+                  Telegram
+                </Button>
               </div>
-            )}
-            {qrStatus === "expired" && (
-              <div className="text-sm text-red-500">QR expired. Please try again.</div>
-            )}
-            <div className="text-xs text-gray-500 text-center">
-              Scan to complete the payment. The order will be created after payment success.
+              <Button key="cancel" className="w-full h-10 bg-gray-100 text-gray-600 font-bold hover:bg-gray-200 border-none" onClick={closeQrModal}>
+                Close
+              </Button>
+              <Button
+                key="confirm"
+                type="primary"
+                className="w-full h-12 font-black text-lg shadow-lg"
+                disabled={qrStatus !== "paid"}
+                onClick={() => {
+                  closeQrModal();
+                  handleConfirm();
+                }}
+              >
+                CONFIRM PAYMENT
+              </Button>
+            </div>,
+          ]}
+          styles={{
+            content: { padding: 0, overflow: 'hidden', borderRadius: '24px' },
+            header: { display: 'none' }
+          }}
+        >
+          <div className="bg-gradient-to-b from-[#e31a22] to-[#9e1217] text-white p-6 pb-10 text-center relative">
+            <div className="absolute top-4 left-4 font-black text-2xl opacity-20 tracking-tighter italic">KHQR</div>
+            <div className="mb-4">
+              <div className="inline-block bg-white p-2 rounded-xl shadow-lg mb-4">
+                <img src={bakong} alt="Bakong" className="h-8 object-contain" />
+              </div>
+              <h2 className="text-xl font-black tracking-wide uppercase">Scan to Pay</h2>
+              <div className="text-3xl font-black mt-2">
+                {orders.order_payment_status === "paid" ? orders.order_total : orders.payment}
+                <span className="text-lg ml-1 font-medium">{exchangeRate?.data?.usd_to_khr ? "USD" : "$"}</span>
+              </div>
+              {exchangeRate?.data?.usd_to_khr && (
+                <div className="text-sm opacity-80 font-bold mt-1">
+                  ≈ ៛ {currencyFormat((orders.order_payment_status === "paid" ? orders.order_total : orders.payment) * exchangeRate.data.usd_to_khr)}
+                </div>
+              )}
             </div>
+          </div>
+
+          <div className="px-8 -mt-8 relative z-10">
+            <div className="bg-white p-4 rounded-3xl shadow-2xl border-4 border-white flex flex-col items-center">
+              {qrLoading ? (
+                <div className="h-64 flex items-center justify-center">
+                  <div className="w-10 h-10 border-4 border-red-600 border-t-transparent rounded-full animate-spin"></div>
+                </div>
+              ) : qrValue ? (
+                <div ref={qrPaymentRef} className="relative p-2">
+                  <QRCodeCanvas value={qrValue} size={240} level="H" />
+                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white p-1 rounded-lg shadow-md border border-gray-100">
+                    <img src={bakong} className="w-8 h-8 object-contain" alt="logo" />
+                  </div>
+                </div>
+              ) : (
+                <div className="h-64 flex items-center justify-center text-red-500 font-bold italic">QR code not available</div>
+              )}
+
+              <div className="mt-4 flex flex-col items-center gap-2">
+                {qrStatus === "waiting" && (
+                  <div className="flex items-center gap-2 text-gray-500 font-bold animate-pulse">
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    Waiting for payment... ({Math.floor(qrCountdown / 60)}:{(qrCountdown % 60).toString().padStart(2, '0')})
+                  </div>
+                )}
+                {qrStatus === "paid" && (
+                  <div className="text-green-600 font-black text-xl flex items-center gap-2">
+                    <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"></path></svg>
+                    PAYMENT RECEIVED
+                  </div>
+                )}
+                {qrStatus === "expired" && (
+                  <div className="text-red-600 font-black flex items-center gap-2">
+                    EXPIRED - PLEASE REGENERATE
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="p-6 text-center">
+            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest leading-tight">
+              Supported by Bakong • ABA Pay • Aceleda<br />
+              Created for Chrome-nenh App
+            </p>
           </div>
         </Modal>
 
@@ -1280,11 +1431,11 @@ const Sales = () => {
                             </div>
 
                             {/* Quantity Controls */}
-                            <div className="flex items-center justify-between mt-3">
+                            <div className="flex items-center justify-between">
                               <div className="flex items-center gap-2">
                                 <button
                                   onClick={() => handleQty(item.id, item.selectionKey)}
-                                  className="w-7 h-7 bg-red-500 text-white rounded hover:bg-red-600 flex items-center justify-center"
+                                  className="w-5 h-5 bg-red-500 text-white rounded hover:bg-red-600 flex items-center justify-center"
                                 >
                                   -
                                 </button>
@@ -1293,7 +1444,7 @@ const Sales = () => {
                                 </span>
                                 <button
                                   onClick={() => handleQtyPlus(item.id, item.selectionKey)}
-                                  className="w-7 h-7 bg-green-500 text-white rounded hover:bg-green-600 flex items-center justify-center"
+                                  className="w-5 h-5 bg-green-500 text-white rounded hover:bg-green-600 flex items-center justify-center"
                                 >
                                   +
                                 </button>

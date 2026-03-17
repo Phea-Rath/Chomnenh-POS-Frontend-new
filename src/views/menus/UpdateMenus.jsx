@@ -61,10 +61,18 @@ const UpdateMenus = ({ onAdd, dataMenu }) => {
     try {
       setLoading(true);
 
+      const placementParentId = {
+        2: 5,
+        3: 8,
+        4: 18,
+      };
+      const parentMenuId = placementParentId[Number(menus.menu_type)] ?? null;
+
       // Since menu_icon can now be a file, we use FormData for the update
       const formData = new FormData();
       formData.append('menu_name', menus.menu_name);
       formData.append('menu_type', menus.menu_type);
+      formData.append('parent_menu', parentMenuId ?? '');
       formData.append('menu_path', menus.menu_path);
       formData.append('order_menu', menus.order_menu);
       // Only append if it's a new file; otherwise, the backend keeps existing

@@ -176,6 +176,11 @@ const OrderList = () => {
   };
 
   const getItemsSummary = (items) => {
+    console.log(items);
+    if (!items?.length || items?.length == 0) {
+      return { totalItems: 0, totalValue: 0 };
+    }
+
     const totalItems = items?.reduce((sum, item) => sum + (item.quantity || 0), 0) || 0;
     const totalValue = items?.reduce((sum, item) => sum + (item.price * item.quantity || 0), 0) || 0;
     return { totalItems, totalValue };
@@ -370,9 +375,9 @@ const OrderList = () => {
                       <div className="flex justify-between items-center text-sm">
                         <div className="flex items-center gap-1">
                           <FaShoppingBag className="text-gray-400" />
-                          <span>{itemsSummary.totalItems} items</span>
+                          <span>{itemsSummary?.totalItems} items</span>
                         </div>
-                        <span className="font-semibold">${formatCurrency(itemsSummary.totalValue)}</span>
+                        <span className="font-semibold">${formatCurrency(itemsSummary?.totalValue)}</span>
                       </div>
                     </div>
 

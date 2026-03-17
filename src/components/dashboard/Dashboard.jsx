@@ -1,9 +1,6 @@
 import { useEffect, useState } from "react";
-import { RiShoppingCartFill } from "react-icons/ri";
-import { RiMoneyDollarCircleFill } from "react-icons/ri";
-import { FaMoneyBillTrendUp } from "react-icons/fa6";
-import { FaWarehouse } from "react-icons/fa";
-import { curveCardinal } from "d3-shape";
+import { RiShoppingCartFill, RiMoneyDollarCircleFill } from "react-icons/ri";
+import { FaMoneyBillTrendUp, FaWarehouse } from "react-icons/fa6";
 import {
   LineChart,
   Line,
@@ -15,14 +12,11 @@ import {
   YAxis,
   Tooltip,
   Legend,
-  RadialBarChart,
-  RadialBar,
   ResponsiveContainer,
   AreaChart,
   Area,
   BarChart,
   Bar,
-  Rectangle,
   RadarChart,
   Radar,
   PolarGrid,
@@ -42,6 +36,10 @@ import {
   useGetSaleByHourQuery,
   useGetSaleByMonthQuery,
   useGetSaleByWeekQuery,
+  useGetProfiteByDayQuery,
+  useGetProfiteByHourQuery,
+  useGetProfiteByMonthQuery,
+  useGetProfiteByWeekQuery,
 } from "../../../app/Features/dashboardsSlice";
 import { BsArrowDownRight, BsArrowUpRight } from "react-icons/bs";
 import { useGetPopularExpansesQuery } from "../../../app/Features/expensesSlice";
@@ -52,234 +50,42 @@ import {
 import { useGetPopularStockQuery } from "../../../app/Features/stocksSlice";
 import { useGetUserLoginQuery } from "../../../app/Features/usersSlice";
 import { Link } from "react-router";
-import { Button } from "antd";
-const dataRadar = [
-  {
-    subject: "07:00 AM",
-    today: 120,
-    yesterday: 110,
-    fullMark: 150,
-  },
-  {
-    subject: "11:00 AM",
-    today: 98,
-    yesterday: 130,
-    fullMark: 150,
-  },
-  {
-    subject: "04:00 PM",
-    today: 86,
-    yesterday: 130,
-    fullMark: 150,
-  },
-  {
-    subject: "09:00 PM",
-    today: 99,
-    yesterday: 100,
-    fullMark: 150,
-  },
-  {
-    subject: "02:00 AM",
-    today: 85,
-    yesterday: 90,
-    fullMark: 150,
-  },
-  {
-    subject: "06:00 AM",
-    today: 65,
-    yesterday: 85,
-    fullMark: 150,
-  },
-];
 
-const dataArea = [
-  {
-    name: "Week 1",
-    thisMonth: 4000,
-    lastMonth: -2400,
-  },
-  {
-    name: "Week 2",
-    thisMonth: 1000,
-    lastMonth: 1398,
-  },
-  {
-    name: "Week 3",
-    thisMonth: 2000,
-    lastMonth: 9800,
-  },
-  {
-    name: "Week 4",
-    thisMonth: -2780,
-    lastMonth: 3908,
-  },
-];
-const dataAreaCard = [
-  {
-    name: "Week 1",
-    thisMonth: 4000,
-  },
-  {
-    name: "Week 2",
-    thisMonth: 3000,
-  },
-  {
-    name: "Week 3",
-    thisMonth: 2000,
-  },
-  {
-    name: "Week 4",
-    thisMonth: 2780,
-  },
-  {
-    name: "Week 5",
-    thisMonth: 2780,
-  },
-];
-const dataBar = [
-  {
-    name: "Day 1",
-    thisWeek: 4000,
-    Weekend: 2400,
-  },
-  {
-    name: "Day 2",
-    thisWeek: 3000,
-    Weekend: 1398,
-  },
-  {
-    name: "Day 3",
-    thisWeek: 2000,
-    Weekend: 9800,
-  },
-  {
-    name: "Day 4",
-    thisWeek: 2780,
-    Weekend: 3908,
-  },
-  {
-    name: "Day 5",
-    thisWeek: 1890,
-    Weekend: 4800,
-  },
-  {
-    name: "Day 6",
-    thisWeek: 2390,
-    Weekend: 3800,
-  },
-  {
-    name: "Day 7",
-    thisWeek: 3490,
-    Weekend: 4300,
-  },
-];
+const COLORS = ["#6366f1", "#f59e0b", "#10b981", "#ef4444", "#8b5cf6", "#ec4899"];
 
-const popularExpanse = [
-  {
-    name: "Computer",
-    type: "Electronic",
-    price: 799,
-    discription:
-      "Lorem ipsum dolor sit amet consectetur adipisicing elit. Iusto laborum vel, doloribus commodi voluptas quod deserunt blanditiis exercitationem sunt non.",
-  },
-  {
-    name: "Printer",
-    type: "Electronic",
-    price: 129,
-    discription:
-      "Lorem ipsum dolor sit amet consectetur adipisicing elit. Iusto laborum vel, doloribus commodi voluptas quod deserunt blanditiis exercitationem sunt non.",
-  },
-  {
-    name: "Phone",
-    type: "Electronic",
-    price: 259,
-    discription:
-      "Lorem ipsum dolor sit amet consectetur adipisicing elit. Iusto laborum vel, doloribus commodi voluptas quod deserunt blanditiis exercitationem sunt non.",
-  },
-  {
-    name: "Camera",
-    type: "Electronic",
-    price: 479,
-    discription:
-      "Lorem ipsum dolor sit amet consectetur adipisicing elit. Iusto laborum vel, doloribus commodi voluptas quod deserunt blanditiis exercitationem sunt non.",
-  },
-  {
-    name: "Panasonic",
-    type: "Electronic",
-    price: 1599,
-    discription:
-      "Lorem ipsum dolor sit amet consectetur adipisicing elit. Iusto laborum vel, doloribus commodi voluptas quod deserunt blanditiis exercitationem sunt non.",
-  },
-];
-const popularStockIn = [
-  {
-    img: "https://t4.ftcdn.net/jpg/04/39/60/05/360_F_439600528_2FWTMQDiXYv6T0qolS57KSxiNbqlhDTa.jpg",
-    name: "Computer",
-    category: "shoe",
-    stock: 799,
-  },
-  {
-    img: "https://t4.ftcdn.net/jpg/04/39/60/05/360_F_439600528_2FWTMQDiXYv6T0qolS57KSxiNbqlhDTa.jpg",
-    name: "Printer",
-    category: "shoe",
-    stock: 129,
-  },
-  {
-    img: "https://t4.ftcdn.net/jpg/04/39/60/05/360_F_439600528_2FWTMQDiXYv6T0qolS57KSxiNbqlhDTa.jpg",
-    name: "Phone",
-    category: "shoe",
-    stock: 259,
-  },
-  {
-    img: "https://t4.ftcdn.net/jpg/04/39/60/05/360_F_439600528_2FWTMQDiXYv6T0qolS57KSxiNbqlhDTa.jpg",
-    name: "Camera",
-    category: "shoe",
-    stock: 479,
-  },
-  {
-    img: "https://t4.ftcdn.net/jpg/04/39/60/05/360_F_439600528_2FWTMQDiXYv6T0qolS57KSxiNbqlhDTa.jpg",
-    name: "Panasonic",
-    category: "shoe",
-    stock: 1599,
-  },
-];
 const Dashboard = () => {
   const token = localStorage.getItem("token");
+  const currentYear = new Date().getFullYear();
+  const [year, setYear] = useState(currentYear);
   const [timeRange, setTimeRange] = useState(["month", "week", "day", "hour"]);
   const [revenueChart, setRevenueChart] = useState([]);
   const [purchaseChart, setPurchaseChart] = useState([]);
   const [expenseChart, setExpanseChart] = useState([]);
   const [profitChart, setProfitChart] = useState([]);
   const [profitByMonth, setProfitByMonth] = useState([]);
-  const [profit, setProfit] = useState({
-    thisYear: 0,
-    lastYear: 0,
-    persent: 0,
-  });
-  const [purchases, setPurchases] = useState({
-    thisYear: 0,
-    lastYear: 0,
-    persent: 0,
-  });
+  const [profit, setProfit] = useState({ thisYear: 0, lastYear: 0, persent: 0 });
+  const [purchases, setPurchases] = useState({ thisYear: 0, lastYear: 0, persent: 0 });
   const [sales, setSales] = useState({ thisYear: 0, lastYear: 0, persent: 0 });
-  const [expenses, setExpanses] = useState({
-    thisYear: 0,
-    lastYear: 0,
-    persent: 0,
-  });
+  const [expenses, setExpanses] = useState({ thisYear: 0, lastYear: 0, persent: 0 });
 
-  const { data: purchaseByMonth } = useGetPurchaseByMonthQuery(token);
-  const { data: purchaseByWeek } = useGetPurchaseByWeekQuery(token);
-  const { data: purchaseByDay } = useGetPurchaseByDayQuery(token);
-  const { data: purchaseByHour } = useGetPurchaseByHourQuery(token);
-  const { data: saleByMonth } = useGetSaleByMonthQuery(token);
-  const { data: saleByWeek } = useGetSaleByWeekQuery(token);
-  const { data: saleByDay } = useGetSaleByDayQuery(token);
-  const { data: saleByHour } = useGetSaleByHourQuery(token);
-  const { data: expenseByMonth } = useGetExpanseByMonthQuery(token);
-  const { data: expenseByWeek } = useGetExpanseByWeekQuery(token);
-  const { data: expenseByDay } = useGetExpanseByDayQuery(token);
-  const { data: expenseByHour } = useGetExpanseByHourQuery(token);
+  const { data: purchaseByMonth, isFetching: isFetchingPM } = useGetPurchaseByMonthQuery({ token, year });
+  const { data: purchaseByWeek, isFetching: isFetchingPW } = useGetPurchaseByWeekQuery({ token, year });
+  const { data: purchaseByDay, isFetching: isFetchingPD } = useGetPurchaseByDayQuery({ token, year });
+  const { data: purchaseByHour, isFetching: isFetchingPH } = useGetPurchaseByHourQuery({ token, year });
+  const { data: saleByMonth, isFetching: isFetchingSM } = useGetSaleByMonthQuery({ token, year });
+  const { data: saleByWeek, isFetching: isFetchingSW } = useGetSaleByWeekQuery({ token, year });
+  const { data: saleByDay, isFetching: isFetchingSD } = useGetSaleByDayQuery({ token, year });
+  const { data: saleByHour, isFetching: isFetchingSH } = useGetSaleByHourQuery({ token, year });
+  const { data: expenseByMonth, isFetching: isFetchingEM } = useGetExpanseByMonthQuery({ token, year });
+  const { data: expenseByWeek, isFetching: isFetchingEW } = useGetExpanseByWeekQuery({ token, year });
+  const { data: expenseByDay, isFetching: isFetchingED } = useGetExpanseByDayQuery({ token, year });
+  const { data: expenseByHour, isFetching: isFetchingEH } = useGetExpanseByHourQuery({ token, year });
+
+  const { data: profitByMonthApi, isFetching: isFetchingPrM } = useGetProfiteByMonthQuery({ token, year });
+  const { data: profitByWeekApi, isFetching: isFetchingPrW } = useGetProfiteByWeekQuery({ token, year });
+  const { data: profitByDayApi, isFetching: isFetchingPrD } = useGetProfiteByDayQuery({ token, year });
+  const { data: profitByHourApi, isFetching: isFetchingPrH } = useGetProfiteByHourQuery({ token, year });
+
   const { data: popularExpanses } = useGetPopularExpansesQuery(token);
   const { data: popularSales } = useGetPopularOrderQuery(token);
   const { data: orderPersentMonthly } = useGetPersentOrderMonthlyQuery(token);
@@ -287,1025 +93,398 @@ const Dashboard = () => {
   const { data: userLogin, isLoading } = useGetUserLoginQuery(token);
 
   useEffect(() => {
-    const purchaseThisYear =
-      purchaseByMonth?.data.reduce(
-        (initial, current) => initial + parseFloat(current.thisYearPrice),
-        0
-      ) || 0;
-    const purchaseLastYear =
-      purchaseByMonth?.data.reduce(
-        (initial, current) => initial + parseFloat(current.lastYearPrice),
-        0
-      ) || 0;
+    const pThis = purchaseByMonth?.data.reduce((i, c) => i + parseFloat(c.thisYearPrice), 0) || 0;
+    const pLast = purchaseByMonth?.data.reduce((i, c) => i + parseFloat(c.lastYearPrice), 0) || 0;
+    const sThis = saleByMonth?.data.reduce((i, c) => i + parseFloat(c.thisYearPrice), 0) || 0;
+    const sLast = saleByMonth?.data.reduce((i, c) => i + parseFloat(c.lastYearPrice), 0) || 0;
+    const eThis = expenseByMonth?.data.reduce((i, c) => i + parseFloat(c.thisYear), 0) || 0;
+    const eLast = expenseByMonth?.data.reduce((i, c) => i + parseFloat(c.lastYear), 0) || 0;
 
-    const saleThisYear =
-      saleByMonth?.data.reduce(
-        (initial, current) => initial + parseFloat(current.thisYearPrice),
-        0
-      ) || 0;
-    const saleLastYear =
-      saleByMonth?.data.reduce(
-        (initial, current) => initial + parseFloat(current.lastYearPrice),
-        0
-      ) || 0;
-    const expenseThisYear =
-      expenseByMonth?.data.reduce(
-        (initial, current) => initial + parseFloat(current.thisYear),
-        0
-      ) || 0;
-    const expenseLastYear =
-      expenseByMonth?.data.reduce(
-        (initial, current) => initial + parseFloat(current.lastYear),
-        0
-      ) || 0;
+    setPurchases({ thisYear: pThis, lastYear: pLast, persent: definePersents(pThis, pLast) });
+    setSales({ thisYear: sThis, lastYear: sLast, persent: definePersents(sThis, sLast) });
+    setExpanses({ thisYear: eThis, lastYear: eLast, persent: definePersents(eThis, eLast) });
 
-    setPurchases({
-      thisYear: purchaseThisYear,
-      lastYear: purchaseLastYear,
-      persent: definePersents(purchaseThisYear, purchaseLastYear),
-    });
-    setSales({
-      thisYear: saleThisYear,
-      lastYear: saleLastYear,
-      persent: definePersents(saleThisYear, saleLastYear),
-    });
-    setExpanses({
-      thisYear: expenseThisYear,
-      lastYear: expenseLastYear,
-      persent: definePersents(expenseThisYear, expenseLastYear),
-    });
-    setProfit({
-      thisYear: saleThisYear - expenseThisYear - purchaseThisYear,
-      lastYear: saleLastYear - expenseLastYear - purchaseLastYear,
-      persent: definePersents(
-        saleThisYear - expenseThisYear - purchaseThisYear,
-        saleLastYear - expenseLastYear - purchaseLastYear
-      ),
-    });
-  }, [purchaseByMonth, saleByMonth, profitByMonth, expenseByMonth]);
+    if (profitByMonthApi?.data) {
+      const prThis = profitByMonthApi.data.reduce((i, c) => i + parseFloat(c.thisYear), 0) || 0;
+      const prLast = profitByMonthApi.data.reduce((i, c) => i + parseFloat(c.lastYear), 0) || 0;
+      setProfit({ thisYear: prThis, lastYear: prLast, persent: definePersents(prThis, prLast) });
+    }
+  }, [purchaseByMonth, saleByMonth, expenseByMonth, profitByMonthApi]);
 
   useEffect(() => {
-    setRevenueChart(saleByWeek?.data || []);
-    setPurchaseChart(purchaseByDay?.data || []);
-    setExpanseChart(expenseByHour?.data || []);
-    if (expenseByMonth) {
-      setProfitChart(() => {
-        const profit =
-          saleByMonth?.data.map((item, idx) => {
-            const purchaseItem = purchaseByMonth?.data[idx];
-            const expenseItem = expenseByMonth?.data[idx];
-            return {
-              name: item.name,
-              thisYear:
-                item.thisYearPrice -
-                purchaseItem.thisYearPrice -
-                expenseItem.thisYear,
-              lastYear:
-                item.lastYearPrice -
-                (purchaseItem.lastYearPrice || 0) -
-                (expenseItem.lastYear || 0),
-            };
-          }) || [];
-        setProfitByMonth(profit);
-        return profit;
-      });
+    if (year !== currentYear) {
+      setTimeRange(["month", "month", "month", "month"]);
     }
+  }, [year]);
+
+  useEffect(() => {
+    const isCurrentYear = year === currentYear;
+
+    const getRevenueData = () => {
+      if (!isCurrentYear) return saleByMonth?.data || [];
+      if (timeRange[1] === "hour") return saleByHour?.data || [];
+      if (timeRange[1] === "day") return saleByDay?.data || [];
+      if (timeRange[1] === "week") return saleByWeek?.data || [];
+      return saleByMonth?.data || [];
+    };
+
+    const getPurchaseData = () => {
+      if (!isCurrentYear) return purchaseByMonth?.data || [];
+      if (timeRange[2] === "hour") return purchaseByHour?.data || [];
+      if (timeRange[2] === "day") return purchaseByDay?.data || [];
+      if (timeRange[2] === "week") return purchaseByWeek?.data || [];
+      return purchaseByMonth?.data || [];
+    };
+
+    const getExpenseData = () => {
+      if (!isCurrentYear) return expenseByMonth?.data || [];
+      if (timeRange[3] === "hour") return expenseByHour?.data || [];
+      if (timeRange[3] === "day") return expenseByDay?.data || [];
+      if (timeRange[3] === "week") return expenseByWeek?.data || [];
+      return expenseByMonth?.data || [];
+    };
+
+    const getProfitData = (range) => {
+      if (range === "hour") return profitByHourApi?.data?.map(i => ({ name: i.name, current: i.today, previous: i.yesterday })) || [];
+      if (range === "day") return profitByDayApi?.data?.map(i => ({ name: i.name, current: i.thisWeek, previous: i.Weekend })) || [];
+      if (range === "week") return profitByWeekApi?.data?.map(i => ({ name: i.name, current: i.thisMonth, previous: i.lastMonth })) || [];
+      return profitByMonthApi?.data?.map(i => ({ name: i.name, current: i.thisYear, previous: i.lastYear })) || [];
+    };
+
+    setRevenueChart(getRevenueData());
+    setPurchaseChart(getPurchaseData());
+    setExpanseChart(getExpenseData());
+
+    if (profitByMonthApi?.data) {
+      setProfitByMonth(profitByMonthApi.data);
+    }
+
+    setProfitChart(getProfitData(timeRange[0]));
   }, [
+    year,
+    currentYear,
+    timeRange,
+    saleByHour,
+    saleByDay,
     saleByWeek,
-    purchaseByDay,
-    expenseByHour,
-    expenseByMonth,
-    purchaseByMonth,
     saleByMonth,
+    purchaseByHour,
+    purchaseByDay,
+    purchaseByWeek,
+    purchaseByMonth,
+    expenseByHour,
+    expenseByDay,
+    expenseByWeek,
+    expenseByMonth,
+    profitByHourApi,
+    profitByDayApi,
+    profitByWeekApi,
+    profitByMonthApi
   ]);
 
-  const definePersents = (thisYear, lastYear) => {
-    if (thisYear === lastYear) return 0;
-    if (lastYear === 0 || thisYear === 0) return 100;
-    if (thisYear < lastYear) {
-      return (((lastYear - thisYear) / lastYear) * 100).toFixed(2);
+  const definePersents = (thisPeriod, lastPeriod) => {
+    if (thisPeriod === lastPeriod) return 0;
+    if (lastPeriod === 0) return 100;
+    return (Math.abs((thisPeriod - lastPeriod) / lastPeriod) * 100).toFixed(1);
+  };
+
+  const handleTimeRangeChange = (index, range) => {
+    const newRange = [...timeRange];
+    newRange[index] = range;
+    setTimeRange(newRange);
+
+    if (index === 1) { // Revenue
+      if (range === "hour") setRevenueChart(saleByHour?.data || []);
+      else if (range === "day") setRevenueChart(saleByDay?.data || []);
+      else if (range === "week") setRevenueChart(saleByWeek?.data || []);
+      else if (range === "month") setRevenueChart(saleByMonth?.data || []);
+    } else if (index === 2) { // Purchase
+      if (range === "hour") setPurchaseChart(purchaseByHour?.data || []);
+      else if (range === "day") setPurchaseChart(purchaseByDay?.data || []);
+      else if (range === "week") setPurchaseChart(purchaseByWeek?.data || []);
+      else if (range === "month") setPurchaseChart(purchaseByMonth?.data || []);
+    } else if (index === 3) { // Expense
+      if (range === "hour") setExpanseChart(expenseByHour?.data || []);
+      else if (range === "day") setExpanseChart(expenseByDay?.data || []);
+      else if (range === "week") setExpanseChart(expenseByWeek?.data || []);
+      else if (range === "month") setExpanseChart(expenseByMonth?.data || []);
+    } else if (index === 0) { // Profit
+      if (range === "hour") setProfitChart(profitByHourApi?.data?.map(i => ({ name: i.name, current: i.today, previous: i.yesterday })) || []);
+      else if (range === "day") setProfitChart(profitByDayApi?.data?.map(i => ({ name: i.name, current: i.thisWeek, previous: i.Weekend })) || []);
+      else if (range === "week") setProfitChart(profitByWeekApi?.data?.map(i => ({ name: i.name, current: i.thisMonth, previous: i.lastMonth })) || []);
+      else if (range === "month") setProfitChart(profitByMonthApi?.data?.map(i => ({ name: i.name, current: i.thisYear, previous: i.lastYear })) || []);
     }
-    return (((thisYear - lastYear) / lastYear) * 100).toFixed(2);
   };
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center p-8">
-        <div className="text-center">
-          <div className="inline-flex items-center justify-center space-x-2">
-            <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-            <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-            <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
-          </div>
-          <p className="mt-3 text-sm text-gray-600 font-medium">Loading...</p>
-        </div>
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
       </div>
     );
   }
 
   if (userLogin?.data?.role_id === 1) {
     return (
-      <div className="max-w-lg mx-auto p-6">
-        {/* Welcome Header */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-blue-100 to-indigo-100 mb-4">
-            <svg className="w-8 h-8 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
-            </svg>
+      <div className="max-w-2xl mx-auto p-8">
+        <div className="bg-white rounded-3xl p-10 shadow-xl border border-gray-100 text-center">
+          <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-indigo-50 text-indigo-600 mb-6">
+            <RiShoppingCartFill size={40} />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Welcome Super Administrator</h1>
-          <p className="text-gray-600">You have full access to system settings</p>
-        </div>
-
-        {/* Stats Cards */}
-        <div className="grid grid-cols-3 gap-3 mb-6">
-          <div className="bg-white rounded-lg p-3 text-center border border-gray-100 shadow-xs">
-            <div className="text-lg font-bold text-blue-600">Super Admin</div>
-            <div className="text-xs text-gray-500">Role</div>
-          </div>
-          <div className="bg-white rounded-lg p-3 text-center border border-gray-100 shadow-xs">
-            <div className="text-lg font-bold text-green-600">Full</div>
-            <div className="text-xs text-gray-500">Access</div>
-          </div>
-          <div className="bg-white rounded-lg p-3 text-center border border-gray-100 shadow-xs">
-            <div className="text-lg font-bold text-purple-600">All</div>
-            <div className="text-xs text-gray-500">Features</div>
-          </div>
-        </div>
-
-        {/* Settings Button */}
-        <Link to="/setting" className="block">
-          <div className="group relative">
-            <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg blur opacity-25 group-hover:opacity-75 transition duration-300"></div>
-            <button className="relative w-full flex items-center justify-between bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg px-6 py-4 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-300">
-              <div className="flex items-center space-x-4">
-                <div className="p-2 bg-white/20 rounded-lg">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
-                  </svg>
-                </div>
-                <div className="text-left">
-                  <p className="font-semibold">Open Settings</p>
-                  <p className="text-xs opacity-90">Manage system configuration</p>
-                </div>
-              </div>
-              <svg className="w-5 h-5 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </button>
-          </div>
-        </Link>
-
-        {/* Quick Tips */}
-        <div className="mt-8 p-4 bg-blue-50 rounded-lg border border-blue-100">
-          <div className="flex items-start space-x-3">
-            <svg className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-            </svg>
-            <div>
-              <p className="text-sm font-medium text-gray-800">Administrator Tips</p>
-              <p className="text-xs text-gray-600 mt-1">Access advanced settings, user management, and system configurations from the settings panel.</p>
-            </div>
-          </div>
+          <h1 className="text-3xl font-bold text-gray-900 mb-3">System Administrator</h1>
+          <p className="text-gray-500 mb-8">Full administrative control active.</p>
+          <Link to="/setting" className="inline-flex items-center justify-between bg-indigo-600 text-white rounded-2xl px-8 py-5 shadow-lg hover:bg-indigo-700 transition-all">
+            <span className="font-bold text-lg">System Settings</span>
+          </Link>
         </div>
       </div>
     );
   }
 
-  const lineData = [
-    { name: "January", thisYear: 50, lastYear: 45 },
-    { name: "February", thisYear: 40, lastYear: 30 },
-    { name: "March", thisYear: 20, lastYear: 15 },
-    { name: "April", thisYear: -50, lastYear: 45 },
-    { name: "May", thisYear: 20, lastYear: 15 },
-    { name: "June", thisYear: 25, lastYear: 20 },
-    { name: "July", thisYear: 30, lastYear: 25 },
-    { name: "August", thisYear: 40, lastYear: -30 },
-    { name: "September", thisYear: 25, lastYear: 20 },
-    { name: "October", thisYear: 50, lastYear: 45 },
-    { name: "November", thisYear: 30, lastYear: 25 },
-    { name: "December", thisYear: 35, lastYear: 30 },
-  ];
+  const MetricCard = ({ title, value, persent, isLoss, icon: Icon, colorClass, chartData, dataKey, chartColor, loading }) => (
+    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 transition-all hover:shadow-md relative overflow-hidden">
+      {loading && (
+        <div className="absolute inset-0 bg-white/40 z-10 flex items-center justify-center">
+          <div className="w-6 h-6 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+        </div>
+      )}
+      <div className="flex justify-between items-start mb-4">
+        <div>
+          <p className="text-sm font-medium text-gray-500 mb-1">{title}</p>
+          <h3 className="text-2xl font-bold text-gray-900">${parseFloat(value).toLocaleString(undefined, { minimumFractionDigits: 2 })}</h3>
+        </div>
+        <div className={`p-3 rounded-xl ${colorClass}`}><Icon size={24} /></div>
+      </div>
+      <div className="flex items-center gap-2 mb-6">
+        <span className={`flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full ${isLoss ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-600'}`}>
+          {isLoss ? <BsArrowDownRight /> : <BsArrowUpRight />} {persent}%
+        </span>
+      </div>
+      <div className="h-16 -mx-6 -mb-6 overflow-hidden rounded-b-2xl">
+        <ResponsiveContainer width="100%" height="100%">
+          <AreaChart data={chartData}>
+            <Area type="monotone" dataKey={dataKey} stroke={chartColor} fill={chartColor} fillOpacity={0.1} />
+          </AreaChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  );
 
-  const pieData = [
-    { name: "thisMonth", value: 63.2 },
-    { name: "lastMonth", value: 30 },
-  ];
-  const RADIAN = Math.PI / 180;
-
-  const renderCustomizedLabel = ({
-    cx,
-    cy,
-    midAngle,
-    innerRadius,
-    outerRadius,
-    percent,
-  }) => {
-    const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
-    const x = cx + radius * Math.cos(-(midAngle ?? 0) * RADIAN);
-    const y = cy + radius * Math.sin(-(midAngle ?? 0) * RADIAN);
-
+  const TimeToggle = ({ active, onChange, index }) => {
+    const options = year === currentYear ? ["hour", "day", "week", "month"] : ["month"];
     return (
-      <text
-        x={x}
-        y={y}
-        fill="white"
-        textAnchor={x > cx ? "start" : "end"}
-        dominantBaseline="central"
-      >
-        {`${((percent ?? 1) * 100).toFixed(0)}%`}
-      </text>
+      <div className="flex bg-gray-100 p-1 rounded-xl">
+        {options.map((r) => (
+          <button
+            key={r}
+            onClick={() => onChange(index, r)}
+            className={`px-3 py-1 text-xs font-medium rounded-lg capitalize transition-all ${active === r ? "bg-white text-indigo-600 shadow-sm" : "text-gray-500 hover:text-gray-700"
+              }`}
+          >
+            {r}
+          </button>
+        ))}
+      </div>
     );
   };
-  const COLORS = ["#0088FE", "#FFBB28", "#00C49F"];
 
-  const topReferrals = [
-    { name: "GitHub", value: 19301 },
-    { name: "Stack Overflow", value: 11201 },
-    { name: "Hacker News", value: 9301 },
-    { name: "Reddit", value: 8301 },
-  ];
-
-  const goalOverview = [
-    {
-      name: "Social Share",
-      completions: 29,
-      value: 120,
-      conversion: 45,
-      fill: "#FF8042",
-    },
-    {
-      name: "EBook Download",
-      completions: 19,
-      value: 120,
-      conversion: 43,
-      fill: "#00C49F",
-    },
-  ];
-
-  const upData = [
-    { name: "1", value: 10 },
-    { name: "2", value: 15 },
-    { name: "3", value: 20 },
-  ];
-
-  const downData = [
-    { name: "1", value: 20 },
-    { name: "2", value: 15 },
-    { name: "3", value: 10 },
-  ];
-
-  const handleTimeRangeChange = (index, range) => {
-    const newTimeRange = [...timeRange];
-    newTimeRange[index] = range;
-    setTimeRange(newTimeRange);
-    if (index === 1) {
-      if (range === "hour") setRevenueChart(saleByHour?.data || []);
-      else if (range === "day") setRevenueChart(saleByDay?.data || []);
-      else if (range === "week") setRevenueChart(saleByWeek?.data || []);
-      else if (range === "month") setRevenueChart(saleByMonth?.data || []);
-    }
-    if (index === 2) {
-      if (range === "hour") setPurchaseChart(purchaseByHour?.data || []);
-      else if (range === "day") setPurchaseChart(purchaseByDay?.data || []);
-      else if (range === "week") setPurchaseChart(purchaseByWeek?.data || []);
-      else if (range === "month") setPurchaseChart(purchaseByMonth?.data || []);
-    }
-    if (index === 3) {
-      if (range === "hour") setExpanseChart(expenseByHour?.data || []);
-      else if (range === "day") setExpanseChart(expenseByDay?.data || []);
-      else if (range === "week") setExpanseChart(expenseByWeek?.data || []);
-      else if (range === "month") setExpanseChart(expenseByMonth?.data || []);
-    }
-    if (index === 0) {
-      // Profit chart
-      if (range === "hour") {
-        const profitData = saleByHour?.data.map((item, idx) => {
-          const purchaseItem = purchaseByHour?.data[idx] || { todayPrice: 0 };
-          const expenseItem = expenseByHour?.data[idx] || { today: 0 };
-          return {
-            name: item.name,
-            today:
-              item.todayPrice - purchaseItem.todayPrice - expenseItem.today,
-            yesterday:
-              item.yesterdayPrice -
-              (purchaseItem.yesterdayPrice || 0) -
-              (expenseItem.yesterday || 0),
-          };
-        });
-        setProfitChart(profitData || []);
-        console.log(profitData);
-      }
-
-      if (range === "day") {
-        const profitData = saleByDay?.data.map((item, idx) => {
-          const purchaseItem = purchaseByDay?.data[idx];
-          const expenseItem = expenseByDay?.data[idx];
-          return {
-            name: item.name,
-            thisWeek:
-              item.thisWeekPrice -
-              purchaseItem.thisWeekPrice -
-              expenseItem.thisWeek,
-            Weekend:
-              item.WeekendPrice -
-              (purchaseItem.WeekendPrice || 0) -
-              (expenseItem.Weekend || 0),
-          };
-        });
-        setProfitChart(profitData || []);
-        console.log(profitData);
-      }
-      if (range === "week") {
-        const profitData = saleByWeek?.data.map((item, idx) => {
-          const purchaseItem = purchaseByWeek?.data[idx];
-          const expenseItem = expenseByWeek?.data[idx];
-          return {
-            name: item.name,
-            thisMonth:
-              item.thisMonthPrice -
-              purchaseItem.thisMonthPrice -
-              expenseItem.thisMonth,
-            lastMonth:
-              item.lastMonthPrice -
-              (purchaseItem.lastMonthPrice || 0) -
-              (expenseItem.lastMonth || 0),
-          };
-        });
-        setProfitChart(profitData || []);
-        console.log(profitData);
-      }
-      if (range === "month") {
-        const profitData = saleByMonth?.data.map((item, idx) => {
-          const purchaseItem = purchaseByMonth?.data[idx];
-          const expenseItem = expenseByMonth?.data[idx];
-          return {
-            name: item.name,
-            thisYear:
-              item.thisYearPrice -
-              purchaseItem.thisYearPrice -
-              expenseItem.thisYear,
-            lastYear:
-              item.lastYearPrice -
-              (purchaseItem.lastYearPrice || 0) -
-              (expenseItem.lastYear || 0),
-          };
-        });
-        setProfitChart(profitData || []);
-        console.log(profitData);
-      }
-    }
-  };
+  const ChartArea = ({ title, children, loading, toggle }) => (
+    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 relative">
+      <div className="flex justify-between items-center mb-8">
+        <h3 className="text-lg font-bold text-gray-900">{title}</h3>
+        {toggle}
+      </div>
+      {loading && (
+        <div className="absolute inset-0 bg-white/40 z-10 flex items-center justify-center rounded-2xl">
+          <div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+        </div>
+      )}
+      <div className="h-80">{children}</div>
+    </div>
+  );
 
   return (
-    <div className="p-6 bg-transparent min-h-screen">
-      {/* Top Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-purple-300/50 text-purple-500 rounded-tl-lg rounded-tr-lg shadow-sm">
-          <div className="px-4 pt-2">
-            <div className="flex justify-between items-center ">
-              <h3 className="text-lg font-semibold">Revenue</h3>
-              <RiShoppingCartFill className="text-5xl text-purple-500" />
-            </div>
-            <p className="text-xl flex items-end">
-              ${(sales.thisYear || 0).toFixed(2)}
-              {sales.thisYear < sales.lastYear ? (
-                <span className="text-red-500 text-base flex items-center ml-2">
-                  {sales.persent}% <BsArrowDownRight />
-                </span>
-              ) : (
-                <span className="text-green-500 text-base flex items-center ml-2">
-                  {sales.persent}% <BsArrowUpRight className="ml-2" />
-                </span>
-              )}
-            </p>
-          </div>
-          <div className="h-10 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart
-                data={saleByMonth?.data || dataAreaCard}
-                margin={{
-                  top: 0,
-                  right: 0,
-                  left: 0,
-                  bottom: 0,
-                }}
-              >
-                <Area
-                  type="monotone"
-                  dataKey={`${Object.keys(saleByMonth?.data[0] || {})[1]}`}
-                  stackId="1"
-                  stroke="#8884d8"
-                  fill="#8884df"
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
+    <div className="p-8 space-y-8 bg-transparent min-h-screen">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Dashboard Overview</h1>
+          <p className="text-sm text-gray-500">Performance insights and real-time data</p>
         </div>
-        <div className="bg-yellow-300/50 text-yellow-500 rounded-tl-lg rounded-tr-lg shadow-sm">
-          <div className="px-4 pt-2">
-            <div className="flex justify-between items-center ">
-              <h3 className="text-lg font-semibold">Purchases</h3>
-              <FaWarehouse className="text-5xl text-yellow-500" />
-            </div>
-            <p className="text-xl flex items-end">
-              ${(purchases.thisYear || 0).toFixed(2)}
-              {purchases.thisYear < purchases.lastYear ? (
-                <span className="text-red-500 text-base flex items-center ml-2">
-                  {purchases.persent}% <BsArrowDownRight />
-                </span>
-              ) : (
-                <span className="text-green-500 text-base flex items-center ml-2">
-                  {purchases.persent}% <BsArrowUpRight className="ml-2" />
-                </span>
-              )}
-            </p>
-          </div>
-          <div className="h-10 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart
-                data={purchaseByMonth?.data || dataAreaCard}
-                margin={{
-                  top: 0,
-                  right: 0,
-                  left: 0,
-                  bottom: 0,
-                }}
-              >
-                <Area
-                  type="monotone"
-                  dataKey={`${Object.keys(purchaseByMonth?.data[0] || {})[1]}`}
-                  stackId="1"
-                  stroke="#dab600"
-                  fill="#e9d700"
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-        {/* Expanse card */}
-        <div className="bg-red-300/50 text-red-500 rounded-tl-lg rounded-tr-lg shadow-sm">
-          <div className="px-4 pt-2">
-            <div className="flex justify-between items-center ">
-              <h3 className="text-lg font-semibold">Expanses</h3>
-              <RiMoneyDollarCircleFill className="text-5xl text-red-500" />
-            </div>
-            <p className="text-xl flex items-end">
-              ${(expenses.thisYear || 0).toFixed(2)}
-              {expenses.thisYear < expenses.lastYear ? (
-                <span className="text-red-500 text-base flex items-center ml-2">
-                  {expenses.persent}% <BsArrowDownRight />
-                </span>
-              ) : (
-                <span className="text-green-500 text-base flex items-center ml-2">
-                  {expenses.persent}% <BsArrowUpRight className="ml-2" />
-                </span>
-              )}
-            </p>
-          </div>
-          <div className="h-10 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart
-                data={expenseByMonth?.data || dataAreaCard}
-                margin={{
-                  top: 0,
-                  right: 0,
-                  left: 0,
-                  bottom: 0,
-                }}
-              >
-                <Area
-                  type="monotone"
-                  dataKey={`${Object.keys(expenseByMonth?.data[0] || {})[1]}`}
-                  stackId="1"
-                  stroke="#ff4d00"
-                  fill="#ff7400"
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-        {/* Profit card */}
-        <div className="bg-green-300/50 text-green-500 rounded-tl-lg rounded-tr-lg shadow-sm">
-          <div className="px-4 pt-2">
-            <div className="flex justify-between items-center ">
-              <h3 className="text-lg font-semibold">Profits</h3>
-              <FaMoneyBillTrendUp className="text-5xl text-green-500" />
-            </div>
-            <p className="text-xl flex items-end">
-              ${(profit.thisYear || 0).toFixed(2)}
-              {profit.thisYear < profit.lastYear ? (
-                <span className="text-red-500 text-base flex items-center ml-2">
-                  {profit.persent}% <BsArrowDownRight />
-                </span>
-              ) : (
-                <span className="text-green-500 text-base flex items-center ml-2">
-                  {profit.persent}% <BsArrowUpRight className="ml-2" />
-                </span>
-              )}
-            </p>
-          </div>
-          <div className="h-10 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart
-                data={profitByMonth}
-                margin={{
-                  top: 0,
-                  right: 0,
-                  left: 0,
-                  bottom: 0,
-                }}
-              >
-                {/* <CartesianGrid strokeDasharray="3 3" /> */}
-                {/* <XAxis dataKey="name" />
-                <YAxis /> */}
-                {/* <Tooltip /> */}
-                {/* <Legend /> */}
-                <Area
-                  type="monotone"
-                  dataKey={`${Object.keys(profitByMonth[0] || {})[1]}`}
-                  stackId="1"
-                  stroke="#398564"
-                  fill="#398564"
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
+        <select
+          className="bg-white px-4 py-2 rounded-xl shadow-sm border border-gray-100 text-sm font-bold text-indigo-600"
+          value={year}
+          onChange={(e) => setYear(Number(e.target.value))}
+        >
+          {[0, 1, 2, 3, 4, 5].map(i => <option key={currentYear - i} value={currentYear - i}>{currentYear - i}</option>)}
+        </select>
       </div>
 
-      {/* Sessions and Devices */}
-      <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-6 text-xs">
-        <div className="lg:col-span-2 bg-white p-4 pb-20 rounded-lg shadow-md h-96">
-          <div className="flex justify-between mb-4">
-            <div className="border-l-4 border-success flex-1 bg-gradient-to-r from-success/50 to-white px-3">
-              <h3 className="text-lg font-semibold">Profits Line Chart</h3>
-            </div>
-            <div className="space-x-2">
-              <button
-                onClick={() => handleTimeRangeChange(0, "hour")}
-                className={`px-2 py-1 rounded ${timeRange[0] === "hour"
-                  ? "bg-green-500 text-white"
-                  : "bg-gray-200"
-                  }`}
-              >
-                Hour
-              </button>
-              <button
-                onClick={() => handleTimeRangeChange(0, "day")}
-                className={`px-2 py-1 rounded ${timeRange[0] === "day"
-                  ? "bg-green-500 text-white"
-                  : "bg-gray-200"
-                  }`}
-              >
-                Day
-              </button>
-              <button
-                onClick={() => handleTimeRangeChange(0, "week")}
-                className={`px-2 py-1 rounded ${timeRange[0] === "week"
-                  ? "bg-green-500 text-white"
-                  : "bg-gray-200"
-                  }`}
-              >
-                Week
-              </button>
-              <button
-                onClick={() => handleTimeRangeChange(0, "month")}
-                className={`px-2 py-1 rounded ${timeRange[0] === "month"
-                  ? "bg-green-500 text-white"
-                  : "bg-gray-200"
-                  }`}
-              >
-                Month
-              </button>
-            </div>
-          </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <MetricCard title="Revenue" value={sales.thisYear} persent={sales.persent} isLoss={sales.thisYear < sales.lastYear} icon={RiShoppingCartFill} colorClass="bg-indigo-50 text-indigo-600" chartData={saleByMonth?.data} dataKey="thisYearPrice" chartColor="#6366f1" loading={isFetchingSM} />
+        <MetricCard title="Purchases" value={purchases.thisYear} persent={purchases.persent} isLoss={purchases.thisYear > purchases.lastYear} icon={FaWarehouse} colorClass="bg-amber-50 text-amber-600" chartData={purchaseByMonth?.data} dataKey="thisYearPrice" chartColor="#f59e0b" loading={isFetchingPM} />
+        <MetricCard title="Expenses" value={expenses.thisYear} persent={expenses.persent} isLoss={expenses.thisYear > expenses.lastYear} icon={RiMoneyDollarCircleFill} colorClass="bg-rose-50 text-rose-600" chartData={expenseByMonth?.data} dataKey="thisYear" chartColor="#f43f5e" loading={isFetchingEM} />
+        <MetricCard title="Net Profit" value={profit.thisYear} persent={profit.persent} isLoss={profit.thisYear < profit.lastYear} icon={FaMoneyBillTrendUp} colorClass="bg-emerald-50 text-emerald-600" chartData={profitByMonth} dataKey="thisYear" chartColor="#10b981" loading={isFetchingSM || isFetchingPM || isFetchingEM} />
+      </div>
 
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart
-              data={profitChart}
-              margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-            >
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Line
-                type="monotone"
-                dataKey={`${Object.keys(profitChart[0] || {})[2]}`}
-                stroke="#0088FE"
-                activeDot={{ r: 8 }}
-              />
-              <Line
-                type="monotone"
-                dataKey={`${Object.keys(profitChart[0] || {})[1]}`}
-                stroke="#FF0000"
-              />
-            </LineChart>
-          </ResponsiveContainer>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-2 space-y-8">
+          <ChartArea
+            title="Profits Analytics"
+            loading={isFetchingPrM || isFetchingPrW || isFetchingPrD || isFetchingPrH}
+            toggle={<TimeToggle active={timeRange[0]} onChange={handleTimeRangeChange} index={0} />}
+          >
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={profitChart}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#9ca3af' }} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#9ca3af' }} />
+                <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} />
+                <Legend verticalAlign="top" align="right" height={36} iconType="circle" />
+                <Line type="monotone" dataKey="previous" name="Previous Period" stroke="#94a3b8" strokeWidth={2} dot={false} strokeDasharray="5 5" />
+                <Line type="monotone" dataKey="current" name="Current Period" stroke="#6366f1" strokeWidth={3} dot={{ r: 4, fill: '#6366f1' }} />
+              </LineChart>
+            </ResponsiveContainer>
+          </ChartArea>
+
+          <ChartArea
+            title="Revenue Trends"
+            loading={isFetchingSM || isFetchingSW || isFetchingSD || isFetchingSH}
+            toggle={<TimeToggle active={timeRange[1]} onChange={handleTimeRangeChange} index={1} />}
+          >
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={revenueChart}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#9ca3af' }} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#9ca3af' }} />
+                <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} />
+                <Area type="monotone" dataKey={Object.keys(revenueChart[0] || {})[4]} name={Object.keys(revenueChart[0] || {})[4]} stroke="#10b981" fill="#10b981" fillOpacity={0.1} />
+                <Area type="monotone" dataKey={Object.keys(revenueChart[0] || {})[2]} name={Object.keys(revenueChart[0] || {})[2]} stroke="#8b5cf6" fill="#8b5cf6" fillOpacity={0.1} />
+              </AreaChart>
+            </ResponsiveContainer>
+          </ChartArea>
         </div>
-        <div className="col-span-1 bg-white p-4 rounded-lg shadow">
-          <div className="border-l-4 border-primary bg-gradient-to-r from-primary/50 to-white px-3">
-            <h3 className="text-lg font-semibold">Popular Sale</h3>
-          </div>
-          <div className="mt-3 flex flex-col gap-4 p-2">
-            {popularSales?.data?.map((s) => (
-              <div className="flex justify-between items-center h-10">
-                <div className="flex gap-2">
-                  <img className="w-10 h-10 object-contain" src={s.image} alt="" />
-                  <div>
-                    <h1 className="text-[15px] font-extrabold text-gray-600">
-                      {s.item_name}
-                    </h1>
-                    <p className="text-info">{s.brand_name}</p>
+
+        <div className="space-y-8">
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+            <h3 className="text-lg font-bold text-gray-900 mb-6">Top Selling Items</h3>
+            <div className="space-y-6">
+              {popularSales?.data?.map((s, i) => (
+                <div key={i} className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-gray-50 p-1 border border-gray-100">
+                    <img className="w-full h-full object-contain" src={s.image} alt="" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h4 className="text-sm font-bold text-gray-800 truncate">{s.item_name}</h4>
+                    <p className="text-xs text-gray-400">{s.brand_name}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-bold text-gray-900">${s.total_price}</p>
+                    <p className="text-[10px] text-emerald-600 font-semibold">{s.total_quantity} sold</p>
                   </div>
                 </div>
-                <div className=" text-gray-500 line-clamp-2 text-ellipsis overflow-hidden">
-                  Sold out {s.total_quantity} items
-                </div>
-                <p className="text-primary">${s.total_price}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-      {/* Sessions and Devices */}
-      <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-6 text-xs">
-        <div className="lg:col-span-2 bg-white p-5 pb-20 rounded-lg shadow-md h-96">
-          <div className="flex justify-between mb-4">
-            <div className="border-l-4 border-success flex-1 bg-gradient-to-r from-success/50 to-white px-3">
-              <h3 className="text-lg font-semibold">Revenue Area Chart</h3>
-            </div>
-            <div className="space-x-2">
-              <button
-                onClick={() => handleTimeRangeChange(1, "hour")}
-                className={`px-2 py-1 rounded ${timeRange[1] === "hour"
-                  ? "bg-green-500 text-white"
-                  : "bg-gray-200"
-                  }`}
-              >
-                Hour
-              </button>
-              <button
-                onClick={() => handleTimeRangeChange(1, "day")}
-                className={`px-2 py-1 rounded ${timeRange[1] === "day"
-                  ? "bg-green-500 text-white"
-                  : "bg-gray-200"
-                  }`}
-              >
-                Day
-              </button>
-              <button
-                onClick={() => handleTimeRangeChange(1, "week")}
-                className={`px-2 py-1 rounded ${timeRange[1] === "week"
-                  ? "bg-green-500 text-white"
-                  : "bg-gray-200"
-                  }`}
-              >
-                Week
-              </button>
-              <button
-                onClick={() => handleTimeRangeChange(1, "month")}
-                className={`px-2 py-1 rounded ${timeRange[1] === "month"
-                  ? "bg-green-500 text-white"
-                  : "bg-gray-200"
-                  }`}
-              >
-                Month
-              </button>
-            </div>
-          </div>
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart
-              width={500}
-              height={400}
-              data={revenueChart}
-              margin={{
-                top: 10,
-                right: 30,
-                left: 0,
-                bottom: 0,
-              }}
-            >
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Area
-                type="monotone"
-                dataKey={`${Object.keys(revenueChart[0] || {})[4]}`}
-                // stackId="1"
-                stroke="#8884d8"
-                fill="#8884d8"
-                fillOpacity={0.4}
-              />
-              <Area
-                type={curveCardinal.tension(0.2)}
-                dataKey={`${Object.keys(revenueChart[0] || {})[2]}`}
-                // stackId="1"
-                stroke="#82ca9d"
-                fill="#82ca9d"
-                fillOpacity={0.3}
-              />
-            </AreaChart>
-          </ResponsiveContainer>
-        </div>
-        <div className="col-span-1 bg-white p-4 rounded-lg shadow">
-          <div className="border-l-4 border-primary flex-1 bg-gradient-to-r from-primary/50 to-white px-3">
-            <h3 className="text-lg font-semibold">Popular Revenue</h3>
-          </div>
-          <PieChart width={300} height={200}>
-            <Pie
-              data={orderPersentMonthly?.data}
-              cx="50%"
-              cy="50%"
-              labelLine={false}
-              label={renderCustomizedLabel}
-              outerRadius={80}
-              fill="#8884d8"
-              dataKey="persent"
-            >
-              {pieData.map((entry, index) => (
-                <Cell
-                  key={`cell-${entry.name}`}
-                  fill={COLORS[index % COLORS.length]}
-                />
               ))}
-            </Pie>
-            <Tooltip />
-          </PieChart>
-          <div>
-            {orderPersentMonthly?.data?.map((entry, index) => (
-              <div className="flex justify-between text-gray-500 items-center mb-3">
-                <div className="flex gap-2 items-center">
-                  <div
-                    style={{ background: COLORS[index % COLORS.length] }}
-                    className={`w-2 h-2`}
-                  />
-                  {entry.name}
-                </div>
-                <div>
-                  <p>{entry.quantity}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-          {/* <p className="text-center mt-2 text-sm text-gray-500">Last Week: 8</p> */}
-          {/* <button className="mt-4 w-full bg-blue-500 text-white py-2 rounded">
-            View Full Report
-          </button> */}
-        </div>
-      </div>
-      {/* Sessions and Devices */}
-      <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-6 text-xs">
-        <div className="lg:col-span-2 bg-white p-5 pb-20 rounded-lg shadow-md h-96">
-          <div className="flex justify-between mb-4">
-            <div className="border-l-4 border-success flex-1 bg-gradient-to-r from-success/50 to-white px-3">
-              <h3 className="text-lg font-semibold">Purchases Bar Chart</h3>
-            </div>
-            <div className="space-x-2">
-              <button
-                onClick={() => handleTimeRangeChange(2, "hour")}
-                className={`px-2 py-1 rounded ${timeRange[2] === "hour"
-                  ? "bg-green-500 text-white"
-                  : "bg-gray-200"
-                  }`}
-              >
-                Hour
-              </button>
-              <button
-                onClick={() => handleTimeRangeChange(2, "day")}
-                className={`px-2 py-1 rounded ${timeRange[2] === "day"
-                  ? "bg-green-500 text-white"
-                  : "bg-gray-200"
-                  }`}
-              >
-                Day
-              </button>
-              <button
-                onClick={() => handleTimeRangeChange(2, "week")}
-                className={`px-2 py-1 rounded ${timeRange[2] === "week"
-                  ? "bg-green-500 text-white"
-                  : "bg-gray-200"
-                  }`}
-              >
-                Week
-              </button>
-              <button
-                onClick={() => handleTimeRangeChange(2, "month")}
-                className={`px-2 py-1 rounded ${timeRange[2] === "month"
-                  ? "bg-green-500 text-white"
-                  : "bg-gray-200"
-                  }`}
-              >
-                Month
-              </button>
             </div>
           </div>
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart
-              width={500}
-              height={300}
-              data={purchaseChart}
-              margin={{
-                top: 5,
-                right: 30,
-                left: 20,
-                bottom: 5,
-              }}
-            >
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Bar
-                dataKey={`${Object.keys(purchaseChart[0] || {})[2]}`}
-                fill="#8884d8"
-                activeBar={<Rectangle fill="pink" stroke="blue" />}
-              />
-              <Bar
-                dataKey={`${Object.keys(purchaseChart[0] || {})[4]}`}
-                fill="#82ca9d"
-                activeBar={<Rectangle fill="gold" stroke="purple" />}
-              />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-        <div className="col-span-1 bg-white p-4 rounded-lg shadow">
-          <div className="border-l-4 border-primary flex-1 bg-gradient-to-r from-primary/50 to-white px-3">
-            <h3 className="text-lg font-semibold">Popular Stock In</h3>
-          </div>
-          <div className="mt-3 flex flex-col gap-3 p-2">
-            {popularStock?.data?.map((s) => (
-              <div className="flex justify-between items-center h-10">
-                <div className="flex gap-2">
-                  <img className="w-10 h-10 object-contain" src={s.image} alt="" />
-                  <div>
-                    <h1 className="text-[15px] font-extrabold text-gray-600">
-                      {s.item_name}
-                    </h1>
-                    <p className="text-info">{s.brand_name}</p>
-                  </div>
+
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 text-center">
+            <h3 className="text-lg font-bold text-gray-900 mb-4">Market Share</h3>
+            <div className="flex justify-center mb-4">
+              <PieChart width={160} height={160}>
+                <Pie data={orderPersentMonthly?.data} innerRadius={50} outerRadius={70} paddingAngle={5} dataKey="persent">
+                  {orderPersentMonthly?.data?.map((_, idx) => <Cell key={idx} fill={COLORS[idx % COLORS.length]} stroke="none" />)}
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </div>
+            <div className="space-y-2 text-left">
+              {orderPersentMonthly?.data?.map((entry, idx) => (
+                <div key={idx} className="flex justify-between text-xs">
+                  <span className="text-gray-500">{entry.name}</span>
+                  <span className="font-bold">{entry.persent}%</span>
                 </div>
-                <p className="text-success">+{s.total_quantity}</p>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
       </div>
-      {/* Sessions and Devices */}
-      <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-6 text-xs">
-        <div className="lg:col-span-2 bg-white p-5 pb-20 rounded-lg shadow-md h-96">
-          <div className="flex justify-between mb-4">
-            <div className="border-l-4 border-success flex-1 bg-gradient-to-r from-success/50 to-white px-3">
-              <h3 className="text-lg font-semibold">Expanse Redar Chart</h3>
-            </div>
-            <div className="space-x-2">
-              <button
-                onClick={() => handleTimeRangeChange(3, "hour")}
-                className={`px-2 py-1 rounded ${timeRange[3] === "hour"
-                  ? "bg-green-500 text-white"
-                  : "bg-gray-200"
-                  }`}
-              >
-                Hour
-              </button>
-              <button
-                onClick={() => handleTimeRangeChange(3, "day")}
-                className={`px-2 py-1 rounded ${timeRange[3] === "day"
-                  ? "bg-green-500 text-white"
-                  : "bg-gray-200"
-                  }`}
-              >
-                Day
-              </button>
-              <button
-                onClick={() => handleTimeRangeChange(3, "week")}
-                className={`px-2 py-1 rounded ${timeRange[3] === "week"
-                  ? "bg-green-500 text-white"
-                  : "bg-gray-200"
-                  }`}
-              >
-                Week
-              </button>
-              <button
-                onClick={() => handleTimeRangeChange(3, "month")}
-                className={`px-2 py-1 rounded ${timeRange[3] === "month"
-                  ? "bg-green-500 text-white"
-                  : "bg-gray-200"
-                  }`}
-              >
-                Month
-              </button>
-            </div>
-          </div>
-          <ResponsiveContainer width="100%" height="100%">
-            <RadarChart cx="50%" cy="50%" outerRadius="80%" data={expenseChart}>
-              <PolarGrid />
-              <PolarAngleAxis dataKey="name" />
-              <PolarRadiusAxis angle={30} domain={[0, 150]} />
-              <Tooltip />
-              <Radar
-                name={`${Object.keys(expenseChart[0] || {})[1]}`}
-                dataKey={`${Object.keys(expenseChart[0] || {})[1]}`}
-                stroke="#8884d8"
-                fill="#8884d8"
-                fillOpacity={0.6}
-              />
-              <Radar
-                name={`${Object.keys(expenseChart[0] || {})[2]}`}
-                dataKey={`${Object.keys(expenseChart[0] || {})[2]}`}
-                stroke="#82ca9d"
-                fill="#82ca9d"
-                fillOpacity={0.6}
-              />
-              <Legend />
-            </RadarChart>
-          </ResponsiveContainer>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-gray-100 relative">
+          <ChartArea
+            title="Purchase Inventory"
+            loading={isFetchingPM || isFetchingPW || isFetchingPD || isFetchingPH}
+            toggle={<TimeToggle active={timeRange[2]} onChange={handleTimeRangeChange} index={2} />}
+          >
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={purchaseChart}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#9ca3af' }} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#9ca3af' }} />
+                <Tooltip contentStyle={{ borderRadius: '12px' }} />
+                <Bar dataKey={Object.keys(purchaseChart[0] || {})[2]} name={Object.keys(purchaseChart[0] || {})[2]} fill="#6366f1" radius={[4, 4, 0, 0]} />
+                <Bar dataKey={Object.keys(purchaseChart[0] || {})[4]} name={Object.keys(purchaseChart[0] || {})[4]} fill="#62eff0" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </ChartArea>
         </div>
-        <div className="col-span-1 bg-white p-4 rounded-lg shadow">
-          <div className="border-l-4 border-primary flex-1 bg-gradient-to-r from-primary/50 to-white px-3">
-            <h3 className="text-lg font-semibold">Popular Expanse Sale</h3>
-          </div>
-          <div className="mt-3 flex flex-col gap-3 p-2">
-            {popularExpanses?.data?.map((ex) => (
-              <div className="flex gap-5 items-center h-10">
-                <div>
-                  <h1 className="text-[15px] font-extrabold text-gray-600">
-                    {ex.description}
-                  </h1>
-                  <p className="text-green-500">{ex.type}</p>
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+          <h3 className="text-lg font-bold text-gray-900 mb-6">Recent Stock In</h3>
+          <div className="space-y-6">
+            {popularStock?.data?.map((s, idx) => (
+              <div key={idx} className="flex items-center gap-4">
+                <div className="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center">
+                  <img className="w-6 h-6 object-contain" src={s.image} alt="" />
                 </div>
-                <div className="flex-1 text-gray-500 line-clamp-2 text-ellipsis overflow-hidden">
-                  {ex.quantity} Items
+                <div className="flex-1 min-w-0">
+                  <h4 className="text-sm font-bold text-gray-800 truncate">{s.item_name}</h4>
+                  <p className="text-xs text-gray-400">{s.brand_name}</p>
                 </div>
-                <p className="text-red-600">-${ex.total_price}</p>
+                <div className="text-emerald-600 font-bold text-sm bg-emerald-50 px-2 py-1 rounded-lg">+{s.total_quantity}</div>
               </div>
             ))}
           </div>
         </div>
       </div>
 
-      {/* Bottom Row */}
-      <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* <div className="bg-white p-4 rounded-lg shadow">
-          <h3 className="text-lg font-semibold">Top Referrals</h3>
-          {topReferrals.map((item, index) => (
-            <div key={index} className="flex justify-between py-2">
-              <span>{item.name}</span>
-              <span>{item.value.toLocaleString()}</span>
-            </div>
-          ))}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-gray-100 relative">
+          <ChartArea
+            title="Expense Analysis"
+            loading={isFetchingEM || isFetchingEW || isFetchingED || isFetchingEH}
+            toggle={<TimeToggle active={timeRange[3]} onChange={handleTimeRangeChange} index={3} />}
+          >
+            <ResponsiveContainer width="100%" height="100%">
+              <RadarChart cx="50%" cy="50%" outerRadius="80%" data={expenseChart}>
+                <PolarGrid stroke="#f0f0f0" />
+                <PolarAngleAxis dataKey="name" tick={{ fontSize: 10, fill: '#6b7280' }} />
+                <Radar name={Object.keys(expenseChart[0] || {})[1]} dataKey={Object.keys(expenseChart[0] || {})[1]} stroke="#67bafe" fill="#67bafe" fillOpacity={0.4} />
+                <Radar name={Object.keys(expenseChart[0] || {})[2]} dataKey={Object.keys(expenseChart[0] || {})[2]} stroke="#ef4444" fill="#ef4444" fillOpacity={0.4} />
+                <Tooltip />
+              </RadarChart>
+            </ResponsiveContainer>
+          </ChartArea>
         </div>
-        <div className="bg-white p-4 rounded-lg shadow">
-          <h3 className="text-lg font-semibold">Goal Overview</h3>
-          {goalOverview.map((item, index) => (
-            <div key={index} className="grid grid-cols-4 gap-2 py-2 text-sm">
-              <span>{item.name}</span>
-              <span>{item.completions} Completions</span>
-              <span>${item.value} Value</span>
-              <div className="flex items-center">
-                <RadialBarChart
-                  width={50}
-                  height={50}
-                  innerRadius="80%"
-                  outerRadius="100%"
-                  startAngle={180}
-                  endAngle={0}
-                  data={[
-                    { name: "conv", value: item.conversion, fill: item.fill },
-                  ]}
-                >
-                  <RadialBar
-                    minAngle={15}
-                    background={{ fill: "#eee" }}
-                    clockWise
-                    dataKey="value"
-                  />
-                </RadialBarChart>
-                <span className="ml-2">{item.conversion}% Conversion Rate</span>
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+          <h3 className="text-lg font-bold text-gray-900 mb-6">Major Expenses</h3>
+          <div className="space-y-6">
+            {popularExpanses?.data?.map((ex, idx) => (
+              <div key={idx} className="flex items-center gap-4">
+                <div className="w-10 h-10 rounded-full bg-rose-50 flex items-center justify-center text-rose-600">
+                  <RiMoneyDollarCircleFill size={20} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h4 className="text-sm font-bold text-gray-800 truncate">{ex.description}</h4>
+                  <p className="text-xs text-rose-400">{ex.type}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm font-bold text-rose-600">-${ex.total_price}</p>
+                </div>
               </div>
-            </div>
-          ))}
-        </div> */}
-        {/* <div className="bg-white p-4 rounded-lg shadow">
-          <h3 className="text-lg font-semibold">My Location</h3>
-          <div className="h-48 bg-gray-200 flex items-center justify-center text-gray-500">
-            <iframe
-              src="https://www.google.com/maps/embed?pb=!1m14!1m12!1m3!1d244.29654544766856!2d104.8630581441245!3d11.570148836088025!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!5e0!3m2!1skm!2skh!4v1760429899901!5m2!1skm!2skh"
-              width="100%"
-              height="100%"
-              // style="border:0;"
-              allowfullscreen=""
-              loading="lazy"
-              referrerpolicy="no-referrer-when-downgrade"
-            ></iframe>
+            ))}
           </div>
-        </div> */}
+        </div>
       </div>
+
     </div>
   );
 };

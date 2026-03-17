@@ -1,15 +1,15 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { FiDownload, FiPrinter, FiFilter, FiCalendar } from 'react-icons/fi';
-import { useGetProductionByRawReportMutation } from '../../../app/Features/reportsSlice';
+import { useGetProductionByItemReportMutation } from '../../../app/Features/reportsSlice';
 import { toast } from 'react-toastify';
 import * as XLSX from 'xlsx';
 import { useGetAllUserQuery } from '../../../app/Features/usersSlice';
-import { useGetAllRawMaterialQuery } from '../../../app/Features/RawMaterialSlice';
+import { useGetAllItemsQuery } from '../../../app/Features/itemsSlice';
 import { useReactToPrint } from 'react-to-print';
 
-const ProductionByRaw = () => {
+const ProductionByItem = () => {
     const token = localStorage.getItem('token');
-    const [getProductionByRaw] = useGetProductionByRawReportMutation();
+    const [getProductionByItemReport] = useGetProductionByItemReportMutation();
 
     const formatDateForInput = (date) => {
         const year = date.getFullYear();
@@ -24,16 +24,16 @@ const ProductionByRaw = () => {
     const [formData, setFormData] = useState({
         created_by: '',
         username: '',
-        raw_material_id: '',
-        raw_material_name: '',
+        item_id: '',
+        item_name: '',
         start_date: formatDateForInput(firstDayOfCurrentMonth),
         end_date: formatDateForInput(today)
     });
 
     const [users, setUsers] = useState([]);
-    const [rawMaterials, setRawMaterials] = useState([]);
+    const [items, setItems] = useState([]);
     const { data: userData } = useGetAllUserQuery(token);
-    const { data: rawMaterialData } = useGetAllRawMaterialQuery({ token, limit: 1000, page: 1, search: '' });
+    const { data: itemData } = useGetAllItemsQuery({ token, limit: 1000, page: 1, search: '' });
 
     const reportRef = useRef();
     const [reportData, setReportData] = useState(null);
@@ -46,10 +46,10 @@ const ProductionByRaw = () => {
     }, [userData]);
 
     useEffect(() => {
-        if (rawMaterialData?.data) {
-            setRawMaterials(rawMaterialData.data);
+        if (itemData?.data) {
+            setItems(itemData.data);
         }
-    }, [rawMaterialData]);
+    }, [itemData]);
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -61,9 +61,9 @@ const ProductionByRaw = () => {
                 next.username = selected?.username || '';
             }
 
-            if (name === 'raw_material_id') {
-                const selected = rawMaterials.find((material) => String(material.id) === String(value));
-                next.raw_material_name = selected?.material_name ?? '';
+            if (name === 'item_id') {
+                const selected = items.find((item) => String(item.item_id ?? item.id) === String(value));
+                next.item_name = selected?.item_name ?? selected?.name ?? '';
             }
 
             return next;
@@ -77,11 +77,11 @@ const ProductionByRaw = () => {
     async function fetchReport() {
         try {
             setLoading(true);
-            const res = await getProductionByRaw({ itemData: formData, token });
+            const res = await getProductionByItemReport({ itemData: formData, token });
             if (res?.data?.status === 200) {
                 setReportData(res.data.data || []);
             } else {
-                toast.error('Failed to generate production report by raw material');
+                toast.error('Failed to generate production report by item');
             }
         } catch (error) {
             toast.error(error?.message || 'An error occurred while generating the report');
@@ -112,14 +112,10 @@ const ProductionByRaw = () => {
             (acc, item) => ({
                 quantity: acc.quantity + (Number(item.quantity) || 0),
                 total_cost: acc.total_cost + (Number(item.total_cost) || 0),
-                production_quantity: acc.production_quantity + (Number(item.production_quantity) || 0),
-                production_total_cost: acc.production_total_cost + (Number(item.production_total_cost) || 0),
             }),
             {
                 quantity: 0,
                 total_cost: 0,
-                production_quantity: 0,
-                production_total_cost: 0,
             }
         )
         : {};
@@ -128,22 +124,18 @@ const ProductionByRaw = () => {
         if (!reportData || reportData.length === 0) return;
 
         const exportData = reportData.map((item) => ({
-            'Raw Code': item.material_code,
-            'Raw Material': item.material_name,
+            Barcode: item.barcode,
+            Item: item.item_name,
+            'Item Code': item.item_code,
             Quantity: formatNumber(item.quantity),
             'Cost Per Unit': Number(item.cost_per_unit) || 0,
-            'Total Raw Cost': Number(item.total_cost) || 0,
-            'Primary Unit': item.primary_unit,
-            'Secondary Unit': item.secondary_unit,
-            'Conversion Value': item.conversion_value,
-            'Production Quantity': formatNumber(item.production_quantity),
-            'Production Total Cost': Number(item.production_total_cost) || 0,
+            'Total Cost': Number(item.total_cost) || 0,
         }));
 
         const ws = XLSX.utils.json_to_sheet(exportData);
         const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, 'ProductionByRaw');
-        XLSX.writeFile(wb, 'ProductionByRaw.xlsx');
+        XLSX.utils.book_append_sheet(wb, ws, 'ProductionByItem');
+        XLSX.writeFile(wb, 'ProductionByItem.xlsx');
     };
 
     const handlePrint = useReactToPrint({
@@ -155,8 +147,8 @@ const ProductionByRaw = () => {
         <div className="min-h-screen bg-transparent p-1 md:p-3">
             <div className="mx-auto">
                 <div className="mb-8 ml-2">
-                    <h1 className="text-2xl font-bold text-gray-900">Production Report By Raw Material</h1>
-                    <p className="text-gray-600 text-md mt-2">Generate and export production cost by raw material</p>
+                    <h1 className="text-2xl font-bold text-gray-900">Production Report By Item</h1>
+                    <p className="text-gray-600 text-md mt-2">Generate and export production cost by item</p>
                 </div>
 
                 <div className="bg-white rounded-lg shadow-md p-6 text-xs mb-6">
@@ -179,17 +171,17 @@ const ProductionByRaw = () => {
                         </div>
 
                         <div>
-                            <label className="block font-medium text-gray-700 mb-2">Raw Material</label>
+                            <label className="block font-medium text-gray-700 mb-2">Item</label>
                             <select
-                                name="raw_material_id"
-                                value={formData.raw_material_id}
+                                name="item_id"
+                                value={formData.item_id}
                                 onChange={handleInputChange}
                                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                             >
-                                <option value="">All Raw Materials</option>
-                                {rawMaterials?.map((material) => (
-                                    <option key={material.id} value={material.id}>
-                                        {material.material_name} ({material.material_code})
+                                <option value="">All Items</option>
+                                {items?.map((item) => (
+                                    <option key={item.item_id ?? item.id} value={item.item_id ?? item.id}>
+                                        {item.item_name ?? item.name} ({item.barcode})
                                     </option>
                                 ))}
                             </select>
@@ -258,7 +250,7 @@ const ProductionByRaw = () => {
                         <div className="overflow-x-auto print:overflow-visible print:p-10" ref={reportRef}>
                             <ul className="px-5 flex justify-between text-left text-xs font-medium mb-5 text-gray-500 uppercase tracking-wider">
                                 <li>User: <span className="font-bold">{formData?.username || 'All'}</span></li>
-                                <li>Raw Material: <span className="font-bold">{formData?.raw_material_name || 'All'}</span></li>
+                                <li>Item: <span className="font-bold">{formData?.item_name || 'All'}</span></li>
                                 <li>Start Date: <span className="font-bold">{formData.start_date || 'All'}</span></li>
                                 <li>End Date: <span className="font-bold">{formData.end_date || 'All'}</span></li>
                             </ul>
@@ -266,41 +258,32 @@ const ProductionByRaw = () => {
                             <table className="min-w-full border-collapse border border-gray-400">
                                 <thead className="bg-gray-50">
                                     <tr>
-                                        <th className="border border-gray-300 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Raw Code</th>
-                                        <th className="border border-gray-300 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Raw Material</th>
+                                        <th className="border border-gray-300 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Barcode</th>
+                                        <th className="border border-gray-300 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Item</th>
+                                        <th className="border border-gray-300 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Item Code</th>
+                                        <th className="border border-gray-300 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
                                         <th className="border border-gray-300 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cost Per Unit</th>
-                                        <th className="border border-gray-300 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Raw Cost</th>
-                                        <th className="border border-gray-300 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Primary Unit</th>
-                                        <th className="border border-gray-300 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Secondary Unit</th>
-                                        <th className="border border-gray-300 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Conversion</th>
-                                        <th className="border border-gray-300 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Production Qty</th>
-                                        <th className="border border-gray-300 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Production Total Cost</th>
+                                        <th className="border border-gray-300 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Cost</th>
                                     </tr>
                                 </thead>
                                 <tbody className="bg-white divide-y divide-gray-200">
                                     {reportData?.map((item, index) => (
                                         <tr key={index} className="hover:bg-gray-50 !text-xs">
-                                            <td className="border border-gray-300 px-6 py-4 whitespace-nowrap font-medium text-gray-900">{item.material_code}</td>
-                                            <td className="border border-gray-300 px-6 py-4 whitespace-nowrap text-gray-500">{item.material_name}</td>
+                                            <td className="border border-gray-300 px-6 py-4 whitespace-nowrap font-medium text-gray-900">{item.barcode}</td>
+                                            <td className="border border-gray-300 px-6 py-4 whitespace-nowrap text-gray-500">{item.item_name}</td>
+                                            <td className="border border-gray-300 px-6 py-4 whitespace-nowrap text-gray-500">{item.item_code}</td>
+                                            <td className="border border-gray-300 px-6 py-4 whitespace-nowrap text-gray-500">{formatNumber(item.quantity)}</td>
                                             <td className="border border-gray-300 px-6 py-4 whitespace-nowrap text-gray-500">{formatCurrency(item.cost_per_unit)}</td>
-                                            <td className="border border-gray-300 px-6 py-4 whitespace-nowrap text-gray-500">{formatCurrency(item.total_cost)}</td>
-                                            <td className="border border-gray-300 px-6 py-4 whitespace-nowrap text-gray-500">{formatNumber(item.quantity)}{item.primary_unit}</td>
-                                            <td className="border border-gray-300 px-6 py-4 whitespace-nowrap text-gray-500">{formatNumber(item.quantity * item.conversion_value)}{item.secondary_unit}</td>
-                                            <td className="border border-gray-300 px-6 py-4 whitespace-nowrap text-gray-500">{item.conversion_value}</td>
-                                            <td className="border border-gray-300 px-6 py-4 whitespace-nowrap text-gray-500">{formatNumber(item.production_quantity)}</td>
-                                            <td className="border border-gray-300 px-6 py-4 whitespace-nowrap font-medium text-green-600">{formatCurrency(item.production_total_cost)}</td>
+                                            <td className="border border-gray-300 px-6 py-4 whitespace-nowrap font-medium text-green-600">{formatCurrency(item.total_cost)}</td>
                                         </tr>
                                     ))}
 
                                     {reportData.length > 0 && (
                                         <tr className="bg-gray-100 font-bold">
-                                            <td className="border border-gray-300 px-6 py-4 text-right" colSpan={2}>Total</td>
-                                            <td className="border border-gray-300 px-6 py-4">-</td>
-                                            <td className="border border-gray-300 px-6 py-4">{formatCurrency(totals.total_cost)}</td>
+                                            <td className="border border-gray-300 px-6 py-4 text-right" colSpan={3}>Total</td>
                                             <td className="border border-gray-300 px-6 py-4">{formatNumber(totals.quantity)}</td>
-                                            <td className="border border-gray-300 px-6 py-4" colSpan={2}>-</td>
-                                            <td className="border border-gray-300 px-6 py-4">{formatNumber(totals.production_quantity)}</td>
-                                            <td className="border border-gray-300 px-6 py-4 text-green-600">{formatCurrency(totals.production_total_cost)}</td>
+                                            <td className="border border-gray-300 px-6 py-4">-</td>
+                                            <td className="border border-gray-300 px-6 py-4 text-green-600">{formatCurrency(totals.total_cost)}</td>
                                         </tr>
                                     )}
                                 </tbody>
@@ -310,12 +293,12 @@ const ProductionByRaw = () => {
                                 <div className="mt-6 p-4 bg-gray-50 rounded-md">
                                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                                         <div>
-                                            <span className="font-medium text-gray-700">Total Raw Materials: </span>
+                                            <span className="font-medium text-gray-700">Total Items: </span>
                                             <span className="text-gray-600">{reportData.length}</span>
                                         </div>
                                         <div>
                                             <span className="font-medium text-gray-700">Total Production Cost: </span>
-                                            <span className="text-green-600 font-medium">{formatCurrency(totals.production_total_cost)}</span>
+                                            <span className="text-green-600 font-medium">{formatCurrency(totals.total_cost)}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -328,7 +311,7 @@ const ProductionByRaw = () => {
                     <div className="bg-white rounded-lg shadow-md p-12 text-center">
                         <FiFilter size={48} className="mx-auto text-gray-400 mb-4" />
                         <h3 className="text-lg font-medium text-gray-900 mb-2">No Report Generated</h3>
-                        <p className="text-gray-500">Use the filters above to generate a production report by raw material</p>
+                        <p className="text-gray-500">Use the filters above to generate a production report by item</p>
                     </div>
                 )}
 
@@ -343,4 +326,4 @@ const ProductionByRaw = () => {
     );
 };
 
-export default ProductionByRaw;
+export default ProductionByItem;

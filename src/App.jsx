@@ -93,6 +93,11 @@ import ProductionReport from "./components/Reports/ProductionReport";
 import StockReport from "./components/Reports/StockReport";
 import StockByItem from "./components/Reports/StockByItem";
 import PurchaseRawList from "./components/Purchases/PurchaseRawList";
+import ABAPaymentComponent from "./components/orders/ABAPay";
+import ProductionByItem from "./components/Reports/ProductionByItem";
+import ARReport from "./components/Reports/ARReport";
+import APReport from "./components/Reports/APReport";
+import DeptAnalysis from "./components/Reports/DeptAnalysis";
 
 
 function ProtectedRoute({ children }) {
@@ -358,6 +363,10 @@ const router = createBrowserRouter([
         element: <ProductionByRaw />,
       },
       {
+        path: "/report/production-item",
+        element: <ProductionByItem />,
+      },
+      {
         path: "/report/expenses",
         element: <ExpenseReportByUser />,
       },
@@ -376,6 +385,18 @@ const router = createBrowserRouter([
       {
         path: "/report/stock-by-item",
         element: <StockByItem />,
+      },
+      {
+        path: "/report/ar",
+        element: <ARReport />,
+      },
+      {
+        path: "/report/ap",
+        element: <APReport />,
+      },
+      {
+        path: "/report/dept-analysis",
+        element: <DeptAnalysis />,
       },
       {
         path: "/home/purchases",
@@ -504,6 +525,10 @@ const router = createBrowserRouter([
         path: "/home/production/view/:id",
         element: <ProductionDetail />,
       },
+      {
+        path: 'aba',
+        element: <ABAPaymentComponent />
+      }
 
     ],
   },

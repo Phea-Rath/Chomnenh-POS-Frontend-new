@@ -74,7 +74,9 @@ const ProductionForm = () => {
     const [debounceItem] = useDebounce(seaarchItem, 5000);
     const [seaarchRaw, setSearchRaw] = useState("");
     const [debounceRaw] = useDebounce(seaarchRaw, 5000);
-    const { data: itemData } = useGetAllItemsQuery({ limit: 10, page: 1, search: debounceItem, token });
+    const [currentPage, setCurrentPage] = useState(1);
+    const [limit, setLimit] = useState(10);
+    const { data: itemData } = useGetAllItemsQuery({ limit: limit, page: currentPage, search: debounceItem, token });
     const { data: rawData } = useGetAllRawMaterialQuery({ limit: 10, page: 1, search: debounceRaw, token });
     const { refetch } = useGetAllProductionQuery({ limit: 10, page: 1, search: debounceRaw, token });
     const [costLoading, setCostLoading] = useState(false);
@@ -87,6 +89,11 @@ const ProductionForm = () => {
             fetchProductionData();
         }
     }, [id]);
+
+    useEffect(() => {
+        setCurrentPage(1);
+        setLimit(10);
+    }, [debounceItem]);
 
     useEffect(() => {
         console.log(itemData);
@@ -170,6 +177,15 @@ const ProductionForm = () => {
     const handleItemSelect = (value) => {
         const item = items.find(i => i.item_id === value);
         setSelectedItem(item);
+    };
+
+    // Handle scroll fetch for items
+    const onScrollFetch = (e) => {
+        const target = e.target;
+        const nearBottom = target.scrollHeight - target.scrollTop - target.clientHeight < 100;
+        if (nearBottom && itemData?.pagination?.total > items?.length) {
+            setLimit(prev => prev + 10);
+        }
     };
 
     // Add raw material
@@ -612,6 +628,7 @@ const ProductionForm = () => {
                                                         suffixIcon={<LuPackage className="text-gray-400" />}
                                                         showSearch
                                                         onSearch={(value) => setSearchItem(value)}
+                                                        onPopupScroll={onScrollFetch}
                                                         filterOption={(input, option) =>
                                                             option.name.toLowerCase().indexOf(input.toLowerCase()) >= 0
                                                         }

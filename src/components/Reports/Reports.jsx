@@ -8,12 +8,12 @@ import { TbReportMedical } from "react-icons/tb";
 import { useGetMenuReportQuery, useGetPermissionByIdQuery } from "../../../app/Features/permissionSlice";
 
 const colors = [
-  { main: "yellow-500", light: "yellow-50", text: "yellow-600" },
-  { main: "blue-500", light: "blue-50", text: "blue-600" },
-  { main: "green-500", light: "green-50", text: "green-600" },
-  { main: "red-500", light: "red-50", text: "red-600" },
-  { main: "purple-500", light: "purple-50", text: "purple-600" },
-  { main: "pink-500", light: "pink-50", text: "pink-600" },
+  { main: "blue-500", light: "blue-50", hoverBorder: "hover:border-blue-200" },
+  { main: "indigo-500", light: "indigo-50", hoverBorder: "hover:border-indigo-200" },
+  { main: "emerald-500", light: "emerald-50", hoverBorder: "hover:border-emerald-200" },
+  { main: "orange-500", light: "orange-50", hoverBorder: "hover:border-orange-200" },
+  { main: "rose-500", light: "rose-50", hoverBorder: "hover:border-rose-200" },
+  { main: "purple-500", light: "purple-50", hoverBorder: "hover:border-purple-200" },
 ];
 
 const flattenMenus = (menus = []) =>
@@ -46,35 +46,48 @@ const Reports = () => {
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
       transition={{ duration: 0.5 }}
+      className="w-full max-w-7xl mx-auto"
     >
-      <section className="p-2 md:px-20">
-        <article className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-5">
+      <section className="p-4 md:p-8">
+        <header className="mb-8">
+          <h1 className="text-2xl font-bold text-gray-800">Reports Dashboard</h1>
+          <p className="text-gray-500 mt-1">Select a report to view detailed analytics</p>
+        </header>
+
+        <article className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
           {menu?.map((perm, index) => {
-            const color = colors[index % colors.length]; // rotate colors
+            const color = colors[index % colors.length];
             return (
-              <Link key={index} to={perm?.menu_path}>
-                <button
+              <motion.div
+                key={index}
+                whileHover={{ y: -5 }}
+                whileTap={{ scale: 0.98 }}
+                transition={{ type: "spring", stiffness: 400, damping: 17 }}
+              >
+                <Link
+                  to={perm?.menu_path}
                   className={`
-          btn relative overflow-hidden rounded-tl-lg shadow-2xl rounded-bl-lg group bg-white p-0
-          text-${color.text}
-          border-[#e5e5e5]
-          flex flex-col justify-center
-          w-full h-30 
-        `}
+                    group flex flex-col items-center justify-center p-6 bg-white 
+                    rounded-3xl border border-gray-100 shadow-sm
+                    hover:shadow-xl hover:shadow-gray-200/50 transition-all duration-300
+                    w-full min-h-[160px] text-center space-y-4
+                    ${color.hoverBorder}
+                  `}
                 >
-                  <div className={`absolute h-full left-0 w-full bg-${color.main} z-1`}></div>
-                  <div className={`absolute h-full left-[4px] rounded-md group-hover:left-2 transition-all duration-500 w-full bg-white/95 z-2`}></div>
-                  <div className="flex flex-col justify-center items-center space-y-2 absolute w-full h-full z-3">
-                    <div className={`text-4xl text-${color.main}`}>
-                      <img className="w-5 h-5" src={perm?.menu_icon} alt="" />
-                    </div>
-                    <h1>{perm?.menu_name}</h1>
+                  <div className={`p-4 rounded-2xl bg-${color.light} transition-transform group-hover:scale-110 duration-300`}>
+                    <img
+                      className="w-10 h-10 object-contain"
+                      src={perm?.menu_icon}
+                      alt={perm?.menu_name}
+                    />
                   </div>
-                </button>
-              </Link>
+                  <h2 className="font-semibold text-gray-700 group-hover:text-gray-900 transition-colors">
+                    {perm?.menu_name}
+                  </h2>
+                </Link>
+              </motion.div>
             );
           })}
-
         </article>
       </section>
     </motion.div >

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { AiTwotoneDelete } from "react-icons/ai";
 import { LuListChecks, LuLogOut } from "react-icons/lu";
 import { Link, useNavigate, useParams } from "react-router";
@@ -31,6 +31,10 @@ import {
 } from "react-icons/bs";
 import { MdOutlineCategory, MdOutlineBrandingWatermark } from "react-icons/md";
 import { useGetItemByIdQuery } from "../../../app/Features/itemsSlice";
+import { QRCodeCanvas } from "qrcode.react";
+import bakong from "../../assets/bakong.png";
+import * as qrService from "../../services/qrPaymentService";
+import handleDownload from "../../services/imageDowload";
 
 // const { Option } = Select;
 

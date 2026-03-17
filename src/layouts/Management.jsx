@@ -142,7 +142,7 @@ const Management = () => {
         <div>
           <Header />
           <AlertMessage show={alert} message={renderAlertMessage(message)} status={alertStatus} className="z-[9999]" />
-          <main ref={topRef} className={`h-[calc(100vh)] ${data?.data?.role_id !== 1 && "lg:w-[calc(100vw-346px)]"} pt-[86px] overflow-auto m-0 !text-black w-[100vw] p-4 !bg-gray-300 `}>
+          <main ref={topRef} className={`h-[calc(100vh)] ${data?.data?.role_id !== 1 && "lg:w-[calc(100vw-346px)]"} pt-[86px] overflow-auto m-0 !text-black w-[100vw] p-4 !bg-gray-100 `}>
             {/* <div className='absolute -z-0 top-0 right-0 w-2/5 h-full bg-gradient-to-b from-blue-50/50 to-transparent pointer-events-none' /> */}
             <Outlet />
           </main>

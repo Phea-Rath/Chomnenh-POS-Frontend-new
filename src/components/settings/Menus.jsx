@@ -29,9 +29,27 @@ const Menus = () => {
     const addModalRef = useRef(null);
     const updateModalRef = useRef(null);
 
+    const buildFlatMenus = (items = [], parent = null, level = 0) => {
+        const sorted = [...items].sort(
+            (a, b) => Number(a.order_menu || 0) - Number(b.order_menu || 0)
+        );
+        return sorted.flatMap((item) => {
+            const row = {
+                ...item,
+                _level: level,
+                _parentName: parent?.menu_name || null
+            };
+            const children = item?.menus?.length
+                ? buildFlatMenus(item.menus, item, level + 1)
+                : [];
+            return [row, ...children];
+        });
+    };
+
     useEffect(() => {
-        setData(response?.data || []);
-        setFilteredMenu(response?.data || []);
+        const flatMenus = buildFlatMenus(response?.data || []);
+        setData(flatMenus);
+        setFilteredMenu(flatMenus);
     }, [response]);
 
     const handleDelete = (id) => {
@@ -60,9 +78,11 @@ const Menus = () => {
 
     const onSearch = (e) => {
         const query = e.target.value.toLowerCase();
-        const filtered = data.filter((item) =>
-            item.menu_name.toLowerCase().includes(query)
-        );
+        const filtered = data.filter((item) => {
+            const nameMatch = item.menu_name?.toLowerCase().includes(query);
+            const parentMatch = item._parentName?.toLowerCase().includes(query);
+            return nameMatch || parentMatch;
+        });
         setFilteredMenu(filtered);
     };
 
@@ -136,14 +156,21 @@ const Menus = () => {
                         ) : filteredMenu.map((item) => (
                             <tr key={item.menu_id} className="hover:bg-slate-50/50 transition-colors">
                                 <td className="px-6 py-4">
-                                    <span className="font-medium text-slate-900">{item.menu_name}</span>
+                                    <div style={{ paddingLeft: 12 + item._level * 16 }}>
+                                        <span className="font-medium text-slate-900">{item.menu_name}</span>
+                                        {item._parentName && (
+                                            <div className="text-xs text-slate-400 mt-1">
+                                                Parent: {item._parentName}
+                                            </div>
+                                        )}
+                                    </div>
                                 </td>
                                 <td className="px-6 py-4">
                                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                                        ${item.menu_type == 1 ? 'bg-blue-50 text-blue-700' :
-                                            item.menu_type == 2 ? 'bg-purple-50 text-purple-700' :
-                                                item.menu_type == 4 ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-700'}`}>
-                                        {item.menu_type == 1 ? 'Sidebar' : item.menu_type == 2 ? 'Home' : item.menu_type == 4 ? 'Report' : 'Setting'}
+                                        ${Number(item.menu_type) === 1 ? 'bg-blue-50 text-blue-700' :
+                                            Number(item.menu_type) === 2 ? 'bg-purple-50 text-purple-700' :
+                                                Number(item.menu_type) === 4 ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-700'}`}>
+                                        {Number(item.menu_type) === 1 ? 'Sidebar' : Number(item.menu_type) === 2 ? 'Home' : Number(item.menu_type) === 4 ? 'Report' : 'Setting'}
                                     </span>
                                 </td>
                                 <td className="px-6 py-4">
