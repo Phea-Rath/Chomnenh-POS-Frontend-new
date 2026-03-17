@@ -896,6 +896,7 @@ const Sales = () => {
       status: 1,
       online: 1,
       deliver_id: 1,
+      deliver_fee: orders.deliver_fee ?? 0,
       through: userLogin?.data?.id,
       order_payment_status: "cod",
       payment: 0,
