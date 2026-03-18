@@ -1,10 +1,7 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import {
   queryData,
-  queryDataById,
   createData,
-  updateData,
-  deleteData,
 } from "../api";
 import { url } from "../api";
 
@@ -14,6 +11,19 @@ const withYear = (path, args) => {
   const qs = year ? `?year=${year}` : "";
   return queryData(`${path}${qs}`, token);
 };
+
+const withDashboardFilter = ({ token, operation, start_date, end_date, user_id }) => {
+  // const params = new URLSearchParams();
+
+  // if (operation) params.append("operation", operation);
+  // if (start_date) params.append("start_date", start_date);
+  // if (end_date) params.append("end_date", end_date);
+  // if (user_id) params.append("user_id", user_id);
+
+  // const qs = params.toString();
+  return createData({ operation, start_date, end_date, user_id }, `/dashboard_filter`, token);
+};
+
 export const dashboardsApi = createApi({
   reducerPath: "dashboard",
   baseQuery: fetchBaseQuery({
@@ -27,56 +37,8 @@ export const dashboardsApi = createApi({
       query: ({ itemData, token }) =>
         createData(itemData, "/stock_graphic", token),
     }),
-    // createBrand: builder.mutation({
-    //     query: ({ itemData, token }) => createData(itemData, '/brands', token),
-    // }),
-    getSaleByMonth: builder.query({
-      query: (args) => withYear("/sale_by_month", args),
-    }),
-    getSaleByWeek: builder.query({
-      query: (args) => withYear("/sale_by_week", args),
-    }),
-    getSaleByDay: builder.query({
-      query: (args) => withYear("/sale_by_day", args),
-    }),
-    getSaleByHour: builder.query({
-      query: (args) => withYear("/sale_by_hour", args),
-    }),
-    getPurchaseByMonth: builder.query({
-      query: (args) => withYear("/purchase_by_month", args),
-    }),
-    getPurchaseByWeek: builder.query({
-      query: (args) => withYear("/purchase_by_week", args),
-    }),
-    getPurchaseByDay: builder.query({
-      query: (args) => withYear("/purchase_by_day", args),
-    }),
-    getPurchaseByHour: builder.query({
-      query: (args) => withYear("/purchase_by_hour", args),
-    }),
-    getExpanseByMonth: builder.query({
-      query: (args) => withYear("/expense_by_month", args),
-    }),
-    getExpanseByWeek: builder.query({
-      query: (args) => withYear("/expense_by_week", args),
-    }),
-    getExpanseByDay: builder.query({
-      query: (args) => withYear("/expense_by_day", args),
-    }),
-    getExpanseByHour: builder.query({
-      query: (args) => withYear("/expense_by_hour", args),
-    }),
-    getProfiteByMonth: builder.query({
-      query: (args) => withYear("/profite_by_month", args),
-    }),
-    getProfiteByWeek: builder.query({
-      query: (args) => withYear("/profite_by_week", args),
-    }),
-    getProfiteByDay: builder.query({
-      query: (args) => withYear("/profite_by_day", args),
-    }),
-    getProfiteByHour: builder.query({
-      query: (args) => withYear("/profite_by_hour", args),
+    getDashboardFilter: builder.query({
+      query: (args) => withDashboardFilter(args),
     }),
   }),
 });
@@ -84,20 +46,5 @@ export const dashboardsApi = createApi({
 export const {
   useGetAllDashboardStockQuery,
   useGetDashboardStockByDateMutation,
-  useGetSaleByMonthQuery,
-  useGetSaleByWeekQuery,
-  useGetSaleByDayQuery,
-  useGetSaleByHourQuery,
-  useGetPurchaseByMonthQuery,
-  useGetPurchaseByWeekQuery,
-  useGetPurchaseByDayQuery,
-  useGetPurchaseByHourQuery,
-  useGetExpanseByMonthQuery,
-  useGetExpanseByWeekQuery,
-  useGetExpanseByDayQuery,
-  useGetExpanseByHourQuery,
-  useGetProfiteByMonthQuery,
-  useGetProfiteByWeekQuery,
-  useGetProfiteByDayQuery,
-  useGetProfiteByHourQuery,
+  useGetDashboardFilterQuery,
 } = dashboardsApi;

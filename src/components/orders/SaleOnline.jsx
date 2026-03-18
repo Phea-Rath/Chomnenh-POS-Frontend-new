@@ -35,6 +35,7 @@ import { QRCodeCanvas } from "qrcode.react";
 import bakong from "../../assets/bakong.png";
 import * as qrService from "../../services/qrPaymentService";
 import handleDownload from "../../services/imageDowload";
+import Echo from "../../echo";
 
 // const { Option } = Select;
 
@@ -262,7 +263,7 @@ const Sales = () => {
   const { id, token } = useParams();
   const localOrderItems = JSON.parse(localStorage.getItem("orderItems"));
   const { data: exchangeRate } = useGetExchangeRateByIdQuery({
-    id,
+    id: id,
     token,
   });
 
@@ -291,11 +292,20 @@ const Sales = () => {
   const [pageSize, setPageSize] = useState(10);
   const [visible, setVisible] = useState(false);
   const [itemDetail, setItemDetail] = useState({});
-  const [itemId, setItemId] = useState(0);
+  const [qrPaymentModal, setQrPaymentModal] = useState(false);
+  const [qrLoading, setQrLoading] = useState(false);
+  const qrRef = useRef(null);
+  const [qrValue, setQrValue] = useState("");
+  const [, setQrMd5] = useState("");
+  const [qrCountdown, setQrCountdown] = useState(0);
+  const [qrStatus, setQrStatus] = useState("idle");
+  const qrCountdownRef = useRef(null);
+  const qrVerifyRef = useRef(null);
+  const qrStatusRef = useRef("idle");
   const [selectedCategory, setSelectedCategory] = useState('all');
-  const [product, setProduct] = useState({});
-  const { data: item } = useGetItemByIdQuery({ id: itemId, token },
-    { skip: !itemId })
+  const [product, setProduct] = useState(null);
+  const { data: item } = useGetItemByIdQuery({ id: id, token },
+    { skip: !id })
   const saleItemContext = useGetAllSaleQuery({
     token,
     limit: pageSize,
@@ -315,9 +325,9 @@ const Sales = () => {
 
   useEffect(() => {
     setProduct(item?.data);
-    console.log(itemId);
+    console.log(id);
 
-  }, [itemId, item])
+  }, [id, item])
 
   useEffect(() => {
     // Load data from localStorage
@@ -334,6 +344,17 @@ const Sales = () => {
     const itemCount = orders?.items?.reduce((sum, curr) => sum + (curr.quantity || 0), 0) || 0;
     setOrderCount(itemCount);
   }, [orders?.items]);
+
+  useEffect(() => {
+    return () => {
+      if (qrCountdownRef.current) {
+        clearInterval(qrCountdownRef.current);
+      }
+      if (qrVerifyRef.current) {
+        clearInterval(qrVerifyRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (categoryContext.data?.data) {
@@ -969,7 +990,10 @@ const Sales = () => {
     }
 
     setValidationErrors({});
-    setAlertBox(true);
+    // Show QR payment modal instead of alert box
+    console.log('good');
+
+    await showQrPayment();
   }
 
   function onSearch(e) {
@@ -982,7 +1006,6 @@ const Sales = () => {
   // Calculate total discount for display
   const calculateTotalDiscount = () => {
     let totalDiscount = 0;
-    console.log(orders.items);
 
     orders.items.forEach(item => {
       if (item.discount > 0) {
@@ -1061,6 +1084,16 @@ const Sales = () => {
 
       localStorage.setItem("guestToken", userToken);
       localStorage.setItem("guest", JSON.stringify(user));
+      if (user?.id) {
+        localStorage.setItem("guestId", user.id);
+      }
+      if (id) {
+        localStorage.setItem("profileId", id);
+      }
+      if (Echo?.connector?.options?.auth?.headers) {
+        Echo.connector.options.auth.headers.Authorization = `Bearer ${userToken}`;
+      }
+      window.dispatchEvent(new Event("auth-changed"));
       if (!loading) {
         toast.success("SingIn successful");
         setShowSignInModal(false);
@@ -1074,6 +1107,106 @@ const Sales = () => {
       );
     } finally {
       setLoading(false);
+    }
+  };
+
+  const clearQrTimers = () => {
+    if (qrCountdownRef.current) {
+      clearInterval(qrCountdownRef.current);
+      qrCountdownRef.current = null;
+    }
+    if (qrVerifyRef.current) {
+      clearInterval(qrVerifyRef.current);
+      qrVerifyRef.current = null;
+    }
+  };
+
+  const setQrStatusSafe = (status) => {
+    qrStatusRef.current = status;
+    setQrStatus(status);
+  };
+
+  const closeQrModal = () => {
+    clearQrTimers();
+    setQrStatusSafe("idle");
+    setQrCountdown(0);
+    setQrMd5("");
+    setQrValue("");
+    setQrPaymentModal(false);
+  };
+
+  const startQrCountdown = () => {
+    setQrCountdown(300);
+    qrCountdownRef.current = setInterval(() => {
+      setQrCountdown((prev) => {
+        if (prev <= 1) {
+          clearQrTimers();
+          setQrStatusSafe("expired");
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+
+  const startQrVerify = (md5Hash) => {
+    qrVerifyRef.current = setInterval(async () => {
+      if (qrStatusRef.current !== "waiting") return;
+
+      try {
+        const isPaid = await qrService.verifyQrPayment(token, md5Hash);
+
+        if (isPaid) {
+          clearQrTimers();
+          setQrStatusSafe("paid");
+          toast.success("Payment received. Creating order...");
+          closeQrModal();
+          handleConfirm();
+        }
+      } catch {
+        // Ignore transient polling errors.
+      }
+    }, 3000);
+  };
+
+  const startQrFlow = (md5Hash) => {
+    clearQrTimers();
+    setQrMd5(md5Hash);
+    setQrStatusSafe("waiting");
+    startQrCountdown();
+    startQrVerify(md5Hash);
+  };
+
+  const showQrPayment = async () => {
+    const rawAmount = orders.order_payment_status === "paid" ? orders.order_total : orders.payment;
+    const rate = exchangeRate?.data?.usd_to_khr || null;
+    const amount = rate ? Math.round(rawAmount * rate) : rawAmount;
+    const currency = rate ? "KHR" : "USD";
+
+    if (!amount || amount <= 0) {
+      toast.error("Payment amount must be greater than 0");
+      return;
+    }
+
+    setQrLoading(true);
+
+    try {
+      const qrResponse = await qrService.fetchQrCode(token, amount, currency);
+      const qrString = qrResponse?.qr || qrResponse?.qr_string || "";
+      const md5Hash = qrResponse?.md5 || "";
+
+      if (!qrString || !md5Hash) {
+        throw new Error("QR code not available");
+      }
+
+      setQrValue(qrString);
+      setQrPaymentModal(true);
+      startQrFlow(md5Hash);
+    } catch (error) {
+      toast.error(error?.response?.data?.message || error.message || "Failed to generate QR code");
+      closeQrModal();
+    } finally {
+      setQrLoading(false);
     }
   };
 
@@ -1286,186 +1419,183 @@ const Sales = () => {
             {orderCount > 0 && <Badge count={orderCount} color="blue" className="ml-2" />}
           </div>
         } width={350}>
-          <div className="space-y-4 max-h-[50vh] overflow-y-auto pr-1">
-            {orders?.items?.length === 0 ? (
-              <div className="text-center py-12">
-                <PiShoppingCartBold className="text-gray-400 text-4xl mx-auto mb-4" />
-                <p className="text-gray-500">Your cart is empty</p>
-                <p className="text-gray-400 text-sm mt-2">Add products from the list</p>
-              </div>
-            ) : (
-              orders?.items?.map((item, index) => (
-                <div key={`${item.id}-${index}`} className="relative border border-gray-200 rounded p-3 bg-gray-50">
-                  <button
-                    onClick={() => handleDelete(item.id, index)}
-                    className="absolute -top-0 -right-2 w-5 h-5 font-extrabold text-red-500 rounded-full text-xs hover:text-red-600 flex items-center justify-center"
-                  >
-                    ✕
-                  </button>
-                  <div className="flex gap-3">
-                    <div className="w-16 h-16 border border-gray-300 rounded overflow-hidden bg-white flex-shrink-0">
-                      <img
-                        src={item.image}
-                        alt={item.name}
-                        className="w-full h-full object-contain p-1"
-                        onError={(e) => {
-                          e.target.onerror = null;
-                          e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(item.name)}&background=3b82f6&color=fff&size=64`;
-                        }}
-                      />
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex justify-between">
-                        <div>
-                          <h4 className="font-bold text-gray-800 text-sm">{item.name}</h4>
-                          <p className="text-xs text-gray-500">{item.barcode}</p>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-sm font-bold text-green-600">
-                            ${(item.price / item.quantity).toFixed(2)}
+          <div className="border-2 overflow-hidden relat">
+            <div className="space-y-4 max-h-[50vh] overflow-y-auto pr-1">
+              {orders?.items?.length === 0 ? (
+                <div className="text-center py-12">
+                  <PiShoppingCartBold className="text-gray-400 text-4xl mx-auto mb-4" />
+                  <p className="text-gray-500">Your cart is empty</p>
+                  <p className="text-gray-400 text-sm mt-2">Add products from the list</p>
+                </div>
+              ) : (
+                orders?.items?.map((item, index) => (
+                  <div key={`${item.id}-${index}`} className="relative z-0 border-2 border-gray-200 rounded p-1 bg-gray-50">
+                    <button
+                      onClick={() => handleDelete(item.id, index)}
+                      className="absolute -top-0 -right-2 w-5 h-5 font-extrabold text-red-500 rounded-full text-xs hover:text-red-600 flex items-center justify-center"
+                    >
+                      ✕
+                    </button>
+                    <div className="flex gap-3">
+                      <div className="w-16 h-16 border border-gray-300 rounded overflow-hidden bg-white flex-shrink-0">
+                        <img
+                          src={item.image}
+                          alt={item.name}
+                          className="w-full h-full object-contain p-1"
+                          onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(item.name)}&background=3b82f6&color=fff&size=64`;
+                          }}
+                        />
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex justify-between">
+                          <div>
+                            <h4 className="font-bold text-gray-800 text-sm">{item.name}</h4>
+                            <p className="text-xs text-gray-500">{item.barcode}</p>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-sm font-bold text-green-600">
+                              ${(item.price / item.quantity).toFixed(2)}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                      <div className="flex items-center justify-between mt-2">
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => handleQty(item.id, item.selectionKey)}
-                            className="w-6 h-6 rounded bg-red-500 text-white hover:bg-red-600"
-                          >
-                            -
-                          </button>
-                          <span className="w-6 text-center font-bold text-gray-800">{item.quantity}</span>
-                          <button
-                            onClick={() => handleQtyPlus(item.id, item.selectionKey)}
-                            className="w-6 h-6 rounded bg-green-500 text-white hover:bg-green-600"
-                          >
-                            +
-                          </button>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => handleQty(item.id, item.selectionKey)}
+                              className="w-5 h-5 rounded bg-red-500 text-white hover:bg-red-600"
+                            >
+                              -
+                            </button>
+                            <span className="w-6 text-center font-bold text-gray-800">{item.quantity}</span>
+                            <button
+                              onClick={() => handleQtyPlus(item.id, item.selectionKey)}
+                              className="w-5 h-5 rounded bg-green-500 text-white hover:bg-green-600"
+                            >
+                              +
+                            </button>
+                          </div>
+                          <div className="font-bold text-blue-600">${item.price.toFixed(2)}</div>
                         </div>
-                        <div className="font-bold text-blue-600">${item.price.toFixed(2)}</div>
                       </div>
                     </div>
                   </div>
+                ))
+              )}
+            </div>
+            {orders?.items?.length > 0 && (
+              <div className="mt-6 space-y-4 text-black">
+                <Divider />
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600 text-xs">Subtotal</span>
+                    <span className="font-bold">${currencyFormat(orders?.order_subtotal)}</span>
+                  </div>
+                  {calculateTotalDiscount() > 0 && (
+                    <div className="flex justify-between text-green-600">
+                      <span className="flex items-center gap-1">
+                        <FaPercent className="text-xs" /> Total Discount
+                      </span>
+                      <span className="font-bold">-${currencyFormat(calculateTotalDiscount())}</span>
+                    </div>
+                  )}
+                  {(
+                    <>
+                      <div className="flex items-center justify-between gap-4">
+                        <label className="text-gray-600 text-xs">លេខទូរស័ព្ទអ្នកទទួល</label>
+                        <Input
+                          value={orders?.order_tel || ''}
+                          onChange={(e) => {
+                            setOrders(prev => {
+                              const newOrders = { ...prev, order_tel: e.target.value };
+                              localStorage.setItem('orderItems', JSON.stringify(newOrders));
+                              return newOrders;
+                            });
+                            if (validationErrors.order_tel) {
+                              setValidationErrors(prev => ({ ...prev, order_tel: null }));
+                            }
+                          }}
+                          placeholder="0123456789"
+                          className={validationErrors.order_tel ? 'border-red-500' : ''}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-gray-600 mb-1 text-xs">អាស័យដ្ឋានអតិថិជន</label>
+                        <Textarea
+                          value={orders?.order_address || ''}
+                          onChange={(e) => {
+                            setOrders(prev => {
+                              const newOrders = { ...prev, order_address: e.target.value };
+                              localStorage.setItem('orderItems', JSON.stringify(newOrders));
+                              const coords = e.target.value.split(',');
+                              if (coords.length >= 2) {
+                                setLocation({ latitude: coords[0].trim(), longitude: coords[1].trim() });
+                              }
+                              return newOrders;
+                            });
+                            if (validationErrors.order_address) {
+                              setValidationErrors(prev => ({ ...prev, order_address: null }));
+                            }
+                          }}
+                          placeholder="address"
+                          rows={3}
+                          className={validationErrors.order_address ? 'border-red-500' : ''}
+                        />
+                      </div>
+                    </>
+                  )}
+                  {location.latitude && location.longitude && (
+                    <div className="mt-4">
+                      <h3 className="text-md font-semibold text-gray-700 mb-2">Location Preview:</h3>
+                      <div className="border border-gray-200 rounded p-2">
+                        <iframe
+                          src={`https://www.google.com/maps?q=${location.latitude},${location.longitude}&hl=es;z=14&output=embed`}
+                          width="100%"
+                          height="180"
+                          className="rounded"
+                          title="map"
+                        />
+                        <p className="text-xs text-gray-600 mt-1">
+                          <span className="font-medium">Coordinates:</span> {location.latitude}, {location.longitude}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                  <Divider />
+                  <div className="flex justify-between items-center text-lg font-bold">
+                    <span>Total Amount</span>
+                    <div className="text-right">
+                      <div className="text-green-600 text-xl">${currencyFormat(orders?.order_total)}</div>
+                      {exchangeRate?.data?.usd_to_khr && (
+                        <div className="text-xs text-gray-500">
+                          ≈ ៛{currencyFormat(parseFloat(orders?.order_total) * Number(exchangeRate.data.usd_to_khr))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
-              ))
+                <div className="space-y-2">
+                  <Button disabled={loading} onClick={handleSubmit} variant="success" size="lg" className="w-full">
+                    {loading ? 'Ordering. . .' : 'PreOrder'}
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      setOrders({ items: [] });
+                      localStorage.setItem('orderItems', JSON.stringify({ items: [] }));
+                      setOrderCount(0);
+                      toast.success('Cart cleared');
+                    }}
+                    variant="outline"
+                    size="lg"
+                    className="w-full"
+                  >
+                    Clear Cart
+                  </Button>
+                </div>
+              </div>
             )}
           </div>
-
-          {orders?.items?.length > 0 && (
-            <div className="mt-6 space-y-4 text-black">
-              <Divider />
-
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-gray-600 text-xs">Subtotal</span>
-                  <span className="font-bold">${currencyFormat(orders?.order_subtotal)}</span>
-                </div>
-                {calculateTotalDiscount() > 0 && (
-                  <div className="flex justify-between text-green-600">
-                    <span className="flex items-center gap-1">
-                      <FaPercent className="text-xs" /> Total Discount
-                    </span>
-                    <span className="font-bold">-${currencyFormat(calculateTotalDiscount())}</span>
-                  </div>
-                )}
-                {(
-                  <>
-                    <div className="flex items-center justify-between gap-4">
-                      <label className="text-gray-600 text-xs">លេខទូរស័ព្ទអ្នកទទួល</label>
-                      <Input
-                        value={orders?.order_tel || ''}
-                        onChange={(e) => {
-                          setOrders(prev => {
-                            const newOrders = { ...prev, order_tel: e.target.value };
-                            localStorage.setItem('orderItems', JSON.stringify(newOrders));
-                            return newOrders;
-                          });
-                          if (validationErrors.order_tel) {
-                            setValidationErrors(prev => ({ ...prev, order_tel: null }));
-                          }
-                        }}
-                        placeholder="0123456789"
-                        className={validationErrors.order_tel ? 'border-red-500' : ''}
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-gray-600 mb-1 text-xs">អាស័យដ្ឋានអតិថិជន</label>
-                      <Textarea
-                        value={orders?.order_address || ''}
-                        onChange={(e) => {
-                          setOrders(prev => {
-                            const newOrders = { ...prev, order_address: e.target.value };
-                            localStorage.setItem('orderItems', JSON.stringify(newOrders));
-                            const coords = e.target.value.split(',');
-                            if (coords.length >= 2) {
-                              setLocation({ latitude: coords[0].trim(), longitude: coords[1].trim() });
-                            }
-                            return newOrders;
-                          });
-                          if (validationErrors.order_address) {
-                            setValidationErrors(prev => ({ ...prev, order_address: null }));
-                          }
-                        }}
-                        placeholder="address"
-                        rows={3}
-                        className={validationErrors.order_address ? 'border-red-500' : ''}
-                      />
-                    </div>
-                  </>
-                )}
-
-                {location.latitude && location.longitude && (
-                  <div className="mt-4">
-                    <h3 className="text-md font-semibold text-gray-700 mb-2">Location Preview:</h3>
-                    <div className="border border-gray-200 rounded p-2">
-                      <iframe
-                        src={`https://www.google.com/maps?q=${location.latitude},${location.longitude}&hl=es;z=14&output=embed`}
-                        width="100%"
-                        height="180"
-                        className="rounded"
-                        title="map"
-                      />
-                      <p className="text-xs text-gray-600 mt-1">
-                        <span className="font-medium">Coordinates:</span> {location.latitude}, {location.longitude}
-                      </p>
-                    </div>
-                  </div>
-                )}
-
-                <Divider />
-                <div className="flex justify-between items-center text-lg font-bold">
-                  <span>Total Amount</span>
-                  <div className="text-right">
-                    <div className="text-green-600 text-xl">${currencyFormat(orders?.order_total)}</div>
-                    {exchangeRate?.data?.usd_to_khr && (
-                      <div className="text-xs text-gray-500">
-                        ≈ ៛{currencyFormat(parseFloat(orders?.order_total) * Number(exchangeRate.data.usd_to_khr))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Button disabled={loading} onClick={handleSubmit} variant="success" size="lg" className="w-full">
-                  {loading ? 'Ordering. . .' : 'PreOrder'}
-                </Button>
-                <Button
-                  onClick={() => {
-                    setOrders({ items: [] });
-                    localStorage.setItem('orderItems', JSON.stringify({ items: [] }));
-                    setOrderCount(0);
-                    toast.success('Cart cleared');
-                  }}
-                  variant="outline"
-                  size="lg"
-                  className="w-full"
-                >
-                  Clear Cart
-                </Button>
-              </div>
-            </div>
-          )}
         </Drawer>
 
         {/* Sign In Modal */}
@@ -1586,6 +1716,92 @@ const Sales = () => {
                 </Button>
               </div>
             </div>
+          </div>
+        </Modal>
+
+        {/* QR Payment Modal */}
+        <Modal open={qrPaymentModal} onClose={closeQrModal} width={400}>
+          <div className="p-6">
+            <div className="text-center mb-6">
+              <h3 className="text-xl font-bold text-gray-800 mb-2">QR Payment</h3>
+              <p className="text-gray-600">Scan the QR code to complete your payment</p>
+            </div>
+
+            {qrValue && (
+              <div className="text-center">
+                <div ref={qrRef} className="inline-block p-4 bg-white border-2 border-gray-200 rounded-lg mb-4">
+                  <QRCodeCanvas
+                    value={qrValue}
+                    size={200}
+                    level="H"
+                    includeMargin={true}
+                    imageSettings={{
+                      src: bakong,
+                      x: undefined,
+                      y: undefined,
+                      height: 24,
+                      width: 24,
+                      excavate: true,
+                    }}
+                  />
+                </div>
+
+                <div className="mb-4">
+                  <p className="text-sm text-gray-600 mb-1">Amount to Pay</p>
+                  <p className="text-2xl font-bold text-green-600">
+                    ${orders.order_total?.toFixed(2)}
+                  </p>
+                </div>
+
+                <div className="flex gap-3">
+                  <Button
+                    onClick={() => handleDownload(qrRef, 'png', 'QR_Payment', `QR_${orders.order_total}`)}
+                    variant="outline"
+                    size="md"
+                    className="w-full"
+                    disabled={qrLoading}
+                  >
+                    Download QR
+                  </Button>
+                </div>
+
+                <div className="mt-4">
+                  {qrStatus === "waiting" && (
+                    <div className="rounded border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-medium text-blue-700">
+                      Waiting for payment... ({Math.floor(qrCountdown / 60)}:{(qrCountdown % 60).toString().padStart(2, '0')})
+                    </div>
+                  )}
+                  {qrStatus === "paid" && (
+                    <div className="rounded border border-green-200 bg-green-50 px-4 py-3 text-sm font-medium text-green-700">
+                      Payment verified. Creating order...
+                    </div>
+                  )}
+                  {qrStatus === "expired" && (
+                    <div className="space-y-3">
+                      <div className="rounded border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+                        QR payment expired. Generate a new QR code to continue.
+                      </div>
+                      <Button
+                        onClick={showQrPayment}
+                        variant="primary"
+                        size="lg"
+                        className="w-full"
+                        disabled={qrLoading}
+                      >
+                        Generate New QR
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {!qrValue && (
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                <p className="text-gray-600">Generating QR Code...</p>
+              </div>
+            )}
           </div>
         </Modal>
       </section>

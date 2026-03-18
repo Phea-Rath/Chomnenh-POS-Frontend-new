@@ -256,7 +256,7 @@ const PurchaseReportByUser = () => {
                                 <thead className="bg-gray-50">
                                     <tr>
                                         <th className="border border-gray-300 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            barcode
+                                            No
                                         </th>
                                         <th className="border border-gray-300 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Supplier
@@ -291,7 +291,7 @@ const PurchaseReportByUser = () => {
                                     {reportData?.map((item, index) => (
                                         <tr key={index} className="hover:bg-gray-50 !text-xs">
                                             <td className="border border-gray-300 px-6 py-4 whitespace-nowrap font-medium text-gray-900">
-                                                {item.barcode}
+                                                {item.purchase_no}
                                             </td>
                                             <td className="border border-gray-300 px-6 py-4 whitespace-nowrap text-gray-500">
                                                 {item.supplier_name}

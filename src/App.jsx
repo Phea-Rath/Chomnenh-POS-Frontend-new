@@ -80,12 +80,12 @@ import Production from "./components/productions/Production";
 import ProductionDetail from "./components/productions/ProductionDetail";
 import RawMaterialDetail from "./components/RawMaterials/RawMaterialDetail";
 import { useGetAllOrderQuery, useGetOrderByUserQuery } from "../app/Features/ordersSlice";
-import { useGetAllItemInStockQuery, useGetAllItemsQuery } from "../app/Features/itemsSlice";
+import { useGetAllItemsQuery } from "../app/Features/itemsSlice";
 import { useGetAllSaleQuery } from "../app/Features/salesSlice";
 import { useGetAllOrderOnlineQuery, useGetAllWasteQuery } from "../app/Features/notificationSlice";
 import Echo from "./echo";
 import { toast } from "react-toastify";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import RawMaterialReport from "./components/Reports/RawMaterialReport";
 import ProfitAnalysis from "./components/Reports/AnalysisProfit";
 import ProductionByRaw from "./components/Reports/ProductionByRaw";
@@ -553,7 +553,8 @@ const router = createBrowserRouter([
 
 
 
-function App() {
+/*
+function _LegacyApp() {
   const token = localStorage.getItem('token');
   const userId = localStorage.getItem('userId');
   const guestId = localStorage.getItem('guestId');
@@ -612,6 +613,107 @@ function App() {
   return (
     <RouterProvider router={router}></RouterProvider>
   );
+}
+*/
+
+function App() {
+  const [authState, setAuthState] = useState(() => ({
+    token: localStorage.getItem("token") || localStorage.getItem("guestToken") || "",
+    guestId: localStorage.getItem("guestId") || JSON.parse(localStorage.getItem("guest") || "null")?.id || "",
+    profileId: localStorage.getItem("profileId") || "",
+  }));
+
+  const { token, guestId, profileId } = authState;
+
+  useEffect(() => {
+    const syncAuthState = () => {
+      setAuthState({
+        token: localStorage.getItem("token") || localStorage.getItem("guestToken") || "",
+        guestId: localStorage.getItem("guestId") || JSON.parse(localStorage.getItem("guest") || "null")?.id || "",
+        profileId: localStorage.getItem("profileId") || "",
+      });
+    };
+
+    window.addEventListener("storage", syncAuthState);
+    window.addEventListener("auth-changed", syncAuthState);
+
+    return () => {
+      window.removeEventListener("storage", syncAuthState);
+      window.removeEventListener("auth-changed", syncAuthState);
+    };
+  }, []);
+
+  const { refetch: refetchWaste } = useGetAllWasteQuery(token, { skip: !token });
+  const { refetch: refetchOnline } = useGetAllOrderOnlineQuery(token, { skip: !token });
+  const { refetch: refetchOrder } = useGetAllOrderQuery(token, { skip: !token });
+  const { refetch: refetchSale } = useGetAllSaleQuery(
+    { token, limit: 10, page: 1, search: "" },
+    { skip: !token }
+  );
+  const { refetch: refetchItem } = useGetAllItemsQuery(
+    { token, limit: 10, page: 1, search: "" },
+    { skip: !token }
+  );
+  const { refetch: refetchGuestOrder } = useGetOrderByUserQuery(
+    { id: guestId, token },
+    { skip: !token || !guestId }
+  );
+
+  useEffect(() => {
+    const privateChannel = profileId ? `my-private-channel.user.${profileId}` : null;
+    const onlineChannel = profileId ? `check-online.user.${profileId}` : null;
+
+    if (token && Echo?.connector?.options?.auth?.headers) {
+      Echo.connector.options.auth.headers.Authorization = `Bearer ${token}`;
+    }
+
+    if (privateChannel) {
+      Echo.private(privateChannel).listen("PrivateChannelEvent", (data) => {
+        const audio = new Audio("/sounds/auto.wav");
+        audio.currentTime = 0;
+        audio.play().catch((err) => console.log("Sound blocked:", err));
+        toast.info(`New orders by ${data.data}`);
+
+        if (token) {
+          refetchWaste();
+          refetchOnline();
+          refetchSale();
+          refetchItem();
+        }
+      });
+    }
+
+    if (onlineChannel) {
+      Echo.private(onlineChannel).listen("OnlineEvent", (data) => {
+        toast.info(`Order tracking updated ${data.data}`);
+
+        if (token) {
+          refetchSale();
+          refetchOnline();
+          refetchOrder();
+        }
+
+        if (token && guestId) {
+          refetchGuestOrder();
+        }
+      });
+    }
+
+    Echo.channel("my-public-channel").listen("PublicChannelEvent", (data) => {
+      const audio = new Audio("/sounds/auto.wav");
+      audio.currentTime = 0;
+      audio.play().catch((err) => console.log("Sound blocked:", err));
+      toast.info(`New orders by ${data.message}`);
+    });
+
+    return () => {
+      if (privateChannel) Echo.leave(privateChannel);
+      if (onlineChannel) Echo.leave(onlineChannel);
+      Echo.leave("my-public-channel");
+    };
+  }, [guestId, profileId, refetchGuestOrder, refetchItem, refetchOnline, refetchOrder, refetchSale, refetchWaste, token]);
+
+  return <RouterProvider router={router}></RouterProvider>;
 }
 
 export default App;

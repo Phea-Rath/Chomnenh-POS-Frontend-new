@@ -9,7 +9,7 @@ import { IoIosSearch, IoIosGrid, IoIosList } from "react-icons/io";
 import { MdAttachMoney, MdCalendarToday, MdPerson } from "react-icons/md";
 import AlertBox from "../../services/AlertBox";
 import { useOutletsContext } from "../../layouts/Management";
-import { Link, Outlet, useNavigate } from "react-router";
+import { Link, Outlet, useLocation, useNavigate } from "react-router";
 import { Button, Empty, Skeleton, Typography, Tag } from "antd";
 import { motion } from "framer-motion";
 import {
@@ -29,9 +29,10 @@ const Expanses = () => {
   const [expenses, setExpanses] = useState([]);
   const [viewMode, setViewMode] = useState('table'); // 'table' or 'grid'
   const navigator = useNavigate();
+  const location = useLocation();
   const [id, setId] = useState(0);
   const [alertBox, setAlertBox] = useState(false);
-  const [edit, setEdit] = useState({ id: 1, name: "" });
+  const [edit, setEdit] = useState(null);
   const {
     setLoading,
     loading,
@@ -42,9 +43,7 @@ const Expanses = () => {
     setReload,
   } = useOutletsContext();
   const ModalRef = useRef(null);
-  const updateModalRef = useRef(null);
   const [expenseType, setExpanseType] = useState([]);
-  const [expenseItems, setExpanseItems] = useState([]);
   const token = localStorage.getItem("token");
   const { data, isLoading, isError, refetch } = useGetAllExpansesQuery(token);
   const [deleteExpanse] = useDeleteExpanseMutation();
@@ -54,11 +53,6 @@ const Expanses = () => {
     setExpanses(data?.data || []);
     setExpanseType(expenseTypeContext.data?.data || []);
   }, [data, expenseTypeContext.data]);
-
-  async function fetchingExpItem(id) {
-    const expenseItems = expenses?.find((item) => item.expense_id == id);
-    setExpanseItems(expenseItems.items);
-  }
 
   function handleDelete(expense_id) {
     setAlertBox(true);
@@ -103,15 +97,33 @@ const Expanses = () => {
 
   function onAdd() {
     ModalRef.current?.close();
+    setEdit(null);
+    navigator("/home/expenses");
   }
 
   async function handleUpdate(expense) {
     setEdit(expense);
-    console.log(expenseType);
-    await fetchingExpItem(expense.expense_id);
     await navigator("update");
     ModalRef.current?.showModal();
   }
+
+  async function handleCreate() {
+    setEdit(null);
+    await navigator("create");
+    ModalRef.current?.showModal();
+  }
+
+  useEffect(() => {
+    const isExpenseChildRoute =
+      location.pathname === "/home/expenses/create" ||
+      location.pathname === "/home/expenses/update";
+
+    if (isExpenseChildRoute) {
+      ModalRef.current?.showModal();
+    } else {
+      ModalRef.current?.close();
+    }
+  }, [location.pathname]);
 
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-US', {
@@ -274,11 +286,7 @@ const Expanses = () => {
 
               <button
                 className="btn btn-primary bg-blue-600 hover:bg-blue-700 text-white border-none px-6 py-3 rounded-lg font-semibold transition-colors duration-200 flex items-center gap-2 shadow-md hover:shadow-lg"
-                onClick={async () => {
-                  await navigator("create");
-                  setEdit(null);
-                  ModalRef.current?.showModal();
-                }}
+                onClick={handleCreate}
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -357,10 +365,7 @@ const Expanses = () => {
                             type="primary"
                             size="large"
                             className="mt-4 bg-blue-600 hover:bg-blue-700 border-none h-11 px-6 rounded-lg font-semibold"
-                            onClick={async () => {
-                              await navigator("create");
-                              ModalRef.current?.showModal();
-                            }}
+                            onClick={handleCreate}
                           >
                             Create Your First Expense
                           </Button>
@@ -466,10 +471,7 @@ const Expanses = () => {
                     type="primary"
                     size="large"
                     className="mt-4 bg-blue-600 hover:bg-blue-700 border-none h-11 px-6 rounded-lg font-semibold"
-                    onClick={async () => {
-                      await navigator("create");
-                      ModalRef.current?.showModal();
-                    }}
+                    onClick={handleCreate}
                   >
                     Create Your First Expense
                   </Button>
@@ -502,18 +504,18 @@ const Expanses = () => {
               </form>
             </div>
             <ExpContext.Provider
-              value={{ expenseType, onAdd, edit, expenseItems }}
+              value={{ expenseType, onAdd, edit, expenses }}
             >
               <Outlet />
             </ExpContext.Provider>
           </div>
         </dialog>
 
-        <dialog id="my_modal_4" ref={updateModalRef} className="modal">
+        {/* <dialog id="my_modal_4" ref={updateModalRef} className="modal">
           <div className="modal-box w-11/12 max-w-6xl bg-white rounded-2xl shadow-xl">
-            {/* Update content */}
+            
           </div>
-        </dialog>
+        </dialog> */}
       </section>
     </div>
   );
