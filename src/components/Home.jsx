@@ -59,7 +59,7 @@ const Home = () => {
   };
 
   return (
-    <div className="min-h-screen bg-transparent text-slate-900 p-6 lg:p-10 relative">
+    <div className="bg-transparent text-slate-900 p-6 lg:p-10 relative">
       {/* Background Decorative Elements */}
       {/* <div className="absolute top-0 right-0 w-1/2 h-1/2 bg-gradient-to-b from-blue-50/50 to-transparent pointer-events-none" /> */}
 

@@ -25,6 +25,9 @@ export const permissionsApi = createApi({
         getMenuSidebar: builder.query({
             query: (token) => queryData('/menu-sidebar', token),
         }),
+        getMenuInventory: builder.query({
+            query: (token) => queryData('/menu-inventories', token),
+        }),
         getMenuSetting: builder.query({
             query: (token) => queryData('/menu-setting', token),
         }),
@@ -47,4 +50,5 @@ export const {
     useGetMenuReportQuery,
     useGetMenuSidebarQuery,
     useGetMenuSettingQuery,
+    useGetMenuInventoryQuery
 } = permissionsApi;

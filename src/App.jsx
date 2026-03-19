@@ -98,6 +98,7 @@ import ProductionByItem from "./components/Reports/ProductionByItem";
 import ARReport from "./components/Reports/ARReport";
 import APReport from "./components/Reports/APReport";
 import DeptAnalysis from "./components/Reports/DeptAnalysis";
+import Inventories from "./components/Inventories";
 
 
 function ProtectedRoute({ children }) {
@@ -144,39 +145,39 @@ const router = createBrowserRouter([
         element: <ExchangeRateForm />,
       },
       {
-        path: "/list",
+        path: "/inventories/list",
         element: <ListItem />,
       },
       {
-        path: "/list/create",
+        path: "/inventories/list/create",
         element: <CreateItems />,
       },
       {
-        path: "/list/update/:id",
+        path: "/inventories/list/update/:id",
         element: <CreateItems />,
       },
       {
-        path: "/list/detail/:id",
+        path: "/inventories/list/detail/:id",
         element: <ItemDetails />,
       },
       {
-        path: "/list/import",
+        path: "/inventories/list/import",
         element: <ImportItems />,
       },
       {
-        path: "/category",
+        path: "/inventories/category",
         element: <CategoryList />,
       },
       {
-        path: "/brand",
+        path: "/inventories/brand",
         element: <Brands />,
       },
       {
-        path: "/scale",
+        path: "/inventories/scale",
         element: <Scales />,
       },
       {
-        path: "/werehouse",
+        path: "/inventories/werehouse",
         element: <Werehouses />,
       },
       {
@@ -211,8 +212,12 @@ const router = createBrowserRouter([
         ],
       },
       {
-        path: "/expense-type",
+        path: "/setting/expense-type",
         element: <ExpansesType />,
+      },
+      {
+        path: "/inventories",
+        element: <Inventories />,
       },
       {
         path: "/setting",
@@ -243,31 +248,31 @@ const router = createBrowserRouter([
         element: <OrderList />,
       },
       {
-        path: "/home/stock-list",
+        path: "/inventories/stock-list",
         element: <Stocks />,
       },
       {
-        path: "/home/stock-list/add",
+        path: "/inventories/stock-list/add",
         element: <AddInStock />,
       },
       {
-        path: "/home/stock-list/detail/:id",
+        path: "/inventories/stock-list/detail/:id",
         element: <StockDetail />,
       },
       {
-        path: "/home/stock-list/update/:id",
+        path: "/inventories/stock-list/update/:id",
         element: <AddInStock />,
       },
       {
-        path: "/home/stock-transfer-list",
+        path: "/inventories/stock-transfer-list",
         element: <StockTransferList />,
       },
       {
-        path: "/home/stock-transfer-list/detail/:id",
+        path: "/inventories/stock-transfer-list/detail/:id",
         element: <StockTransferDetail />,
       },
       {
-        path: "/home/stock-transfer-list/update/:id",
+        path: "/inventories/stock-transfer-list/update/:id",
         element: <StockTransfer />,
       },
       {
@@ -399,52 +404,52 @@ const router = createBrowserRouter([
         element: <DeptAnalysis />,
       },
       {
-        path: "/home/purchases",
+        path: "/inventories/purchases",
         element: <Purchases />,
       },
       {
-        path: "/home/purchase-raw",
+        path: "/inventories/purchase-raw",
         element: <PurchaseRawList />,
       },
       {
-        path: "/home/purchases/add",
+        path: "/inventories/purchases/add",
         element: <CreatePurchase />,
       },
       {
-        path: "/home/purchase-raw/add",
+        path: "/inventories/purchase-raw/add",
         element: <CreatePurchase />,
       },
       {
-        path: "/home/purchases/update/:id",
+        path: "/inventories/purchases/update/:id",
         element: <CreatePurchase />,
       },
       {
-        path: "/home/purchase-raw/update/:id",
+        path: "/inventories/purchase-raw/update/:id",
         element: <CreatePurchase />,
       },
       {
-        path: "/home/purchases/receipt/:id",
+        path: "/inventories/purchases/receipt/:id",
         element: <PurchaseReceipt />,
       },
       {
-        path: "/home/purchase-raw/receipt-raw/:id",
+        path: "/inventories/purchase-raw/receipt-raw/:id",
         element: <PurchaseReceipt />,
       },
 
       {
-        path: "/suppliers",
+        path: "/inventories/suppliers",
         element: <SupplierList />,
       },
       {
-        path: "/suppliers",
+        path: "/inventories/suppliers",
         element: <SupplierList />,
       },
       {
-        path: "/suppliers/create",
+        path: "/inventories/suppliers/create",
         element: <SupplierForm />,
       },
       {
-        path: "/suppliers/edit/:id",
+        path: "/inventories/suppliers/edit/:id",
         element: <SupplierForm />,
       },
       //roles
@@ -493,36 +498,36 @@ const router = createBrowserRouter([
         element: <DeliverList />,
       },
       {
-        path: "/raw-materials",
+        path: "/inventories/raw-materials",
         element: <RawMaterials />,
       },
       {
-        path: "/raw-materials/create",
+        path: "/inventories/raw-materials/create",
         element: <RawMaterialForm />,
       },
 
       {
-        path: "/raw-materials/edit/:id",
+        path: "/inventories/raw-materials/edit/:id",
         element: <RawMaterialForm />,
       },
       {
-        path: "/raw-materials/view/:id",
+        path: "/inventories/raw-materials/view/:id",
         element: <RawMaterialDetail />,
       },
       {
-        path: "/home/production",
+        path: "/inventories/production",
         element: <Production />,
       },
       {
-        path: "/home/production/create/",
+        path: "/inventories/production/create/",
         element: <ProductionForm />,
       },
       {
-        path: "/home/production/edit/:id",
+        path: "/inventories/production/edit/:id",
         element: <ProductionForm />,
       },
       {
-        path: "/home/production/view/:id",
+        path: "/inventories/production/view/:id",
         element: <ProductionDetail />,
       },
       {

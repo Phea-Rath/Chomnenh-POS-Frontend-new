@@ -1,49 +1,55 @@
 import React, { useEffect, useState } from 'react';
-import { FaEdit, FaSyncAlt, FaLink, FaImage, FaCloudUploadAlt, FaTimes, FaCheck } from 'react-icons/fa';
-import { Input, Select, Divider, Button } from 'antd';
+import { FaSyncAlt, FaLink, FaImage, FaCloudUploadAlt, FaCheck } from 'react-icons/fa';
+import { Input, Divider, Button } from 'antd';
 import { toast } from 'react-toastify';
 
 // Components & Services
 import AlertBox from '../../services/AlertBox';
 import { useOutletsContext } from '../../layouts/Management';
-import { useGetAllMenuQuery, useUpdateMenuMutation } from '../../../app/Features/menusSlice';
 import { useGetPermissionByIdQuery } from '../../../app/Features/permissionSlice';
 import api from '../../services/api';
+import {
+  INITIAL_MENU_FORM,
+  MENU_TYPE_OPTIONS,
+  getParentMenuId,
+} from './menuFormConfig';
 
-const UpdateMenus = ({ onAdd, dataMenu }) => {
+const UpdateMenus = ({ onClose, onSuccess, dataMenu }) => {
   const { setLoading } = useOutletsContext();
   const [alertBox, setAlertBox] = useState(false);
   const [iconPreview, setIconPreview] = useState(null);
-
-  // Initialize state with specific naming to match backend expectation
-  const [menus, setMenus] = useState({
-    menu_name: "",
-    menu_type: "",
-    menu_icon: "",
-    menu_path: "",
-    order_menu: 0,
-  });
+  const [menus, setMenus] = useState(INITIAL_MENU_FORM);
 
   const token = localStorage.getItem('token');
   const userId = localStorage.getItem('userId');
-  const { data: allMenus, refetch, isLoading: isLoadMenus } = useGetAllMenuQuery(token);
   const { refetch: permRefetch } = useGetPermissionByIdQuery({ id: userId, token });
-  const [updateMenu] = useUpdateMenuMutation();
 
-  // Sync dataMenu to local state and handle initial preview if icon is a URL
+  const resetForm = () => {
+    setMenus(INITIAL_MENU_FORM);
+    setIconPreview(null);
+    setAlertBox(false);
+  };
+
+  const handleClose = () => {
+    resetForm();
+    onClose?.();
+  };
+
   useEffect(() => {
-    if (dataMenu) {
+    if (dataMenu?.menu_id) {
       setMenus({
-        menu_name: dataMenu.name || "",
-        menu_type: dataMenu.type || "",
-        menu_icon: dataMenu.icon || "",
-        menu_path: dataMenu.path || "",
+        menu_name: dataMenu.menu_name || '',
+        menu_type: String(dataMenu.menu_type ?? ''),
+        menu_icon: dataMenu.menu_icon || null,
+        menu_path: dataMenu.menu_path || '',
         order_menu: dataMenu.order_menu ?? 0,
+        parent_menu: dataMenu.parent_menu ?? '',
       });
-      if (typeof dataMenu.icon === 'string' && dataMenu.icon.startsWith('http')) {
-        setIconPreview(dataMenu.icon);
-      }
+      setIconPreview(typeof dataMenu.menu_icon === 'string' ? dataMenu.menu_icon : null);
+      return;
     }
+
+    resetForm();
   }, [dataMenu]);
 
   const handleImageChange = (e) => {
@@ -57,61 +63,46 @@ const UpdateMenus = ({ onAdd, dataMenu }) => {
   };
 
   const handleConfirm = async () => {
-    setAlertBox(false);
     try {
       setLoading(true);
-
-      const placementParentId = {
-        2: 5,
-        3: 8,
-        4: 18,
-      };
-      const parentMenuId = placementParentId[Number(menus.menu_type)] ?? null;
-
-      // Since menu_icon can now be a file, we use FormData for the update
+      const parentMenuId = getParentMenuId(menus.menu_type, menus.parent_menu);
       const formData = new FormData();
       formData.append('menu_name', menus.menu_name);
       formData.append('menu_type', menus.menu_type);
       formData.append('parent_menu', parentMenuId ?? '');
       formData.append('menu_path', menus.menu_path);
       formData.append('order_menu', menus.order_menu);
-      // Only append if it's a new file; otherwise, the backend keeps existing
       if (menus.menu_icon instanceof File) {
-        formData.append('menu_icon', menus.menu_icon);
-      } else {
         formData.append('menu_icon', menus.menu_icon);
       }
 
-      // await updateMenu({ id: dataMenu.id, itemData: formData, token }).unwrap();
-      const res = await api.post(`/menus/${dataMenu.id}`, formData, {
+      const res = await api.post(`/menus/${dataMenu.menu_id}`, formData, {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'multipart/form-data',
         },
       });
-      refetch();
+
       permRefetch();
 
       toast.success('System configuration updated');
-      setAlertBox(false);
-      onAdd();
-
-      if (!isLoadMenus) {
-        localStorage.setItem('menus', JSON.stringify(allMenus));
-      }
+      resetForm();
+      onSuccess?.(res.data?.data);
     } catch (error) {
-      toast.error(error?.data?.message || 'Update failed');
+      toast.error(error?.response?.data?.message || 'Update failed');
     } finally {
       setLoading(false);
     }
   };
+
+  const canSubmit = menus.menu_name.trim() && menus.menu_type && menus.menu_path.trim();
 
   return (
     <section className="bg-[#f5f5f7] rounded-lg overflow-hidden border border-[#d2d2d7] shadow-xl">
       <AlertBox
         isOpen={alertBox}
         title="Confirm Modification"
-        message={`Save changes to the "${dataMenu?.name}" navigation record?`}
+        message={`Save changes to the "${menus.menu_name || dataMenu?.menu_name || 'menu'}" navigation record?`}
         onConfirm={handleConfirm}
         onCancel={() => setAlertBox(false)}
       />
@@ -123,7 +114,7 @@ const UpdateMenus = ({ onAdd, dataMenu }) => {
           <span className="text-[13px] font-semibold text-slate-700 tracking-tight">Update Routing Resource</span>
         </div>
         <span className="text-[10px] font-mono text-slate-600 bg-slate-100 px-2 py-0.5 rounded">
-          UUID: {dataMenu?.id}
+          UUID: {dataMenu?.menu_id}
         </span>
       </div>
 
@@ -146,15 +137,15 @@ const UpdateMenus = ({ onAdd, dataMenu }) => {
                 <label className="text-[11px] font-bold text-slate-600 uppercase ml-1">ទីតាំងមីនុយ (Placement)</label>
                 <select
                   className="w-full border rounded-sm border-gray-300 text-[13px]"
-                  placeholder="Select System Layer"
-                  value={menus?.menu_type}
+                  value={menus.menu_type}
                   onChange={(e) => setMenus({ ...menus, menu_type: e.target.value })}
-
                 >
-                  <option value={1}>SideBar Navigation</option>
-                  <option value={2}>Home Dashboard</option>
-                  <option value={3}>System Settings</option>
-                  <option value={4}>Analytical Reports</option>
+                  <option value="">Select System Layer</option>
+                  {MENU_TYPE_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
                 </select>
               </div>
             </div>
@@ -228,14 +219,17 @@ const UpdateMenus = ({ onAdd, dataMenu }) => {
         <div className="mt-6 flex justify-end gap-2 border-t border-[#d2d2d7] pt-5">
           <form method="dialog">
             <button
-              onClick={onAdd}
+              type="button"
+              onClick={handleClose}
               className="px-5 py-1.5 rounded bg-white border border-[#d2d2d7] text-[12px] text-slate-600 hover:bg-slate-50 active:bg-slate-100 transition-colors font-medium"
             >
               Cancel
             </button>
           </form>
           <button
+            type="button"
             onClick={() => setAlertBox(true)}
+            disabled={!canSubmit || !dataMenu?.menu_id}
             className="px-6 py-1.5 rounded bg-[#007aff] border border-[#0070e0] text-[12px] text-white font-bold hover:bg-[#006ee0] active:bg-[#0062c9] shadow-sm transition-all flex items-center gap-2"
           >
             <FaCheck className="text-[10px]" /> Save Record

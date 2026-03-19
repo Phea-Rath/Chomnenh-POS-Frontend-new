@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { IoIosSearch } from 'react-icons/io';
-import { HiOutlinePlus, HiOutlinePencilAlt, HiOutlineTrash, HiOutlineDotsVertical } from 'react-icons/hi';
+import { HiOutlinePlus, HiOutlinePencilAlt, HiOutlineTrash } from 'react-icons/hi';
 import { toast } from 'react-toastify';
 
 // Services & Redux
@@ -13,6 +13,7 @@ import { useGetAllPermissionQuery } from '../../../app/Features/permissionSlice'
 import AlertBox from '../../services/AlertBox';
 import CreateMenus from '../../views/menus/CreateMenus';
 import UpdateMenus from '../../views/menus/UpdateMenus';
+import { MENU_TYPE_LABELS } from '../../views/menus/menuFormConfig';
 
 const Menus = () => {
     const [data, setData] = useState([]);
@@ -22,7 +23,7 @@ const Menus = () => {
     const [editData, setEditData] = useState({});
 
     const token = localStorage.getItem('token');
-    const { setLoading, reload, setReload } = useOutletsContext();
+    const { setLoading } = useOutletsContext();
     const { data: response, refetch, isLoading: loadings } = useGetAllMenuQuery(token);
     const { refetch: permRefetch } = useGetAllPermissionQuery(token);
 
@@ -86,14 +87,20 @@ const Menus = () => {
         setFilteredMenu(filtered);
     };
 
+    const closeCreateModal = () => addModalRef.current?.close();
+
+    const closeUpdateModal = () => {
+        updateModalRef.current?.close();
+        setEditData({});
+    };
+
+    const handleMutationSuccess = () => {
+        refetch();
+        permRefetch();
+    };
+
     const openUpdate = (menu) => {
-        setEditData({
-            name: menu.menu_name,
-            id: menu.menu_id,
-            path: menu.menu_path,
-            icon: menu.menu_icon,
-            type: menu.menu_type
-        });
+        setEditData({ ...menu });
         updateModalRef.current?.showModal();
     };
 
@@ -170,7 +177,7 @@ const Menus = () => {
                                         ${Number(item.menu_type) === 1 ? 'bg-blue-50 text-blue-700' :
                                             Number(item.menu_type) === 2 ? 'bg-purple-50 text-purple-700' :
                                                 Number(item.menu_type) === 4 ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-700'}`}>
-                                        {Number(item.menu_type) === 1 ? 'Sidebar' : Number(item.menu_type) === 2 ? 'Home' : Number(item.menu_type) === 4 ? 'Report' : 'Setting'}
+                                        {MENU_TYPE_LABELS[Number(item.menu_type)] || 'Unknown'}
                                     </span>
                                 </td>
                                 <td className="px-6 py-4">
@@ -203,13 +210,26 @@ const Menus = () => {
             {/* Modals */}
             <dialog ref={addModalRef} className="modal backdrop-blur-sm">
                 <div className="modal-box bg-white rounded-2xl shadow-2xl p-0 max-w-xl">
-                    <CreateMenus onAdd={() => addModalRef.current?.close()} />
+                    <CreateMenus
+                        onClose={closeCreateModal}
+                        onSuccess={() => {
+                            handleMutationSuccess();
+                            closeCreateModal();
+                        }}
+                    />
                 </div>
             </dialog>
 
             <dialog ref={updateModalRef} className="modal backdrop-blur-sm">
                 <div className="modal-box bg-white rounded-2xl shadow-2xl p-0 max-w-xl">
-                    <UpdateMenus dataMenu={editData} onAdd={() => updateModalRef.current?.close()} />
+                    <UpdateMenus
+                        dataMenu={editData}
+                        onClose={closeUpdateModal}
+                        onSuccess={() => {
+                            handleMutationSuccess();
+                            closeUpdateModal();
+                        }}
+                    />
                 </div>
             </dialog>
         </section>

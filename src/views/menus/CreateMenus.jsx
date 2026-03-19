@@ -1,31 +1,39 @@
 import React, { useState } from 'react';
-import { FaCompass, FaLink, FaImage, FaListUl, FaCloudUploadAlt, FaTimes, FaCheck } from 'react-icons/fa';
-import { Input, Select, Divider, Button } from 'antd';
+import { FaCompass, FaLink, FaImage, FaCloudUploadAlt, FaCheck } from 'react-icons/fa';
+import { Input, Divider, Button } from 'antd';
 import { toast } from 'react-toastify';
 import api from '../../services/api';
 
 // Components & Services
 import AlertBox from '../../services/AlertBox';
 import { useOutletsContext } from '../../layouts/Management';
-import { useGetAllMenuQuery } from '../../../app/Features/menusSlice';
 import { useGetPermissionByIdQuery } from '../../../app/Features/permissionSlice';
+import {
+  INITIAL_MENU_FORM,
+  MENU_TYPE_OPTIONS,
+  getParentMenuId,
+} from './menuFormConfig';
 
-const CreateMenus = ({ onAdd }) => {
+const CreateMenus = ({ onClose, onSuccess }) => {
   const { setLoading } = useOutletsContext();
   const [alertBox, setAlertBox] = useState(false);
   const [iconPreview, setIconPreview] = useState(null);
-  const [menus, setMenus] = useState({
-    menu_name: "",
-    menu_type: "",
-    menu_icon: null, // Changed to null for file object
-    menu_path: "",
-    order_menu: 0, // numeric order for display
-  });
+  const [menus, setMenus] = useState(INITIAL_MENU_FORM);
 
   const token = localStorage.getItem('token');
   const userId = localStorage.getItem('userId');
-  const { refetch } = useGetAllMenuQuery(token);
   const { refetch: permRefetch } = useGetPermissionByIdQuery({ id: userId, token });
+
+  const resetForm = () => {
+    setMenus(INITIAL_MENU_FORM);
+    setIconPreview(null);
+    setAlertBox(false);
+  };
+
+  const handleClose = () => {
+    resetForm();
+    onClose?.();
+  };
 
   // Handle Image Upload & Preview
   const handleImageChange = (e) => {
@@ -40,22 +48,17 @@ const CreateMenus = ({ onAdd }) => {
 
   async function handleConfirm() {
     try {
-
-      const placementParentId = {
-        2: 5,
-        3: 8,
-        4: 18,
-      };
-      const parentMenuId = placementParentId[Number(menus.menu_type)] ?? null;
+      const parentMenuId = getParentMenuId(menus.menu_type, menus.parent_menu);
       setLoading(true);
-      // Use FormData if sending an image file to the backend
       const formData = new FormData();
       formData.append('menu_name', menus.menu_name);
       formData.append('menu_type', menus.menu_type);
       formData.append('parent_menu', parentMenuId ?? '');
       formData.append('menu_path', menus.menu_path);
       formData.append('order_menu', menus.order_menu);
-      formData.append('menu_icon', menus.menu_icon); // The actual file
+      if (menus.menu_icon instanceof File) {
+        formData.append('menu_icon', menus.menu_icon);
+      }
       formData.append('created_by', 0);
 
       const res = await api.post('/menus', formData, {
@@ -66,11 +69,10 @@ const CreateMenus = ({ onAdd }) => {
       });
 
       if (res.status === 200) {
-        refetch();
         permRefetch();
         toast.success('System menu deployed');
-        setAlertBox(false);
-        if (onAdd) onAdd();
+        resetForm();
+        onSuccess?.(res.data?.data);
       }
     } catch (error) {
       toast.error(error?.response?.data?.message || 'System error: Link failed');
@@ -78,6 +80,8 @@ const CreateMenus = ({ onAdd }) => {
       setLoading(false);
     }
   }
+
+  const canSubmit = menus.menu_name.trim() && menus.menu_type && menus.menu_path.trim();
 
   return (
     <section className="bg-[#f5f5f7] rounded-lg overflow-hidden border border-[#d2d2d7] shadow-xl">
@@ -120,14 +124,15 @@ const CreateMenus = ({ onAdd }) => {
                 <label className="text-[11px] font-bold text-slate-700 uppercase ml-1">ទីតាំងមីនុយ (Placement)</label>
                 <select
                   className="w-full border rounded-sm border-gray-300 text-[13px]"
-                  placeholder="Select System Layer"
+                  value={menus.menu_type}
                   onChange={(e) => setMenus({ ...menus, menu_type: e.target.value })}
-
                 >
-                  <option value={1}>SideBar Navigation</option>
-                  <option value={2}>Home Dashboard</option>
-                  <option value={3}>System Settings</option>
-                  <option value={4}>Analytical Reports</option>
+                  <option value="">Select System Layer</option>
+                  {MENU_TYPE_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
                 </select>
               </div>
             </div>
@@ -203,14 +208,17 @@ const CreateMenus = ({ onAdd }) => {
         <div className="mt-6 flex justify-end gap-2 border-t border-[#d2d2d7] pt-5">
           <form method="dialog">
             <button
-              onClick={onAdd}
+              type="button"
+              onClick={handleClose}
               className="px-5 py-1.5 rounded bg-white border border-[#d2d2d7] text-[12px] text-slate-600 hover:bg-slate-50 active:bg-slate-100 transition-colors font-medium"
             >
               Discard
             </button>
           </form>
           <button
+            type="button"
             onClick={() => setAlertBox(true)}
+            disabled={!canSubmit}
             className="px-6 py-1.5 rounded bg-[#007aff] border border-[#0070e0] text-[12px] text-white font-bold hover:bg-[#006ee0] active:bg-[#0062c9] shadow-sm transition-colors flex items-center gap-2"
           >
             <FaCheck className="text-[10px]" /> Initialize Menu
