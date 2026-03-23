@@ -279,7 +279,7 @@ const APReport = () => {
                             </button>
                         </div>
 
-                        <div className="overflow-x-auto print:overflow-visible print:p-8" ref={reportRef}>
+                        <div className="overflow-x-auto print:overflow-visible print:p-10 print:bg-white print:text-black print:shadow-none" ref={reportRef}>
                             <ul className="px-3 flex flex-wrap gap-4 text-xs font-medium text-slate-500 uppercase tracking-wider mb-4">
                                 <li>User: <span className="font-semibold text-slate-700">{formData.username || 'All'}</span></li>
                                 <li>Supplier: <span className="font-semibold text-slate-700">{formData.supplier_name || 'All'}</span></li>

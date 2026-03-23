@@ -261,6 +261,7 @@ const Drawer = ({ open, onClose, title, children, width = 400 }) => {
 
 const Sales = () => {
   const { id, token } = useParams();
+  const profileId = localStorage.getItem('profileId');
   const localOrderItems = JSON.parse(localStorage.getItem("orderItems"));
   const { data: exchangeRate } = useGetExchangeRateByIdQuery({
     id: id,
@@ -272,7 +273,7 @@ const Sales = () => {
   const { data: profile } = useGetUserProfileQuery({ id, token });
   const [payment, setPayment] = useState("paid");
   const [alertBox, setAlertBox] = useState(false);
-  const [showSignInModal, setShowSignInModal] = useState(localStorage.getItem('guestToken') ? false : true);
+  const [showSignInModal, setShowSignInModal] = useState(profileId == id ? false : true);
   const [allItems, setAllItems] = useState([]);
   const { data: userLogin } = useGetUserLoginQuery(token)
   const [itemsSech, setItemsSech] = useState([]);
@@ -1771,6 +1772,17 @@ const Sales = () => {
                       Waiting for payment... ({Math.floor(qrCountdown / 60)}:{(qrCountdown % 60).toString().padStart(2, '0')})
                     </div>
                   )}
+                  <div className="flex gap-3">
+                    <Button
+                      onClick={handleConfirm}
+                      variant="outline"
+                      size="md"
+                      className="w-full"
+                      disabled={qrLoading}
+                    >
+                      Skip to COD
+                    </Button>
+                  </div>
                   {qrStatus === "paid" && (
                     <div className="rounded border border-green-200 bg-green-50 px-4 py-3 text-sm font-medium text-green-700">
                       Payment verified. Creating order...

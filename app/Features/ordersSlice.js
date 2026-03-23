@@ -22,6 +22,25 @@ export const ordersApi = createApi({
     getAllOrderTransection: builder.query({
       query: ({ token, limit, page, search }) => queryData(`/order_transection?limit=${limit}&page=${page}&search=${search}`, token),
     }),
+    getAllDeliveryTracking: builder.query({
+      query: ({ token, limit = 10, page = 1, search = "", deliver_id = "", user_id = "" }) => {
+        const params = new URLSearchParams({
+          limit: String(limit),
+          page: String(page),
+          search: search ?? "",
+        });
+
+        if (deliver_id !== "" && deliver_id !== null && deliver_id !== undefined) {
+          params.append("deliver_id", String(deliver_id));
+        }
+
+        if (user_id !== "" && user_id !== null && user_id !== undefined) {
+          params.append("user_id", String(user_id));
+        }
+
+        return queryData(`/delivery_tracking?${params.toString()}`, token);
+      },
+    }),
     getOrderByUser: builder.query({
       query: ({ id, token }) => queryData(`/order_by_user/${id}`, token),
     }),
@@ -78,4 +97,5 @@ export const {
   useViewOrderMutation,
   useGetPopularOrderQuery,
   useGetPersentOrderMonthlyQuery,
+  useGetAllDeliveryTrackingQuery,
 } = ordersApi;

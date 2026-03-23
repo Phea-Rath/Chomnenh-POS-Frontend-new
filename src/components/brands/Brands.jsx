@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { IoIosSearch, IoIosGrid, IoIosList } from 'react-icons/io';
 import { FaPlus, FaEdit, FaTrash, FaTags, FaUser } from 'react-icons/fa';
 import { useOutletsContext } from '../../layouts/Management';
@@ -14,9 +14,9 @@ const Brands = () => {
   const [edit, setEdit] = useState({ id: 1, name: '' });
   const [viewMode, setViewMode] = useState('grid'); // 'list' or 'grid'
   const [searchTerm, setSearchTerm] = useState('');
+  const [isAddOpen, setIsAddOpen] = useState(false);
+  const [isUpdateOpen, setIsUpdateOpen] = useState(false);
   const { setLoading, loading } = useOutletsContext();
-  const addModalRef = useRef(null);
-  const updateModalRef = useRef(null);
   const token = localStorage.getItem('token');
   const [brands, setBrands] = useState([]);
   const [filteredBrands, setFilteredBrands] = useState([]);
@@ -63,7 +63,7 @@ const Brands = () => {
   const onSearch = (e) => setSearchTerm(e.target.value);
 
   const handleUpdate = (name, id) => {
-    updateModalRef.current?.showModal();
+    setIsUpdateOpen(true);
     setEdit({ name, id });
   };
 
@@ -213,7 +213,7 @@ const Brands = () => {
           </h1>
           <p className="text-gray-500 mt-1 font-medium">Configure and organize your product brands</p>
         </div>
-        <Button onClick={() => addModalRef.current?.showModal()} variant="success" icon={<FaPlus />} className="shadow-lg shadow-green-200/50">
+        <Button onClick={() => setIsAddOpen(true)} variant="success" icon={<FaPlus />} className="shadow-lg shadow-green-200/50">
           Add New Brand
         </Button>
       </div>
@@ -267,7 +267,7 @@ const Brands = () => {
       {isLoading ? (
         <LoadingSkeleton count={viewMode === 'grid' ? 8 : 5} grid={viewMode === 'grid'} />
       ) : filteredBrands.length === 0 ? (
-        <EmptyState onCreate={() => addModalRef.current?.showModal()} />
+        <EmptyState onCreate={() => setIsAddOpen(true)} />
       ) : viewMode === 'list' ? (
         <div className="bg-white rounded-3xl border border-gray-100 overflow-hidden shadow-sm">
           <div className="overflow-x-auto">
@@ -335,16 +335,20 @@ const Brands = () => {
       )}
 
       {/* Modals */}
-      <dialog ref={addModalRef} className="modal">
-        <div className="modal-box bg-white max-w-2xl p-0 rounded-3xl overflow-hidden border-none shadow-2xl">
-          <CreateBrands data={edit} onAdd={() => addModalRef.current?.close()} />
+      {isAddOpen && (
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-2xl overflow-hidden rounded-3xl bg-white shadow-2xl">
+            <CreateBrands data={edit} onAdd={() => setIsAddOpen(false)} />
+          </div>
         </div>
-      </dialog>
-      <dialog ref={updateModalRef} className="modal">
-        <div className="modal-box bg-white max-w-2xl p-0 rounded-3xl overflow-hidden border-none shadow-2xl">
-          <UpdateBrands dataBrand={edit} onAdd={() => updateModalRef.current?.close()} />
+      )}
+      {isUpdateOpen && (
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-2xl overflow-hidden rounded-3xl bg-white shadow-2xl">
+            <UpdateBrands dataBrand={edit} onAdd={() => setIsUpdateOpen(false)} />
+          </div>
         </div>
-      </dialog>
+      )}
     </div>
   );
 };

@@ -644,7 +644,7 @@ const Production = () => {
                             <LuDownload />
                             Export Excel
                         </ExportExcel>
-                        <Link to="/home/production/create">
+                        <Link to="create">
                             <button className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 flex items-center gap-2">
                                 <LuPlus />
                                 New Production

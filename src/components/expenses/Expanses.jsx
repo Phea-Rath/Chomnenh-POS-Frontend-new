@@ -2,7 +2,6 @@ import React, {
   createContext,
   useContext,
   useEffect,
-  useRef,
   useState,
 } from "react";
 import { IoIosSearch, IoIosGrid, IoIosList } from "react-icons/io";
@@ -11,7 +10,6 @@ import AlertBox from "../../services/AlertBox";
 import { useOutletsContext } from "../../layouts/Management";
 import { Link, Outlet, useLocation, useNavigate } from "react-router";
 import { Button, Empty, Skeleton, Typography, Tag } from "antd";
-import { motion } from "framer-motion";
 import {
   useDeleteExpanseMutation,
   useGetAllExpansesQuery,
@@ -27,25 +25,16 @@ export function useExpContext() {
 
 const Expanses = () => {
   const [expenses, setExpanses] = useState([]);
-  const [viewMode, setViewMode] = useState('table'); // 'table' or 'grid'
+  const [viewMode, setViewMode] = useState("table");
   const navigator = useNavigate();
   const location = useLocation();
   const [id, setId] = useState(0);
   const [alertBox, setAlertBox] = useState(false);
   const [edit, setEdit] = useState(null);
-  const {
-    setLoading,
-    loading,
-    setAlert,
-    setMessage,
-    setAlertStatus,
-    reload,
-    setReload,
-  } = useOutletsContext();
-  const ModalRef = useRef(null);
+  const { setLoading } = useOutletsContext();
   const [expenseType, setExpanseType] = useState([]);
   const token = localStorage.getItem("token");
-  const { data, isLoading, isError, refetch } = useGetAllExpansesQuery(token);
+  const { data, isLoading, refetch } = useGetAllExpansesQuery(token);
   const [deleteExpanse] = useDeleteExpanseMutation();
   const expenseTypeContext = useGetAllExpanseTypesQuery(token);
 
@@ -76,8 +65,8 @@ const Expanses = () => {
     } catch (error) {
       toast.error(
         error?.message ||
-        error ||
-        "An error occurred while deleting the expense"
+          error ||
+          "An error occurred while deleting the expense"
       );
       setLoading(false);
       setAlertBox(false);
@@ -96,7 +85,6 @@ const Expanses = () => {
   }
 
   function onAdd() {
-    ModalRef.current?.close();
     setEdit(null);
     navigator("/home/expenses");
   }
@@ -104,66 +92,61 @@ const Expanses = () => {
   async function handleUpdate(expense) {
     setEdit(expense);
     await navigator("update");
-    ModalRef.current?.showModal();
   }
 
   async function handleCreate() {
     setEdit(null);
     await navigator("create");
-    ModalRef.current?.showModal();
   }
 
-  useEffect(() => {
-    const isExpenseChildRoute =
-      location.pathname === "/home/expenses/create" ||
-      location.pathname === "/home/expenses/update";
+  const isExpenseChildRoute =
+    location.pathname === "/home/expenses/create" ||
+    location.pathname === "/home/expenses/update";
 
-    if (isExpenseChildRoute) {
-      ModalRef.current?.showModal();
-    } else {
-      ModalRef.current?.close();
+  useEffect(() => {
+    if (!isExpenseChildRoute) {
+      setEdit(null);
     }
-  }, [location.pathname]);
+  }, [isExpenseChildRoute]);
 
   const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 2
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+      minimumFractionDigits: 2,
     }).format(amount);
   };
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
     });
   };
 
   const getStatusColor = (amount) => {
-    if (amount > 1000) return 'red';
-    if (amount > 500) return 'orange';
-    return 'green';
+    if (amount > 1000) return "red";
+    if (amount > 500) return "orange";
+    return "green";
   };
 
-  // Grid Card Component
-  const ExpenseCard = ({ expense, index }) => (
+  const ExpenseCard = ({ expense }) => (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-all duration-200">
-      {/* Header */}
       <div className="flex justify-between items-start mb-4">
         <div>
           <h3 className="font-semibold text-gray-900 text-lg mb-1">
             {expense.expense_no}
           </h3>
-          <p className="text-sm text-gray-600">{expense.expense_supplier || 'No supplier'}</p>
+          <p className="text-sm text-gray-600">
+            {expense.expense_supplier || "No supplier"}
+          </p>
         </div>
         <Tag color={getStatusColor(expense.amount)} className="rounded-full px-3 py-1">
           {formatCurrency(expense.amount)}
         </Tag>
       </div>
 
-      {/* Details */}
       <div className="space-y-3 mb-4">
         <div className="flex items-center gap-2 text-sm text-gray-600">
           <MdPerson className="text-gray-400" />
@@ -175,20 +158,18 @@ const Expanses = () => {
         </div>
         <div className="flex items-center gap-2 text-sm text-gray-600">
           <MdAttachMoney className="text-gray-400" />
-          <span className="truncate">{expense.expense_other || 'No description'}</span>
+          <span className="truncate">{expense.expense_other || "No description"}</span>
         </div>
       </div>
 
-      {/* Staff */}
       <div className="flex items-center justify-between mb-4">
         <Tag color="blue" className="rounded-full px-3 py-1 text-xs">
           {expense.created_by}
         </Tag>
       </div>
 
-      {/* Actions */}
       <div className="flex gap-2 pt-4 border-t border-gray-100">
-        <Link to="/expense-print" className="flex-1">
+        <Link to={`/expense-print/${expense.expense_id}`} target="_blank" className="flex-1">
           <button className="w-full inline-flex items-center justify-center px-3 py-2 border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-600 hover:text-white transition-colors duration-200 text-xs font-semibold">
             Details
           </button>
@@ -209,7 +190,6 @@ const Expanses = () => {
     </div>
   );
 
-  // Loading Card Skeleton
   const ExpenseCardSkeleton = () => (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
       <div className="animate-pulse">
@@ -236,9 +216,7 @@ const Expanses = () => {
   );
 
   return (
-    <div
-      className="min-h-screen bg-transparent"
-    >
+    <div className="min-h-screen bg-transparent">
       <section className="px-4 py-6">
         <AlertBox
           isOpen={alertBox}
@@ -250,7 +228,6 @@ const Expanses = () => {
           cancelText="Cancel"
         />
 
-        {/* Header Section */}
         <div className="mb-8">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
             <div>
@@ -261,24 +238,25 @@ const Expanses = () => {
             </div>
 
             <div className="flex items-center gap-3">
-              {/* View Mode Toggle */}
-              <ExportExel data={expenses} title='Expenses' />
+              <ExportExel data={expenses} title="Expenses" />
               <div className="flex bg-white rounded-lg border border-gray-200 p-1">
                 <button
-                  onClick={() => setViewMode('table')}
-                  className={`p-2 rounded-md transition-colors duration-200 ${viewMode === 'table'
-                    ? 'bg-blue-100 text-blue-600'
-                    : 'text-gray-500 hover:text-gray-700'
-                    }`}
+                  onClick={() => setViewMode("table")}
+                  className={`p-2 rounded-md transition-colors duration-200 ${
+                    viewMode === "table"
+                      ? "bg-blue-100 text-blue-600"
+                      : "text-gray-500 hover:text-gray-700"
+                  }`}
                 >
                   <IoIosList className="text-xl" />
                 </button>
                 <button
-                  onClick={() => setViewMode('grid')}
-                  className={`p-2 rounded-md transition-colors duration-200 ${viewMode === 'grid'
-                    ? 'bg-blue-100 text-blue-600'
-                    : 'text-gray-500 hover:text-gray-700'
-                    }`}
+                  onClick={() => setViewMode("grid")}
+                  className={`p-2 rounded-md transition-colors duration-200 ${
+                    viewMode === "grid"
+                      ? "bg-blue-100 text-blue-600"
+                      : "text-gray-500 hover:text-gray-700"
+                  }`}
                 >
                   <IoIosGrid className="text-xl" />
                 </button>
@@ -296,7 +274,6 @@ const Expanses = () => {
             </div>
           </div>
 
-          {/* Search Bar */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
             <div className="relative max-w-md">
               <IoIosSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-xl" />
@@ -310,41 +287,21 @@ const Expanses = () => {
           </div>
         </div>
 
-        {/* Content Section */}
-        {viewMode === 'table' ? (
-          /* Table View */
+        {viewMode === "table" ? (
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead className="bg-gray-50 border-b border-gray-200">
                   <tr>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      No.
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      Expense No.
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      Supplier
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      Paid By
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      Date
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      Description
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      Amount
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      Staff
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      Actions
-                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">No.</th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Expense No.</th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Supplier</th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Paid By</th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Date</th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Description</th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Amount</th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Staff</th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
@@ -355,11 +312,7 @@ const Expanses = () => {
                           className="w-full flex flex-col items-center justify-center"
                           image="https://gw.alipayobjects.com/zos/antfincdn/ZHrcdLPrvN/empty.svg"
                           imageStyle={{ height: 80 }}
-                          description={
-                            <Typography.Text className="text-gray-500 text-lg">
-                              No expenses found
-                            </Typography.Text>
-                          }
+                          description={<Typography.Text className="text-gray-500 text-lg">No expenses found</Typography.Text>}
                         >
                           <Button
                             type="primary"
@@ -374,42 +327,21 @@ const Expanses = () => {
                     </tr>
                   ) : (
                     expenses?.map((exp, index) => (
-                      <tr
-                        key={index}
-                        className="hover:bg-gray-50 transition-colors duration-150"
-                      >
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                          {index + 1}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-semibold">
-                          {exp.expense_no}
-                        </td>
+                      <tr key={index} className="hover:bg-gray-50 transition-colors duration-150">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{index + 1}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-semibold">{exp.expense_no}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{exp.expense_supplier || "-"}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{exp.expense_by}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{formatDate(exp.expense_date)}</td>
+                        <td className="px-6 py-4 text-sm text-gray-700 max-w-xs truncate">{exp.expense_other || "No description"}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-green-600">{formatCurrency(exp.amount)}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                          {exp.expense_supplier || '-'}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                          {exp.expense_by}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                          {formatDate(exp.expense_date)}
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-700 max-w-xs truncate">
-                          {exp.expense_other || 'No description'}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-green-600">
-                          {formatCurrency(exp.amount)}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                          <Tag color="blue" className="rounded-full px-3 py-1 text-xs">
-                            {exp.created_by}
-                          </Tag>
+                          <Tag color="blue" className="rounded-full px-3 py-1 text-xs">{exp.created_by}</Tag>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                           <div className="flex items-center gap-2">
                             <Link to={`/expense-print/${exp.expense_id}`} target="_blank">
-                              <button
-                                className="inline-flex items-center px-3 py-1.5 border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-600 hover:text-white transition-colors duration-200 text-xs font-semibold"
-                              >
+                              <button className="inline-flex items-center px-3 py-1.5 border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-600 hover:text-white transition-colors duration-200 text-xs font-semibold">
                                 Details
                               </button>
                             </Link>
@@ -433,27 +365,16 @@ const Expanses = () => {
                 </tbody>
               </table>
 
-              {/* Loading Skeleton */}
-              <div
-                className={`flex flex-col gap-3 p-6 transition-all duration-500 ${isLoading ? "" : "hidden"
-                  }`}
-              >
+              <div className={`flex flex-col gap-3 p-6 transition-all duration-500 ${isLoading ? "" : "hidden"}`}>
                 {[...Array(5)].map((_, index) => (
                   <div key={index} className="flex items-center gap-4">
-                    <Skeleton.Button
-                      style={{ width: "100%" }}
-                      active={true}
-                      size={"small"}
-                      shape={"square"}
-                      block={true}
-                    />
+                    <Skeleton.Button style={{ width: "100%" }} active={true} size={"small"} shape={"square"} block={true} />
                   </div>
                 ))}
               </div>
             </div>
           </div>
         ) : (
-          /* Grid View */
           <div>
             {expenses.length === 0 && !isLoading ? (
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
@@ -461,11 +382,7 @@ const Expanses = () => {
                   className="w-full flex flex-col items-center justify-center"
                   image="https://gw.alipayobjects.com/zos/antfincdn/ZHrcdLPrvN/empty.svg"
                   imageStyle={{ height: 80 }}
-                  description={
-                    <Typography.Text className="text-gray-500 text-lg">
-                      No expenses found
-                    </Typography.Text>
-                  }
+                  description={<Typography.Text className="text-gray-500 text-lg">No expenses found</Typography.Text>}
                 >
                   <Button
                     type="primary"
@@ -480,42 +397,24 @@ const Expanses = () => {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {isLoading ? (
-                  [...Array(8)].map((_, index) => (
-                    <ExpenseCardSkeleton key={index} />
-                  ))
+                  [...Array(8)].map((_, index) => <ExpenseCardSkeleton key={index} />)
                 ) : (
-                  expenses?.map((exp, index) => (
-                    <ExpenseCard key={index} expense={exp} index={index} />
-                  ))
+                  expenses?.map((exp, index) => <ExpenseCard key={index} expense={exp} index={index} />)
                 )}
               </div>
             )}
           </div>
         )}
 
-        {/* Modals */}
-        <dialog id="my_modal_4" ref={ModalRef} className="modal">
-          <div className="modal-box w-11/12 max-w-6xl bg-white rounded-2xl shadow-xl">
-            <div className="modal-action">
-              <form method="dialog">
-                <button className="btn btn-sm btn-circle btn-ghost absolute right-4 top-4 text-gray-400 hover:text-gray-600">
-                  ✕
-                </button>
-              </form>
+        {isExpenseChildRoute && (
+          <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/50 p-4">
+            <div className="w-11/12 max-w-6xl rounded-2xl bg-white shadow-xl">
+              <ExpContext.Provider value={{ expenseType, onAdd, edit, expenses }}>
+                <Outlet />
+              </ExpContext.Provider>
             </div>
-            <ExpContext.Provider
-              value={{ expenseType, onAdd, edit, expenses }}
-            >
-              <Outlet />
-            </ExpContext.Provider>
           </div>
-        </dialog>
-
-        {/* <dialog id="my_modal_4" ref={updateModalRef} className="modal">
-          <div className="modal-box w-11/12 max-w-6xl bg-white rounded-2xl shadow-xl">
-            
-          </div>
-        </dialog> */}
+        )}
       </section>
     </div>
   );

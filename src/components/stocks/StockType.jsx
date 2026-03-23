@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { IoIosSearch } from 'react-icons/io'
 import AlertBox from '../../services/AlertBox'
 import { useOutletsContext } from '../../layouts/Management'
@@ -14,9 +14,9 @@ const StockType = () => {
   const [id, setId] = useState(0)
   const [alertBox, setAlertBox] = useState(false)
   const [edit, setEdit] = useState({ id: 1, name: "" });
+  const [isAddOpen, setIsAddOpen] = useState(false);
+  const [isUpdateOpen, setIsUpdateOpen] = useState(false);
   const { setLoading, loading, setAlert, setMessage, setAlertStatus } = useOutletsContext();
-  const addModalRef = useRef(null);
-  const updateModalRef = useRef(null);
   const token = localStorage.getItem('token');
   const { data, isError, isLoading, refetch } = useGetAllStockTypesQuery(token);
   const [deleteStockType, stockTypeDel] = useDeleteStockTypeMutation();
@@ -63,7 +63,7 @@ const StockType = () => {
   }
 
   function handleUpdate(id, name) {
-    updateModalRef.current?.showModal();
+    setIsUpdateOpen(true);
     setEdit(prev => { return { ...prev, name: name, id: id } })
   }
   return (
@@ -90,17 +90,6 @@ const StockType = () => {
               <input onChange={onSearch} type="text" className="input text-gray-700 bg-white border-none border-gray-400 pl-8 focus:outline-none" placeholder="ស្វែងរក. . ." />
               <IoIosSearch className=' absolute left-2 top-[10px] z-1 text-xl text-gray-400' />
             </fieldset>
-            {/* <button className="btn btn-outline btn-success" onClick={() => addModalRef.current?.showModal()}>Add New</button> */}
-            <dialog id="my_modal_5" ref={addModalRef} className="modal modal-bottom sm:modal-middle">
-              <div className="modal-box bg-gray-100">
-                <CreateStockTypes onAdd={() => addModalRef.current?.close()} />
-              </div>
-            </dialog>
-            <dialog id="my_modal_5" ref={updateModalRef} className="modal modal-bottom sm:modal-middle">
-              <div className="modal-box bg-gray-100">
-                <UpdateStockTypes onAdd={() => updateModalRef.current?.close()} data={edit} />
-              </div>
-            </dialog>
           </article>
           <div className="overflow-x-auto rounded-box border border-base-300/10 text-gray-600">
             <table className="table bg-white">
@@ -126,7 +115,7 @@ const StockType = () => {
                         </Typography.Text>
                       }
                     >
-                      <Button type="primary" onClick={() => addModalRef.current?.showModal()}>Create Now</Button>
+                      <Button type="primary" onClick={() => setIsAddOpen(true)}>Create Now</Button>
                     </Empty>
                   </td>
                 </tr>
@@ -150,6 +139,20 @@ const StockType = () => {
             </div>
           </div>
         </article>
+        {isAddOpen && (
+          <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/50 p-4">
+            <div className="w-full max-w-2xl overflow-hidden rounded bg-gray-100">
+              <CreateStockTypes onAdd={() => setIsAddOpen(false)} />
+            </div>
+          </div>
+        )}
+        {isUpdateOpen && (
+          <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/50 p-4">
+            <div className="w-full max-w-2xl overflow-hidden rounded bg-gray-100">
+              <UpdateStockTypes onAdd={() => setIsUpdateOpen(false)} data={edit} />
+            </div>
+          </div>
+        )}
       </section>
     </motion.div>
   )

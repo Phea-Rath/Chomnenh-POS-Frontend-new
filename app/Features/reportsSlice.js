@@ -50,6 +50,9 @@ export const reportsApi = createApi({
         getDebtAnalysis: builder.mutation({
             query: ({ itemData, token }) => createData(itemData, '/debt-analysis', token),
         }),
+        getStockByRawReport: builder.mutation({
+            query: ({ itemData, token }) => createData(itemData, '/stock_report_raw', token),
+        }),
 
     }),
 });
@@ -68,5 +71,6 @@ export const {
     useGetProductionByItemReportMutation,
     useGetAPReportMutation,
     useGetARReportMutation,
-    useGetDebtAnalysisMutation
+    useGetDebtAnalysisMutation,
+    useGetStockByRawReportMutation
 } = reportsApi;

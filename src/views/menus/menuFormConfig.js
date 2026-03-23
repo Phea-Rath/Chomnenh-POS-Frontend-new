@@ -28,7 +28,7 @@ export const MENU_TYPE_LABELS = {
 const DEFAULT_PARENT_BY_TYPE = {
   2: 5,
   3: 8,
-  4: 18,
+  4: 29,
   5: 46,
 };
 

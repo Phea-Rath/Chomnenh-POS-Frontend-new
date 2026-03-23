@@ -9,7 +9,11 @@ import { Provider } from "react-redux";
 createRoot(document.getElementById('root')).render(
   <>
     <Provider store={store} >
-      <ToastContainer position="bottom-right" autoClose={2000} />
+      <ToastContainer
+        position="bottom-right"
+        autoClose={2000}
+        containerStyle={{ zIndex: 2147483647 }}
+      />
       <App />
     </Provider>
   </>

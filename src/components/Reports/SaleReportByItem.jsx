@@ -287,7 +287,7 @@ const SaleReportByItem = () => {
                         </div>
 
                         {/* Report Table */}
-                        <div className="overflow-x-auto print:overflow-visible print:p-10" ref={reportRef}>
+                        <div className="overflow-x-auto print:overflow-visible print:p-10 print:bg-white print:text-black print:shadow-none" ref={reportRef}>
                             <ul className='px-5 flex justify-between text-left text-xs font-medium mb-5 text-gray-500 uppercase tracking-wider'>
                                 <li>User:   <span className='font-bold'>{formData?.username || 'All'}</span></li>
                                 <li>Customer:   <span className='font-bold'>{formData?.customer_name || 'All'}</span></li>

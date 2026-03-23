@@ -32,11 +32,10 @@ import UserProfile from "./components/logins/UserProfile";
 import UserDetails from "./components/logins/UserDetails";
 import ItemDetails from "./components/items/ItemDetails";
 import CreateItems from "./views/items/CreateItems";
+import OrderDetail from "./components/orders/OrderDetail";
 import OrderReceipt from "./components/orders/OrderReceipt";
 import Notification from "./components/notifications/page";
-import OrderOnline from "./components/notifications/orderOnline";
 import SaleOnline from "./components/orders/SaleOnline";
-import OrderDetails from "./components/notifications/orderDetails";
 import WasteItemDetail from "./components/notifications/WasteItemDetail";
 import Permission from "./components/settings/Permission";
 import ImportItems from "./components/items/ImportItems";
@@ -60,7 +59,6 @@ import CustomerForm from "./components/customers/CustomerForm";
 import RoleList from "./components/Roles/RoleList";
 import RoleForm from "./components/Roles/RoleForm";
 import OrderInvoice from "./components/orders/OrderInvoice";
-import Page from "./markets/Page";
 import Main from "./markets/Main";
 import ErrorPage from "./components/ErrorPage";
 import QuotationForm from "./components/quotations/QuotationForm";
@@ -99,6 +97,7 @@ import ARReport from "./components/Reports/ARReport";
 import APReport from "./components/Reports/APReport";
 import DeptAnalysis from "./components/Reports/DeptAnalysis";
 import Inventories from "./components/Inventories";
+import StockByRaw from "./components/Reports/StockByRaw";
 
 
 function ProtectedRoute({ children }) {
@@ -232,12 +231,20 @@ const router = createBrowserRouter([
         element: <OrderTracking />,
       },
       {
+        path: "/home/order-tracking/view/:id",
+        element: <OrderDetail />,
+      },
+      {
         path: "/order-list/edit/:id",
         element: <UpdateOrders />,
       },
       {
         path: "/order-list/receipt/:id",
         element: <OrderReceipt />,
+      },
+      {
+        path: "/order-list/detail/:id",
+        element: <OrderDetail />,
       },
       {
         path: "/order-list/invoice/:id",
@@ -306,10 +313,6 @@ const router = createBrowserRouter([
       {
         path: "/notification",
         element: <Notification />,
-      },
-      {
-        path: "/detail-notification/:id",
-        element: <OrderDetails />,
       },
       {
         path: "/detail-waste/:id",
@@ -390,6 +393,10 @@ const router = createBrowserRouter([
       {
         path: "/report/stock-by-item",
         element: <StockByItem />,
+      },
+      {
+        path: "/report/stock-by-raw",
+        element: <StockByRaw />,
       },
       {
         path: "/report/ar",

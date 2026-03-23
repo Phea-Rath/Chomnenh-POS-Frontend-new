@@ -238,7 +238,7 @@ const Dashboard = () => {
             <option value="">All Users</option>
             {usersData?.data?.map((user) => (
               <option key={user.id} value={user.id}>
-                {user.name}
+                {user.username}
               </option>
             ))}
           </select>

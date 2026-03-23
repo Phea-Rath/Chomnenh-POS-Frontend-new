@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { IoIosSearch } from 'react-icons/io';
 import { HiOutlineBuildingOffice2 } from 'react-icons/hi2';
 import { TbBuildingWarehouse } from 'react-icons/tb';
@@ -21,9 +21,9 @@ const Warehouses = () => {
   const [edit, setEdit] = useState({ id: 1, name: '', status: 0 });
   const [viewMode, setViewMode] = useState('table'); // 'table' or 'grid'
   const [searchTerm, setSearchTerm] = useState('');
+  const [isAddOpen, setIsAddOpen] = useState(false);
+  const [isUpdateOpen, setIsUpdateOpen] = useState(false);
   const { setLoading, loading } = useOutletsContext();
-  const addModalRef = useRef(null);
-  const updateModalRef = useRef(null);
   const token = localStorage.getItem('token');
   const { data, isLoading, refetch } = useGetAllWarehousesQuery(token);
   const [deleteWarehouse] = useDeleteWarehouseMutation();
@@ -84,7 +84,7 @@ const Warehouses = () => {
   };
 
   const handleUpdate = (name, id, status) => {
-    updateModalRef.current?.showModal();
+    setIsUpdateOpen(true);
     setEdit({ id, name, status });
   };
 
@@ -276,7 +276,7 @@ const Warehouses = () => {
           </motion.h1>
           <p className="text-gray-600 text-sm">Manage your storage facilities and distribution centers</p>
         </div>
-        <Button onClick={() => addModalRef.current?.showModal()} variant="success" icon={<TbBuildingWarehouse />}>
+        <Button onClick={() => setIsAddOpen(true)} variant="success" icon={<TbBuildingWarehouse />}>
           Add New Warehouse
         </Button>
       </div>
@@ -329,7 +329,7 @@ const Warehouses = () => {
       {isLoading ? (
         <LoadingSkeleton count={viewMode === 'grid' ? 8 : 5} grid={viewMode === 'grid'} />
       ) : filteredWarehouses.length === 0 ? (
-        <EmptyState onCreate={() => addModalRef.current?.showModal()} />
+        <EmptyState onCreate={() => setIsAddOpen(true)} />
       ) : viewMode === 'table' ? (
         <div className="bg-white border border-gray-200 rounded overflow-hidden">
           <div className="overflow-x-auto">
@@ -407,23 +407,33 @@ const Warehouses = () => {
       )}
 
       {/* Modals */}
-      <dialog ref={addModalRef} className="modal">
-        <div className="modal-box max-w-4xl bg-white p-0 rounded overflow-hidden">
-          <CreateWarehouses data={edit} onAdd={() => addModalRef.current?.close()} />
+      {isAddOpen && (
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/50 p-4">
+          <div className="max-h-[90vh] w-full max-w-4xl overflow-hidden rounded bg-white">
+            <CreateWarehouses data={edit} onAdd={() => setIsAddOpen(false)} />
+          </div>
+          <button
+            type="button"
+            aria-label="Close add warehouse modal"
+            className="absolute inset-0 -z-10 cursor-default"
+            onClick={() => setIsAddOpen(false)}
+          />
         </div>
-        <form method="dialog" className="modal-backdrop">
-          <button>close</button>
-        </form>
-      </dialog>
+      )}
 
-      <dialog ref={updateModalRef} className="modal">
-        <div className="modal-box max-w-4xl bg-white p-0 rounded overflow-hidden">
-          <UpdateWarehouses data={edit} onAdd={() => updateModalRef.current?.close()} />
+      {isUpdateOpen && (
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/50 p-4">
+          <div className="max-h-[90vh] w-full max-w-4xl overflow-hidden rounded bg-white">
+            <UpdateWarehouses data={edit} onAdd={() => setIsUpdateOpen(false)} />
+          </div>
+          <button
+            type="button"
+            aria-label="Close update warehouse modal"
+            className="absolute inset-0 -z-10 cursor-default"
+            onClick={() => setIsUpdateOpen(false)}
+          />
         </div>
-        <form method="dialog" className="modal-backdrop">
-          <button>close</button>
-        </form>
-      </dialog>
+      )}
     </motion.div>
   );
 };
