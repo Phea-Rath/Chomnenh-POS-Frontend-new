@@ -21,6 +21,8 @@ import {
   FaShoppingCart,
   FaArrowRight,
   FaFileExport,
+  FaChevronLeft,
+  FaChevronRight,
 } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import * as XLSX from 'xlsx';
@@ -29,7 +31,6 @@ import AlertBox from '../../services/AlertBox';
 
 const Stocks = () => {
   const [stocks, setStocks] = useState([]);
-  const [filteredStocks, setFilteredStocks] = useState([]);
   const token = localStorage.getItem('token');
   const [id, setId] = useState(0);
   const [alertBox, setAlertBox] = useState(false);
@@ -37,13 +38,22 @@ const Stocks = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [exportLoading, setExportLoading] = useState(false);
   const { setLoading } = useOutletsContext();
-  const { data, isLoading, refetch } = useGetAllStockQuery(token);
+
+  // Pagination States
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+
+  const { data, isLoading, refetch } = useGetAllStockQuery({
+    limit,
+    page,
+    search: searchTerm,
+    token
+  });
   const { refetch: saleRefetch } = useGetAllSaleQuery(token);
 
   useEffect(() => {
     const stockData = data?.data || [];
     setStocks(stockData);
-    setFilteredStocks(stockData);
   }, [data?.data]);
 
   // Helper functions
@@ -98,7 +108,7 @@ const Stocks = () => {
     setLoading(true);
     try {
       const res = await api.delete(`stock_masters/${id}`, {
-        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' },
+        headers: { Authorization: `Bearer ${token}` },
       });
       if (res.data.status === 200) {
         refetch();
@@ -116,24 +126,7 @@ const Stocks = () => {
   const handleSearch = (e) => {
     const value = e.target.value;
     setSearchTerm(value);
-    if (!value) {
-      setFilteredStocks(stocks);
-      return;
-    }
-    const filtered = stocks.filter(
-      (stock) =>
-        stock.stock_no?.toLowerCase().includes(value.toLowerCase()) ||
-        stock.stock_type_name?.toLowerCase().includes(value.toLowerCase()) ||
-        stock.from_warehouse_name?.toLowerCase().includes(value.toLowerCase()) ||
-        stock.to_warehouse_name?.toLowerCase().includes(value.toLowerCase()) ||
-        stock.stock_remark?.toLowerCase().includes(value.toLowerCase()) ||
-        getStockItems(stock).some(
-          (item) =>
-            item.item_name?.toLowerCase().includes(value.toLowerCase()) ||
-            item.item_code?.toLowerCase().includes(value.toLowerCase())
-        )
-    );
-    setFilteredStocks(filtered);
+    setPage(1); // Reset to first page on search
   };
 
   // View mode toggle
@@ -146,7 +139,7 @@ const Stocks = () => {
   const exportToExcel = () => {
     try {
       setExportLoading(true);
-      const dataToExport = searchTerm ? filteredStocks : stocks;
+      const dataToExport = stocks;
       if (dataToExport.length === 0) {
         toast.warning('No data to export');
         setExportLoading(false);
@@ -200,22 +193,6 @@ const Stocks = () => {
         XLSX.utils.book_append_sheet(workbook, itemsSheet, 'Items Details');
       }
 
-      // Sheet 3: Statistics
-      const statsData = [
-        ['STOCK REPORT'],
-        [],
-        ['Generated:', new Date().toLocaleString()],
-        ['Total Records:', dataToExport.length],
-        ['Stock In:', dataToExport.filter((s) => s.stock_type_name?.toLowerCase() === 'stock in').length],
-        ['Stock Out:', dataToExport.filter((s) => s.stock_type_name?.toLowerCase() === 'stock out').length],
-        ['Transfers:', dataToExport.filter((s) => s.stock_type_name?.toLowerCase() === 'transfer').length],
-        ['Total Items:', dataToExport.reduce((acc, s) => acc + getTotalItems(s), 0)],
-        ['Total Quantity:', dataToExport.reduce((acc, s) => acc + getTotalQuantity(s), 0)],
-        ['Total Value:', `$${dataToExport.reduce((acc, s) => acc + getTotalValue(s), 0).toFixed(2)}`],
-      ];
-      const statsSheet = XLSX.utils.aoa_to_sheet(statsData);
-      XLSX.utils.book_append_sheet(workbook, statsSheet, 'Statistics');
-
       const fileName = `Stock_Report_${new Date().toISOString().split('T')[0]}.xlsx`;
       XLSX.writeFile(workbook, fileName);
       toast.success(`Exported ${dataToExport.length} records`);
@@ -252,18 +229,6 @@ const Stocks = () => {
       </div>
     </div>
   );
-
-  const ProductImage = ({ src, alt, className }) => {
-    const [error, setError] = useState(false);
-    if (!src || error) {
-      return (
-        <div className={`${className} bg-blue-100 flex items-center justify-center`}>
-          <span className="text-blue-600 text-xl">{alt?.charAt(0) || 'P'}</span>
-        </div>
-      );
-    }
-    return <img src={src} alt={alt} className={className} onError={() => setError(true)} />;
-  };
 
   // Grid Item Card
   const GridItem = ({ stock }) => {
@@ -379,9 +344,9 @@ const Stocks = () => {
           <div className="text-xs text-gray-500">{formatDateTime(stock.created_at)}</div>
         </div>
       </td>
-      <td className="px-6 py-4">
+      {/* <td className="px-6 py-4">
         <div className="font-bold text-lg text-purple-600">${getTotalValue(stock).toFixed(2)}</div>
-      </td>
+      </td> */}
       <td className="px-6 py-4">
         <div className="flex gap-2">
           <Link to={`detail/${stock.stock_id}`} className="p-2 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200">
@@ -504,70 +469,74 @@ const Stocks = () => {
           </div>
         </div>
 
-        {/* Search Bar */}
-        <div className="rounded-lg p-1 mb-3">
-          <div className="relative max-w-xl">
+        {/* Search & Limit Bar */}
+        <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-6">
+          <div className="relative w-full md:max-w-xl">
             <IoIosSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-xl" />
             <input
               type="text"
-              placeholder="Search by stock number, warehouse, item name, or remark..."
+              placeholder="Search by stock number, warehouse, or remark..."
               value={searchTerm}
               onChange={handleSearch}
               className="w-full pl-12 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
-            <div className="absolute right-3 top-1/2 -translate-y-1/2">
-              <Badge color="blue">{filteredStocks.length} records</Badge>
-            </div>
+          </div>
+          <div className="flex items-center gap-3 bg-white px-4 py-2 rounded-lg border border-gray-200 shadow-sm">
+            <span className="text-sm text-gray-600 font-medium">Show:</span>
+            <select
+              value={limit}
+              onChange={(e) => {
+                setLimit(Number(e.target.value));
+                setPage(1);
+              }}
+              className="bg-transparent text-sm font-bold text-blue-600 focus:outline-none cursor-pointer"
+            >
+              <option value={10}>10 items</option>
+              <option value={25}>25 items</option>
+              <option value={50}>50 items</option>
+              <option value={100}>100 items</option>
+            </select>
           </div>
         </div>
 
         {/* Summary Dashboard */}
-        {filteredStocks.length > 0 && (
+        {data?.pagination && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-3">
             <StatCard
               title="Total Stock Records"
-              value={filteredStocks.length}
+              value={data.pagination.total}
               icon={<FaClipboardList className="text-blue-500" />}
               color="from-blue-50 to-blue-100"
             />
             <StatCard
-              title="Stock In Records"
-              value={filteredStocks.filter(s => s.stock_type_name?.toLowerCase() === 'stock in').length}
+              title="Current Page"
+              value={data.pagination.current_page}
               icon={<FaBoxOpen className="text-green-500" />}
               color="from-green-50 to-green-100"
             />
             <StatCard
-              title="Total Items"
-              value={filteredStocks.reduce((acc, s) => acc + getTotalItems(s), 0)}
+              title="Items on Page"
+              value={stocks.length}
               icon={<FaCubes className="text-orange-500" />}
               color="from-orange-50 to-orange-100"
             />
             <StatCard
-              title="Total Value"
-              value={`$${filteredStocks.reduce((acc, s) => acc + getTotalValue(s), 0).toFixed(2)}`}
+              title="Last Page"
+              value={data.pagination.last_page}
               icon={<FaShoppingCart className="text-purple-500" />}
               color="from-purple-50 to-purple-100"
             />
           </div>
         )}
 
-        {/* Clear Search */}
-        {searchTerm && (
-          <div className="flex justify-end mb-4">
-            <button onClick={() => setSearchTerm('')} className="text-blue-600 hover:text-blue-800 text-sm font-medium">
-              Clear search
-            </button>
-          </div>
-        )}
-
         {/* Content */}
         {isLoading ? (
           <LoadingState />
-        ) : filteredStocks.length === 0 ? (
+        ) : stocks.length === 0 ? (
           <EmptyState />
         ) : viewMode === 'grid' ? (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
-            {filteredStocks.map((stock) => (
+            {stocks.map((stock) => (
               <GridItem key={stock.stock_id} stock={stock} />
             ))}
           </div>
@@ -582,16 +551,56 @@ const Stocks = () => {
                     <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Transfer</th>
                     <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Items</th>
                     <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Date</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Total Value</th>
+                    {/* <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Total Value</th> */}
                     <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
-                  {filteredStocks.map((stock) => (
+                  {stocks.map((stock) => (
                     <ListItem key={stock.stock_id} stock={stock} />
                   ))}
                 </tbody>
               </table>
+            </div>
+          </div>
+        )}
+
+        {/* Pagination Controls */}
+        {data?.pagination && data.pagination.last_page > 1 && (
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-8 bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+            <div className="text-sm text-gray-600">
+              Showing <span className="font-bold text-gray-900">{(page - 1) * limit + 1}</span> to{' '}
+              <span className="font-bold text-gray-900">{Math.min(page * limit, data.pagination.total)}</span> of{' '}
+              <span className="font-bold text-gray-900">{data.pagination.total}</span> results
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+                disabled={page === 1}
+                className="p-2 rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                <FaChevronLeft className="text-gray-600" />
+              </button>
+              {Array.from({ length: data.pagination.last_page }, (_, i) => i + 1)
+                .filter(p => p === 1 || p === data.pagination.last_page || (p >= page - 1 && p <= page + 1))
+                .map((p, i, arr) => (
+                  <React.Fragment key={p}>
+                    {i > 0 && arr[i - 1] !== p - 1 && <span className="px-2 text-gray-400">...</span>}
+                    <button
+                      onClick={() => setPage(p)}
+                      className={`w-10 h-10 rounded-lg font-semibold transition-all ${page === p ? 'bg-blue-600 text-white shadow-md shadow-blue-200' : 'hover:bg-blue-50 text-gray-600'}`}
+                    >
+                      {p}
+                    </button>
+                  </React.Fragment>
+                ))}
+              <button
+                onClick={() => setPage(p => Math.min(data.pagination.last_page, p + 1))}
+                disabled={page === data.pagination.last_page}
+                className="p-2 rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                <FaChevronRight className="text-gray-600" />
+              </button>
             </div>
           </div>
         )}

@@ -40,7 +40,7 @@ const AddInStock = () => {
   const token = localStorage.getItem("token");
   const { setLoading } = useOutletsContext();
   const { refetch: wasteRefetch } = useGetAllWasteQuery(token);
-  const { refetch } = useGetAllStockQuery(token);
+  const { refetch } = useGetAllStockQuery({ limit: 10, page: 1, search: '', token });
   const stockRes = useGetAllStockTypesQuery(token);
   const navigator = useNavigate();
   const [searchItem, setSearchItem] = useState('');
@@ -591,7 +591,7 @@ const AddInStock = () => {
                               <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">#</th>
                               <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Item</th>
                               <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Attributes</th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Cost</th>
+                              {/* <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Cost</th> */}
                               <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Quantity</th>
                               <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Expire Date</th>
                               <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Actions</th>
@@ -638,7 +638,7 @@ const AddInStock = () => {
                                       )}
                                     </div>
                                   </td>
-                                  <td className="px-6 py-4">
+                                  {/* <td className="px-6 py-4">
                                     <Input
                                       type="number"
                                       step="any"
@@ -651,7 +651,7 @@ const AddInStock = () => {
                                       size="middle"
                                     />
 
-                                  </td>
+                                  </td> */}
                                   <td className="px-6 py-4">
                                     <Input
                                       type="number"

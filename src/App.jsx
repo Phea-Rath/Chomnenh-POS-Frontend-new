@@ -98,6 +98,8 @@ import APReport from "./components/Reports/APReport";
 import DeptAnalysis from "./components/Reports/DeptAnalysis";
 import Inventories from "./components/Inventories";
 import StockByRaw from "./components/Reports/StockByRaw";
+import StockRaws from "./components/stocks/StockRaws";
+import StockRawForm from "./views/stocks/StockRawForm";
 
 
 function ProtectedRoute({ children }) {
@@ -257,6 +259,18 @@ const router = createBrowserRouter([
       {
         path: "/inventories/stock-list",
         element: <Stocks />,
+      },
+      {
+        path: "/inventories/stock-raws",
+        element: <StockRaws />,
+      },
+      {
+        path: "/inventories/stock-raws/update/:id",
+        element: <StockRawForm />,
+      },
+      {
+        path: "/inventories/stock-raws/add",
+        element: <StockRawForm />,
       },
       {
         path: "/inventories/stock-list/add",
