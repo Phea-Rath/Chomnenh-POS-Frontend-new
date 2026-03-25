@@ -1,4 +1,4 @@
-import { FaAngleDown } from "react-icons/fa";
+import { FaAngleDown, FaSun, FaMoon } from "react-icons/fa";
 import { IoPersonCircleOutline } from "react-icons/io5";
 import { Link } from "react-router";
 import { useOutletsContext } from "./Management";
@@ -6,48 +6,76 @@ import { BiBell, BiMenuAltLeft } from "react-icons/bi";
 import { useGetUserLoginQuery } from "../../app/Features/usersSlice";
 import { useEffect, useState } from "react";
 import { Badge, Space } from "antd";
+import { useTranslation } from "react-i18next";
 
 const Header = () => {
+  const { t, i18n } = useTranslation();
   const { setSidebar, notification } = useOutletsContext();
   const token = localStorage.getItem("token");
   const uId = localStorage.getItem("userId");
   const { data, refetch } = useGetUserLoginQuery(token);
   const [profile, setProfile] = useState();
+  const [darkMode, setDarkMode] = useState(() => {
+    const saved = localStorage.getItem("darkMode");
+    return saved ? JSON.parse(saved) : false;
+  });
 
   useEffect(() => {
     setProfile(data?.data);
   }, [data]);
+
+  useEffect(() => {
+    localStorage.setItem("darkMode", JSON.stringify(darkMode));
+    if (darkMode) {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  }, [darkMode]);
+
+  const toggleLanguage = () => {
+    const newLang = i18n.language === "en" ? "kh" : "en";
+    i18n.changeLanguage(newLang);
+    localStorage.setItem("language", newLang);
+  };
+
+  useEffect(() => {
+    const savedLang = localStorage.getItem("language");
+    if (savedLang) {
+      i18n.changeLanguage(savedLang);
+    }
+  }, [i18n]);
 
   function showDrawer() {
     setSidebar(true);
   }
 
   return (
-    <header className={`fixed shadow-sm drop-shadow-md w-full ${data?.data?.role_id !== 1 && "lg:w-[calc(100vw-346px)]"} top-0 z-50 bg-white border-b border-gray-200`}>
+    <header className={`fixed shadow-sm drop-shadow-md w-full ${data?.data?.role_id !== 1 && "lg:w-[calc(100vw-346px)]"} top-0 z-50 ${darkMode ? "bg-gray-900 border-gray-700" : "bg-white border-gray-200"}`}>
       <div className="flex justify-between items-center px-4 lg:px-8 py-3">
         {/* Left Section - Logo and Menu */}
         <div className="flex items-center gap-4">
           <button
             onClick={showDrawer}
-            className="lg:hidden p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            className={`lg:hidden p-2 rounded-lg transition-colors ${darkMode ? "hover:bg-gray-800" : "hover:bg-gray-100"}`}
           >
-            <BiMenuAltLeft className="text-2xl text-blue-600" />
+            <BiMenuAltLeft className={`text-2xl ${darkMode ? "text-blue-400" : "text-blue-600"}`} />
           </button>
 
           <Link
-            to="/home"
+            to={uId == 1 ? '/dashboard' : '/home'}
             className="flex items-center gap-2 hover:opacity-80 transition-opacity"
           >
             <div className="">
               <div className="flex items-center gap-3">
-                <div className="w-5 h-5 bg-blue-600 rounded-2xl flex items-center justify-center shadow-inner shadow-blue-400">
+                <div className={`w-5 h-5 rounded-2xl flex items-center justify-center shadow-inner ${darkMode ? "bg-blue-500 shadow-blue-400" : "bg-blue-600 shadow-blue-400"}`}>
                   <span className="text-white font-black text-xl">C</span>
                 </div>
                 <div>
-                  <h1 className="text-slate-900 font-black text-xs leading-tight tracking-tight">
-                    CHOMNENH <span className="text-blue-600">POS</span>
+                  <h1 className={`font-black text-xs leading-tight tracking-tight ${darkMode ? "text-white" : "text-slate-900"}`}>
+                    CHOMNENH <span className={`${darkMode ? "text-blue-400" : "text-blue-600"}`}>POS</span>
                   </h1>
-                  <p className="text-slate-400 text-[10px] uppercase font-bold tracking-[0.1em]">Management v2.0</p>
+                  <p className={`text-[10px] uppercase font-bold tracking-[0.1em] ${darkMode ? "text-gray-400" : "text-slate-400"}`}>Management v2.0</p>
                 </div>
               </div>
             </div>
@@ -55,18 +83,36 @@ const Header = () => {
         </div>
 
         {/* Right Section - User and Notifications */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2">
+          {/* Dark Mode Toggle */}
+          <button
+            onClick={() => setDarkMode(!darkMode)}
+            className={`p-2 rounded-lg transition-colors ${darkMode ? "hover:bg-gray-800 text-yellow-400" : "hover:bg-gray-100 text-gray-600"}`}
+            title={darkMode ? "Light Mode" : "Dark Mode"}
+          >
+            {darkMode ? <FaSun className="text-xl" /> : <FaMoon className="text-xl" />}
+          </button>
+
+          {/* Language Toggle */}
+          <button
+            onClick={toggleLanguage}
+            className={`px-3 py-2 rounded-lg font-medium text-sm transition-colors ${darkMode ? "hover:bg-gray-800 bg-gray-800 text-white" : "hover:bg-gray-100 bg-gray-100 text-gray-700"}`}
+            title={i18n.language === "en" ? "Switch to Khmer" : "Switch to English"}
+          >
+            {i18n.language === "en" ? "KH" : "EN"}
+          </button>
+
           {/* Notification Bell */}
           {uId != 1 && <Link
             to="/notification"
-            className="relative p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            className={`relative p-2 rounded-lg transition-colors ${darkMode ? "hover:bg-gray-800" : "hover:bg-gray-100"}`}
           >
             <Badge
               count={notification || 0}
               size="small"
               className="flex items-center justify-center"
             >
-              <BiBell className="text-xl text-gray-600 hover:text-blue-600 transition-colors" />
+              <BiBell className={`text-xl transition-colors ${darkMode ? "text-gray-400 hover:text-blue-400" : "text-gray-600 hover:text-blue-600"}`} />
             </Badge>
           </Link>}
 
@@ -74,11 +120,11 @@ const Header = () => {
           <div className="dropdown dropdown-end">
             <button
               tabIndex={0}
-              className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-100 transition-colors"
+              className={`flex items-center gap-2 p-2 rounded-lg transition-colors ${darkMode ? "hover:bg-gray-800" : "hover:bg-gray-100"}`}
             >
               <div className="flex items-center gap-3">
                 {!profile?.image ? (
-                  <IoPersonCircleOutline className="text-3xl text-gray-500" />
+                  <IoPersonCircleOutline className={`text-3xl ${darkMode ? "text-gray-500" : "text-gray-500"}`} />
                 ) : (
                   <img
                     src={profile?.image}
@@ -87,41 +133,41 @@ const Header = () => {
                   />
                 )}
                 <div className="hidden sm:block text-left">
-                  <p className="text-sm font-medium text-gray-800">
+                  <p className={`text-sm font-medium ${darkMode ? "text-white" : "text-gray-800"}`}>
                     {profile?.username || "User"}
                   </p>
-                  <p className="text-xs text-gray-500">
+                  <p className={`text-xs ${darkMode ? "text-gray-400" : "text-gray-500"}`}>
                     {profile?.role || "Admin"}
                   </p>
                 </div>
-                <FaAngleDown className="text-sm text-gray-500" />
+                <FaAngleDown className={`text-sm ${darkMode ? "text-gray-400" : "text-gray-500"}`} />
               </div>
             </button>
 
             <ul
               tabIndex={0}
-              className="dropdown-content menu bg-white rounded-lg shadow-lg border border-gray-200 w-48 p-2 mt-2"
+              className={`dropdown-content menu rounded-lg shadow-lg border w-48 p-2 mt-2 ${darkMode ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"}`}
             >
               <li>
                 <Link
                   to={"/user_detail/" + localStorage.getItem("userId")}
-                  className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-gray-100 text-gray-700 transition-colors"
+                  className={`flex items-center gap-2 px-3 py-2 rounded-md transition-colors ${darkMode ? "hover:bg-gray-700 text-gray-200" : "hover:bg-gray-100 text-gray-700"}`}
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                   </svg>
-                  Profile
+                  {t("profile")}
                 </Link>
               </li>
               <li>
                 <a
                   href="/"
-                  className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-gray-100 text-gray-700 transition-colors"
+                  className={`flex items-center gap-2 px-3 py-2 rounded-md transition-colors ${darkMode ? "hover:bg-gray-700 text-gray-200" : "hover:bg-gray-100 text-gray-700"}`}
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                   </svg>
-                  Logout
+                  {t("logout")}
                 </a>
               </li>
             </ul>

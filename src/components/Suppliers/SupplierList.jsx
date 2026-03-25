@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { FaSearch, FaEye, FaEdit, FaTrash, FaTimes, FaPlus } from 'react-icons/fa';
+import { FaSearch, FaEye, FaEdit, FaTrash, FaTimes, FaPlus, FaMapMarkerAlt } from 'react-icons/fa';
 import { Link } from 'react-router';
 import api from '../../services/api';
 import { useGetAllSupplierQuery } from '../../../app/Features/suppliesSlice';
-import { Image } from 'antd';
+import { Image, Card, Skeleton, Badge, Tag, Empty } from 'antd';
 import { FaMapLocationDot } from "react-icons/fa6";
+import { motion, AnimatePresence } from 'framer-motion';
 
 const SupplierList = () => {
   const token = localStorage.getItem('token');
@@ -14,8 +15,9 @@ const SupplierList = () => {
   const [filteredSuppliers, setFilteredSuppliers] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
+  const [selectedSupplier, setSelectedSupplier] = useState(null);
+  const [showDetailModal, setShowDetailModal] = useState(false);
 
-  // Fetch and set suppliers
   useEffect(() => {
     if (supplierData?.data) {
       setSuppliers(supplierData.data);
@@ -23,16 +25,14 @@ const SupplierList = () => {
     }
   }, [supplierData]);
 
-  // Filter suppliers based on search term
   useEffect(() => {
     const filtered = suppliers.filter(supplier =>
       supplier.supplier_name.toLowerCase().includes(searchTerm.toLowerCase())
     );
     setFilteredSuppliers(filtered);
-    setCurrentPage(1); // Reset to first page on search
+    setCurrentPage(1);
   }, [searchTerm, suppliers]);
 
-  // Handle delete supplier
   const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this supplier?')) {
       try {
@@ -48,21 +48,33 @@ const SupplierList = () => {
     }
   };
 
-  // Pagination logic
+  const openDetail = (supplier) => {
+    setSelectedSupplier(supplier);
+    setShowDetailModal(true);
+  };
+
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentSuppliers = filteredSuppliers.slice(indexOfFirstItem, indexOfLastItem);
   const totalPages = Math.ceil(filteredSuppliers.length / itemsPerPage);
-
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
+
+  const formatAddress = (supplier) => {
+    const parts = [
+      supplier.villages,
+      supplier.communes,
+      supplier.districts,
+      supplier.provinces
+    ].filter(Boolean);
+    return parts.length > 0 ? parts.join(', ') : supplier.supplier_address || 'N/A';
+  };
 
   return (
     <div className="min-h-screen bg-transparent py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className=" mx-auto px-4 sm:px-6 lg:px-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-6">Suppliers</h1>
 
         <div className="bg-white shadow-lg rounded-lg p-6">
-          {/* Search and Add New */}
           <div className="flex justify-between items-center mb-6">
             <div className="relative w-1/3">
               <FaSearch className="absolute left-3 top-3 text-gray-400" />
@@ -82,9 +94,12 @@ const SupplierList = () => {
             </Link>
           </div>
 
-          {/* Error and Loading States */}
           {isLoading && (
-            <p className="text-center text-gray-500 py-8">Loading...</p>
+            <div className="space-y-4">
+              {[1, 2, 3].map((i) => (
+                <Skeleton key={i} active paragraph={{ rows: 1 }} />
+              ))}
+            </div>
           )}
           {error && (
             <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded-md">
@@ -92,59 +107,43 @@ const SupplierList = () => {
             </div>
           )}
 
-          {/* Suppliers Table */}
           {filteredSuppliers.length === 0 && !isLoading ? (
-            <p className="text-gray-500 text-center py-8">
-              No suppliers found.
-            </p>
+            <Empty description="No suppliers found" className="py-12" />
           ) : (
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Image
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Name
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Address
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Phone
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Email
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Actions
-                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Image</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phone</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {currentSuppliers.map((supplier) => (
-                    <tr key={supplier.supplier_id}>
-                      <td>
-                        <div className="flex items-center justify-center gap-3">
-                          <div className="avatar">
-                            <div className="mask h-12 w-12">
-                              <Image.PreviewGroup>
-                                <Image
-                                  // width={50}
-                                  className="object-cover rounded-md"
-                                  src={supplier?.image}
-                                />
-                              </Image.PreviewGroup>
-                            </div>
+                    <tr key={supplier.supplier_id} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="avatar">
+                          <div className="mask h-12 w-12">
+                            <Image.PreviewGroup>
+                              <Image className="object-cover rounded-md" src={supplier?.image} />
+                            </Image.PreviewGroup>
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                         {supplier.supplier_name}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {supplier.supplier_address}
+                      <td className="px-6 py-4 text-sm text-gray-600 max-w-xs">
+                        <div className="flex items-start gap-2">
+                          <FaMapMarkerAlt className="text-red-500 mt-1 flex-shrink-0" />
+                          <span className="line-clamp-2" title={formatAddress(supplier)}>
+                            {formatAddress(supplier)}
+                          </span>
+                        </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {supplier.supplier_tel || "N/A"}
@@ -154,28 +153,36 @@ const SupplierList = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <div className="flex space-x-2">
-                          {/* <Link
-                                                        to={`/suppliers/${supplier.supplier_id}`}
-                                                        className="text-blue-600 hover:text-blue-900"
-                                                        title="View"
-                                                    >
-                                                        <FaEye />
-                                                    </Link> */}
+                          <button
+                            onClick={() => openDetail(supplier)}
+                            className="text-blue-600 hover:text-blue-900 p-1"
+                            title="View Details"
+                          >
+                            <FaEye />
+                          </button>
                           <Link
                             to={`edit/${supplier.supplier_id}`}
-                            className="text-green-600 hover:text-green-900"
+                            className="text-green-600 hover:text-green-900 p-1"
                             title="Edit"
                           >
                             <FaEdit />
                           </Link>
                           <button
                             onClick={() => handleDelete(supplier.supplier_id)}
-                            className="text-red-600 hover:text-red-900"
+                            className="text-red-600 hover:text-red-900 p-1"
                             title="Delete"
                           >
                             <FaTrash />
                           </button>
-                          <a href={`https://www.google.com/maps?q=${supplier.supplier_address}`} target="_blank" rel="noopener noreferrer"><FaMapLocationDot className="text-blue-600 hover:text-green-900" /></a>
+                          <a
+                            href={`https://www.google.com/maps?q=${encodeURIComponent(formatAddress(supplier))}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:text-blue-900 p-1"
+                            title="View on Map"
+                          >
+                            <FaMapLocationDot />
+                          </a>
                         </div>
                       </td>
                     </tr>
@@ -185,7 +192,6 @@ const SupplierList = () => {
             </div>
           )}
 
-          {/* Pagination */}
           {totalPages > 1 && (
             <div className="flex justify-center mt-6">
               <div className="flex space-x-2">
@@ -200,10 +206,7 @@ const SupplierList = () => {
                   <button
                     key={number + 1}
                     onClick={() => paginate(number + 1)}
-                    className={`px-3 py-1 border border-gray-300 rounded-md ${currentPage === number + 1
-                      ? "bg-blue-500 text-white"
-                      : "text-gray-700"
-                      }`}
+                    className={`px-3 py-1 border border-gray-300 rounded-md ${currentPage === number + 1 ? "bg-blue-500 text-white" : "text-gray-700"}`}
                   >
                     {number + 1}
                   </button>
@@ -219,7 +222,6 @@ const SupplierList = () => {
             </div>
           )}
 
-          {/* Cancel Button */}
           <div className="flex justify-end mt-6">
             <Link
               to="/dashboard"
@@ -230,6 +232,127 @@ const SupplierList = () => {
           </div>
         </div>
       </div>
+
+      {/* Detail Modal */}
+      <AnimatePresence>
+        {showDetailModal && selectedSupplier && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+            onClick={() => setShowDetailModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="relative bg-gradient-to-r from-blue-400 to-blue-500 p-6 rounded-t-2xl">
+                <button
+                  onClick={() => setShowDetailModal(false)}
+                  className="absolute top-4 right-4 w-8 h-8 bg-white rounded-full flex items-center justify-center text-gray-600 hover:text-gray-900"
+                >
+                  <FaTimes />
+                </button>
+                <div className="flex items-center gap-4">
+                  {selectedSupplier.image ? (
+                    <img
+                      src={selectedSupplier.image}
+                      alt={selectedSupplier.supplier_name}
+                      className="w-20 h-20 rounded-xl object-cover border-4 border-white shadow-lg"
+                    />
+                  ) : (
+                    <div className="w-20 h-20 rounded-xl bg-blue-200 flex items-center justify-center border-4 border-white shadow-lg">
+                      <span className="text-3xl text-blue-600 font-bold">
+                        {selectedSupplier.supplier_name?.charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                  )}
+                  <div className="text-white">
+                    <h2 className="text-2xl font-bold">{selectedSupplier.supplier_name}</h2>
+                    <p className="text-blue-100">Supplier Details</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <Card title="Contact Information" size="small" className="shadow-sm">
+                    <div className="space-y-3">
+                      <div>
+                        <p className="text-xs text-gray-500 uppercase">Phone</p>
+                        <p className="font-medium">{selectedSupplier.supplier_tel || 'N/A'}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500 uppercase">Email</p>
+                        <p className="font-medium">{selectedSupplier.supplier_email || 'N/A'}</p>
+                      </div>
+                    </div>
+                  </Card>
+
+                  <Card title="Location Details" size="small" className="shadow-sm">
+                    <div className="space-y-3">
+                      <div>
+                        <p className="text-xs text-gray-500 uppercase">Province</p>
+                        <p className="font-medium">{selectedSupplier.provinces || 'N/A'}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500 uppercase">District</p>
+                        <p className="font-medium">{selectedSupplier.districts || 'N/A'}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500 uppercase">Commune</p>
+                        <p className="font-medium">{selectedSupplier.communes || 'N/A'}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500 uppercase">Village</p>
+                        <p className="font-medium">{selectedSupplier.villages || 'N/A'}</p>
+                      </div>
+                    </div>
+                  </Card>
+                </div>
+
+                <div className="mt-6">
+                  <Card title="Full Address" size="small" className="shadow-sm">
+                    <div className="flex items-start gap-2">
+                      <FaMapMarkerAlt className="text-red-500 mt-1 flex-shrink-0" />
+                      <p className="text-gray-700">{selectedSupplier.supplier_address || 'N/A'}</p>
+                    </div>
+                    {selectedSupplier.supplier_address && (
+                      <a
+                        href={`https://www.google.com/maps?q=${encodeURIComponent(formatAddress(selectedSupplier))}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="mt-3 inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 text-sm"
+                      >
+                        <FaMapLocationDot /> View on Google Maps
+                      </a>
+                    )}
+                  </Card>
+                </div>
+
+                <div className="flex justify-end gap-3 mt-6 pt-4 border-t">
+                  <button
+                    onClick={() => setShowDetailModal(false)}
+                    className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                  >
+                    Close
+                  </button>
+                  <Link
+                    to={`edit/${selectedSupplier.supplier_id}`}
+                    className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors flex items-center gap-2"
+                  >
+                    <FaEdit /> Edit Supplier
+                  </Link>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

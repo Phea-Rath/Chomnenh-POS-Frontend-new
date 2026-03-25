@@ -735,7 +735,7 @@ const SupplierForm = () => {
           {/* Action Buttons */}
           <div className="flex justify-end space-x-4 pt-8 mt-8 border-t border-gray-200">
             <Link
-              to="/suppliers"
+              to={-1}
               className="px-6 py-3 border border-gray-300 flex gap-2 items-center text-gray-700 rounded-lg hover:bg-gray-50 transition-all duration-200 cursor-pointer font-medium"
             >
               <FaTimes />

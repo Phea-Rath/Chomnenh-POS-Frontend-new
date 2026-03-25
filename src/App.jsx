@@ -56,6 +56,8 @@ import ExchangeRateForm from "./components/ExchangeRate";
 import Dashboard from "./components/dashboard/Dashboard";
 import CustomerList from "./components/customers/CustomerList";
 import CustomerForm from "./components/customers/CustomerForm";
+import CustomerDetail from "./components/customers/CustomerDetail";
+import SupplierDetail from "./components/Suppliers/SupplierDetail";
 import RoleList from "./components/Roles/RoleList";
 import RoleForm from "./components/Roles/RoleForm";
 import OrderInvoice from "./components/orders/OrderInvoice";
@@ -187,16 +189,20 @@ const router = createBrowserRouter([
       },
       //customers
       {
-        path: "/customers",
+        path: "/home/customers",
         element: <CustomerList />,
       },
       {
-        path: "/customers/create",
+        path: "/home/customers/create",
         element: <CustomerForm />,
       },
       {
-        path: "/customers/edit/:id",
+        path: "/home/customers/edit/:id",
         element: <CustomerForm />,
+      },
+      {
+        path: "/home/customers/detail/:id",
+        element: <CustomerDetail />,
       },
       {
         path: "/home/expenses",
@@ -462,16 +468,16 @@ const router = createBrowserRouter([
         element: <SupplierList />,
       },
       {
-        path: "/inventories/suppliers",
-        element: <SupplierList />,
-      },
-      {
         path: "/inventories/suppliers/create",
         element: <SupplierForm />,
       },
       {
         path: "/inventories/suppliers/edit/:id",
         element: <SupplierForm />,
+      },
+      {
+        path: "/inventories/suppliers/detail/:id",
+        element: <SupplierDetail />,
       },
       //roles
       {
@@ -507,15 +513,15 @@ const router = createBrowserRouter([
         element: <QuotationReceipt />,
       },
       {
-        path: "/deliver/create",
+        path: "/home/delivers/create",
         element: <DeliverForm />,
       },
       {
-        path: "/deliver/edit/:id",
+        path: "/home/delivers/edit/:id",
         element: <DeliverForm />,
       },
       {
-        path: "/delivers",
+        path: "/home/delivers",
         element: <DeliverList />,
       },
       {
@@ -711,7 +717,7 @@ function App() {
 
     if (onlineChannel) {
       Echo.private(onlineChannel).listen("OnlineEvent", (data) => {
-        toast.info(`Order tracking updated ${data.data}`);
+        // toast.info(`Order tracking updated ${data.data}`);
 
         if (token) {
           refetchSale();

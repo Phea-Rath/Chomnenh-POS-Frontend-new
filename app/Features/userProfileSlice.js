@@ -16,6 +16,9 @@ export const userProfileApi = createApi({
         updateName: builder.mutation({
             query: ({ id, itemData, path, token }) => updateData(id, itemData, path, token),
         }),
+        updateRole: builder.mutation({
+            query: ({ id, itemData, path, token }) => updateData(id, itemData, path, token),
+        }),
         updateAddress: builder.mutation({
             query: ({ id, itemData, path, token }) => updateData(id, itemData, path, token),
         }),
@@ -35,4 +38,5 @@ export const {
     useUpdateNumberPhoneMutation,
     useUpdateNameMutation,
     useUpdateAddressMutation,
+    useUpdateRoleMutation,
 } = userProfileApi;

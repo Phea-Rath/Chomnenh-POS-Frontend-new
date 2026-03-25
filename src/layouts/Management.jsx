@@ -36,7 +36,12 @@ const Management = () => {
   const [orderCount, setOrderCount] = useState(0)
   const [sidebar, setSidebar] = useState(false);
   const { data } = useGetUserLoginQuery(token);
-  const { refetch: refetchOrder } = useGetAllOrderQuery(token);
+  const { refetch: refetchOrder } = useGetAllOrderQuery({
+    token,
+    limit: 10,
+    page: 1,
+    search: ''
+  });
   const { refetch: refetchSale } = useGetAllSaleQuery({
     token,
     limit: 10,
@@ -50,7 +55,6 @@ const Management = () => {
     search: ''
   });
   const { refetch: refetchGuestOrder } = useGetOrderByUserQuery({ id: guestId, token });
-  const { refetch: refetchItemInStock } = useGetAllItemInStockQuery(token);
   const { refetch: userRefetch } = useGetAllUserQuery(token);
   const { data: permission } = useGetPermissionByIdQuery({ id: userId, token });
   const { pathname } = useLocation();

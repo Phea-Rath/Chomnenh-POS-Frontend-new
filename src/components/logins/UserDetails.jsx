@@ -3,7 +3,7 @@ import { FiEdit, FiCamera, FiCheck, FiX, FiUser, FiPhone, FiShield, FiClock, FiA
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGetAllUserQuery, useGetUserByIdQuery, useGetUserByProIdQuery, useGetUserLoginQuery } from '../../../app/Features/usersSlice';
 import { useNavigate, useParams } from 'react-router';
-import { useUpdateImageMutation, useUpdateNameMutation, useUpdateNumberPhoneMutation } from '../../../app/Features/userProfileSlice';
+import { useUpdateImageMutation, useUpdateNameMutation, useUpdateNumberPhoneMutation, useUpdateRoleMutation } from '../../../app/Features/userProfileSlice';
 import { useOutletsContext } from '../../layouts/Management';
 import { toast } from 'react-toastify';
 import { Avatar, Badge, Card, Divider, Skeleton } from 'antd';
@@ -27,18 +27,21 @@ const UserProfilePage = () => {
     const [updateImage] = useUpdateImageMutation();
     const [updateNumberPhone] = useUpdateNumberPhoneMutation();
     const [updateName] = useUpdateNameMutation();
+    const [updateRole] = useUpdateRoleMutation();
     const { refetch: userRefetch } = useGetAllUserQuery(token);
     const { data: filteredUsers } = useGetUserByProIdQuery({ id: data?.data?.profile_id, token });
 
     const [editing, setEditing] = useState({
         username: false,
         phone_number: false,
-        image: false
+        image: false,
+        role: false
     });
 
     const [tempValues, setTempValues] = useState({
         username: '',
-        phone_number: ''
+        phone_number: '',
+        role: ''
     });
 
     const [selectedImage, setSelectedImage] = useState(null);
@@ -50,7 +53,8 @@ const UserProfilePage = () => {
             setUser(data.data);
             setTempValues({
                 username: data.data.username || '',
-                phone_number: data.data.phone_number || ''
+                phone_number: data.data.phone_number || '',
+                role: data.data.role || ''
             });
         }
     }, [data]);
@@ -84,6 +88,13 @@ const UserProfilePage = () => {
                     id,
                     itemData: { phone_number: tempValues.phone_number },
                     path: "/user/number_phone",
+                    token
+                });
+            } else if (field === 'role') {
+                response = await updateRole({
+                    id,
+                    itemData: { role: tempValues.role },
+                    path: "/user/role",
                     token
                 });
             }
@@ -575,15 +586,69 @@ const UserProfilePage = () => {
                                         {/* Role and Status Cards */}
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                             <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-5">
-                                                <div className="flex items-center gap-3 mb-3">
-                                                    <div className="p-2 bg-blue-100 rounded-lg">
-                                                        <FiShield className="h-5 w-5 text-blue-600" />
+                                                <div className="flex items-center justify-between mb-3">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="p-2 bg-blue-100 rounded-lg">
+                                                            <FiShield className="h-5 w-5 text-blue-600" />
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-sm text-gray-600">Role</p>
+                                                        </div>
                                                     </div>
-                                                    <div>
-                                                        <p className="text-sm text-gray-600">Role</p>
-                                                        <p className="text-lg font-bold text-gray-800 capitalize">{user?.role}</p>
-                                                    </div>
+                                                    {!editing.role && (
+                                                        <button
+                                                            onClick={() => handleEdit('role')}
+                                                            className="text-blue-600 hover:text-blue-800 transition-colors p-2 hover:bg-blue-100 rounded-lg"
+                                                        >
+                                                            <FiEdit className="h-4 w-4" />
+                                                        </button>
+                                                    )}
                                                 </div>
+                                                <AnimatePresence mode="wait">
+                                                    {editing.role ? (
+                                                        <motion.div
+                                                            initial={{ opacity: 0, y: -10 }}
+                                                            animate={{ opacity: 1, y: 0 }}
+                                                            exit={{ opacity: 0, y: 10 }}
+                                                            className="flex items-center gap-3"
+                                                        >
+                                                            <select
+                                                                value={tempValues.role}
+                                                                onChange={(e) => setTempValues(prev => ({ ...prev, role: e.target.value }))}
+                                                                className="flex-1 border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent capitalize"
+                                                            >
+                                                                <option value="">Select Role</option>
+                                                                <option value="admin">Admin</option>
+                                                                <option value="manager">Manager</option>
+                                                                <option value="cashier">Cashier</option>
+                                                                <option value="guest">Guest</option>
+                                                            </select>
+                                                            <div className="flex gap-2">
+                                                                <button
+                                                                    onClick={() => handleSave('role')}
+                                                                    disabled={isSaving}
+                                                                    className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors disabled:opacity-50 flex items-center gap-2"
+                                                                >
+                                                                    <FiCheck className="h-4 w-4" />
+                                                                </button>
+                                                                <button
+                                                                    onClick={() => handleCancel('role')}
+                                                                    className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors flex items-center gap-2"
+                                                                >
+                                                                    <FiX className="h-4 w-4" />
+                                                                </button>
+                                                            </div>
+                                                        </motion.div>
+                                                    ) : (
+                                                        <motion.p
+                                                            initial={{ opacity: 0 }}
+                                                            animate={{ opacity: 1 }}
+                                                            className="text-lg font-bold text-gray-800 capitalize"
+                                                        >
+                                                            {user?.role}
+                                                        </motion.p>
+                                                    )}
+                                                </AnimatePresence>
                                             </div>
 
                                             <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-5">

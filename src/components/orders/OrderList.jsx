@@ -609,7 +609,7 @@ const OrderList = () => {
 
         {/* Empty State */}
         {orderItems.length === 0 && !isLoading && (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
+          <div className="bg-white rounded-xl shadow-sm border flex justify-center border-gray-200 p-12 text-center">
             <Empty
               image="https://gw.alipayobjects.com/zos/antfincdn/ZHrcdLPrvN/empty.svg"
               description={
