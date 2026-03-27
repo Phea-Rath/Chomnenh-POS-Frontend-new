@@ -29,6 +29,46 @@
   --bg-gradient: linear-gradient(0deg, var(--bg) 100%, var(--bg-light));
 }
 
+/* Light mode CSS variables */
+:root {
+  --bg-dark: hsl(0 0% 90%);
+  --bg: hsl(300 0% 95%);
+  --bg-light: hsl(300 50% 100%);
+  --text: hsl(300 0% 4%);
+  --text-muted: hsl(0 0% 28%);
+  --highlight: hsl(300 50% 100%);
+  --border: hsl(NaN 0% 50%);
+  --border-muted: hsl(340 0% 62%);
+  --primary: hsl(357 44% 32%);
+  --secondary: hsl(183 100% 9%);
+  --danger: hsl(9 21% 41%);
+  --warning: hsl(52 23% 34%);
+  --success: hsl(147 19% 36%);
+  --info: hsl(217 22% 41%);
+  --shadow: 0px 4px 4px #00000015, 0px 12px 12px #00000015;
+  --bg-gradient: linear-gradient(0deg, var(--bg) 100%, var(--bg-light));
+}
+
+/* Dark mode CSS variables */
+.dark {
+  --bg-dark: hsl(0 0% 10%);
+  --bg: hsl(0 0% 13%);
+  --bg-light: hsl(0 0% 18%);
+  --text: hsl(0 0% 95%);
+  --text-muted: hsl(0 0% 60%);
+  --highlight: hsl(0 0% 22%);
+  --border: hsl(0 0% 25%);
+  --border-muted: hsl(0 0% 40%);
+  --primary: hsl(357 44% 50%);
+  --secondary: hsl(183 100% 50%);
+  --danger: hsl(9 21% 60%);
+  --warning: hsl(52 23% 50%);
+  --success: hsl(147 19% 50%);
+  --info: hsl(217 22% 60%);
+  --shadow: 0px 4px 4px #00000040, 0px 12px 12px #00000040;
+  --bg-gradient: linear-gradient(0deg, var(--bg) 100%, var(--bg-light));
+}
+
 @layer components {
   .combined {
     box-shadow: 0px 4px 4px #00000015;
@@ -77,6 +117,224 @@
 
   .menu-bar::-webkit-scrollbar {
     display: none !important;
+  }
+
+  .dark .report-page .bg-white {
+    @apply !bg-gray-800;
+  }
+
+  .dark .report-page .bg-gray-50,
+  .dark .report-page .bg-slate-50 {
+    @apply !bg-gray-900;
+  }
+
+  .dark .report-page .border-gray-100,
+  .dark .report-page .border-gray-200,
+  .dark .report-page .border-gray-300,
+  .dark .report-page .border-slate-100,
+  .dark .report-page .border-slate-200 {
+    @apply !border-gray-700;
+  }
+
+  .dark .report-page .text-gray-900,
+  .dark .report-page .text-slate-900 {
+    @apply !text-white;
+  }
+
+  .dark .report-page .text-gray-700,
+  .dark .report-page .text-slate-700,
+  .dark .report-page .text-gray-600,
+  .dark .report-page .text-slate-600 {
+    @apply !text-gray-300;
+  }
+
+  .dark .report-page .text-gray-500,
+  .dark .report-page .text-slate-500,
+  .dark .report-page .text-slate-400,
+  .dark .report-page .text-gray-400 {
+    @apply !text-gray-400;
+  }
+
+  .dark .report-page input,
+  .dark .report-page select,
+  .dark .report-page .ant-picker,
+  .dark .report-page .ant-select-selector {
+    @apply !bg-gray-900 !text-white !border-gray-700;
+  }
+
+  .dark .report-page tbody,
+  .dark .report-page thead {
+    @apply !bg-transparent;
+  }
+
+  .dark .report-page tr:hover {
+    @apply !bg-gray-700/40;
+  }
+
+  .dark .items-page .bg-white {
+    @apply !bg-gray-800;
+  }
+
+  .dark .items-page .bg-gray-50,
+  .dark .items-page .bg-gray-100 {
+    @apply !bg-gray-900;
+  }
+
+  .dark .items-page .border-gray-100,
+  .dark .items-page .border-gray-200,
+  .dark .items-page .border-gray-300 {
+    @apply !border-gray-700;
+  }
+
+  .dark .items-page .text-gray-900,
+  .dark .items-page .text-gray-800 {
+    @apply !text-white;
+  }
+
+  .dark .items-page .text-gray-700,
+  .dark .items-page .text-gray-600 {
+    @apply !text-gray-300;
+  }
+
+  .dark .items-page .text-gray-500,
+  .dark .items-page .text-gray-400,
+  .dark .items-page .text-gray-300 {
+    @apply !text-gray-400;
+  }
+
+  .dark .items-page input,
+  .dark .items-page select,
+  .dark .items-page textarea {
+    @apply !bg-gray-900 !text-white !border-gray-700;
+  }
+
+  .dark .items-page tr:hover {
+    @apply !bg-gray-700/40;
+  }
+
+  .dark .view-page,
+  .dark .view-page > div,
+  .dark .view-page section {
+    @apply !text-white;
+  }
+
+  .dark .view-page .bg-white {
+    @apply !bg-gray-800;
+  }
+
+  .dark .view-page .bg-slate-50,
+  .dark .view-page .bg-slate-100,
+  .dark .view-page .bg-gray-50,
+  .dark .view-page .bg-[#f5f5f7] {
+    @apply !bg-gray-900;
+  }
+
+  .dark .view-page .border-slate-100,
+  .dark .view-page .border-slate-200,
+  .dark .view-page .border-gray-200,
+  .dark .view-page .border-gray-300,
+  .dark .view-page .border-[#d2d2d7],
+  .dark .view-page .border-blue-100,
+  .dark .view-page .border-amber-100,
+  .dark .view-page .border-emerald-100,
+  .dark .view-page .border-cyan-100,
+  .dark .view-page .border-violet-100,
+  .dark .view-page .border-sky-100 {
+    @apply !border-gray-700;
+  }
+
+  .dark .view-page .text-slate-900,
+  .dark .view-page .text-slate-800,
+  .dark .view-page .text-gray-900,
+  .dark .view-page .text-black {
+    @apply !text-white;
+  }
+
+  .dark .view-page .text-slate-700,
+  .dark .view-page .text-slate-600,
+  .dark .view-page .text-gray-700,
+  .dark .view-page .text-gray-600 {
+    @apply !text-gray-300;
+  }
+
+  .dark .view-page .text-slate-500,
+  .dark .view-page .text-slate-400,
+  .dark .view-page .text-gray-500,
+  .dark .view-page .text-gray-400,
+  .dark .view-page .text-gray-300 {
+    @apply !text-gray-400;
+  }
+
+  .dark .view-page input,
+  .dark .view-page select,
+  .dark .view-page textarea,
+  .dark .view-page .ant-input,
+  .dark .view-page .ant-input-affix-wrapper,
+  .dark .view-page .ant-input-number,
+  .dark .view-page .ant-select-selector,
+  .dark .view-page .input {
+    @apply !bg-gray-900 !text-white !border-gray-700;
+  }
+
+  .dark .view-page .btn-error,
+  .dark .view-page .btn-success,
+  .dark .view-page .btn {
+    @apply !border-gray-700;
+  }
+
+  .dark main .component-page,
+  .dark main .component-page > div,
+  .dark main .component-page section {
+    @apply text-white;
+  }
+
+  .dark main .component-page .bg-white {
+    @apply !bg-gray-800;
+  }
+
+  .dark main .component-page .bg-slate-50,
+  .dark main .component-page .bg-slate-100,
+  .dark main .component-page .bg-gray-50,
+  .dark main .component-page .bg-gray-100 {
+    @apply !bg-gray-900;
+  }
+
+  .dark main .component-page .border-slate-100,
+  .dark main .component-page .border-slate-200,
+  .dark main .component-page .border-gray-100,
+  .dark main .component-page .border-gray-200,
+  .dark main .component-page .border-gray-300 {
+    @apply !border-gray-700;
+  }
+
+  .dark main .component-page .text-slate-900,
+  .dark main .component-page .text-slate-800,
+  .dark main .component-page .text-gray-900,
+  .dark main .component-page .text-gray-800 {
+    @apply !text-white;
+  }
+
+  .dark main .component-page .text-slate-700,
+  .dark main .component-page .text-slate-600,
+  .dark main .component-page .text-gray-700,
+  .dark main .component-page .text-gray-600 {
+    @apply !text-gray-300;
+  }
+
+  .dark main .component-page .text-slate-500,
+  .dark main .component-page .text-gray-500,
+  .dark main .component-page .text-gray-400 {
+    @apply !text-gray-400;
+  }
+
+  .dark main .component-page input,
+  .dark main .component-page select,
+  .dark main .component-page textarea,
+  .dark main .component-page .ant-input,
+  .dark main .component-page .ant-input-affix-wrapper,
+  .dark main .component-page .ant-select-selector,
+  .dark main .component-page .ant-picker {
+    @apply !bg-gray-900 !text-white !border-gray-700;
   }
 
 }

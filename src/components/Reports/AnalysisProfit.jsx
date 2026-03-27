@@ -262,7 +262,7 @@ const ProfitAnalysis = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="min-h-screen bg-transparent p-4 md:p-6"
+            className="report-page min-h-screen bg-transparent p-4 md:p-6"
         >
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
@@ -509,3 +509,4 @@ const ProfitAnalysis = () => {
 };
 
 export default ProfitAnalysis;
+

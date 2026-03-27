@@ -8,8 +8,10 @@ import { toast } from 'react-toastify';
 import AlertBox from '../../services/AlertBox';
 import { useOutletsContext } from '../../layouts/Management';
 import { useCreateBrandMutation, useGetAllBrandQuery } from '../../../app/Features/brandsSlice';
+import { useViewText } from '../viewText';
 
 const CreateBrands = ({ onAdd }) => {
+  const { vt } = useViewText();
   const { setLoading } = useOutletsContext();
   const [alertBox, setAlertBox] = useState(false);
   const [brandData, setBrandData] = useState({ brand_name: "", created_by: 0 });
@@ -20,7 +22,7 @@ const CreateBrands = ({ onAdd }) => {
 
   const handleConfirm = async () => {
     if (!brandData.brand_name.trim()) {
-      toast.warning('Please enter a brand name');
+      toast.warning(vt('Please enter a brand name'));
       return;
     }
 
@@ -28,27 +30,27 @@ const CreateBrands = ({ onAdd }) => {
       setLoading(true);
       await createBrand({ itemData: brandData, token }).unwrap();
       refetch();
-      toast.success('Brand created successfully');
+      toast.success(vt('Brand created successfully'));
       setAlertBox(false);
       onAdd(); // Close modal
     } catch (error) {
-      toast.error(error?.data?.message || 'An error occurred while creating the brand');
+      toast.error(error?.data?.message || vt('An error occurred while creating the brand'));
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <section className="bg-white overflow-hidden">
+    <section className="view-page bg-white overflow-hidden">
       {/* Alert Confirmation */}
       <AlertBox
         isOpen={alertBox}
-        title="Confirm Creation"
-        message={`Do you want to add "${brandData.brand_name}" to your brand list?`}
+        title={vt('Confirm Creation')}
+        message={`${vt('Do you want to add')} "${brandData.brand_name}" ${vt('to your brand list?')}`}
         onConfirm={handleConfirm}
         onCancel={() => setAlertBox(false)}
-        confirmText="Confirm"
-        cancelText="Cancel"
+        confirmText={vt('Confirm')}
+        cancelText={vt('Cancel')}
       />
 
       {/* Header Section */}
@@ -58,8 +60,8 @@ const CreateBrands = ({ onAdd }) => {
             <FaTags className="text-xl" />
           </div>
           <div>
-            <h2 className="text-2xl font-black text-slate-800 leading-none">New Brand</h2>
-            <p className="text-slate-500 text-sm mt-1 font-medium">Add a new manufacturer to your inventory</p>
+            <h2 className="text-2xl font-black text-slate-800 leading-none">{vt('New Brand')}</h2>
+            <p className="text-slate-500 text-sm mt-1 font-medium">{vt('Add a new manufacturer to your inventory')}</p>
           </div>
         </div>
       </div>
@@ -69,11 +71,11 @@ const CreateBrands = ({ onAdd }) => {
         <div className="space-y-6">
           <div>
             <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 ml-1">
-              Brand Identity
+              {vt('Brand Identity')}
             </label>
             <Input
               size="large"
-              placeholder="e.g. Nike, Apple, Samsung..."
+              placeholder={vt('e.g. Nike, Apple, Samsung...')}
               value={brandData.brand_name}
               onChange={(e) => setBrandData({ ...brandData, brand_name: e.target.value })}
               className="h-14 rounded-2xl border-slate-200 bg-slate-50/50 hover:bg-white focus:bg-white transition-all font-medium text-lg px-6"
@@ -82,7 +84,7 @@ const CreateBrands = ({ onAdd }) => {
 
           <div className="bg-blue-50/50 p-4 rounded-2xl border border-blue-100/50">
             <p className="text-xs text-blue-600 font-medium leading-relaxed">
-              <strong>Tip:</strong> Ensure the brand name is unique to avoid duplicates in your reports.
+              <strong>{vt('Tip:')}</strong> {vt('Ensure the brand name is unique to avoid duplicates in your reports.')}
             </p>
           </div>
         </div>
@@ -95,7 +97,7 @@ const CreateBrands = ({ onAdd }) => {
             onClick={() => setAlertBox(true)}
             className="h-14 flex-1 rounded-2xl bg-blue-600 shadow-lg shadow-blue-200 border-none font-bold text-base order-2 sm:order-1"
           >
-            Create Brand
+            {vt('Create Brand')}
           </Button>
 
           <form method="dialog" className="order-1 sm:order-2">

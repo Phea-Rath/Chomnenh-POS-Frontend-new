@@ -35,6 +35,10 @@ const Management = () => {
   const [notification, setNotification] = useState(false);
   const [orderCount, setOrderCount] = useState(0)
   const [sidebar, setSidebar] = useState(false);
+  const [darkMode, setDarkMode] = useState(() => {
+    const saved = localStorage.getItem("darkMode");
+    return saved ? JSON.parse(saved) : false;
+  });
   const { data } = useGetUserLoginQuery(token);
   const { refetch: refetchOrder } = useGetAllOrderQuery({
     token,
@@ -69,37 +73,7 @@ const Management = () => {
     }
   }, [permission]);
 
-  // useEffect(() => {
-  //   echo.private(`my-private-channel.user.${profileId}`).listen("PrivateChannelEvent", (data) => {
-  //     // const audio = new Audio("../../public/sounds/auto.wav");
-  //     const audio = new Audio("/sounds/auto.wav");
-  //     audio.currentTime = 0; // restart from beginning
-  //     audio.play().catch((err) => console.log("🔇 Sound blocked:", err));
-  //     console.log("📡 Event received:", data); // 👈 Debug first
-  //     toast.info(`💬 New orders by ${data.data}`);
-  //     refetch();
-  //     refetchOnline();
-  //     refetchSale();
-  //     refetchItem();
-  //     refetchItemInStock();
-  //   });
-  //   echo.private(`check-online.user.${profileId}`).listen("OnlineEvent", (data) => {
-  //     // refetch();
-  //     toast.info(`💬 Order tracking updated ${data.data}`);
-  //     refetchSale();
-  //     refetchGuestOrder();
-  //     refetchOnline();
-  //     refetchOrder();
-  //   });
-  //   echo.channel("my-public-channel").listen("PublicChannelEvent", (data) => {
-  //     const audio = new Audio("/sounds/auto.wav");
-  //     audio.currentTime = 0; // restart from beginning
-  //     audio.play().catch((err) => console.log("🔇 Sound blocked:", err));
-  //     console.log("📡 Event received:", data); // 👈 Debug first
-  //     toast.info(`💬 New orders by ${data.message}`);
-  //   });
 
-  // }, []);
   useEffect(() => {
     setNotification(dataWaste?.data?.length + dataOrderOnline?.data?.length);
   }, [dataOrderOnline, dataWaste, data])
@@ -113,6 +87,15 @@ const Management = () => {
       setAlert(false);
     }, 5000)
   }, [alert]);
+
+  useEffect(() => {
+    localStorage.setItem("darkMode", JSON.stringify(darkMode));
+    if (darkMode) {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  }, [darkMode]);
   const renderAlertMessage = (message) => {
     if (!message) return "";
     if (typeof message === 'string') return message;
@@ -134,6 +117,8 @@ const Management = () => {
         loading,
         sidebar,
         setSidebar,
+        darkMode,
+        setDarkMode,
         orderCount,
         setOrderCount,
         notification,
@@ -141,12 +126,12 @@ const Management = () => {
       }}>
       <ToastContainer position="top-right" autoClose={2000} />
       {loading ? <Loading /> : ""}
-      <section className={`bg-sky-50 h-[100vh] flex`}>
-        {data?.data?.role_id !== 1 && <Sidebar />}
+      <section className={`h-[100vh] flex ${darkMode ? "bg-gray-900" : "bg-sky-50"}`}>
+        {data?.data?.role_id !== 1 && <Sidebar darkMode={darkMode} />}
         <div>
-          <Header />
+          <Header darkMode={darkMode} setDarkMode={setDarkMode} />
           <AlertMessage show={alert} message={renderAlertMessage(message)} status={alertStatus} className="z-[9999]" />
-          <main ref={topRef} className={`h-[calc(100vh)] ${data?.data?.role_id !== 1 && "lg:w-[calc(100vw-346px)]"} pt-[86px] overflow-auto m-0 !text-black w-[100vw] p-4 !bg-gray-100 `}>
+          <main ref={topRef} className={`h-[calc(100vh)] ${data?.data?.role_id !== 1 && "lg:w-[calc(100vw-346px)]"} pt-[86px] overflow-auto m-0 w-[100vw] p-4 ${darkMode ? "!bg-gray-900 !text-white" : "!bg-gray-100 !text-black"} `}>
             {/* <div className='absolute -z-0 top-0 right-0 w-2/5 h-full bg-gradient-to-b from-blue-50/50 to-transparent pointer-events-none' /> */}
             <Outlet />
           </main>

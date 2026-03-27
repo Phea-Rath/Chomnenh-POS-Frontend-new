@@ -292,7 +292,7 @@ const CreateExpanses = () => {
   // }
 
   return (
-    <section className="p-4 md:p-6 bg-gray-50 min-h-screen">
+    <section className="view-page p-4 md:p-6 bg-gray-50 min-h-screen">
       <AlertBox
         isOpen={alertBox}
         title={`Confirm Expense ${isEditMode ? 'Update' : 'Creation'}`}

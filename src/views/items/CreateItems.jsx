@@ -19,8 +19,10 @@ import { toast } from "react-toastify";
 import { useGetAllSaleQuery } from "../../../app/Features/salesSlice";
 import { IoPulseOutline } from "react-icons/io5";
 import { useGetAllAttributeQuery } from "../../../app/Features/attributesSlice";
+import { useTranslation } from "react-i18next";
 
 const ItemForm = () => {
+  const { t } = useTranslation();
   const { id } = useParams(); // Get item ID from URL if editing
   const isEditMode = Boolean(id);
   const navigator = useNavigate();
@@ -164,30 +166,30 @@ const ItemForm = () => {
 
     // Required field validation
     if (!item.name || item.name.trim() === '') {
-      newErrors.name = 'Item name is required';
+      newErrors.name = t('itemNameRequired', 'Item name is required');
     }
 
     if (!item.price || item.price === '') {
-      newErrors.price = 'Item price is required';
+      newErrors.price = t('itemPriceRequired', 'Item price is required');
     } else if (isNaN(item.price) || parseFloat(item.price) <= 0) {
-      newErrors.price = 'Item price must be a valid positive number';
+      newErrors.price = t('itemPriceValid', 'Item price must be a valid positive number');
     }
 
     if (!item.category_id || item.category_id === '') {
-      newErrors.category_id = 'Category is required';
+      newErrors.category_id = t('categoryRequired', 'Category is required');
     }
 
     if (!item.brand_id || item.brand_id === '') {
-      newErrors.brand_id = 'Brand is required';
+      newErrors.brand_id = t('brandRequired', 'Brand is required');
     }
 
     // Validate other attributes
     attributes.forEach((attr, index) => {
       if (attr.name !== "colors" && (!attr.name || attr.name.trim() === "")) {
-        newErrors[`attribute_${index}_name`] = "Attribute name is required";
+        newErrors[`attribute_${index}_name`] = t('attributeNameRequired', "Attribute name is required");
       }
       if (attr.name !== "colors" && (!attr.value || (Array.isArray(attr.value) && attr.value.length === 0))) {
-        newErrors[`attribute_${index}_value`] = "Attribute value is required";
+        newErrors[`attribute_${index}_value`] = t('attributeValueRequired', "Attribute value is required");
       }
     });
 
@@ -200,7 +202,7 @@ const ItemForm = () => {
     console.log(existingImageId);
 
     if (!validateForm()) {
-      toast.error("Please fix all validation errors before submitting");
+      toast.error(t('fixValidationErrors', "Please fix all validation errors before submitting"));
       setLoading(false);
       return;
     }
@@ -277,7 +279,7 @@ const ItemForm = () => {
         refetch();
         if (isEditMode) refetchItem();
         saleContext.refetch();
-        toast.success(response.data.message || `Item ${isEditMode ? 'updated' : 'created'} successfully`);
+        toast.success(response.data.message || t('itemSuccess', `Item ${isEditMode ? 'updated' : 'created'} successfully`));
         setLoading(false);
         navigator(-1);
         // }
@@ -285,7 +287,7 @@ const ItemForm = () => {
     } catch (error) {
       console.error("Error:", error);
       toast.error(
-        error?.response?.data?.message || `An error occurred while ${isEditMode ? 'updating' : 'creating'} the item`
+        error?.response?.data?.message || t('itemError', `An error occurred while ${isEditMode ? 'updating' : 'creating'} the item`)
       );
       setLoading(false);
     }
@@ -299,7 +301,7 @@ const ItemForm = () => {
 
     console.log(existingImageId);
     if (!validateForm()) {
-      toast.error("Please fix all validation errors before submitting");
+      toast.error(t('fixValidationErrors', "Please fix all validation errors before submitting"));
 
       const firstErrorField = Object.keys(errors)[0];
       if (firstErrorField) {
@@ -336,14 +338,14 @@ const ItemForm = () => {
       if (invalidFiles.length > 0) {
         setErrors(prev => ({
           ...prev,
-          images: `Invalid file type: ${invalidFiles.join(', ')}. Please select valid image files`
+          images: t('invalidFileType', `Invalid file type: ${invalidFiles.join(', ')}. Please select valid image files`)
         }));
       }
 
       if (oversizedFiles.length > 0) {
         setErrors(prev => ({
           ...prev,
-          images: `Files too large: ${oversizedFiles.join(', ')}. Max size 2MB each`
+          images: t('fileTooLarge', `Files too large: ${oversizedFiles.join(', ')}. Max size 2MB each`)
         }));
       }
 
@@ -395,10 +397,10 @@ const ItemForm = () => {
           <select
             value={attribute.value[0] || "false"}
             onChange={(e) => updateAttributeValue(index, e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100"
           >
-            <option value="true">True</option>
-            <option value="false">False</option>
+            <option value="true">{t('booleanTrue', 'True')}</option>
+            <option value="false">{t('booleanFalse', 'False')}</option>
           </select>
         );
       case 'select':
@@ -407,21 +409,10 @@ const ItemForm = () => {
             <textarea
               value={Array.isArray(attribute.value) ? attribute.value.join(",") : attribute.value}
               onChange={(e) => updateAttributeValue(index, e.target.value)}
-              placeholder="Enter values separated by commas (e.g., Red,Blue,Green)"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder={t('enterValuesSeparatedByCommas', "Enter values separated by commas (e.g., Red,Blue,Green)")}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100"
               rows="3"
             />
-            {/* <div className="flex flex-wrap gap-2">
-              {Array.isArray(attribute.value) &&
-                attribute.value.map((val, idx) => (
-                  <span
-                    key={idx}
-                    className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm"
-                  >
-                    {val}
-                  </span>
-                ))}
-            </div> */}
           </div>
         );
       case 'number':
@@ -431,7 +422,7 @@ const ItemForm = () => {
             onWheel={(e) => e.target.blur()}   // 👈 បិទ scroll change
             value={Array.isArray(attribute.value) ? attribute.value[0] : attribute.value || ""}
             onChange={(e) => updateAttributeValue(index, e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100"
           />
         );
       default:
@@ -440,7 +431,7 @@ const ItemForm = () => {
             type="text"
             value={Array.isArray(attribute.value) ? attribute.value[0] : attribute.value || ""}
             onChange={(e) => updateAttributeValue(index, e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100"
           />
         );
     }
@@ -448,18 +439,18 @@ const ItemForm = () => {
 
   // Helper function to get input classes with error styling
   const getInputClass = (fieldName) => {
-    const baseClass = "w-full px-4 py-2 border text-sm rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white";
+    const baseClass = "w-full px-4 py-2 border text-sm rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100";
     return errors[fieldName]
-      ? `${baseClass} border-red-500 bg-red-50`
-      : `${baseClass} border-gray-300 hover:border-gray-400`;
+      ? `${baseClass} border-red-500 dark:border-red-500 bg-red-50 dark:bg-red-900/20`
+      : `${baseClass} border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500`;
   };
 
   // Helper function to get select classes with error styling
   const getSelectClass = (fieldName) => {
-    const baseClass = "w-full px-4 py-2 border text-sm rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white";
+    const baseClass = "w-full px-4 py-2 border text-sm rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100";
     return errors[fieldName]
-      ? `${baseClass} border-red-500 bg-red-50`
-      : `${baseClass} border-gray-300 hover:border-gray-400`;
+      ? `${baseClass} border-red-500 dark:border-red-500 bg-red-50 dark:bg-red-900/20`
+      : `${baseClass} border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500`;
   };
 
   const inputRef = useRef(null);
@@ -499,25 +490,25 @@ const ItemForm = () => {
   };
 
   return (
-    <div className="min-h-screen bg-transparent py-8">
+    <div className="view-page min-h-screen bg-transparent py-8">
       <div className="mx-auto px-2">
         <AlertBox
           isOpen={alertBox}
-          title="Confirmation"
-          message={`Are you sure you want to ${isEditMode ? 'update' : 'create'} this item?`}
+          title={t('confirm', "Confirmation")}
+          message={isEditMode ? t('confirmUpdateItem', `Are you sure you want to update this item?`) : t('confirmCreateItem', `Are you sure you want to create this item?`)}
           onConfirm={handleConfirm}
           onCancel={handleCancel}
-          confirmText={isEditMode ? "Update" : "Create"}
-          cancelText="Cancel"
+          confirmText={isEditMode ? t('update', "Update") : t('create', "Create")}
+          cancelText={t('cancel', "Cancel")}
         />
 
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            {isEditMode ? 'Edit Item' : 'Create New Item'}
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+            {isEditMode ? t('editItem') : t('createNewItem')}
           </h1>
-          <p className="text-gray-600">
-            {isEditMode ? 'Update product information' : 'Add a new product to your inventory system'}
+          <p className="text-gray-600 dark:text-gray-400">
+            {isEditMode ? t('updateProductInfo', 'Update product information') : t('addNewProductToInventory', 'Add a new product to your inventory system')}
           </p>
         </div>
 
@@ -526,10 +517,10 @@ const ItemForm = () => {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Left Column - Image Upload */}
             <div className="lg:col-span-1">
-              <div className="bg-gray-50 rounded-xl shadow-sm p-6 border-2 border-dashed border-gray-300">
+              <div className="bg-gray-50 dark:bg-slate-800/50 rounded-xl shadow-sm p-6 border-2 border-dashed border-gray-300 dark:border-gray-600">
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-lg font-semibold text-gray-800">
-                    Product Images
+                  <h2 className="text-lg font-semibold text-gray-800 dark:text-white">
+                    {t('productImages')}
                   </h2>
                   {(viewImages.length > 0 || existingImages.length > 0) && (
                     <button
@@ -541,7 +532,7 @@ const ItemForm = () => {
                       className="px-3 py-1 text-sm bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors flex items-center gap-2"
                     >
                       <FaTrash className="text-xs" />
-                      Remove All
+                      {t('removeAll')}
                     </button>
                   )}
                 </div>
@@ -549,7 +540,7 @@ const ItemForm = () => {
                 {/* Existing Images */}
                 {existingImages.length > 0 && (
                   <div className="mb-4">
-                    <h3 className="text-sm font-medium text-gray-700 mb-2">Existing Images</h3>
+                    <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('existingImages')}</h3>
                     <div className="grid grid-cols-2 gap-3 mb-4">
                       {existingImages.map((image, index) => (
                         <div key={index} className="relative group">
@@ -574,7 +565,7 @@ const ItemForm = () => {
                 {/* New Images */}
                 {viewImages.length > 0 && (
                   <div className="mb-4">
-                    <h3 className="text-sm font-medium text-gray-700 mb-2">New Images</h3>
+                    <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('newImages')}</h3>
                     <div className="grid grid-cols-2 gap-3 mb-4">
                       {viewImages.map((image, index) => (
                         <div key={index} className="relative group">
@@ -605,17 +596,17 @@ const ItemForm = () => {
                   <div className={`w-full flex justify-center items-center p-4 border-2 border-dashed rounded-lg transition-all duration-200 ${errors.images
                     ? 'border-red-500 bg-red-25'
                     : viewImages.length > 0 || existingImages.length > 0
-                      ? 'border-blue-300 bg-blue-25'
-                      : 'border-gray-400 hover:border-blue-400 hover:bg-blue-25'
+                      ? 'border-blue-300 dark:border-blue-500/50 bg-blue-25 dark:bg-blue-900/20'
+                      : 'border-gray-400 dark:border-gray-600 hover:border-blue-400 dark:hover:border-blue-500 hover:bg-blue-25 dark:hover:bg-blue-900/20'
                     }`}>
                     <div className="text-center py-4">
                       <IoMdCloudUpload className="text-5xl text-blue-400 mx-auto mb-4" />
-                      <h3 className="text-lg font-medium text-gray-700 mb-2">
-                        {(viewImages.length > 0 || existingImages.length > 0) ? 'Add more images' : 'Upload product images'}
+                      <h3 className="text-lg font-medium text-gray-700 dark:text-gray-200 mb-2">
+                        {(viewImages.length > 0 || existingImages.length > 0) ? t('addMoreImages') : t('uploadProductImages')}
                       </h3>
-                      <p className="text-sm text-gray-500 mb-4">Drag and drop or click to browse multiple files</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">{t('dragAndDrop')}</p>
                       <div className="px-6 py-2 bg-blue-500 text-white rounded-lg inline-flex items-center gap-2 hover:bg-blue-600 transition-colors">
-                        Browse files
+                        {t('browseFiles')}
                       </div>
                     </div>
                   </div>
@@ -638,9 +629,9 @@ const ItemForm = () => {
                   </div>
                 )}
 
-                <p className="text-xs text-gray-500 mt-3 text-center">
-                  Max size 2MB each • JPEG, PNG, GIF, WebP
-                  <span className="text-red-500 ml-1">* Required</span>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-3 text-center">
+                  {t('maxSize2MB')}
+                  <span className="text-red-500 ml-1">* {t('required')}</span>
                 </p>
               </div>
             </div>
@@ -650,23 +641,23 @@ const ItemForm = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Basic Information */}
                 <div className="space-y-4">
-                  <div className="bg-gray-50 rounded-xl p-6 border border-gray-200 shadow-sm">
+                  <div className="bg-gray-50 dark:bg-slate-800/50 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm">
                     <div className="flex items-center gap-3 mb-4">
                       <FaTag className="text-blue-500 text-xl" />
-                      <h2 className="text-lg font-semibold text-gray-800">Basic Information</h2>
+                      <h2 className="text-lg font-semibold text-gray-800 dark:text-white">{t('basicInformation')}</h2>
                     </div>
 
                     <div className="space-y-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Item Name <span className="text-red-500">*</span>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          {t('itemName')} <span className="text-red-500">*</span>
                         </label>
                         <input
                           onChange={(e) => setItem({ ...item, name: e.target.value })}
                           value={item.name}
                           type="text"
                           className={getInputClass('name')}
-                          placeholder="Enter product name..."
+                          placeholder={t('enterProductName')}
                           data-field="name"
                         />
                         {errors.name && (
@@ -678,8 +669,8 @@ const ItemForm = () => {
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Item Code
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          {t('itemCode')}
                         </label>
                         <input
                           onChange={(e) => setItem({ ...item, code: e.target.value })}
@@ -692,8 +683,8 @@ const ItemForm = () => {
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Retail Price <span className="text-red-500">*</span>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          {t('retailPrice')} <span className="text-red-500">*</span>
                         </label>
                         <input
                           onChange={(e) => setItem({ ...item, price: e.target.value })}
@@ -715,8 +706,8 @@ const ItemForm = () => {
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Wholesale Price
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          {t('wholesalePrice')}
                         </label>
                         <input
                           onChange={(e) => setItem({ ...item, wholesale_price: e.target.value })}
@@ -734,16 +725,16 @@ const ItemForm = () => {
                   </div>
 
                   {/* Pricing & Discount */}
-                  <div className="bg-gray-50 rounded-xl p-6 border border-gray-200 shadow-sm">
+                  <div className="bg-gray-50 dark:bg-slate-800/50 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm">
                     <div className="flex items-center gap-3 mb-4">
                       <FaTag className="text-green-500 text-xl" />
-                      <h2 className="text-lg font-semibold text-gray-800">Pricing & Discount</h2>
+                      <h2 className="text-lg font-semibold text-gray-800 dark:text-white">{t('pricingAndDiscount')}</h2>
                     </div>
 
                     <div className="space-y-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Discount (%)
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          {t('discountPercentage')}
                         </label>
                         <input
                           onChange={(e) => setItem({ ...item, discount: e.target.value })}
@@ -764,16 +755,16 @@ const ItemForm = () => {
 
                 {/* Specifications */}
                 <div className="space-y-4">
-                  <div className="bg-gray-50 rounded-xl p-6 border border-gray-200 shadow-sm">
+                  <div className="bg-gray-50 dark:bg-slate-800/50 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm">
                     <div className="flex items-center gap-3 mb-4">
                       <FaBox className="text-purple-500 text-xl" />
-                      <h2 className="text-lg font-semibold text-gray-800">Specifications</h2>
+                      <h2 className="text-lg font-semibold text-gray-800 dark:text-white">{t('specifications')}</h2>
                     </div>
 
                     <div className="space-y-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Category <span className="text-red-500">*</span>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          {t('category')} <span className="text-red-500">*</span>
                         </label>
                         <select
                           onChange={(e) => setItem({ ...item, category_id: e.target.value })}
@@ -781,7 +772,7 @@ const ItemForm = () => {
                           className={getSelectClass('category_id')}
                           data-field="category_id"
                         >
-                          <option value="" disabled>Select category</option>
+                          <option value="" disabled>{t('selectCategory')}</option>
                           {categories?.map(({ category_name, category_id }, index) => (
                             <option key={index} value={category_id}>
                               {category_name}
@@ -797,8 +788,8 @@ const ItemForm = () => {
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Brand <span className="text-red-500">*</span>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          {t('brand')} <span className="text-red-500">*</span>
                         </label>
                         <select
                           onChange={(e) => setItem({ ...item, brand_id: e.target.value })}
@@ -806,7 +797,7 @@ const ItemForm = () => {
                           className={getSelectClass('brand_id')}
                           data-field="brand_id"
                         >
-                          <option value="" disabled>Select brand</option>
+                          <option value="" disabled>{t('selectBrand')}</option>
                           {brands?.map(({ brand_name, brand_id }, index) => (
                             <option key={index} value={brand_id}>
                               {brand_name}
@@ -822,8 +813,8 @@ const ItemForm = () => {
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Scale <span className="text-red-500">*</span>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          {t('scale')} <span className="text-red-500">*</span>
                         </label>
                         <select
                           onChange={(e) => setItem({ ...item, scale_id: e.target.value })}
@@ -831,7 +822,7 @@ const ItemForm = () => {
                           className={getSelectClass('scale_id')}
                           data-field="scale_id"
                         >
-                          <option value="" disabled>Select scale</option>
+                          <option value="" disabled>{t('selectScale')}</option>
                           {scales?.map(({ scale_name, scale_id }, index) => (
                             <option key={index} value={scale_id}>
                               {scale_name}
@@ -848,15 +839,15 @@ const ItemForm = () => {
 
                       {/* Color Selection - Integrated with Attributes */}
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Colors
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          {t('colors')}
                         </label>
                         <div className="relative w-full" ref={wrapperRef}>
-                          <div className={`flex border rounded-lg shadow-sm bg-white ${errors.colors ? 'border-red-500' : 'border-gray-300'
+                          <div className={`flex border rounded-lg shadow-sm bg-white dark:bg-slate-800 ${errors.colors ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
                             }`}>
                             <input
                               type="color"
-                              className="h-12 w-16 p-1 rounded-l cursor-pointer border-r border-gray-300"
+                              className="h-12 w-16 p-1 rounded-l cursor-pointer border-r border-gray-300 dark:border-gray-600 bg-white dark:bg-slate-800"
                               onChange={handleCustomColor}
                               defaultValue="#000000"
                             />
@@ -865,7 +856,7 @@ const ItemForm = () => {
                               className="flex-1 px-4 py-3 bg-blue-500 text-white rounded-r-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-300 transition-colors flex items-center justify-between"
                               onClick={() => setIsOpen(!isOpen)}
                             >
-                              <span>Pick Color</span>
+                              <span>{t('pickColor')}</span>
                               <FaPalette className="text-lg" />
                             </button>
                           </div>
@@ -884,7 +875,7 @@ const ItemForm = () => {
                           {colors.map((color, index) => (
                             <div key={index} className="relative group">
                               <div
-                                className="w-8 h-8 rounded-full border border-gray-300 shadow-sm"
+                                className="w-8 h-8 rounded-full border border-gray-300 dark:border-gray-600 shadow-sm"
                                 style={{ backgroundColor: color }}
                               />
                               <button
@@ -898,7 +889,7 @@ const ItemForm = () => {
                           ))}
                         </div>
                         {colors.length === 0 && (
-                          <p className="text-sm text-gray-500 mt-2">No colors selected yet</p>
+                          <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">{t('noColorsSelected')}</p>
                         )}
                       </div>
                     </div>
@@ -907,12 +898,12 @@ const ItemForm = () => {
               </div>
 
               {/* Attributes Section (Excluding Colors) */}
-              <div className="mt-6 bg-gray-50 rounded-xl p-6 border border-gray-200 shadow-sm">
+              <div className="mt-6 bg-gray-50 dark:bg-slate-800/50 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-3">
                     <FaBox className="text-orange-500 text-xl" />
-                    <h2 className="text-lg font-semibold text-gray-800">Product Attributes</h2>
-                    <span className="text-sm text-gray-500">(Excluding colors)</span>
+                    <h2 className="text-lg font-semibold text-gray-800 dark:text-white">{t('productAttributes')}</h2>
+                    <span className="text-sm text-gray-500 dark:text-gray-400">({t('excludingColors', 'Excluding colors')})</span>
                   </div>
                   <button
                     type="button"
@@ -920,7 +911,7 @@ const ItemForm = () => {
                     className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors flex items-center gap-2"
                   >
                     <FaPlus />
-                    Add Attribute
+                    {t('addAttribute')}
                   </button>
                 </div>
 
@@ -928,31 +919,33 @@ const ItemForm = () => {
                   {attributes.filter(attr => attr.name !== "colors").map((attribute, index) => {
                     const actualIndex = attributes.findIndex(a => a === attribute);
                     return (
-                      <div key={actualIndex} className="flex gap-3 items-start p-4 bg-white rounded-lg border border-gray-200">
-                        <div className="flex-1">
-                          <label className="block text-sm font-medium text-gray-700 mb-2">Name</label>
+                      <div key={actualIndex} className="flex flex-col md:flex-row gap-3 items-start p-4 bg-white dark:bg-slate-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                        <div className="flex-1 w-full">
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('attributeName')}</label>
                           <Select
+                            className="dark:bg-slate-800 dark:text-white"
                             style={{ width: '100%' }}
-                            placeholder="Select attribute name"
+                            placeholder={t('selectAttributeName')}
                             value={attribute.name}
                             onChange={(value) => updateAttribute(actualIndex, 'name', value)}
                             popupRender={menu => (
-                              <>
+                              <div className="dark:bg-slate-800">
                                 {menu}
-                                <Divider style={{ margin: '8px 0' }} />
+                                <Divider className="dark:bg-gray-700" style={{ margin: '8px 0' }} />
                                 <Space style={{ padding: '0 8px 4px' }}>
                                   <Input
-                                    placeholder="Enter new attribute name"
+                                    className="dark:bg-slate-700 dark:text-white dark:border-gray-600"
+                                    placeholder={t('enterNewAttributeName')}
                                     ref={inputRef}
                                     value={attributeName}
                                     onChange={onAttributeName}
                                     onKeyDown={e => e.stopPropagation()}
                                   />
-                                  <Button type="text" icon={<IoPulseOutline />} onClick={addItem}>
-                                    Add attribute
+                                  <Button className="dark:text-blue-400" type="text" icon={<IoPulseOutline />} onClick={addItem}>
+                                    {t('addAttribute')}
                                   </Button>
                                 </Space>
-                              </>
+                              </div>
                             )}
                             options={attributesAll?.filter(attr => attr.name !== "colors").map(item => ({
                               label: item.name,
@@ -963,20 +956,20 @@ const ItemForm = () => {
                             <div className="text-red-500 text-sm mt-1">{errors[`attribute_${actualIndex}_name`]}</div>
                           )}
                         </div>
-                        <div className="flex-1">
-                          <label className="block text-sm font-medium text-gray-700 mb-2">Type</label>
+                        <div className="flex-1 w-full">
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('attributeType')}</label>
                           <select
                             value={attribute.type}
                             onChange={(e) => updateAttribute(actualIndex, 'type', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100"
                           >
-                            <option value="text">Text</option>
-                            <option value="number">Number</option>
-                            <option value="boolean">Boolean</option>
+                            <option value="text">{t('text')}</option>
+                            <option value="number">{t('number')}</option>
+                            <option value="boolean">{t('boolean')}</option>
                           </select>
                         </div>
-                        <div className="flex-1">
-                          <label className="block text-sm font-medium text-gray-700 mb-2">Value</label>
+                        <div className="flex-1 w-full">
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('attributeValue')}</label>
                           {renderAttributeValueInput(attribute, actualIndex)}
                           {errors[`attribute_${actualIndex}_value`] && (
                             <div className="text-red-500 text-sm mt-1">{errors[`attribute_${actualIndex}_value`]}</div>
@@ -985,7 +978,7 @@ const ItemForm = () => {
                         <button
                           type="button"
                           onClick={() => removeAttribute(actualIndex)}
-                          className="mt-6 px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+                          className="mt-0 md:mt-7 px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors w-full md:w-auto flex justify-center"
                         >
                           <FaTrash />
                         </button>
@@ -994,9 +987,9 @@ const ItemForm = () => {
                   })}
 
                   {attributes.filter(attr => attr.name !== "colors").length === 0 && (
-                    <div className="text-center py-8 text-gray-500">
+                    <div className="text-center py-8 text-gray-500 dark:text-gray-400">
                       <FaBox className="text-4xl mx-auto mb-3 opacity-50" />
-                      <p>No additional attributes added yet. Click "Add Attribute" to get started.</p>
+                      <p>{t('noAdditionalAttributes')}</p>
                     </div>
                   )}
                 </div>
@@ -1005,15 +998,15 @@ const ItemForm = () => {
           </div>
 
           {/* Action Buttons */}
-          <div className="flex justify-end space-x-4 pt-8 mt-8 border-t border-gray-200">
+          <div className="flex justify-end space-x-4 pt-8 mt-8 border-t border-gray-200 dark:border-gray-700">
             <button
               type="button"
-              className="px-6 py-3 border border-gray-300 flex gap-2 items-center text-gray-700 rounded-lg hover:bg-gray-50 transition-all duration-200 cursor-pointer font-medium"
+              className="px-6 py-3 border border-gray-300 dark:border-gray-600 flex gap-2 items-center text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800 transition-all duration-200 cursor-pointer font-medium"
               onClick={() => navigator(-1)}
               disabled={loading}
             >
               <FaTimes />
-              Cancel
+              {t('cancel')}
             </button>
             <button
               type="button"
@@ -1022,7 +1015,7 @@ const ItemForm = () => {
               disabled={loading}
             >
               {isEditMode ? <FaEdit className="text-lg" /> : <FaSave className="text-lg" />}
-              {loading ? (isEditMode ? 'Updating...' : 'Creating...') : (isEditMode ? 'Update Item' : 'Create Item')}
+              {loading ? (isEditMode ? t('updating') : t('creating')) : (isEditMode ? t('updateItem') : t('createItem'))}
             </button>
           </div>
         </div>

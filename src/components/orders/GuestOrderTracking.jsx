@@ -29,8 +29,10 @@ import { GrRefresh } from 'react-icons/gr';
 import { IoArrowUndoCircle, IoArrowUndoCircleOutline } from 'react-icons/io5';
 import handleDownload from '../../services/imageDowload';
 import { FaCartShopping } from 'react-icons/fa6';
+import { useTranslation } from 'react-i18next';
 
 const GuestOrderTracking = () => {
+    const { t } = useTranslation();
     const navigate = useNavigate();
     const { token } = useParams();
     const profileId = localStorage.getItem('profileId');
@@ -166,10 +168,10 @@ const GuestOrderTracking = () => {
             await api.put(`/order_cancel/${selectedOrder.order_id}`, {}, {
                 headers: { Authorization: `Bearer ${gToken}` }
             });
-            toast.success('Order cancelled');
+            toast.success(t('orderCancelled'));
             refetch();
         } catch (error) {
-            toast.error('Failed to cancel');
+            toast.error(t('failedToCancelOrder'));
         } finally {
             setLoading(false);
             setCancelAlert(false);
@@ -177,10 +179,10 @@ const GuestOrderTracking = () => {
     };
 
     return (
-        <div className="p-4 md:p-6 bg-gray-200 min-h-screen">
+        <div className="component-page p-4 md:p-6 bg-gray-200 min-h-screen">
             <AlertBox
                 isOpen={cancelAlert}
-                title="Cancel Order"
+                title={t("cancelOrderTitle")}
                 message={`Cancel order ${selectedOrder?.order_no}?`}
                 onConfirm={confirmCancel}
                 onCancel={() => setCancelAlert(false)}
@@ -199,10 +201,10 @@ const GuestOrderTracking = () => {
                 onCancel={handleCloseDetails}
                 footer={[
                     <Button key="receipt" onClick={handleOpenReceipt}>
-                        Show Receipt
+                        {t('showReceipt')}
                     </Button>,
                     <Button key="close" onClick={handleCloseDetails} type="primary">
-                        Close
+                        {t('close')}
                     </Button>
                 ]}
                 width={700}
@@ -235,15 +237,15 @@ const GuestOrderTracking = () => {
                         <div className="flex flex-col items-end gap-1">
                             <div className="w-full max-w-[250px] space-y-2">
                                 <div className="flex justify-between text-gray-500">
-                                    <span>Subtotal:</span>
+                                    <span>{t('subtotal')}:</span>
                                     <span>${viewingOrder.order_subtotal.toFixed(2)}</span>
                                 </div>
                                 <div className="flex justify-between text-green-600">
-                                    <span>Discount:</span>
+                                    <span>{t('discount')}:</span>
                                     <span>-${viewingOrder.order_discount.toFixed(2)}</span>
                                 </div>
                                 <div className="flex justify-between text-gray-800 font-bold text-lg border-t pt-2">
-                                    <span>Total Amount:</span>
+                                    <span>{t('totalAmount')}:</span>
                                     <span className="text-blue-600">${viewingOrder.order_total.toFixed(2)}</span>
                                 </div>
                             </div>
@@ -256,7 +258,7 @@ const GuestOrderTracking = () => {
                 title={
                     <div className="flex items-center gap-2 text-lg">
                         <FaDollarSign className="text-blue-500" />
-                        <span>Order Receipt</span>
+                        <span>{t('orderReceipt')}</span>
                         <Button icon={<MdOutlineDownload className="text-lg !text-green-500" />} key="download" onClick={() => handleDownload(receiptRef, 'jpg', 'receipt-preorder', viewingOrder.order_no)} >
                         </Button>
                     </div>
@@ -265,7 +267,7 @@ const GuestOrderTracking = () => {
                 onCancel={handleCloseReceipt}
                 footer={[
                     <Button key="close" onClick={handleCloseReceipt} type="primary">
-                        Close
+                        {t('close')}
                     </Button>
 
                 ]}
@@ -276,8 +278,8 @@ const GuestOrderTracking = () => {
                     <div ref={receiptRef} className="bg-white px-5 rounded-lg shadow-sm max-w-md text-xs mx-auto">
                         <div className="text-center mb-6 border-b pb-4">
                             <h1 className="text-2xl font-bold">E-Store</h1>
-                            <p className="text-black">ORDER RECEIPT</p>
-                            <p className="text-black">Thank you for your purchase!</p>
+                            <p className="text-black">{t('orderReceipt').toUpperCase()}</p>
+                            <p className="text-black">{t('thankYouPurchase')}</p>
                         </div>
 
                         <div className="mb-6">
@@ -286,21 +288,21 @@ const GuestOrderTracking = () => {
                                 <span>{viewingOrder.order_no}</span>
                             </div>
                             <div className="flex justify-between mb-2">
-                                <span className="font-semibold">Order Date:</span>
+                                <span className="font-semibold">{t('orderDate')}:</span>
                                 <span>{formatReceiptDate(viewingOrder.order_date)}</span>
                             </div>
                             <div className="flex justify-between mb-2">
-                                <span className="font-semibold">Payment Method:</span>
+                                <span className="font-semibold">{t('paymentMethod')}:</span>
                                 <span className="capitalize">{viewingOrder.order_payment_method || "N/A"}</span>
                             </div>
                             <div className="flex justify-between">
-                                <span className="font-semibold">Payment Status:</span>
+                                <span className="font-semibold">{t('paymentStatus')}:</span>
                                 <span className="capitalize">{viewingOrder.order_payment_status || "N/A"}</span>
                             </div>
                         </div>
 
                         <div className="mb-6 border-t pt-4">
-                            <h2 className="font-bold mb-2">CUSTOMER INFORMATION</h2>
+                            <h2 className="font-bold mb-2">{t('customerInformation').toUpperCase()}</h2>
                             <div className="mb-1">
                                 <span className="font-semibold">Name:</span> {viewingOrder.customer_name}
                             </div>
@@ -308,19 +310,19 @@ const GuestOrderTracking = () => {
                                 <span className="font-semibold">Phone:</span> {viewingOrder.order_tel}
                             </div>
                             <div>
-                                <span className="font-semibold">Address:</span> {viewingOrder.order_address}
+                                <span className="font-semibold">{t('address')}:</span> {viewingOrder.order_address}
                             </div>
                         </div>
 
                         <div className="mb-6 border-t pt-4">
-                            <h2 className="font-bold mb-3">ORDER ITEMS</h2>
+                            <h2 className="font-bold mb-3">{t('orderItems').toUpperCase()}</h2>
                             <table className="w-full">
                                 <thead>
                                     <tr className="border-b">
-                                        <th className="text-left pb-2">Item</th>
-                                        <th className="text-right pb-2">Qty</th>
-                                        <th className="text-right pb-2">Price</th>
-                                        <th className="text-right pb-2">Total</th>
+                                        <th className="text-left pb-2">{t('item')}</th>
+                                        <th className="text-right pb-2">{t('quantity')}</th>
+                                        <th className="text-right pb-2">{t('price')}</th>
+                                        <th className="text-right pb-2">{t('total')}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -345,17 +347,17 @@ const GuestOrderTracking = () => {
 
                         <div className="border-t pt-4">
                             <div className="flex justify-between mb-2">
-                                <span className="font-semibold">Subtotal:</span>
+                                <span className="font-semibold">{t('subtotal')}:</span>
                                 <span>${parseFloat(viewingOrder.order_subtotal).toFixed(2)}</span>
                             </div>
                             {viewingOrder.order_discount > 0 && (
                                 <div className="flex justify-between mb-2">
-                                    <span className="font-semibold">Discount ($):</span>
+                                    <span className="font-semibold">{t('discount')} ($):</span>
                                     <span className="text-red-600">-${parseFloat(viewingOrder.order_discount).toFixed(2)}</span>
                                 </div>
                             )}
                             <div className="flex justify-between mb-2">
-                                <span className="font-semibold">Delivery Fee:</span>
+                                <span className="font-semibold">{t('deliveryFee')}:</span>
                                 <span>${parseFloat(viewingOrder.delivery_fee || 0).toFixed(2)}</span>
                             </div>
                             <div className="flex justify-between font-bold text-lg border-t pt-2 mt-2">
@@ -365,9 +367,9 @@ const GuestOrderTracking = () => {
                         </div>
 
                         <div className="text-center mt-8 pt-4 border-t text-black text-sm">
-                            <p>For questions about this order, please contact us</p>
-                            <p className="mt-1">Thank you for your business!</p>
-                            <p className="mt-2 text-xs">Receipt ID: {viewingOrder.order_no}</p>
+                            <p>{t('forQuestions')}</p>
+                            <p className="mt-1">{t('thankYouBusiness')}</p>
+                            <p className="mt-2 text-xs">{t('receiptId')}: {viewingOrder.order_no}</p>
                         </div>
                     </div>
                 )}
@@ -377,9 +379,9 @@ const GuestOrderTracking = () => {
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
                     <IoArrowUndoCircleOutline className='!text-md text-red-500' onClick={() => navigate(-1)} />
-                    <FaShoppingBag className="text-blue-600" /> Tracking
+                    <FaShoppingBag className="text-blue-600" /> {t('tracking')}
                 </h1>
-                <Button icon={<GrRefresh />} onClick={refetch}>Refresh</Button>
+                <Button icon={<GrRefresh />} onClick={refetch}>{t('refresh')}</Button>
             </div>
 
             {/* Orders Grid */}
@@ -389,10 +391,10 @@ const GuestOrderTracking = () => {
                     <FaCartShopping className="text-white text-2xl" />
                 </div>
                 <h1 className="text-2xl md:text-3xl font-bold text-gray-800 flex items-center gap-3">
-                    Order Tracking Management
+                    {t('orderTrackingManagement')}
                 </h1>
                 <p className="text-gray-600 mt-2">
-                    Manage all your orders services in one place
+                    {t('manageAllOrdersInOnePlace')}
                 </p>
 
 
@@ -401,7 +403,7 @@ const GuestOrderTracking = () => {
                     className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-0.5 font-medium"
                 >
                     <FaPlus className="w-5 h-5" />
-                    Order Now
+                    {t('orderNow')}
                 </button>
             </div>}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -489,7 +491,7 @@ const GuestOrderTracking = () => {
                             </div>
                             <div className="flex items-center justify-between mb-5">
                                 <div className="flex justify-between text-gray-800 font-bold text-lg border-t pt-2">
-                                    <span>Total Amount:</span>
+                                    <span>{t('totalAmount')}:</span>
                                     <span className="text-blue-600 ml-3">${order?.order_total.toFixed(2)}</span>
                                 </div>
                             </div>
@@ -499,7 +501,7 @@ const GuestOrderTracking = () => {
                                     onClick={() => handleOpenDetails(order)}
                                     className="w-full bg-blue-100 text-blue-600 py-2 rounded-lg font-medium hover:bg-blue-100 transition"
                                 >
-                                    View Item Details
+                                    {t('viewItemDetails')}
                                 </button>
 
                                 {/* {!order.is_cancelled && order.status === 1 && (

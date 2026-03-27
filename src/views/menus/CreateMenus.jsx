@@ -13,8 +13,10 @@ import {
   MENU_TYPE_OPTIONS,
   getParentMenuId,
 } from './menuFormConfig';
+import { useViewText } from '../viewText';
 
 const CreateMenus = ({ onClose, onSuccess }) => {
+  const { vt } = useViewText();
   const { setLoading } = useOutletsContext();
   const [alertBox, setAlertBox] = useState(false);
   const [iconPreview, setIconPreview] = useState(null);
@@ -70,12 +72,12 @@ const CreateMenus = ({ onClose, onSuccess }) => {
 
       if (res.status === 200) {
         permRefetch();
-        toast.success('System menu deployed');
+        toast.success(vt('System menu deployed'));
         resetForm();
         onSuccess?.(res.data?.data);
       }
     } catch (error) {
-      toast.error(error?.response?.data?.message || 'System error: Link failed');
+      toast.error(error?.response?.data?.message || vt('System error: Link failed'));
     } finally {
       setLoading(false);
     }
@@ -84,11 +86,11 @@ const CreateMenus = ({ onClose, onSuccess }) => {
   const canSubmit = menus.menu_name.trim() && menus.menu_type && menus.menu_path.trim();
 
   return (
-    <section className="bg-[#f5f5f7] rounded-lg overflow-hidden border border-[#d2d2d7] shadow-xl">
+    <section className="view-page bg-[#f5f5f7] rounded-lg overflow-hidden border border-[#d2d2d7] shadow-xl">
       <AlertBox
         isOpen={alertBox}
-        title="System Link Confirmation"
-        message={`Confirming creation of "${menus.menu_name}" routing entity?`}
+        title={vt('System Link Confirmation')}
+        message={`${vt('Confirming creation of')} "${menus.menu_name}" ${vt('routing entity?')}`}
         onConfirm={handleConfirm}
         onCancel={() => setAlertBox(false)}
       />
@@ -97,7 +99,7 @@ const CreateMenus = ({ onClose, onSuccess }) => {
       <div className="bg-white px-5 py-3 border-b border-[#d2d2d7] flex items-center justify-between">
         <div className="flex items-center gap-2">
           <FaCompass className="text-slate-500" />
-          <span className="text-[13px] font-semibold text-slate-700 tracking-tight">Navigation Interface Architect</span>
+          <span className="text-[13px] font-semibold text-slate-700 tracking-tight">{vt('Navigation Interface Architect')}</span>
         </div>
         <div className="flex gap-1.5 opacity-30">
           <div className="w-2.5 h-2.5 rounded-full bg-slate-700" />
@@ -127,7 +129,7 @@ const CreateMenus = ({ onClose, onSuccess }) => {
                   value={menus.menu_type}
                   onChange={(e) => setMenus({ ...menus, menu_type: e.target.value })}
                 >
-                  <option value="">Select System Layer</option>
+                  <option value="">{vt('Select System Layer')}</option>
                   {MENU_TYPE_OPTIONS.map((option) => (
                     <option key={option.value} value={option.value}>
                       {option.label}
@@ -169,20 +171,20 @@ const CreateMenus = ({ onClose, onSuccess }) => {
             <div className="flex flex-col sm:flex-row gap-5 items-center">
               <div className="w-24 h-24 bg-white border-2 border-dashed border-[#d2d2d7] rounded-xl flex items-center justify-center overflow-hidden relative group">
                 {iconPreview ? (
-                  <img src={iconPreview} alt="Preview" className="w-full h-full object-cover" />
+                  <img src={iconPreview} alt={vt('Preview')} className="w-full h-full object-cover" />
                 ) : (
                   <FaImage className="text-slate-200 text-3xl" />
                 )}
                 <label className="absolute inset-0 bg-black/40 text-white opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer text-[10px] font-bold">
-                  REPLACE
+                  {vt('REPLACE')}
                   <input type="file" className="hidden" accept="image/*" onChange={handleImageChange} />
                 </label>
               </div>
 
               <div className="flex-1 space-y-2 text-center sm:text-left">
-                <h4 className="text-[13px] font-bold text-slate-700">Upload SVG or PNG icon</h4>
+                <h4 className="text-[13px] font-bold text-slate-700">{vt('Upload SVG or PNG icon')}</h4>
                 <p className="text-[11px] text-slate-500 leading-relaxed max-w-xs">
-                  Upload a high-resolution icon for the sidebar. Recommended size: 64x64px.
+                  {vt('Upload a high-resolution icon for the sidebar. Recommended size: 64x64px.')}
                 </p>
                 <input
                   type="file"
@@ -197,7 +199,7 @@ const CreateMenus = ({ onClose, onSuccess }) => {
                   onClick={() => document.getElementById('icon-upload').click()}
                   className="mt-2 text-[12px] rounded border-[#d2d2d7] font-semibold"
                 >
-                  Choose File
+                  {vt('Choose File')}
                 </Button>
               </div>
             </div>
@@ -212,7 +214,7 @@ const CreateMenus = ({ onClose, onSuccess }) => {
               onClick={handleClose}
               className="px-5 py-1.5 rounded bg-white border border-[#d2d2d7] text-[12px] text-slate-600 hover:bg-slate-50 active:bg-slate-100 transition-colors font-medium"
             >
-              Discard
+              {vt('Discard')}
             </button>
           </form>
           <button
@@ -221,7 +223,7 @@ const CreateMenus = ({ onClose, onSuccess }) => {
             disabled={!canSubmit}
             className="px-6 py-1.5 rounded bg-[#007aff] border border-[#0070e0] text-[12px] text-white font-bold hover:bg-[#006ee0] active:bg-[#0062c9] shadow-sm transition-colors flex items-center gap-2"
           >
-            <FaCheck className="text-[10px]" /> Initialize Menu
+            <FaCheck className="text-[10px]" /> {vt('Initialize Menu')}
           </button>
         </div>
       </div>

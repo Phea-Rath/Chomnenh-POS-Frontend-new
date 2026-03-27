@@ -8,8 +8,10 @@ import { toast } from 'react-toastify';
 import AlertBox from '../../services/AlertBox';
 import { useOutletsContext } from '../../layouts/Management';
 import { useCreateScaleMutation, useGetAllScalesQuery } from '../../../app/Features/scalesSlice';
+import { useViewText } from '../viewText';
 
 const CreateScales = ({ onAdd }) => {
+  const { vt } = useViewText();
   const { setLoading } = useOutletsContext();
   const [alertBox, setAlertBox] = useState(false);
   const [scales, setScales] = useState({ scale_name: "", created_by: 0 });
@@ -20,7 +22,7 @@ const CreateScales = ({ onAdd }) => {
 
   const handleConfirm = async () => {
     if (!scales.scale_name.trim()) {
-      toast.warning('Please enter a scale name');
+      toast.warning(vt('Please enter a scale name'));
       return;
     }
 
@@ -32,27 +34,27 @@ const CreateScales = ({ onAdd }) => {
       // Checking for 200 status as per your original logic
       if (res.status === 200 || res) {
         refetch();
-        toast.success('Unit of measurement created');
+        toast.success(vt('Unit of measurement created'));
         onAdd(); // Close modal
       }
     } catch (error) {
-      toast.error(error?.data?.message || error?.message || 'Failed to create scale');
+      toast.error(error?.data?.message || error?.message || vt('Failed to create scale'));
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <section className="bg-white overflow-hidden">
+    <section className="view-page bg-white overflow-hidden">
       {/* Alert Confirmation */}
       <AlertBox
         isOpen={alertBox}
-        title="Confirm New Unit"
-        message={`Add "${scales.scale_name}" to your measurement units?`}
+        title={vt('Confirm New Unit')}
+        message={`${vt('Add')} "${scales.scale_name}" ${vt('to your measurement units?')}`}
         onConfirm={handleConfirm}
         onCancel={() => setAlertBox(false)}
-        confirmText="Confirm"
-        cancelText="Cancel"
+        confirmText={vt('Confirm')}
+        cancelText={vt('Cancel')}
       />
 
       {/* Header Section - Sky Blue Theme */}
@@ -62,8 +64,8 @@ const CreateScales = ({ onAdd }) => {
             <FaRulerCombined className="text-xl" />
           </div>
           <div>
-            <h2 className="text-2xl font-black text-slate-800 leading-none">New Scale</h2>
-            <p className="text-slate-500 text-sm mt-1 font-medium">Define units of measurement</p>
+            <h2 className="text-2xl font-black text-slate-800 leading-none">{vt('New Scale')}</h2>
+            <p className="text-slate-500 text-sm mt-1 font-medium">{vt('Define units of measurement')}</p>
           </div>
         </div>
       </div>
@@ -73,11 +75,11 @@ const CreateScales = ({ onAdd }) => {
         <div className="space-y-6">
           <div>
             <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 ml-1">
-              Unit Name / Measurement
+              {vt('Unit Name / Measurement')}
             </label>
             <Input
               size="large"
-              placeholder="e.g. Kilograms (kg), Liters (L), Pieces (pcs)..."
+              placeholder={vt('e.g. Kilograms (kg), Liters (L), Pieces (pcs)...')}
               value={scales.scale_name}
               onChange={(e) => setScales({ ...scales, scale_name: e.target.value, created_by: 0 })}
               className="h-14 rounded-2xl border-slate-200 bg-slate-50/50 hover:bg-white focus:bg-white transition-all font-medium text-lg px-6"
@@ -87,7 +89,7 @@ const CreateScales = ({ onAdd }) => {
           <div className="bg-sky-50/50 p-4 rounded-2xl border border-sky-100/50 flex gap-3 items-center">
             <FaWeightHanging className="text-sky-400" />
             <p className="text-xs text-sky-700 font-medium">
-              Scales ensure accuracy in stock levels and pricing calculations.
+              {vt('Scales ensure accuracy in stock levels and pricing calculations.')}
             </p>
           </div>
         </div>
@@ -100,7 +102,7 @@ const CreateScales = ({ onAdd }) => {
             onClick={() => setAlertBox(true)}
             className="h-14 flex-1 rounded-2xl bg-sky-600 hover:bg-sky-700 shadow-lg shadow-sky-100 border-none font-bold text-base order-2 sm:order-1"
           >
-            Create Scale
+            {vt('Create Scale')}
           </Button>
 
           <form method="dialog" className="order-1 sm:order-2">

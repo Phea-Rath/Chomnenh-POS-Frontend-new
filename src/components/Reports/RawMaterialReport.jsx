@@ -16,6 +16,7 @@ import { useGetRawMaterialReportMutation } from '../../../app/Features/reportsSl
 import { toast } from 'react-toastify';
 import { useGetAllRawMaterialQuery } from '../../../app/Features/RawMaterialSlice';
 import { useGetAllUserQuery } from '../../../app/Features/usersSlice';
+import { useReportText } from './reportText';
 
 const { RangePicker } = DatePicker;
 const EMPTY_REPORT_DATA = {
@@ -35,6 +36,7 @@ const EMPTY_REPORT_DATA = {
 };
 
 const RawMaterialReport = () => {
+    const { rt } = useReportText();
     const token = localStorage.getItem('token');
     const [loading, setLoading] = useState(false);
     const [form] = Form.useForm();
@@ -137,10 +139,10 @@ const RawMaterialReport = () => {
     };
 
     return (
-        <div className="p-6 bg-transparent min-h-screen">
+        <div className="report-page p-6 bg-transparent min-h-screen">
             <div className="max-w-7xl mx-auto">
                 <h1 className="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2">
-                    <StockOutlined className="text-blue-600" /> Raw Material Stock Report
+                    <StockOutlined className="text-blue-600" /> {rt("Raw Material Stock Report")}
                 </h1>
 
                 {/* Filter Section */}
@@ -176,10 +178,10 @@ const RawMaterialReport = () => {
                             </Col>
                             <Col xs={12} md={4} className="!flex !gap-2 !items-center">
                                 <Button type="primary" icon={<FilterOutlined />} htmlType="submit" className="flex-1" loading={loading}>
-                                    Filter
+                                    {rt("Get Report")}
                                 </Button>
                                 <Button icon={<ReloadOutlined />} onClick={handleReset} disabled={loading}>
-                                    Reset
+                                    {rt("Reset")}
                                 </Button>
                             </Col>
                         </Row>

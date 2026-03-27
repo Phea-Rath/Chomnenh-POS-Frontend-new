@@ -28,10 +28,12 @@ import {
 } from "react-icons/fa";
 import { toast } from "react-toastify";
 import { totalSum } from "../../services/serviceFunction";
+import { useTranslation } from "react-i18next";
 
 const { Countdown } = Statistic;
 
 const OrderList = () => {
+  const { t } = useTranslation();
   const navigator = useNavigate();
   const [orderItems, setOrderItems] = useState([]);
   const [data, setData] = useState([]);
@@ -88,11 +90,11 @@ const OrderList = () => {
       const res = await deleteOrder({ id, token });
       if (res.data.status === 200) {
         refetch();
-        toast.success(res.data.message || "Order deleted successfully!");
+        toast.success(res.data.message || t("orderDeletedSuccessfully"));
         setLoading(false);
       }
     } catch (error) {
-      toast.error(error.message || error || "Order item delete fail!");
+      toast.error(error.message || error || t("orderDeleteFailed"));
       setLoading(false);
     }
   }
@@ -104,11 +106,11 @@ const OrderList = () => {
       const res = await cancelOrder({ id, token });
       if (res.data.status === 200) {
         refetch();
-        toast.success(res.data.message || "Order canceled successfully!");
+        toast.success(res.data.message || t("orderCanceledSuccessfully"));
         setLoading(false);
       }
     } catch (error) {
-      toast.error(error.message || error || "Order item cancel fail!");
+      toast.error(error.message || error || t("orderCancelFailed"));
       setLoading(false);
     }
   }
@@ -120,11 +122,11 @@ const OrderList = () => {
       const res = await uncancelOrder({ id, token });
       if (res.data.status === 200) {
         refetch();
-        toast.success(res.data.message || "Order uncanceled successfully!");
+        toast.success(res.data.message || t("orderUncanceledSuccessfully"));
         setLoading(false);
       }
     } catch (error) {
-      toast.error(error.message || error || "Order item uncancel fail!");
+      toast.error(error.message || error || t("orderUncancelFailed"));
       setLoading(false);
     }
   }
@@ -150,9 +152,9 @@ const OrderList = () => {
   };
 
   const getStatusText = (online, isCancelled) => {
-    if (isCancelled) return "Cancelled";
-    if (online === 1) return "Online";
-    return "Direct";
+    if (isCancelled) return t("cancelled");
+    if (online === 1) return t("online");
+    return t("direct");
   };
 
   const getPaymentStatusColor = (online) => {
@@ -176,7 +178,6 @@ const OrderList = () => {
   };
 
   const getItemsSummary = (items) => {
-    console.log(items);
     if (!items?.length || items?.length == 0) {
       return { totalItems: 0, totalValue: 0 };
     }
@@ -197,32 +198,32 @@ const OrderList = () => {
       {/* Alert Boxes */}
       <AlertBox
         isOpen={alertBox}
-        title="Delete Order"
-        message="Are you sure you want to delete this order? This action cannot be undone."
+        title={t("deleteOrderTitle")}
+        message={t("deleteOrderMessage")}
         onConfirm={handleConfirm}
         onCancel={handleCancel}
-        confirmText="Delete"
-        cancelText="Cancel"
+        confirmText={t("delete")}
+        cancelText={t("cancel")}
         confirmColor="error"
       />
       <AlertBox
         isOpen={alertBoxCancel}
-        title="Cancel Order"
-        message="Are you sure you want to cancel this order?"
+        title={t("cancelOrderTitle")}
+        message={t("cancelOrderMessage")}
         onConfirm={handleCancelOrder}
         onCancel={handleCancel}
-        confirmText="Cancel Order"
-        cancelText="Keep Order"
+        confirmText={t("cancelOrderAction")}
+        cancelText={t("keepOrder")}
         confirmColor="warning"
       />
       <AlertBox
         isOpen={alertBoxUncancel}
-        title="Uncancel Order"
-        message="Are you sure you want to uncancel this order?"
+        title={t("uncancelOrderTitle")}
+        message={t("uncancelOrderMessage")}
         onConfirm={handleUncancelOrder}
         onCancel={handleCancel}
-        confirmText="Uncancel Order"
-        cancelText="Keep Cancelled"
+        confirmText={t("uncancelOrder")}
+        cancelText={t("keepCancelled")}
         confirmColor="info"
       />
 
@@ -230,30 +231,30 @@ const OrderList = () => {
         {/* Header Section */}
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-8 gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-800 mb-2">Order List</h1>
-            <p className="text-gray-600">Manage and track all customer orders</p>
+            <h1 className="text-3xl font-bold text-gray-800 dark:text-white mb-2">{t("orderList")}</h1>
+            <p className="text-gray-600 dark:text-gray-400">{t("manageTrackOrders")}</p>
           </div>
 
           <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
             {/* View Mode Toggle */}
-            <div className="flex bg-white rounded-lg border border-gray-200 p-1">
-              <Tooltip title="Grid View">
+            <div className="flex rounded-lg border border-gray-200 bg-white p-1 dark:border-gray-700 dark:bg-gray-800">
+              <Tooltip title={t("gridView")}>
                 <button
                   onClick={() => handleViewModeChange("grid")}
                   className={`p-2 rounded-md transition-all duration-200 ${viewMode === "grid"
-                    ? "bg-blue-100 text-blue-600"
-                    : "text-gray-500 hover:text-gray-700"
+                    ? "bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-300"
+                    : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
                     }`}
                 >
                   <IoIosGrid size={20} />
                 </button>
               </Tooltip>
-              <Tooltip title="List View">
+              <Tooltip title={t("listView")}>
                 <button
                   onClick={() => handleViewModeChange("list")}
                   className={`p-2 rounded-md transition-all duration-200 ${viewMode === "list"
-                    ? "bg-blue-100 text-blue-600"
-                    : "text-gray-500 hover:text-gray-700"
+                    ? "bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-300"
+                    : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
                     }`}
                 >
                   <IoIosList size={20} />
@@ -263,58 +264,58 @@ const OrderList = () => {
 
             <Link to="/orders">
               <button className="btn btn-success bg-green-600 border-green-600 hover:bg-green-700 text-white font-semibold px-6 py-2 rounded-lg transition-all duration-200">
-                Add New Order
+                {t("addNewOrder")}
               </button>
             </Link>
           </div>
         </div>
 
         {/* Search Bar */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-6">
           <div className="relative max-w-md">
-            <IoIosSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-xl" />
+            <IoIosSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 text-xl" />
             <input
               type="text"
-              placeholder="Search orders by order number, customer name, or phone..."
+              placeholder={t("searchOrdersPlaceholder")}
               onChange={onSearch}
-              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+              className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-700 rounded-lg bg-white text-gray-900 dark:bg-gray-900 dark:text-white dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
             />
           </div>
         </div>
 
         {/* Results Count */}
         <div className="flex justify-between items-center mb-4">
-          <span className="text-gray-700 font-medium">
-            {orderItems.length} orders found
+          <span className="text-gray-700 dark:text-gray-300 font-medium">
+            {orderItems.length} {t("ordersFound")}
           </span>
         </div>
 
         {orderItems.length > 0 && (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-6">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-center">
               <div>
                 <div className="text-2xl font-bold text-green-600">
                   ${formatCurrency(totalSum(orderItems, "order_total"))}
                 </div>
-                <div className="text-sm text-gray-600">Total Sales</div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">{t("totalSales")}</div>
               </div>
               <div>
                 <div className="text-2xl font-bold text-blue-600">
                   ${formatCurrency(totalSum(orderItems, "payment"))}
                 </div>
-                <div className="text-sm text-gray-600">Total Paid</div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">{t("totalPaid")}</div>
               </div>
               <div>
                 <div className="text-2xl font-bold text-orange-600">
                   ${formatCurrency(totalSum(orderItems, "balance"))}
                 </div>
-                <div className="text-sm text-gray-600">Total Balance</div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">{t("totalBalance")}</div>
               </div>
               <div>
                 <div className="text-2xl font-bold text-purple-600">
                   {orderItems.length}
                 </div>
-                <div className="text-sm text-gray-600">Total Orders</div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">{t("totalOrders")}</div>
               </div>
             </div>
           </div>
@@ -333,7 +334,7 @@ const OrderList = () => {
                   transition={{ duration: 0.3, delay: index * 0.1 }}
                 >
                   <Card
-                    className={`h-full border rounded-xl shadow-sm hover:shadow-sm transition-all duration-300 overflow-hidden ${order.is_cancelled ? "border-red-200 bg-red-50" : "border-gray-200"
+                    className={`h-full border rounded-xl shadow-sm hover:shadow-sm transition-all duration-300 overflow-hidden ${order.is_cancelled ? "border-red-200 bg-red-50 dark:border-red-900 dark:bg-red-950/30" : "border-gray-200 dark:border-gray-700 dark:bg-gray-800"
                       }`}
                   >
                     {/* Header */}
@@ -344,8 +345,8 @@ const OrderList = () => {
                           color={getStatusColor(order.online, order.is_cancelled)}
                           className="mb-2"
                         />
-                        <h3 className="font-bold text-lg text-gray-800">{order.order_no}</h3>
-                        <p className="text-sm text-gray-500">{order.order_date}</p>
+                        <h3 className="font-bold text-lg text-gray-800 dark:text-white">{order.order_no}</h3>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">{order.order_date}</p>
                       </div>
                       <Tag color={getSaleTypeColor(order.sale_type)}>
                         {order.sale_type.toUpperCase()}
@@ -355,48 +356,48 @@ const OrderList = () => {
                     {/* Customer Info */}
                     <div className="space-y-2 mb-4">
                       <div className="flex items-center gap-2">
-                        <FaUser className="text-gray-400" />
-                        <span className="font-medium">{order.customer_name}</span>
+                        <FaUser className="text-gray-400 dark:text-gray-500" />
+                        <span className="font-medium text-gray-800 dark:text-gray-100">{order.customer_name}</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <FaPhone className="text-gray-400" />
-                        <span>{order.order_tel}</span>
+                        <FaPhone className="text-gray-400 dark:text-gray-500" />
+                        <span className="text-gray-700 dark:text-gray-300">{order.order_tel}</span>
                       </div>
                       {order.order_address && (
                         <div className="flex items-center gap-2">
-                          <FaMapMarkerAlt className="text-gray-400" />
-                          <span className="text-sm text-gray-600 truncate">{order.order_address}</span>
+                          <FaMapMarkerAlt className="text-gray-400 dark:text-gray-500" />
+                          <span className="text-sm text-gray-600 dark:text-gray-400 truncate">{order.order_address}</span>
                         </div>
                       )}
                     </div>
 
                     {/* Items Summary */}
-                    <div className="bg-gray-50 rounded-lg p-3 mb-4">
-                      <div className="flex justify-between items-center text-sm">
+                    <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-3 mb-4">
+                      <div className="flex justify-between items-center text-sm text-gray-700 dark:text-gray-300">
                         <div className="flex items-center gap-1">
-                          <FaShoppingBag className="text-gray-400" />
-                          <span>{itemsSummary?.totalItems} items</span>
+                          <FaShoppingBag className="text-gray-400 dark:text-gray-500" />
+                          <span>{itemsSummary?.totalItems} {t("itemCount")}</span>
                         </div>
                         <span className="font-semibold">${formatCurrency(itemsSummary?.totalValue)}</span>
                       </div>
                     </div>
 
                     {/* Financial Info */}
-                    <div className="space-y-2 mb-4">
+                    <div className="space-y-2 mb-4 text-gray-700 dark:text-gray-300">
                       <div className="flex justify-between text-sm">
-                        <span>Subtotal:</span>
+                        <span>{t("subtotalLabel")}:</span>
                         <span>${formatCurrency(order.order_subtotal)}</span>
                       </div>
                       <div className="flex justify-between text-sm">
-                        <span>Discount:</span>
+                        <span>{t("discount")}:</span>
                         <span className="text-red-600">-${formatCurrency(order.order_discount)}</span>
                       </div>
                       <div className="flex justify-between text-sm">
-                        <span>Delivery:</span>
+                        <span>{t("delivery")}:</span>
                         <span>${formatCurrency(order.delivery_fee)}</span>
                       </div>
-                      <div className="flex justify-between font-semibold border-t pt-2">
-                        <span>Total:</span>
+                      <div className="flex justify-between font-semibold border-t border-gray-200 dark:border-gray-700 pt-2">
+                        <span>{t("total")}:</span>
                         <span className="text-green-600">${formatCurrency(order.order_total)}</span>
                       </div>
                     </div>
@@ -407,14 +408,14 @@ const OrderList = () => {
                         {order.order_payment_status.toUpperCase()}
                       </Tag>
                       <div className="text-right">
-                        <div className="text-sm text-gray-600">Paid: ${formatCurrency(order.payment)}</div>
-                        <div className="text-sm text-gray-600">Balance: ${formatCurrency(order.balance)}</div>
+                        <div className="text-sm text-gray-600 dark:text-gray-400">{t("paidAmount")}: ${formatCurrency(order.payment)}</div>
+                        <div className="text-sm text-gray-600 dark:text-gray-400">{t("remainingBalance")}: ${formatCurrency(order.balance)}</div>
                       </div>
                     </div>
 
                     {/* Action Buttons */}
                     <div className="flex gap-2">
-                      <Tooltip title="View Details">
+                      <Tooltip title={t("details")}>
                         <button
                           onClick={() => {
                             order.sale_type === "sale"
@@ -424,12 +425,12 @@ const OrderList = () => {
                           className="flex-1 bg-blue-500 text-white py-2 px-3 rounded-lg hover:bg-blue-600 transition-colors text-sm flex items-center justify-center gap-1"
                         >
                           <FaReceipt />
-                          Details
+                          {t("details")}
                         </button>
                       </Tooltip>
 
                       {!order.is_cancelled && order.online !== 1 && (
-                        <Tooltip title="Edit Order">
+                        <Tooltip title={t("editOrder")}>
                           <button
                             onClick={() => navigator("edit/" + order.order_id)}
                             className="p-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
@@ -440,7 +441,7 @@ const OrderList = () => {
                       )}
 
                       {!order.is_cancelled ? (
-                        <Tooltip title="Cancel Order">
+                        <Tooltip title={t("cancelOrderAction")}>
                           <button
                             onClick={() => handleOrderCancel(order.order_id)}
                             className="p-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
@@ -449,7 +450,7 @@ const OrderList = () => {
                           </button>
                         </Tooltip>
                       ) : (
-                        <Tooltip title="Uncancel Order">
+                        <Tooltip title={t("uncancelOrder")}>
                           <button
                             onClick={() => handleOrderUncancel(order.order_id)}
                             className="p-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
@@ -459,7 +460,7 @@ const OrderList = () => {
                         </Tooltip>
                       )}
 
-                      <Tooltip title="Delete Order">
+                      <Tooltip title={t("deleteOrder")}>
                         <button
                           onClick={() => handleDelete(order.order_id)}
                           className="p-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
@@ -478,29 +479,29 @@ const OrderList = () => {
 
         {/* List View */}
         {viewMode === "list" && (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-gray-50 border-b border-gray-200">
+                <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
                   <tr>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Order</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Customer</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Date</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Items</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Total</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Payment</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Status</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Actions</th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t("order")}</th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t("customer")}</th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t("date")}</th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t("items")}</th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t("total")}</th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t("paymentStatus")}</th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t("status")}</th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t("actions")}</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-200">
+                <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                   {orderItems.map((order) => {
                     const itemsSummary = getItemsSummary(order.items);
                     return (
-                      <tr key={order.order_id} className="hover:bg-gray-50 transition-colors">
+                      <tr key={order.order_id} className="hover:bg-gray-50 dark:hover:bg-gray-900/60 transition-colors">
                         <td className="px-6 py-4">
                           <div>
-                            <div className="font-semibold text-gray-900">{order.order_no}</div>
+                            <div className="font-semibold text-gray-900 dark:text-white">{order.order_no}</div>
                             <Tag color={getSaleTypeColor(order.sale_type)} className="!m-0 mt-1">
                               {order.sale_type}
                             </Tag>
@@ -508,17 +509,17 @@ const OrderList = () => {
                         </td>
                         <td className="px-6 py-4">
                           <div>
-                            <div className="font-medium text-gray-900">{order.customer_name}</div>
-                            <div className="text-sm text-gray-500">{order.order_tel}</div>
+                            <div className="font-medium text-gray-900 dark:text-white">{order.customer_name}</div>
+                            <div className="text-sm text-gray-500 dark:text-gray-400">{order.order_tel}</div>
                           </div>
                         </td>
                         <td className="px-6 py-4">
-                          <div className="text-sm text-gray-900">{order.order_date}</div>
+                          <div className="text-sm text-gray-900 dark:text-gray-200">{order.order_date}</div>
                         </td>
                         <td className="px-6 py-4">
-                          <div className="text-sm">
-                            <div className="font-medium">{itemsSummary.totalItems} items</div>
-                            <div className="text-gray-500">${formatCurrency(itemsSummary.totalValue)}</div>
+                          <div className="text-sm text-gray-700 dark:text-gray-300">
+                            <div className="font-medium">{itemsSummary.totalItems} {t("itemCount")}</div>
+                            <div className="text-gray-500 dark:text-gray-400">${formatCurrency(itemsSummary.totalValue)}</div>
                           </div>
                         </td>
                         <td className="px-6 py-4">
@@ -531,8 +532,8 @@ const OrderList = () => {
                             <Tag color={getPaymentStatusColor(order.order_payment_status)}>
                               {order.order_payment_status}
                             </Tag>
-                            <div className="text-xs text-gray-500 mt-1">
-                              Paid: ${formatCurrency(order.payment)}
+                            <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                              {t("paidAmount")}: ${formatCurrency(order.payment)}
                             </div>
                           </div>
                         </td>
@@ -544,24 +545,24 @@ const OrderList = () => {
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex gap-2">
-                            <Tooltip title="View Details">
+                            <Tooltip title={t("details")}>
                               <button
                                 onClick={() => {
                                   order.sale_type === "sale"
                                     ? navigator("receipt/" + order.order_id)
                                     : navigator("invoice/" + order.order_id);
                                 }}
-                                className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                className="p-2 text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-950/40 rounded-lg transition-colors"
                               >
                                 <FaReceipt />
                               </button>
                             </Tooltip>
 
                             {!order.is_cancelled && order.online !== 1 && (
-                              <Tooltip title="Edit Order">
+                              <Tooltip title={t("editOrder")}>
                                 <button
                                   onClick={() => navigator("edit/" + order.order_id)}
-                                  className="p-2 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
+                                  className="p-2 text-gray-600 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-700 rounded-lg transition-colors"
                                 >
                                   <FaEdit />
                                 </button>
@@ -569,29 +570,29 @@ const OrderList = () => {
                             )}
 
                             {order?.order_payment_status === 'cod' && (!order.is_cancelled ? (
-                              <Tooltip title="Cancel Order">
+                              <Tooltip title={t("cancelOrderAction")}>
                                 <button
                                   onClick={() => handleOrderCancel(order.order_id)}
-                                  className="p-2 text-orange-600 hover:bg-orange-50 rounded-lg transition-colors"
+                                  className="p-2 text-orange-600 hover:bg-orange-50 dark:text-orange-400 dark:hover:bg-orange-950/40 rounded-lg transition-colors"
                                 >
                                   <FaBan />
                                 </button>
                               </Tooltip>
                             ) : (
-                              <Tooltip title="Uncancel Order">
+                              <Tooltip title={t("uncancelOrder")}>
                                 <button
                                   onClick={() => handleOrderUncancel(order.order_id)}
-                                  className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                  className="p-2 text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-950/40 rounded-lg transition-colors"
                                 >
                                   <FaUndo />
                                 </button>
                               </Tooltip>
                             ))}
 
-                            <Tooltip title="Delete Order">
+                            <Tooltip title={t("deleteOrder")}>
                               <button
                                 onClick={() => handleDelete(order.order_id)}
-                                className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                className="p-2 text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/40 rounded-lg transition-colors"
                               >
                                 <FaTrash />
                               </button>
@@ -609,21 +610,21 @@ const OrderList = () => {
 
         {/* Empty State */}
         {orderItems.length === 0 && !isLoading && (
-          <div className="bg-white rounded-xl shadow-sm border flex justify-center border-gray-200 p-12 text-center">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border flex justify-center border-gray-200 dark:border-gray-700 p-12 text-center">
             <Empty
               image="https://gw.alipayobjects.com/zos/antfincdn/ZHrcdLPrvN/empty.svg"
               description={
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">No orders found</h3>
-                  <p className="text-gray-500">
-                    {data.length === 0 ? "Get started by creating your first order" : "No orders match your search criteria"}
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">{t("noOrdersFound")}</h3>
+                  <p className="text-gray-500 dark:text-gray-400">
+                    {data.length === 0 ? t("getStartedByCreatingFirstOrder") : t("noOrdersMatchSearch")}
                   </p>
                 </div>
               }
             >
               <Link to="/orders">
                 <Button type="primary" size="large" icon={<FaShoppingBag />}>
-                  Create First Order
+                  {t("createFirstOrder")}
                 </Button>
               </Link>
             </Empty>

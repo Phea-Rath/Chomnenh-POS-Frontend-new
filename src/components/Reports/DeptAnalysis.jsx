@@ -12,6 +12,7 @@ import {
 } from 'recharts';
 import { useGetDebtAnalysisMutation } from '../../../app/Features/reportsSlice';
 import { toast } from 'react-toastify';
+import { useReportText } from './reportText';
 
 const EMPTY_REPORT = {
     start_date: '',
@@ -30,6 +31,7 @@ const EMPTY_REPORT = {
 };
 
 const DeptAnalysis = () => {
+    const { rt } = useReportText();
     const token = localStorage.getItem('token');
     const [getDebtAnalysis] = useGetDebtAnalysisMutation();
 
@@ -153,10 +155,10 @@ const DeptAnalysis = () => {
     }, [reportData]);
 
     return (
-        <div className="min-h-screen bg-transparent p-2 md:p-4">
+        <div className="report-page min-h-screen bg-transparent p-2 md:p-4">
             <div className="max-w-7xl mx-auto">
                 <div className="mb-6">
-                    <h1 className="text-2xl font-bold text-slate-900">Debt Analysis Dashboard</h1>
+                    <h1 className="text-2xl font-bold text-slate-900">{rt("Debt Analysis Dashboard")}</h1>
                     <p className="text-slate-500 text-sm mt-1">Monitor receivables, payables, and liquidity trends</p>
                 </div>
 
@@ -197,7 +199,7 @@ const DeptAnalysis = () => {
                                 className="w-full flex items-center justify-center gap-2 bg-blue-600 text-white px-5 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 <FiSearch size={16} />
-                                {loading ? 'Loading...' : 'Get Report'}
+                                {loading ? rt('Loading...') : rt('Get Report')}
                             </button>
                         </div>
                     </div>
@@ -343,3 +345,4 @@ const DeptAnalysis = () => {
 };
 
 export default DeptAnalysis;
+

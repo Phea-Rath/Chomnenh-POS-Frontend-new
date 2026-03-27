@@ -271,7 +271,7 @@ const StockTransfer = () => {
 
 
   return (
-    <section className='p-6 bg-transparent min-h-screen'>
+    <section className='view-page p-6 bg-transparent min-h-screen'>
       <AlertBox
         isOpen={alertBox}
         title="Confirm Stock Transfer"

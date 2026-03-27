@@ -4,7 +4,9 @@ import AlertBox from '../../services/AlertBox';
 import { useGetAllExpanseTypesQuery, useUpdateExpanseTypeMutation } from '../../../app/Features/expenseTypesSlice';
 import { toast } from 'react-toastify';
 import api from '../../services/api';
+import { useViewText } from '../viewText';
 const UpdateExpanseType = ({ onAdd, data }) => {
+  const { vt } = useViewText();
   const { setLoading, loading, setAlert, setMessage, setAlertStatus } = useOutletsContext();
   const [alertBox, setAlertBox] = useState(false);
   const token = localStorage.getItem('token');
@@ -26,13 +28,13 @@ const UpdateExpanseType = ({ onAdd, data }) => {
         refetch();
         onAdd();
         setLoading(false);
-        toast.success(response.data.message || 'Expanse type updated successfully');
+        toast.success(response.data.message || vt('Expanse type updated successfully'));
       } else {
-        toast.error(response.data.message || 'Failed to update expense type');
+        toast.error(response.data.message || vt('Failed to update expense type'));
         setAlertBox(false);
       }
     } catch (error) {
-      toast.error(error?.message || error || 'An error occurred while updating the expense_type');
+      toast.error(error?.message || error || vt('An error occurred while updating the expense_type'));
       setLoading(false);
       setAlertBox(false);
     }
@@ -48,30 +50,30 @@ const UpdateExpanseType = ({ onAdd, data }) => {
 
 
   return (
-    <section>
+    <section className="view-page">
       <AlertBox
         isOpen={alertBox}
-        title="Question"
-        message="Are you sure you want update expense_type?"
+        title={vt('Question')}
+        message={vt('Are you sure you want update expense_type?')}
         onConfirm={handleConfirm}
         onCancel={handleCancel}
-        confirmText="Ok"
-        cancelText="Cancel"
+        confirmText={vt('Ok')}
+        cancelText={vt('Cancel')}
       />
       <fieldset className="fieldset w-full text-black bg-transparent">
-        <legend className="fieldset-legend text-xl text-black">Update ExpanseType</legend>
+        <legend className="fieldset-legend text-xl text-black">{vt('Update ExpanseType')}</legend>
         <article className='flex gap-5 items-center'>
           <nav className='flex flex-col gap-3 flex-1'>
-            <label className="label">ExpanseType name</label>
-            <input type="text" defaultValue={data?.name} onChange={(e) => setExpanseTypes(prev => { return { ...prev, expense_type_name: e.target.value, created_by: 0 } })} className="input bg-transparent border-gray-400" placeholder="Enter expense_type name here. . ." />
+            <label className="label">{vt('ExpanseType name')}</label>
+            <input type="text" defaultValue={data?.name} onChange={(e) => setExpanseTypes(prev => { return { ...prev, expense_type_name: e.target.value, created_by: 0 } })} className="input bg-transparent border-gray-400" placeholder={vt('Enter expense_type name here. . .')} />
           </nav>
         </article>
         <div className='flex items-end gap-2'>
-          <button onClick={handleSubmit} className="btn btn-success mt-4 flex-1">Submit</button>
+          <button onClick={handleSubmit} className="btn btn-success mt-4 flex-1">{vt('Submit')}</button>
           <div className="modal-action">
             <form method="dialog">
               {/* if there is a button, it will close the modal */}
-              <button className="btn btn-error">Close</button>
+              <button className="btn btn-error">{vt('Close')}</button>
             </form>
           </div>
         </div>

@@ -6,8 +6,10 @@ import * as XLSX from 'xlsx';
 import { useGetAllUserQuery } from '../../../app/Features/usersSlice';
 import { useGetAllItemsQuery } from '../../../app/Features/itemsSlice';
 import { useReactToPrint } from 'react-to-print';
+import { useReportText } from './reportText';
 
 const ProductionReport = () => {
+    const { rt } = useReportText();
     const token = localStorage.getItem('token');
     const [getProductionReport] = useGetProductionReportMutation();
 
@@ -155,11 +157,11 @@ const ProductionReport = () => {
     });
 
     return (
-        <div className="min-h-screen bg-transparent p-1 md:p-3">
+        <div className="report-page min-h-screen bg-transparent p-1 md:p-3">
             <div className="mx-auto">
                 <div className="mb-8 ml-2">
-                    <h1 className="text-2xl font-bold text-gray-900">Production Report</h1>
-                    <p className="text-gray-600 text-md mt-2">Generate and export production reports</p>
+                    <h1 className="text-2xl font-bold text-gray-900">{rt("Production Report")}</h1>
+                    <p className="text-gray-600 text-md mt-2">{rt("Generate and export production reports")}</p>
                 </div>
 
                 <div className="bg-white rounded-lg shadow-md p-6 text-xs mb-6">
@@ -234,7 +236,7 @@ const ProductionReport = () => {
                             className="flex items-center gap-2 bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             <FiFilter size={18} />
-                            {loading ? 'Loading...' : 'Get Report'}
+                            {loading ? rt('Loading...') : rt('Get Report')}
                         </button>
                     </div>
                 </div>
@@ -247,14 +249,14 @@ const ProductionReport = () => {
                                 className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700"
                             >
                                 <FiDownload size={18} />
-                                Export Excel
+                                {rt('Export Excel')}
                             </button>
                             <button
                                 onClick={handlePrint}
                                 className="flex items-center gap-2 bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700 print:hidden"
                             >
                                 <FiPrinter size={18} />
-                                Print
+                                {rt('Print')}
                             </button>
                         </div>
 
@@ -344,15 +346,15 @@ const ProductionReport = () => {
                 {!reportData && !loading && (
                     <div className="bg-white rounded-lg shadow-md p-12 text-center">
                         <FiFilter size={48} className="mx-auto text-gray-400 mb-4" />
-                        <h3 className="text-lg font-medium text-gray-900 mb-2">No Report Generated</h3>
-                        <p className="text-gray-500">Use the filters above to generate a production report</p>
+                        <h3 className="text-lg font-medium text-gray-900 mb-2">{rt("No Report Generated")}</h3>
+                        <p className="text-gray-500">{rt("Use the filters above to generate a production report")}</p>
                     </div>
                 )}
 
                 {loading && (
                     <div className="bg-white rounded-lg shadow-md p-12 text-center">
                         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                        <p className="text-gray-600">Generating report...</p>
+                        <p className="text-gray-600">{rt("Generating report...")}</p>
                     </div>
                 )}
             </div>
@@ -361,3 +363,4 @@ const ProductionReport = () => {
 };
 
 export default ProductionReport;
+

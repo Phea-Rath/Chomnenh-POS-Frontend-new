@@ -229,7 +229,7 @@ const Dashboard = () => {
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t("dashboard")}</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400">Performance insights and filtered dashboard data</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">{t("performanceInsights")}</p>
         </div>
         <div className="flex items-center gap-3">
           {/* Language Toggle */}

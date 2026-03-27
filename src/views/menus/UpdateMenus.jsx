@@ -13,8 +13,10 @@ import {
   MENU_TYPE_OPTIONS,
   getParentMenuId,
 } from './menuFormConfig';
+import { useViewText } from '../viewText';
 
 const UpdateMenus = ({ onClose, onSuccess, dataMenu }) => {
+  const { vt } = useViewText();
   const { setLoading } = useOutletsContext();
   const [alertBox, setAlertBox] = useState(false);
   const [iconPreview, setIconPreview] = useState(null);
@@ -85,11 +87,11 @@ const UpdateMenus = ({ onClose, onSuccess, dataMenu }) => {
 
       permRefetch();
 
-      toast.success('System configuration updated');
+      toast.success(vt('System configuration updated'));
       resetForm();
       onSuccess?.(res.data?.data);
     } catch (error) {
-      toast.error(error?.response?.data?.message || 'Update failed');
+      toast.error(error?.response?.data?.message || vt('Update failed'));
     } finally {
       setLoading(false);
     }
@@ -98,11 +100,11 @@ const UpdateMenus = ({ onClose, onSuccess, dataMenu }) => {
   const canSubmit = menus.menu_name.trim() && menus.menu_type && menus.menu_path.trim();
 
   return (
-    <section className="bg-[#f5f5f7] rounded-lg overflow-hidden border border-[#d2d2d7] shadow-xl">
+    <section className="view-page bg-[#f5f5f7] rounded-lg overflow-hidden border border-[#d2d2d7] shadow-xl">
       <AlertBox
         isOpen={alertBox}
-        title="Confirm Modification"
-        message={`Save changes to the "${menus.menu_name || dataMenu?.menu_name || 'menu'}" navigation record?`}
+        title={vt('Confirm Modification')}
+        message={`${vt('Save changes to the')} "${menus.menu_name || dataMenu?.menu_name || vt('menu')}" ${vt('navigation record?')}`}
         onConfirm={handleConfirm}
         onCancel={() => setAlertBox(false)}
       />
@@ -111,7 +113,7 @@ const UpdateMenus = ({ onClose, onSuccess, dataMenu }) => {
       <div className="bg-white px-5 py-3 border-b border-[#d2d2d7] flex items-center justify-between">
         <div className="flex items-center gap-2">
           <FaSyncAlt className="text-[#007aff] text-xs animate-spin-slow" />
-          <span className="text-[13px] font-semibold text-slate-700 tracking-tight">Update Routing Resource</span>
+          <span className="text-[13px] font-semibold text-slate-700 tracking-tight">{vt('Update Routing Resource')}</span>
         </div>
         <span className="text-[10px] font-mono text-slate-600 bg-slate-100 px-2 py-0.5 rounded">
           UUID: {dataMenu?.menu_id}
@@ -140,7 +142,7 @@ const UpdateMenus = ({ onClose, onSuccess, dataMenu }) => {
                   value={menus.menu_type}
                   onChange={(e) => setMenus({ ...menus, menu_type: e.target.value })}
                 >
-                  <option value="">Select System Layer</option>
+                  <option value="">{vt('Select System Layer')}</option>
                   {MENU_TYPE_OPTIONS.map((option) => (
                     <option key={option.value} value={option.value}>
                       {option.label}
@@ -178,23 +180,23 @@ const UpdateMenus = ({ onClose, onSuccess, dataMenu }) => {
 
           {/* Icon/Media Management Section */}
           <div className="p-6 bg-slate-50/50">
-            <label className="text-[11px] font-bold text-slate-600 uppercase block mb-3 ml-1">Resource Icon</label>
+            <label className="text-[11px] font-bold text-slate-600 uppercase block mb-3 ml-1">{vt('Resource Icon')}</label>
             <div className="flex flex-col sm:flex-row gap-5 items-center">
               <div className="w-20 h-20 bg-white border-2 border-dashed border-[#d2d2d7] rounded-xl flex items-center justify-center overflow-hidden relative group">
                 {iconPreview ? (
-                  <img src={iconPreview} alt="Preview" className="w-full h-full object-cover" />
+                  <img src={iconPreview} alt={vt('Preview')} className="w-full h-full object-cover" />
                 ) : (
                   <FaImage className="text-slate-200 text-2xl" />
                 )}
                 <label className="absolute inset-0 bg-black/40 text-white opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer text-[10px] font-bold">
-                  CHANGE
+                  {vt('CHANGE')}
                   <input type="file" className="hidden" accept="image/*" onChange={handleImageChange} />
                 </label>
               </div>
 
               <div className="flex-1 text-center sm:text-left">
-                <h4 className="text-[13px] font-bold text-slate-700">Update Visual Asset</h4>
-                <p className="text-[11px] text-slate-500 mb-3">Upload a new icon to replace the current system asset.</p>
+                <h4 className="text-[13px] font-bold text-slate-700">{vt('Update Visual Asset')}</h4>
+                <p className="text-[11px] text-slate-500 mb-3">{vt('Upload a new icon to replace the current system asset.')}</p>
                 <input
                   type="file"
                   id="icon-update-upload"
@@ -208,7 +210,7 @@ const UpdateMenus = ({ onClose, onSuccess, dataMenu }) => {
                   onClick={() => document.getElementById('icon-update-upload').click()}
                   className="text-[12px] rounded border-[#d2d2d7]"
                 >
-                  Upload New
+                  {vt('Upload New')}
                 </Button>
               </div>
             </div>
@@ -223,7 +225,7 @@ const UpdateMenus = ({ onClose, onSuccess, dataMenu }) => {
               onClick={handleClose}
               className="px-5 py-1.5 rounded bg-white border border-[#d2d2d7] text-[12px] text-slate-600 hover:bg-slate-50 active:bg-slate-100 transition-colors font-medium"
             >
-              Cancel
+              {vt('Cancel')}
             </button>
           </form>
           <button
@@ -232,7 +234,7 @@ const UpdateMenus = ({ onClose, onSuccess, dataMenu }) => {
             disabled={!canSubmit || !dataMenu?.menu_id}
             className="px-6 py-1.5 rounded bg-[#007aff] border border-[#0070e0] text-[12px] text-white font-bold hover:bg-[#006ee0] active:bg-[#0062c9] shadow-sm transition-all flex items-center gap-2"
           >
-            <FaCheck className="text-[10px]" /> Save Record
+            <FaCheck className="text-[10px]" /> {vt('Save Record')}
           </button>
         </div>
       </div>

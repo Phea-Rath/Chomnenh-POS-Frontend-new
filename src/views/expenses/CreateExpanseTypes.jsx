@@ -28,11 +28,13 @@ import {
 import { MdOutlineCategory, MdDescription } from 'react-icons/md';
 import { motion } from 'framer-motion';
 import api from '../../services/api';
+import { useViewText } from '../viewText';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
 
 const CreateExpanseTypes = ({ onAdd }) => {
+  const { vt } = useViewText();
   const token = localStorage.getItem('token');
   const { setLoading } = useOutletsContext();
   const [alertBox, setAlertBox] = useState(false);
@@ -63,16 +65,16 @@ const CreateExpanseTypes = ({ onAdd }) => {
         refetch();
         onAdd();
         setLoading(false);
-        toast.success('Expense category created successfully!');
+        toast.success(vt('Expense category created successfully!'));
         // Reset form
         form.resetFields();
         setExpanseTypes({ expense_type_name: "", description: "", created_by: "", status: "active" });
       } else {
-        toast.error(response.data.message || 'Failed to create expense category');
+        toast.error(response.data.message || vt('Failed to create expense category'));
         setAlertBox(false);
       }
     } catch (error) {
-      toast.error(error?.message || 'An error occurred while creating the expense category');
+      toast.error(error?.message || vt('An error occurred while creating the expense category'));
       setLoading(false);
       setAlertBox(false);
     }
@@ -80,7 +82,7 @@ const CreateExpanseTypes = ({ onAdd }) => {
 
   function handleSubmit() {
     if (!expense_types.expense_type_name.trim()) {
-      toast.error('Please enter a category name');
+      toast.error(vt('Please enter a category name'));
       return;
     }
     setAlertBox(true);
@@ -111,15 +113,16 @@ const CreateExpanseTypes = ({ onAdd }) => {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
+      className="view-page"
     >
       <AlertBox
         isOpen={alertBox}
-        title="Create New Expense Category"
-        message="Are you sure you want to create this expense category?"
+        title={vt('Create New Expense Category')}
+        message={vt('Are you sure you want to create this expense category?')}
         onConfirm={handleConfirm}
         onCancel={handleCancel}
-        confirmText="Create"
-        cancelText="Cancel"
+        confirmText={vt('Create')}
+        cancelText={vt('Cancel')}
       />
 
       <div className="max-w-4xl mx-auto">
@@ -130,8 +133,8 @@ const CreateExpanseTypes = ({ onAdd }) => {
               <FaLayerGroup className="text-2xl text-white" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Create Expense Type</h1>
-              <p className="text-gray-600">Add a new category to organize your expenses</p>
+              <h1 className="text-3xl font-bold text-gray-900">{vt('Create Expense Type')}</h1>
+              <p className="text-gray-600">{vt('Add a new category to organize your expenses')}</p>
             </div>
           </div>
         </div>
@@ -149,11 +152,11 @@ const CreateExpanseTypes = ({ onAdd }) => {
               {/* Category Name */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  <span className="text-red-500">*</span> Category Name
+                  <span className="text-red-500">*</span> {vt('Category Name')}
                 </label>
                 <Input
                   size="large"
-                  placeholder="Enter category name (e.g., Office Supplies, Travel, Marketing)"
+                  placeholder={vt('Enter category name (e.g., Office Supplies, Travel, Marketing)')}
                   value={expense_types.expense_type_name}
                   onChange={onExpanseTypeName}
                   prefix={<FaTag className="text-gray-400" />}
@@ -162,7 +165,7 @@ const CreateExpanseTypes = ({ onAdd }) => {
                 />
                 <div className="flex items-center gap-2 mt-2 text-sm text-gray-500">
                   <FaInfoCircle />
-                  <span>Choose a descriptive name for easy identification</span>
+                  <span>{vt('Choose a descriptive name for easy identification')}</span>
                 </div>
               </div>
 
@@ -181,7 +184,7 @@ const CreateExpanseTypes = ({ onAdd }) => {
               className="h-12 flex-1 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 border-0 shadow-lg"
               disabled={!expense_types.expense_type_name.trim()}
             >
-              Create Category
+              {vt('Create Category')}
             </Button>
 
             <Button
@@ -191,15 +194,15 @@ const CreateExpanseTypes = ({ onAdd }) => {
               size="large"
               className="h-12 flex-1 border-gray-300 hover:border-gray-400"
             >
-              Cancel
+              {vt('Cancel')}
             </Button>
           </div>
 
           {/* Validation Alert */}
           {!expense_types.expense_type_name.trim() && (
             <Alert
-              message="Required Field"
-              description="Please enter a category name to continue"
+              message={vt('Required Field')}
+              description={vt('Please enter a category name to continue')}
               type="warning"
               showIcon
               className="mt-4"

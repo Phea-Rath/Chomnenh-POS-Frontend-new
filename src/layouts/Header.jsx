@@ -8,35 +8,23 @@ import { useEffect, useState } from "react";
 import { Badge, Space } from "antd";
 import { useTranslation } from "react-i18next";
 
-const Header = () => {
+const Header = ({ darkMode, setDarkMode }) => {
   const { t, i18n } = useTranslation();
   const { setSidebar, notification } = useOutletsContext();
   const token = localStorage.getItem("token");
   const uId = localStorage.getItem("userId");
   const { data, refetch } = useGetUserLoginQuery(token);
   const [profile, setProfile] = useState();
-  const [darkMode, setDarkMode] = useState(() => {
-    const saved = localStorage.getItem("darkMode");
-    return saved ? JSON.parse(saved) : false;
-  });
 
   useEffect(() => {
     setProfile(data?.data);
   }, [data]);
 
-  useEffect(() => {
-    localStorage.setItem("darkMode", JSON.stringify(darkMode));
-    if (darkMode) {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-    }
-  }, [darkMode]);
-
   const toggleLanguage = () => {
     const newLang = i18n.language === "en" ? "kh" : "en";
     i18n.changeLanguage(newLang);
     localStorage.setItem("language", newLang);
+    localStorage.setItem("i18nextLng", newLang);
   };
 
   useEffect(() => {
@@ -51,7 +39,7 @@ const Header = () => {
   }
 
   return (
-    <header className={`fixed shadow-sm drop-shadow-md w-full ${data?.data?.role_id !== 1 && "lg:w-[calc(100vw-346px)]"} top-0 z-50 ${darkMode ? "bg-gray-900 border-gray-700" : "bg-white border-gray-200"}`}>
+    <header className={`fixed shadow-sm drop-shadow-md w-full ${data?.data?.role_id !== 1 && "lg:w-[calc(100vw-346px)]"} top-0 z-50 ${darkMode ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"}`}>
       <div className="flex justify-between items-center px-4 lg:px-8 py-3">
         {/* Left Section - Logo and Menu */}
         <div className="flex items-center gap-4">
@@ -88,7 +76,7 @@ const Header = () => {
           <button
             onClick={() => setDarkMode(!darkMode)}
             className={`p-2 rounded-lg transition-colors ${darkMode ? "hover:bg-gray-800 text-yellow-400" : "hover:bg-gray-100 text-gray-600"}`}
-            title={darkMode ? "Light Mode" : "Dark Mode"}
+            title={darkMode ? t("lightMode") : t("darkMode")}
           >
             {darkMode ? <FaSun className="text-xl" /> : <FaMoon className="text-xl" />}
           </button>
@@ -97,7 +85,7 @@ const Header = () => {
           <button
             onClick={toggleLanguage}
             className={`px-3 py-2 rounded-lg font-medium text-sm transition-colors ${darkMode ? "hover:bg-gray-800 bg-gray-800 text-white" : "hover:bg-gray-100 bg-gray-100 text-gray-700"}`}
-            title={i18n.language === "en" ? "Switch to Khmer" : "Switch to English"}
+            title={i18n.language === "en" ? t("switchToKhmer") : t("switchToEnglish")}
           >
             {i18n.language === "en" ? "KH" : "EN"}
           </button>

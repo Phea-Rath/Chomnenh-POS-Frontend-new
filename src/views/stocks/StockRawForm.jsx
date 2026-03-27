@@ -283,7 +283,7 @@ const StockRawForm = () => {
     }
 
     return (
-        <section className="px-6 py-6 bg-transparent min-h-screen">
+        <section className="view-page px-6 py-6 bg-transparent min-h-screen">
             <AlertBox
                 isOpen={alertBox}
                 title="Confirmation"

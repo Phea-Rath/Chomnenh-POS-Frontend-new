@@ -30,6 +30,7 @@ import { useGetAllDeliveryTrackingQuery } from '../../../app/Features/ordersSlic
 import { useGetAllSaleQuery } from '../../../app/Features/salesSlice';
 import { useGetAllUserQuery } from '../../../app/Features/usersSlice';
 import { useGetAllWasteQuery } from '../../../app/Features/notificationSlice';
+import { useTranslation } from 'react-i18next';
 
 const statusOptions = [
     { id: 1, label: 'Pending', icon: FaClock, color: 'bg-yellow-100 text-yellow-800 border-yellow-200' },
@@ -43,6 +44,7 @@ const statusOptions = [
 const PAGE_SIZE = 10;
 
 const OrderTracking = () => {
+    const { t } = useTranslation();
     const navigate = useNavigate();
     const token = localStorage.getItem('token');
     const [orders, setOrders] = useState([]);
@@ -190,7 +192,7 @@ const OrderTracking = () => {
                 await refetch();
                 refetchWaste();
                 saleItemContext.refetch();
-                toast.success(response?.data?.message || 'Order updated successfully');
+                toast.success(response?.data?.message || t('orderUpdatedSuccessfully'));
                 setEditingField({});
                 setShowField((prev) => ({
                     ...prev,
@@ -200,11 +202,11 @@ const OrderTracking = () => {
                     },
                 }));
             } else {
-                toast.error('Failed to update order');
+                toast.error(t('failedToUpdateOrder'));
             }
         } catch (error) {
             console.error('Error updating order:', error);
-            toast.error(error?.response?.data?.message || 'Error updating order');
+            toast.error(error?.response?.data?.message || t('errorUpdatingOrder'));
         } finally {
             setEditingOrder(null);
         }
@@ -227,14 +229,14 @@ const OrderTracking = () => {
             <div className="flex min-h-screen items-center justify-center bg-gray-50">
                 <div className="text-center">
                     <div className="mx-auto h-12 w-12 animate-spin rounded-full border-b-2 border-blue-600" />
-                    <p className="mt-4 text-gray-600">Loading orders...</p>
+                    <p className="mt-4 text-gray-600 dark:text-gray-400">{t('loadingOrders')}</p>
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen bg-transparent">
+        <div className="component-page min-h-screen bg-transparent">
             <div className="mx-auto space-y-4">
                 <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
                     <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -243,14 +245,14 @@ const OrderTracking = () => {
                                 <FaTruck className="h-4 w-4" />
                             </div>
                             <div>
-                                <h1 className="text-lg font-semibold text-slate-900">Order Tracking</h1>
+                                <h1 className="text-lg font-semibold text-slate-900">{t('orderTracking')}</h1>
                                 <p className="text-xs text-slate-500">{totalOrders} order{totalOrders !== 1 ? 's' : ''}</p>
                             </div>
                         </div>
 
                         <button
                             onClick={refetch}
-                            title="Refresh"
+                            title={t('refresh')}
                             className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 text-slate-600 transition hover:bg-slate-50"
                         >
                             <FaSync className={`h-4 w-4 ${isFetching ? 'animate-spin' : ''}`} />
@@ -265,7 +267,7 @@ const OrderTracking = () => {
                                     type="text"
                                     value={filters.search}
                                     onChange={(event) => handleFilterChange('search', event.target.value)}
-                                    placeholder="Search tel, address, order no"
+                                    placeholder={t('searchOrderTracking')}
                                     className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-9 pr-4 text-sm text-slate-800 outline-none transition focus:border-blue-500 focus:bg-white"
                                 />
                             </div>
@@ -277,7 +279,7 @@ const OrderTracking = () => {
                                 onChange={(event) => handleFilterChange('deliver_id', event.target.value)}
                                 className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-800 outline-none transition focus:border-blue-500 focus:bg-white"
                             >
-                                <option value="">All delivery</option>
+                                <option value="">{t('allDelivery')}</option>
                                 {delivers?.data?.map((service) => (
                                     <option key={service.deliver_id} value={service.deliver_id}>
                                         {service.deliver_name}
@@ -292,7 +294,7 @@ const OrderTracking = () => {
                                 onChange={(event) => handleFilterChange('user_id', event.target.value)}
                                 className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-800 outline-none transition focus:border-blue-500 focus:bg-white"
                             >
-                                <option value="">All users</option>
+                                <option value="">{t('allUsers')}</option>
                                 {usersData?.data?.map((user) => (
                                     <option key={user.id} value={user.id}>
                                         {user.username}
@@ -304,7 +306,7 @@ const OrderTracking = () => {
                         <div className="flex items-center justify-end">
                             <button
                                 onClick={() => setFilters({ search: '', deliver_id: '', user_id: '', page: 1, limit: PAGE_SIZE })}
-                                title="Clear filters"
+                                title={t('clearFilters')}
                                 className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 text-slate-600 transition hover:bg-slate-50"
                             >
                                 <FaXmark className="h-4 w-4" />
@@ -337,9 +339,9 @@ const OrderTracking = () => {
                         <div className="mx-auto mb-5 flex h-24 w-24 items-center justify-center rounded-full bg-slate-100">
                             <FaTruck className="h-11 w-11 text-slate-400" />
                         </div>
-                        <h3 className="text-xl font-semibold text-slate-800">No delivery orders found</h3>
+                        <h3 className="text-xl font-semibold text-slate-800">{t('noDeliveryOrdersFound')}</h3>
                         <p className="mx-auto mt-2 max-w-md text-sm text-slate-500">
-                            Try changing the search keyword, delivery service, or user filter.
+                            {t('tryChangingFilters')}
                         </p>
                     </div>
                 ) : (
@@ -376,13 +378,13 @@ const OrderTracking = () => {
                                                     <button
                                                         onClick={() => handleEditClick(order.order_id, 'status', order.status)}
                                                         className="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-blue-600"
-                                                        title="Edit Status"
+                                                        title={t('editStatus')}
                                                     >
                                                         <FaEdit className="h-3.5 w-3.5" />
                                                     </button>
                                                     <button
                                                         onClick={() => handleViewItems(order)}
-                                                        title="View details"
+                                                        title={t('viewDetails')}
                                                         className="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-blue-600"
                                                     >
                                                         <FaEye className="h-4 w-4" />
@@ -393,7 +395,7 @@ const OrderTracking = () => {
                                             {isEditing(order.order_id, 'status') && (
                                                 <div className="mb-3 rounded-xl border border-blue-100 bg-blue-50 p-2.5">
                                                     <div className="mb-2 flex items-center justify-between">
-                                                        <span className="text-xs font-semibold uppercase tracking-wide text-slate-600">Update Status</span>
+                                                        <span className="text-xs font-semibold uppercase tracking-wide text-slate-600">{t('updateStatus')}</span>
                                                         <button
                                                             onClick={handleCancelEdit}
                                                             className="rounded-md p-1 text-red-600 transition hover:bg-red-100"
@@ -524,7 +526,7 @@ const OrderTracking = () => {
                                                     <div className="mb-2 flex items-center justify-between">
                                                         <label className="flex items-center gap-2 text-[11px] font-medium text-slate-700">
                                                             <FaTruck className="h-3.5 w-3.5" />
-                                                            Delivery Service
+                                                            {t('deliveryService')}
                                                         </label>
                                                         <button
                                                             onClick={() => {
@@ -532,7 +534,7 @@ const OrderTracking = () => {
                                                                 handleEditClick(order.order_id, 'deliver_id', order.deliver_id);
                                                             }}
                                                             className="rounded-md p-1 text-slate-400 transition hover:bg-slate-100 hover:text-blue-600"
-                                                            title="Edit delivery service"
+                                                            title={t('editDeliveryService')}
                                                         >
                                                             <FaEdit className="h-3.5 w-3.5" />
                                                         </button>
@@ -545,7 +547,7 @@ const OrderTracking = () => {
                                                                 onChange={(event) => handleInputChange(order.order_id, 'deliver_id', event.target.value)}
                                                                 className="flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none transition focus:border-blue-500"
                                                             >
-                                                                <option value="">Delivery service</option>
+                                                                <option value="">{t('deliveryService')}</option>
                                                                 {delivers?.data?.map((service) => (
                                                                     <option key={service.deliver_id} value={service.deliver_id}>
                                                                         {service.deliver_name}
@@ -568,7 +570,7 @@ const OrderTracking = () => {
                                                         </div>
                                                     ) : (
                                                         <div className="rounded-xl bg-slate-50 px-3 py-2.5 text-sm text-slate-700">
-                                                            {order.deliver_name || 'Unknown'}
+                                                            {order.deliver_name || t('unknown')}
                                                         </div>
                                                     )}
                                                 </div>
@@ -589,7 +591,7 @@ const OrderTracking = () => {
                                                         <span className="font-medium text-green-600">-${Number(order.order_discount || 0).toFixed(2)}</span>
                                                     </div>
                                                     <div className="flex justify-between border-t border-slate-100 pt-2 text-sm font-bold text-slate-900">
-                                                        <span>Total Amount</span>
+                                                        <span>{t('totalAmount')}</span>
                                                         <span className="text-blue-700">${getTotalAmount(order)}</span>
                                                     </div>
                                                 </div>
@@ -602,14 +604,14 @@ const OrderTracking = () => {
 
                         <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:flex-row md:items-center md:justify-between">
                             <div className="text-xs text-slate-600">
-                                Showing page {pagination.current_page || 1} of {totalPages}
+                                {t('showingPageOf', { page: pagination.current_page || 1, total: totalPages })}
                             </div>
 
                             <div className="flex items-center gap-2">
                                 <button
                                     onClick={() => handleFilterChange('page', Math.max(1, filters.page - 1))}
                                     disabled={(pagination.current_page || 1) <= 1}
-                                    title="Previous page"
+                                    title={t('previousPage')}
                                     className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
                                 >
                                     <FaChevronLeft className="h-3.5 w-3.5" />
@@ -633,7 +635,7 @@ const OrderTracking = () => {
                                 <button
                                     onClick={() => handleFilterChange('page', Math.min(totalPages, filters.page + 1))}
                                     disabled={(pagination.current_page || 1) >= totalPages}
-                                    title="Next page"
+                                    title={t('nextPage')}
                                     className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
                                 >
                                     <FaChevronRight className="h-3.5 w-3.5" />
@@ -650,10 +652,10 @@ const OrderTracking = () => {
                                     <div>
                                         <h2 className="flex items-center gap-2 text-xl font-bold text-slate-900">
                                             <FaEye className="h-5 w-5 text-blue-600" />
-                                            Order Items - {selectedOrder.order_no}
+                                            {t('orderItems')} - {selectedOrder.order_no}
                                         </h2>
                                         <p className="mt-1 text-sm text-slate-500">
-                                            {selectedOrder.items?.length || 0} item(s) in this order
+                                            {t('itemsInThisOrder', { count: selectedOrder.items?.length || 0 })}
                                         </p>
                                     </div>
                                     <button
@@ -677,7 +679,7 @@ const OrderTracking = () => {
                                                 />
                                             ) : (
                                                 <div className="flex h-16 w-16 items-center justify-center rounded-xl border border-dashed border-slate-300 bg-white text-xs text-slate-400">
-                                                    No Image
+                                                    {t('noImage')}
                                                 </div>
                                             )}
 
@@ -686,7 +688,7 @@ const OrderTracking = () => {
                                                     <div>
                                                         <h4 className="font-semibold text-slate-900">{item.item_name}</h4>
                                                         <p className="mt-1 text-xs text-slate-500">
-                                                            Code: {item.item_code} | Category: {item.category_name}
+                                                            {t('code')}: {item.item_code} | {t('category')}: {item.category_name}
                                                         </p>
                                                     </div>
                                                     <div className="text-right">
@@ -701,11 +703,11 @@ const OrderTracking = () => {
 
                                                 <div className="mt-3 grid grid-cols-3 gap-3 text-xs">
                                                     <div className="rounded-xl border border-slate-200 bg-white p-3">
-                                                        <div className="text-slate-500">Quantity</div>
+                                                        <div className="text-slate-500">{t('quantity')}</div>
                                                         <div className="mt-1 font-medium text-slate-800">{item.quantity}</div>
                                                     </div>
                                                     <div className="rounded-xl border border-slate-200 bg-white p-3">
-                                                        <div className="text-slate-500">Price</div>
+                                                        <div className="text-slate-500">{t('price')}</div>
                                                         <div className="mt-1 font-medium text-slate-800">${Number(item.price || 0).toFixed(2)}</div>
                                                     </div>
                                                     <div className="rounded-xl border border-slate-200 bg-white p-3">
@@ -719,10 +721,10 @@ const OrderTracking = () => {
                                 </div>
 
                                 <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-4">
-                                    <h4 className="mb-3 font-semibold text-slate-800">Order Summary</h4>
+                                    <h4 className="mb-3 font-semibold text-slate-800">{t('orderSummary')}</h4>
                                     <div className="space-y-2 text-sm">
                                         <div className="flex justify-between text-slate-600">
-                                            <span>Items Total</span>
+                                            <span>{t('itemsTotal')}</span>
                                             <span className="font-medium">${Number(selectedOrder.order_subtotal || 0).toFixed(2)}</span>
                                         </div>
                                         <div className="flex justify-between text-slate-600">
@@ -734,7 +736,7 @@ const OrderTracking = () => {
                                             <span className="font-medium text-green-600">-${Number(selectedOrder.order_discount || 0).toFixed(2)}</span>
                                         </div>
                                         <div className="flex justify-between border-t border-slate-100 pt-2 text-base font-bold text-slate-900">
-                                            <span>Total Amount</span>
+                                            <span>{t('totalAmount')}</span>
                                             <span className="text-blue-700">${getTotalAmount(selectedOrder)}</span>
                                         </div>
                                     </div>
@@ -746,7 +748,7 @@ const OrderTracking = () => {
                                     onClick={handleCloseItemsModal}
                                     className="rounded-2xl border border-slate-200 px-6 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-white"
                                 >
-                                    Close
+                                    {t('close')}
                                 </button>
                             </div>
                         </div>

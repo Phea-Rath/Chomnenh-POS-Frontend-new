@@ -6,6 +6,7 @@ import { useGetAllCustomerQuery } from '../../../app/Features/customersSlice';
 import { toast } from 'react-toastify';
 import * as XLSX from 'xlsx';
 import { useReactToPrint } from 'react-to-print';
+import { useReportText } from './reportText';
 
 const EMPTY_REPORT = {
     summary: [],
@@ -18,6 +19,7 @@ const EMPTY_REPORT = {
 };
 
 const ARReport = () => {
+    const { rt } = useReportText();
     const token = localStorage.getItem('token');
     const [getARReport] = useGetARReportMutation();
 
@@ -162,11 +164,11 @@ const ARReport = () => {
     });
 
     return (
-        <div className="min-h-screen bg-transparent p-2 md:p-4">
+        <div className="report-page min-h-screen bg-transparent p-2 md:p-4">
             <div className="max-w-7xl mx-auto">
                 <div className="mb-6">
-                    <h1 className="text-2xl font-bold text-slate-900">Account Receivables Report</h1>
-                    <p className="text-slate-500 text-sm mt-1">Track customers, balances, and collections</p>
+                    <h1 className="text-2xl font-bold text-slate-900">{rt("Account Receivables Report")}</h1>
+                    <p className="text-slate-500 text-sm mt-1">{rt("Track customers, balances, and collections")}</p>
                 </div>
 
                 <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-5 text-xs mb-6">
@@ -239,7 +241,7 @@ const ARReport = () => {
                             className="flex items-center justify-center gap-2 bg-blue-600 text-white px-5 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             <FiFilter size={16} />
-                            {loading ? 'Loading...' : 'Get Report'}
+                            {loading ? rt('Loading...') : rt('Get Report')}
                         </button>
                     </div>
                 </div>
@@ -270,14 +272,14 @@ const ARReport = () => {
                                 className="flex items-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-md hover:bg-emerald-700"
                             >
                                 <FiDownload size={16} />
-                                Export Excel
+                                {rt('Export Excel')}
                             </button>
                             <button
                                 onClick={handlePrint}
                                 className="flex items-center gap-2 bg-slate-600 text-white px-4 py-2 rounded-md hover:bg-slate-700 print:hidden"
                             >
                                 <FiPrinter size={16} />
-                                Print
+                                {rt('Print')}
                             </button>
                         </div>
 
@@ -351,15 +353,15 @@ const ARReport = () => {
                 {!reportData && !loading && (
                     <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-12 text-center">
                         <FiFilter size={48} className="mx-auto text-slate-300 mb-4" />
-                        <h3 className="text-lg font-medium text-slate-900 mb-2">No Report Generated</h3>
-                        <p className="text-slate-500">Use the filters above to generate an account receivables report</p>
+                        <h3 className="text-lg font-medium text-slate-900 mb-2">{rt("No Report Generated")}</h3>
+                        <p className="text-slate-500">{rt("Use the filters above to generate an account receivables report")}</p>
                     </div>
                 )}
 
                 {loading && (
                     <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-12 text-center">
                         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                        <p className="text-slate-600">Generating report...</p>
+                        <p className="text-slate-600">{rt("Generating report...")}</p>
                     </div>
                 )}
             </div>
@@ -368,3 +370,4 @@ const ARReport = () => {
 };
 
 export default ARReport;
+

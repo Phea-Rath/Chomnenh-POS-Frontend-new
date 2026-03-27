@@ -382,7 +382,7 @@ const SupplierForm = () => {
   };
 
   return (
-    <div className="min-h-screen bg-transparent py-8">
+    <div className="view-page min-h-screen bg-transparent py-8">
       <div className=" mx-auto px-2">
         {/* Header */}
         <div className="mb-8">

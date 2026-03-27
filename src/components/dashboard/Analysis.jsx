@@ -1,10 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { Bar, Doughnut, Pie } from 'react-chartjs-2';
-import { DatePicker, Progress, Radio, Card } from 'antd';
+import { DatePicker, Progress, Radio, Card, Select } from 'antd';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, ArcElement, Title, Tooltip, Legend } from 'chart.js';
 import { useGetAllDashboardStockQuery, useGetDashboardStockByDateMutation } from '../../../app/Features/dashboardsSlice';
+import { useGetAllUserQuery } from '../../../app/Features/usersSlice';
 import BarChartStock from './BarChartStock';
 import PieChartStock from './PieChartStock';
+import dayjs from 'dayjs';
+
+const { RangePicker } = DatePicker;
 
 // Register ChartJS components
 ChartJS.register(
@@ -22,12 +26,15 @@ const Analysis = () => {
   const token = localStorage.getItem('token');
   const [apiData, setApiData] = useState({});
   const { data, refetch } = useGetAllDashboardStockQuery(token);
+  const { data: usersData } = useGetAllUserQuery(token);
   const [getDashboardStockByDate, { data: dataByDate }] = useGetDashboardStockByDateMutation();
+
+  const users = usersData?.data || [];
 
   useEffect(() => {
     refetch();
     setApiData(data);
-  }, [data])
+  }, [data]);
 
 
   // State for date filter option
@@ -36,13 +43,15 @@ const Analysis = () => {
   const [year, setYear] = useState('');
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [dateRange, setDateRange] = useState([null, null]);
+  const [selectedUserId, setSelectedUserId] = useState(null);
 
   // Card data mapping
   const cardData = [
     {
       title: "Stock Return",
       value: apiData?.data?.stock_return || 0,
-      range: ((apiData?.data?.stock_return ?? 1) / (apiData?.data?.stock_total ?? 1)) * 100,
+      range: ((apiData?.data?.stock_return ?? 0) / (apiData?.data?.stock_total ?? 1)) * 100,
       icon: (
         <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
@@ -55,7 +64,7 @@ const Analysis = () => {
     {
       title: "Stock In",
       value: apiData?.data?.stock_in || 0,
-      range: ((apiData?.data?.stock_in ?? 1) / (apiData?.data?.stock_total ?? 1)) * 100,
+      range: ((apiData?.data?.stock_in ?? 0) / (apiData?.data?.stock_total ?? 1)) * 100,
       icon: (
         <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
@@ -68,7 +77,7 @@ const Analysis = () => {
     {
       title: "Stock Out",
       value: apiData?.data?.stock_out || 0,
-      range: ((apiData?.data?.stock_out ?? 1) / (apiData?.data?.stock_total ?? 1)) * 100,
+      range: ((apiData?.data?.stock_out ?? 0) / (apiData?.data?.stock_total ?? 1)) * 100,
       icon: (
         <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
@@ -81,7 +90,7 @@ const Analysis = () => {
     {
       title: "Stock Sale",
       value: apiData?.data?.stock_sale || 0,
-      range: ((apiData?.data?.stock_sale ?? 1) / (apiData?.data?.stock_total ?? 1)) * 100,
+      range: ((apiData?.data?.stock_sale ?? 0) / (apiData?.data?.stock_total ?? 1)) * 100,
       icon: (
         <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
@@ -94,7 +103,7 @@ const Analysis = () => {
     {
       title: "Stock Waste",
       value: apiData?.data?.stock_waste || 0,
-      range: (apiData?.data?.stock_waste ?? 1) / (apiData?.data?.stock_total ?? 1) * 100,
+      range: ((apiData?.data?.stock_waste ?? 0) / (apiData?.data?.stock_total ?? 1)) * 100,
       icon: (
         <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -111,24 +120,70 @@ const Analysis = () => {
     "July", "August", "September", "October", "November", "December"
   ];
 
-  const handleMonth = async (date) => {
-    if (!date) return;
+  const applyFilters = async (updatedFilters = {}) => {
+    const currentFilters = {
+      month: selectedMonth,
+      year: selectedYear,
+      user_id: selectedUserId,
+      start_date: dateRange[0] ? dateRange[0].format('YYYY-MM-DD') : null,
+      end_date: dateRange[1] ? dateRange[1].format('YYYY-MM-DD') : null,
+      ...updatedFilters
+    };
 
-    const selectedMonth = date.month() + 1;
-    const selectedYear = date.year();
-    setMonth(months[selectedMonth - 1]);
-    setYear(selectedYear);
-    setSelectedMonth(selectedMonth);
-    setSelectedYear(selectedYear);
+    if (dateFilter === 'option1' && !currentFilters.user_id) {
+      setApiData(data);
+      return;
+    }
+
+    const payload = {};
+    if (dateFilter === 'option2') {
+      payload.month = currentFilters.month;
+      payload.year = currentFilters.year;
+    } else if (dateFilter === 'option3') {
+      payload.start_date = currentFilters.start_date;
+      payload.end_date = currentFilters.end_date;
+    } else {
+      payload.year = currentFilters.year;
+    }
+
+    if (currentFilters.user_id) {
+      payload.user_id = currentFilters.user_id;
+    }
 
     try {
-      const res = await getDashboardStockByDate({ itemData: { month: selectedMonth, year: selectedYear }, token });
+      const res = await getDashboardStockByDate({ itemData: payload, token });
       if (res?.data) {
         setApiData(res.data);
       }
     } catch (error) {
       console.log(error);
     }
+  };
+
+  const handleMonth = (date) => {
+    if (!date) return;
+    const m = date.month() + 1;
+    const y = date.year();
+    setMonth(months[m - 1]);
+    setYear(y);
+    setSelectedMonth(m);
+    setSelectedYear(y);
+    applyFilters({ month: m, year: y });
+  };
+
+  const handleRangeChange = (dates) => {
+    setDateRange(dates || [null, null]);
+    if (dates && dates[0] && dates[1]) {
+      applyFilters({
+        start_date: dates[0].format('YYYY-MM-DD'),
+        end_date: dates[1].format('YYYY-MM-DD')
+      });
+    }
+  };
+
+  const handleUserChange = (value) => {
+    setSelectedUserId(value);
+    applyFilters({ user_id: value });
   };
 
   const getProgressColor = (percentage) => {
@@ -151,13 +206,13 @@ const Analysis = () => {
             {/* Date Filter Options */}
             <Card className="w-full lg:w-auto shadow-sm border-0">
               <div className="flex flex-col space-y-4">
-                <div className="flex items-center space-x-6">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-4">
                   <Radio.Group
                     value={dateFilter}
                     onChange={(e) => {
                       setDateFilter(e.target.value);
                       if (e.target.value === 'option1') {
-                        setApiData(data);
+                        applyFilters({ start_date: null, end_date: null, month: null });
                       }
                     }}
                     buttonStyle="solid"
@@ -168,7 +223,19 @@ const Analysis = () => {
                     <Radio.Button value="option2" className="text-sm">
                       Monthly
                     </Radio.Button>
+                    <Radio.Button value="option3" className="text-sm">
+                      Custom Range
+                    </Radio.Button>
                   </Radio.Group>
+
+                  <Select
+                    placeholder="Filter by User"
+                    allowClear
+                    className="w-full sm:w-48"
+                    onChange={handleUserChange}
+                    optionLabelProp='name'
+                    options={users.map(u => ({ label: u.username, value: u.id }))}
+                  />
                 </div>
 
                 {dateFilter === 'option2' && (
@@ -179,6 +246,16 @@ const Analysis = () => {
                       onChange={handleMonth}
                       className="w-full"
                       placeholder="Select month"
+                    />
+                  </div>
+                )}
+
+                {dateFilter === 'option3' && (
+                  <div className="flex space-x-2">
+                    <RangePicker
+                      size={'middle'}
+                      onChange={handleRangeChange}
+                      className="w-full"
                     />
                   </div>
                 )}
@@ -240,7 +317,9 @@ const Analysis = () => {
                   <span className="text-sm font-medium text-blue-700">
                     {dateFilter === 'option1'
                       ? `Year ${selectedYear}`
-                      : `${month} ${year}`}
+                      : dateFilter === 'option2'
+                        ? `${month} ${year}`
+                        : `${dateRange[0]?.format('DD MMM')} - ${dateRange[1]?.format('DD MMM YYYY') || ''}`}
                   </span>
                 </div>
               </div>
@@ -264,7 +343,9 @@ const Analysis = () => {
                   <span className="text-sm font-medium text-purple-700">
                     {dateFilter === 'option1'
                       ? `Year ${selectedYear}`
-                      : `${month} ${year}`}
+                      : dateFilter === 'option2'
+                        ? `${month} ${year}`
+                        : `${dateRange[0]?.format('DD MMM')} - ${dateRange[1]?.format('DD MMM YYYY') || ''}`}
                   </span>
                 </div>
               </div>

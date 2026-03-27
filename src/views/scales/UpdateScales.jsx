@@ -8,8 +8,10 @@ import { toast } from 'react-toastify';
 import AlertBox from '../../services/AlertBox';
 import { useOutletsContext } from '../../layouts/Management';
 import { useGetAllScalesQuery, useUpdateScaleMutation } from '../../../app/Features/scalesSlice';
+import { useViewText } from '../viewText';
 
 const UpdateScales = ({ onAdd, data }) => {
+  const { vt } = useViewText();
   const { setLoading } = useOutletsContext();
   const [alertBox, setAlertBox] = useState(false);
   const [scales, setScales] = useState({ scale_name: "", created_by: 0 });
@@ -30,7 +32,7 @@ const UpdateScales = ({ onAdd, data }) => {
 
   const handleConfirm = async () => {
     if (!scales.scale_name.trim()) {
-      toast.warning('Scale name cannot be empty');
+      toast.warning(vt('Scale name cannot be empty'));
       return;
     }
 
@@ -41,11 +43,11 @@ const UpdateScales = ({ onAdd, data }) => {
 
       if (res.status === 200 || res) {
         refetch();
-        toast.success(res.message || 'Unit updated successfully');
+        toast.success(res.message || vt('Unit updated successfully'));
         onAdd(); // Close modal
       }
     } catch (error) {
-      toast.error(error?.data?.message || error?.message || 'Failed to update scale');
+      toast.error(error?.data?.message || error?.message || vt('Failed to update scale'));
     } finally {
       setLoading(false);
     }
@@ -54,16 +56,16 @@ const UpdateScales = ({ onAdd, data }) => {
   const isUnchanged = data?.name === scales.scale_name;
 
   return (
-    <section className="bg-white overflow-hidden">
+    <section className="view-page bg-white overflow-hidden">
       {/* Alert Confirmation */}
       <AlertBox
         isOpen={alertBox}
-        title="Update Measurement Unit"
-        message={`Confirm changing unit name from "${data.name}" to "${scales.scale_name}"?`}
+        title={vt('Update Measurement Unit')}
+        message={`${vt('Confirm changing unit name from')} "${data.name}" ${vt('to')} "${scales.scale_name}"?`}
         onConfirm={handleConfirm}
         onCancel={() => setAlertBox(false)}
-        confirmText="Confirm Update"
-        cancelText="Cancel"
+        confirmText={vt('Confirm Update')}
+        cancelText={vt('Cancel')}
       />
 
       {/* Header Section - Cyan Theme */}
@@ -73,8 +75,8 @@ const UpdateScales = ({ onAdd, data }) => {
             <FaExchangeAlt className="text-xl" />
           </div>
           <div>
-            <h2 className="text-2xl font-black text-slate-800 leading-none">Edit Scale</h2>
-            <p className="text-slate-500 text-sm mt-1 font-medium">Update unit of measurement details</p>
+            <h2 className="text-2xl font-black text-slate-800 leading-none">{vt('Edit Scale')}</h2>
+            <p className="text-slate-500 text-sm mt-1 font-medium">{vt('Update unit of measurement details')}</p>
           </div>
         </div>
         <Tag color="cyan" className="rounded-full px-4 py-1 font-bold border-none bg-cyan-200/50 text-cyan-700 hidden sm:block">
@@ -88,17 +90,17 @@ const UpdateScales = ({ onAdd, data }) => {
           <div>
             <div className="flex justify-between items-center mb-3">
               <label className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">
-                Unit Name / Symbol
+                {vt('Unit Name / Symbol')}
               </label>
               {!isUnchanged && (
                 <span className="text-[10px] font-bold text-cyan-600 bg-cyan-50 px-2 py-0.5 rounded animate-pulse">
-                  EDITING
+                  {vt('EDITING')}
                 </span>
               )}
             </div>
             <Input
               size="large"
-              placeholder="e.g. Kilograms, Meters, Liters..."
+              placeholder={vt('e.g. Kilograms, Meters, Liters...')}
               value={scales.scale_name}
               onChange={(e) => setScales(prev => ({ ...prev, scale_name: e.target.value }))}
               className="h-14 rounded-2xl border-slate-200 bg-slate-50/50 hover:bg-white focus:bg-white transition-all font-medium text-lg px-6"
@@ -109,10 +111,10 @@ const UpdateScales = ({ onAdd, data }) => {
             <FaHistory className="text-slate-400 mt-1" />
             <div>
               <p className="text-xs text-slate-500 font-medium">
-                Previous value was <span className="text-slate-900 font-bold">"{data.name}"</span>.
+                {vt('Previous value was')} <span className="text-slate-900 font-bold">"{data.name}"</span>.
               </p>
               <p className="text-[10px] text-slate-400 font-medium mt-1 uppercase tracking-tight">
-                This will update all associated product measurements.
+                {vt('This will update all associated product measurements.')}
               </p>
             </div>
           </div>
@@ -130,7 +132,7 @@ const UpdateScales = ({ onAdd, data }) => {
                 ? 'bg-slate-100 text-slate-300 shadow-none'
                 : 'bg-cyan-600 hover:bg-cyan-700 text-white shadow-cyan-100'}`}
           >
-            Update Scale
+            {vt('Update Scale')}
           </Button>
 
           <form method="dialog" className="order-1 sm:order-2">

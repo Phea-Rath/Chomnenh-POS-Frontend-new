@@ -8,8 +8,10 @@ import { toast } from 'react-toastify';
 import AlertBox from '../../services/AlertBox';
 import { useOutletsContext } from '../../layouts/Management';
 import { useGetAllCategoriesQuery, useUpdateCategoryMutation } from '../../../app/Features/categoriesSlice';
+import { useViewText } from '../viewText';
 
 const UpdateCategory = ({ onAdd, data }) => {
+  const { vt } = useViewText();
   const { setLoading } = useOutletsContext();
   const [alertBox, setAlertBox] = useState(false);
   const [category, setCategory] = useState({ category_name: "", created_by: 0 });
@@ -30,7 +32,7 @@ const UpdateCategory = ({ onAdd, data }) => {
 
   const handleConfirm = async () => {
     if (!category.category_name.trim()) {
-      toast.warning('Category name cannot be empty');
+      toast.warning(vt('Category name cannot be empty'));
       return;
     }
 
@@ -38,27 +40,27 @@ const UpdateCategory = ({ onAdd, data }) => {
       setLoading(true);
       await updateCategory({ id: data.id, itemData: category, token }).unwrap();
       refetch();
-      toast.success('Category updated successfully');
+      toast.success(vt('Category updated successfully'));
       setAlertBox(false);
       onAdd(); // Close modal
     } catch (error) {
-      toast.error(error?.data?.message || 'Failed to update category');
+      toast.error(error?.data?.message || vt('Failed to update category'));
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <section className="bg-white overflow-hidden">
+    <section className="view-page bg-white overflow-hidden">
       {/* Alert Confirmation */}
       <AlertBox
         isOpen={alertBox}
-        title="Confirm Update"
-        message={`Are you sure you want to rename "${data.name}" to "${category.category_name}"?`}
+        title={vt('Confirm Update')}
+        message={`${vt('Are you sure you want to rename')} "${data.name}" ${vt('to')} "${category.category_name}"?`}
         onConfirm={handleConfirm}
         onCancel={() => setAlertBox(false)}
-        confirmText="Yes, Update"
-        cancelText="Discard"
+        confirmText={vt('Yes, Update')}
+        cancelText={vt('Discard')}
       />
 
       {/* Header Section - Violet Theme */}
@@ -68,8 +70,8 @@ const UpdateCategory = ({ onAdd, data }) => {
             <FaEdit className="text-xl" />
           </div>
           <div>
-            <h2 className="text-2xl font-black text-slate-800 leading-none">Edit Category</h2>
-            <p className="text-slate-500 text-sm mt-1 font-medium">Modify category name and settings</p>
+            <h2 className="text-2xl font-black text-slate-800 leading-none">{vt('Edit Category')}</h2>
+            <p className="text-slate-500 text-sm mt-1 font-medium">{vt('Modify category name and settings')}</p>
           </div>
         </div>
         <Tag color="purple" className="rounded-full px-4 py-1 font-bold border-none bg-violet-200/50 text-violet-700 hidden sm:block">
@@ -83,17 +85,17 @@ const UpdateCategory = ({ onAdd, data }) => {
           <div>
             <div className="flex justify-between items-center mb-3">
               <label className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">
-                Category Name
+                {vt('Category Name')}
               </label>
               {data.name !== category.category_name && (
                 <span className="text-[10px] font-bold text-violet-600 bg-violet-50 px-2 py-0.5 rounded tracking-tighter uppercase">
-                  Pending Change
+                  {vt('Pending Change')}
                 </span>
               )}
             </div>
             <Input
               size="large"
-              placeholder="Enter category name..."
+              placeholder={vt('Enter category name...')}
               value={category.category_name}
               onChange={(e) => setCategory(prev => ({ ...prev, category_name: e.target.value }))}
               className="h-14 rounded-2xl border-slate-200 bg-slate-50/50 hover:bg-white focus:bg-white transition-all font-medium text-lg px-6"
@@ -104,7 +106,7 @@ const UpdateCategory = ({ onAdd, data }) => {
             <FaInfoCircle className="text-slate-400 mt-0.5" />
             <div>
               <p className="text-xs text-slate-500 font-medium">
-                Changing this name will update the classification for all items currently under <span className="text-slate-900 font-bold">"{data.name}"</span>.
+                {vt('Changing this name will update the classification for all items currently under')} <span className="text-slate-900 font-bold">"{data.name}"</span>.
               </p>
             </div>
           </div>
@@ -122,7 +124,7 @@ const UpdateCategory = ({ onAdd, data }) => {
                 ? 'bg-slate-200 text-slate-400 shadow-none'
                 : 'bg-violet-600 hover:bg-violet-700 text-white shadow-violet-100'}`}
           >
-            Save Changes
+            {vt('Save Changes')}
           </Button>
 
           <form method="dialog" className="order-1 sm:order-2">

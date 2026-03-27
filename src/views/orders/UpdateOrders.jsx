@@ -566,6 +566,7 @@ const UpdateOrders = () => {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
+      className="view-page"
     >
       <section className="px-4 md:px-6 lg:px-8 py-6">
         {contextHolder}

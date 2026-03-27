@@ -145,7 +145,7 @@ const StockByRaw = () => {
     });
 
     return (
-        <div className="min-h-screen bg-transparent p-1 md:p-3">
+        <div className="report-page min-h-screen bg-transparent p-1 md:p-3">
             <div className="mx-auto">
                 <div className="mb-8 ml-2">
                     <h1 className="text-3xl font-bold text-gray-900">Stock Report By Raw Material</h1>
@@ -337,3 +337,4 @@ const StockByRaw = () => {
 };
 
 export default StockByRaw;
+

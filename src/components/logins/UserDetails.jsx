@@ -11,6 +11,7 @@ import { FaUserCircle } from 'react-icons/fa';
 import { IoArrowBack, IoChevronForward } from 'react-icons/io5';
 import api from '../../services/api';
 import { FaCircleArrowLeft } from 'react-icons/fa6';
+import { useGetAllRoleQuery } from '../../../app/Features/rolesSlice';
 
 const UserProfilePage = () => {
     const { id } = useParams();
@@ -30,18 +31,19 @@ const UserProfilePage = () => {
     const [updateRole] = useUpdateRoleMutation();
     const { refetch: userRefetch } = useGetAllUserQuery(token);
     const { data: filteredUsers } = useGetUserByProIdQuery({ id: data?.data?.profile_id, token });
+    const { data: roles } = useGetAllRoleQuery(token);
 
     const [editing, setEditing] = useState({
         username: false,
         phone_number: false,
         image: false,
-        role: false
+        role_id: false
     });
 
     const [tempValues, setTempValues] = useState({
         username: '',
         phone_number: '',
-        role: ''
+        role_id: ''
     });
 
     const [selectedImage, setSelectedImage] = useState(null);
@@ -54,7 +56,7 @@ const UserProfilePage = () => {
             setTempValues({
                 username: data.data.username || '',
                 phone_number: data.data.phone_number || '',
-                role: data.data.role || ''
+                role_id: data.data.role_id || ''
             });
         }
     }, [data]);
@@ -90,10 +92,10 @@ const UserProfilePage = () => {
                     path: "/user/number_phone",
                     token
                 });
-            } else if (field === 'role') {
+            } else if (field === 'role_id') {
                 response = await updateRole({
                     id,
-                    itemData: { role: tempValues.role },
+                    itemData: { role_id: tempValues.role_id },
                     path: "/user/role",
                     token
                 });
@@ -595,9 +597,9 @@ const UserProfilePage = () => {
                                                             <p className="text-sm text-gray-600">Role</p>
                                                         </div>
                                                     </div>
-                                                    {!editing.role && (
+                                                    {!editing.role_id && (
                                                         <button
-                                                            onClick={() => handleEdit('role')}
+                                                            onClick={() => handleEdit('role_id')}
                                                             className="text-blue-600 hover:text-blue-800 transition-colors p-2 hover:bg-blue-100 rounded-lg"
                                                         >
                                                             <FiEdit className="h-4 w-4" />
@@ -605,7 +607,7 @@ const UserProfilePage = () => {
                                                     )}
                                                 </div>
                                                 <AnimatePresence mode="wait">
-                                                    {editing.role ? (
+                                                    {editing.role_id ? (
                                                         <motion.div
                                                             initial={{ opacity: 0, y: -10 }}
                                                             animate={{ opacity: 1, y: 0 }}
@@ -613,26 +615,23 @@ const UserProfilePage = () => {
                                                             className="flex items-center gap-3"
                                                         >
                                                             <select
-                                                                value={tempValues.role}
-                                                                onChange={(e) => setTempValues(prev => ({ ...prev, role: e.target.value }))}
+                                                                value={tempValues.role_id}
+                                                                onChange={(e) => setTempValues(prev => ({ ...prev, role_id: e.target.value }))}
                                                                 className="flex-1 border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent capitalize"
                                                             >
                                                                 <option value="">Select Role</option>
-                                                                <option value="admin">Admin</option>
-                                                                <option value="manager">Manager</option>
-                                                                <option value="cashier">Cashier</option>
-                                                                <option value="guest">Guest</option>
+                                                                {roles?.data?.map(r => <option value={r.role_id}>{r.role_name}</option>)}
                                                             </select>
                                                             <div className="flex gap-2">
                                                                 <button
-                                                                    onClick={() => handleSave('role')}
+                                                                    onClick={() => handleSave('role_id')}
                                                                     disabled={isSaving}
                                                                     className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors disabled:opacity-50 flex items-center gap-2"
                                                                 >
                                                                     <FiCheck className="h-4 w-4" />
                                                                 </button>
                                                                 <button
-                                                                    onClick={() => handleCancel('role')}
+                                                                    onClick={() => handleCancel('role_id')}
                                                                     className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors flex items-center gap-2"
                                                                 >
                                                                     <FiX className="h-4 w-4" />

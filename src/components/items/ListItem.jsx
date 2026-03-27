@@ -14,6 +14,7 @@ import {
 } from "react-icons/ri";
 import { toast } from "react-toastify";
 import api from "../../services/api";
+import { useItemText } from "./itemText";
 
 // Custom components
 const Button = ({ children, onClick, variant = "default", icon, disabled, className = "" }) => {
@@ -81,7 +82,7 @@ const EmptyState = ({ description, buttonText, onButtonClick }) => (
   </div>
 );
 
-const Pagination = ({ current, total, pageSize, onChange }) => {
+const Pagination = ({ current, total, pageSize, onChange, it }) => {
   const totalPages = Math.ceil(total / pageSize);
   const start = (current - 1) * pageSize + 1;
   const end = Math.min(current * pageSize, total);
@@ -89,7 +90,7 @@ const Pagination = ({ current, total, pageSize, onChange }) => {
   return (
     <div className="flex items-center justify-between gap-4 bg-white border border-gray-200 rounded px-4 py-2">
       <div className="text-sm text-gray-600">
-        Showing {start} to {end} of {total} items
+        {it("Showing")} {start} {it("to")} {end} {it("of")} {total} {it("items")}
       </div>
       <div className="flex items-center gap-2">
         <button
@@ -107,7 +108,7 @@ const Pagination = ({ current, total, pageSize, onChange }) => {
           ⟨
         </button>
         <span className="px-3 py-1 text-sm">
-          Page {current} of {totalPages}
+          {it("Page")} {current} {it("of")} {totalPages}
         </span>
         <button
           onClick={() => onChange(current + 1)}
@@ -129,7 +130,7 @@ const Pagination = ({ current, total, pageSize, onChange }) => {
 };
 
 // Grid Card component
-const GridCard = ({ item, onEdit, onDelete, onView, formatCurrency, getDiscount }) => {
+const GridCard = ({ item, onEdit, onDelete, onView, formatCurrency, getDiscount, it }) => {
   const discount = getDiscount(item.price, item.price_discount);
   const inStock = item?.stock?.in_stock || 0;
 
@@ -147,12 +148,12 @@ const GridCard = ({ item, onEdit, onDelete, onView, formatCurrency, getDiscount 
         />
         <div className="absolute top-2 left-2 flex flex-col gap-1">
           <Tag color={inStock > 0 ? "success" : "error"}>
-            {inStock > 0 ? `Stock: ${inStock}` : "Sold Out"}
+            {inStock > 0 ? `${it("Stock:")} ${inStock}` : it("Sold Out")}
           </Tag>
         </div>
         {item.discount > 0 && (
           <div className="absolute top-2 right-0">
-            <Tag color="error" className="rounded-l-md border-none font-bold">{item.discount}% off</Tag>
+            <Tag color="error" className="rounded-l-md border-none font-bold">{item.discount}% {it("off")}</Tag>
           </div>
         )}
       </div>
@@ -181,17 +182,17 @@ const GridCard = ({ item, onEdit, onDelete, onView, formatCurrency, getDiscount 
 };
 
 // List View Table
-const ListView = ({ items, navigator, onDelete, formatCurrency }) => (
+const ListView = ({ items, navigator, onDelete, formatCurrency, it }) => (
   <div className="bg-white border border-gray-200 rounded overflow-hidden">
     <div className="overflow-x-auto">
       <table className="w-full border-collapse text-sm">
         <thead className="bg-gray-100 border-b border-gray-300">
           <tr>
-            <th className="px-4 py-3 text-left font-medium text-gray-600">Product</th>
-            <th className="px-4 py-3 text-left font-medium text-gray-600">Code</th>
-            <th className="px-4 py-3 text-left font-medium text-gray-600">Stock</th>
-            <th className="px-4 py-3 text-left font-medium text-gray-600">Price</th>
-            <th className="px-4 py-3 text-right font-medium text-gray-600">Actions</th>
+            <th className="px-4 py-3 text-left font-medium text-gray-600">{it("Product")}</th>
+            <th className="px-4 py-3 text-left font-medium text-gray-600">{it("Code")}</th>
+            <th className="px-4 py-3 text-left font-medium text-gray-600">{it("Stock")}</th>
+            <th className="px-4 py-3 text-left font-medium text-gray-600">{it("Price")}</th>
+            <th className="px-4 py-3 text-right font-medium text-gray-600">{it("Actions")}</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-200">
@@ -221,7 +222,7 @@ const ListView = ({ items, navigator, onDelete, formatCurrency }) => (
                 </td>
                 <td className="px-4 py-3">
                   <Tag color={inStock > 0 ? "success" : "error"}>
-                    {inStock} In Stock
+                    {inStock} {it("In Stock")}
                   </Tag>
                 </td>
                 <td className="px-4 py-3 font-medium">{formatCurrency(item.price_discount || item.price)}</td>
@@ -257,6 +258,7 @@ const ListView = ({ items, navigator, onDelete, formatCurrency }) => (
 );
 
 const ListItem = () => {
+  const { it } = useItemText();
   const navigate = useNavigate();
   const [viewMode, setViewMode] = useState(localStorage.getItem("itemViewMode") || "grid");
   const [alertBox, setAlertBox] = useState(false);
@@ -297,11 +299,11 @@ const ListItem = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.data.status === 200) {
-        toast.success("Item deleted successfully");
+        toast.success(it("Item deleted successfully"));
         refetch();
       }
     } catch (error) {
-      toast.error(error?.message || "Error deleting item");
+      toast.error(error?.message || it("Error deleting item"));
     } finally {
       setLoading(false);
       setDeleteItemId(null);
@@ -317,11 +319,11 @@ const ListItem = () => {
   };
 
   return (
-    <div className="min-h-screen bg-transparent pb-5">
+    <div className="items-page min-h-screen bg-transparent pb-5">
       <AlertBox
         isOpen={alertBox}
-        title="Delete Item"
-        message="This action is permanent. Are you sure?"
+        title={it("Delete Item")}
+        message={it("This action is permanent. Are you sure?")}
         onConfirm={handleConfirmDelete}
         onCancel={() => setAlertBox(false)}
         confirmColor="error"
@@ -331,10 +333,10 @@ const ListItem = () => {
       <div className="border-b border-gray-200 p-3">
         <div className="mx-auto flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Items</h1>
+            <h1 className="text-2xl font-bold text-gray-900">{it("Items")}</h1>
             <p className="text-sm text-gray-500 flex items-center gap-2">
               <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-              {totalItems} total items found
+              {totalItems} {it("total items found")}
             </p>
           </div>
           <div className="flex gap-3 w-full md:w-auto">
@@ -344,7 +346,7 @@ const ListItem = () => {
               variant="default"
               className="flex-1 md:flex-none"
             >
-              Import
+              {it("Import")}
             </Button>
             <Button
               onClick={() => navigate("create")}
@@ -352,7 +354,7 @@ const ListItem = () => {
               variant="primary"
               className="flex-1 md:flex-none"
             >
-              Add New
+              {it("Add New")}
             </Button>
           </div>
         </div>
@@ -363,7 +365,7 @@ const ListItem = () => {
         <div className="flex flex-col lg:flex-row gap-4 mb-6">
           <div className="flex-1 relative">
             <input
-              placeholder="Search database by name, code or category..."
+              placeholder={it("Search database by name, code or category...")}
               className="w-full h-12 pl-10 pr-4 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -399,7 +401,7 @@ const ListItem = () => {
 
         {/* Content */}
         {isLoading || isFetching ? (
-          <LoadingSpinner tip="Syncing with database..." />
+          <LoadingSpinner tip={it("Syncing with database...")} />
         ) : items.length > 0 ? (
           viewMode === "grid" ? (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3">
@@ -412,6 +414,7 @@ const ListItem = () => {
                   onView={() => navigate(`detail/${item.id}`)}
                   formatCurrency={formatCurrency}
                   getDiscount={getDiscountPercentage}
+                  it={it}
                 />
               ))}
             </div>
@@ -421,12 +424,13 @@ const ListItem = () => {
               navigator={navigate}
               onDelete={handleDelete}
               formatCurrency={formatCurrency}
+              it={it}
             />
           )
         ) : (
           <EmptyState
-            description="No results found matching your search"
-            buttonText="Add Item"
+            description={it("No results found matching your search")}
+            buttonText={it("Add Item")}
             onButtonClick={() => navigate("create")}
           />
         )}
@@ -438,6 +442,7 @@ const ListItem = () => {
               current={currentPage}
               total={totalItems}
               pageSize={pageSize}
+              it={it}
               onChange={(page) => { setCurrentPage(page); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
             />
           </div>
