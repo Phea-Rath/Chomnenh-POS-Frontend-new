@@ -40,6 +40,8 @@ import api from "../../services/api";
 import ExportExel from "../../services/ExportExel";
 import { BiEdit, BiTrash } from "react-icons/bi";
 import { useTranslation } from "react-i18next";
+import { set } from "date-fns";
+import { MdPayment } from "react-icons/md";
 
 const Purchases = () => {
   const { t } = useTranslation();
@@ -47,6 +49,7 @@ const Purchases = () => {
   const [filteredPurchases, setFilteredPurchases] = useState([]);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentAmount, setPaymentAmount] = useState(0);
+  const [balanceAmount, setBalanceAmount] = useState(0);
   const [paymentDate, setPaymentDate] = useState("");
   const token = localStorage.getItem("token");
   const [id, setId] = useState(0);
@@ -545,12 +548,13 @@ const Purchases = () => {
                                 onClick={() => {
                                   setShowPaymentModal(true);
                                   setPaymentAmount(item.balance);
+                                  setBalanceAmount({ pay: item.total_paid, balance: item.balance });
                                   setId(item.purchase_id);
                                   setPaymentDate(new Date().toISOString().split("T")[0]);
                                 }}
-                                className="px-3 rounded-2xl border border-blue-600 hover:text-white text-blue-500 hover:bg-blue-700 dark:border-blue-400 dark:text-blue-400 dark:hover:bg-blue-600 dark:hover:text-white text-xs transition-colors"
+                                className="p-2 bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 rounded hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors"
                               >
-                                {t('pay')}
+                                <MdPayment />
                               </button>
                             )}
                             <Link to={`receipt/${item.purchase_id}`}>
@@ -673,12 +677,13 @@ const Purchases = () => {
                             onClick={() => {
                               setShowPaymentModal(true);
                               setPaymentAmount(item.balance);
+                              setBalanceAmount({ pay: item.total_paid, balance: item.balance });
                               setId(item.purchase_id);
                               setPaymentDate(new Date().toISOString().split("T")[0]);
                             }}
-                            className="px-3 rounded-2xl border border-blue-600 hover:text-white text-blue-500 hover:bg-blue-700 dark:border-blue-400 dark:text-blue-400 dark:hover:bg-blue-600 dark:hover:text-white text-xs transition-colors"
+                            className="p-2 bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 rounded hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors"
                           >
-                            {t('pay')}
+                            <MdPayment />
                           </button>
                         )}
                         <Link to={`receipt/${item.purchase_id}`}>
@@ -755,6 +760,10 @@ const Purchases = () => {
               <FaMoneyBillWave className="text-green-500" />
               {t('addPayment')}
             </h3>
+            <div className="flex justify-between mb-4 dark:text-gray-300">
+              <h1>{t('balance')}: <span className="text-red-500">{parseFloat(balanceAmount?.balance).toFixed(2)}</span></h1>
+              <h1>{t('paidAmount')}: <span className="text-green-500">{parseFloat(balanceAmount?.pay).toFixed(2)}</span></h1>
+            </div>
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-1">

@@ -247,17 +247,17 @@ const APReport = () => {
                 {reportData && (
                     <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-5 text-xs">
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                            <div className="rounded-lg border border-blue-100 bg-blue-50 p-4">
+                            <div className="rounded-lg border border-blue-100 bg-blue-50 dark:bg-gray-700 dark:border-gray-500 p-4">
                                 <p className="text-slate-500">Total Amount</p>
                                 <p className="text-lg font-semibold text-slate-900">{formatUSD(totals.total)}</p>
                                 <p className="text-slate-400 text-xs mt-1">{formatKHR(totals.total_kh)}</p>
                             </div>
-                            <div className="rounded-lg border border-emerald-100 bg-emerald-50 p-4">
+                            <div className="rounded-lg border border-emerald-100 bg-emerald-50 dark:bg-gray-700 dark:border-gray-500 p-4">
                                 <p className="text-slate-500">Total Paid</p>
                                 <p className="text-lg font-semibold text-emerald-600">{formatUSD(totals.total_paid)}</p>
                                 <p className="text-slate-400 text-xs mt-1">{formatKHR(totals.total_paid_kh)}</p>
                             </div>
-                            <div className="rounded-lg border border-rose-100 bg-rose-50 p-4">
+                            <div className="rounded-lg border border-rose-100 bg-rose-50 dark:bg-gray-700 dark:border-gray-500 p-4">
                                 <p className="text-slate-500">Total Payable</p>
                                 <p className="text-lg font-semibold text-rose-600">{formatUSD(totals.total_balance)}</p>
                                 <p className="text-slate-400 text-xs mt-1">{formatKHR(totals.total_balance_kh)}</p>

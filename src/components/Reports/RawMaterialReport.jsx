@@ -17,6 +17,7 @@ import { toast } from 'react-toastify';
 import { useGetAllRawMaterialQuery } from '../../../app/Features/RawMaterialSlice';
 import { useGetAllUserQuery } from '../../../app/Features/usersSlice';
 import { useReportText } from './reportText';
+import { useOutletsContext } from '../../layouts/Management';
 
 const { RangePicker } = DatePicker;
 const EMPTY_REPORT_DATA = {
@@ -37,6 +38,7 @@ const EMPTY_REPORT_DATA = {
 
 const RawMaterialReport = () => {
     const { rt } = useReportText();
+    const { darkMode } = useOutletsContext();
     const token = localStorage.getItem('token');
     const [loading, setLoading] = useState(false);
     const [form] = Form.useForm();
@@ -141,38 +143,40 @@ const RawMaterialReport = () => {
     return (
         <div className="report-page p-6 bg-transparent min-h-screen">
             <div className="max-w-7xl mx-auto">
-                <h1 className="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2">
+                <h1 className="text-2xl font-bold mb-6 flex items-center gap-2 text-gray-800 dark:!text-white">
                     <StockOutlined className="text-blue-600" /> {rt("Raw Material Stock Report")}
                 </h1>
 
                 {/* Filter Section */}
-                <Card className="!mb-6 shadow-sm border-none rounded-xl">
+                <Card className="!mb-6 shadow-sm border-none rounded-xl dark:!bg-gray-800 dark:!text-white">
                     <Form form={form} layout="vertical" onFinish={onFinish}>
                         <Row gutter={[16, 16]} align="center">
                             <Col xs={24} md={6}>
-                                <Form.Item name="date_range" label="Date Range">
-                                    <RangePicker className="w-full" />
+                                <Form.Item name="date_range" label={<span className="dark:!text-white">{rt("Date Range")}</span>}>
+                                    <RangePicker className="w-full dark:!bg-gray-700 dark:!text-white dark:!border-gray-600" />
                                 </Form.Item>
                             </Col>
                             <Col xs={12} md={4}>
-                                <Form.Item name="item_id" label="Material">
-                                    <Select placeholder="All Materials" allowClear>
-                                        {rawMaterials?.map(raw => <Select.Option value={raw?.id}>{raw?.material_name}</Select.Option>)}
+                                <Form.Item name="item_id" label={<span className="dark:!text-white">{rt("Material")}</span>}>
+                                    <Select 
+                                        placeholder={rt("All Materials")} 
+                                        allowClear 
+                                        className="dark:!bg-gray-700 dark:!text-white"
+                                        dropdownStyle={darkMode ? { backgroundColor: '#1f2937', color: 'white' } : {}}
+                                    >
+                                        {rawMaterials?.map(raw => <Select.Option key={raw?.id} value={raw?.id}>{raw?.material_name}</Select.Option>)}
                                     </Select>
                                 </Form.Item>
                             </Col>
-                            {/* <Col xs={12} md={4}>
-                                <Form.Item name="stock_type_id" label="Stock Type">
-                                    <Select placeholder="All Types" allowClear>
-                                        <Select.Option value={1}>Stock In</Select.Option>
-                                        <Select.Option value={2}>Production</Select.Option>
-                                    </Select>
-                                </Form.Item>
-                            </Col> */}
                             <Col xs={12} md={4}>
-                                <Form.Item name="created_by" label="Handled By">
-                                    <Select placeholder="All Users" allowClear>
-                                        {handles?.map(u => <Select.Option value={u?.id}>{u?.username}</Select.Option>)}
+                                <Form.Item name="created_by" label={<span className="dark:!text-white">{rt("Handled By")}</span>}>
+                                    <Select 
+                                        placeholder={rt("All Users")} 
+                                        allowClear 
+                                        className="dark:!bg-gray-700 dark:!text-white"
+                                        dropdownStyle={darkMode ? { backgroundColor: '#1f2937', color: 'white' } : {}}
+                                    >
+                                        {handles?.map(u => <Select.Option key={u?.id} value={u?.id}>{u?.username}</Select.Option>)}
                                     </Select>
                                 </Form.Item>
                             </Col>
@@ -180,7 +184,7 @@ const RawMaterialReport = () => {
                                 <Button type="primary" icon={<FilterOutlined />} htmlType="submit" className="flex-1" loading={loading}>
                                     {rt("Get Report")}
                                 </Button>
-                                <Button icon={<ReloadOutlined />} onClick={handleReset} disabled={loading}>
+                                <Button icon={<ReloadOutlined />} onClick={handleReset} disabled={loading} className="dark:!bg-gray-700 dark:!text-white dark:!border-gray-600">
                                     {rt("Reset")}
                                 </Button>
                             </Col>
@@ -191,97 +195,105 @@ const RawMaterialReport = () => {
                 {/* Top Statistics Cards */}
                 <Row gutter={[16, 16]} className="mb-6">
                     <Col xs={24} sm={12} md={6}>
-                        <Card borderless className="shadow-sm">
+                        <Card borderless className="shadow-sm dark:!bg-gray-800">
                             <Statistic
-                                title="Total Purchase Cost"
+                                title={<span className="text-gray-600 dark:!text-gray-300">{rt("Total Purchase Cost")}</span>}
                                 value={reportData.cost_in}
                                 prefix={<StockOutlined />}
-                                valueStyle={{ color: '#3f8600' }}
+                                valueStyle={{ color: darkMode ? '#86efac' : '#3f8600' }}
                                 suffix='$'
                             />
-                            <p className='px-5'>{Number(reportData?.cost_in_kh || 0).toFixed(2)}៛</p>
+                            <p className="px-5 text-gray-500 dark:!text-gray-400">{Number(reportData?.cost_in_kh || 0).toFixed(2)}៛</p>
                         </Card>
                     </Col>
                     <Col xs={24} sm={12} md={6}>
-                        <Card borderless className="shadow-sm">
+                        <Card borderless className="shadow-sm dark:!bg-gray-800">
                             <Statistic
-                                title="Total Used Cost"
+                                title={<span className="text-gray-600 dark:!text-gray-300">{rt("Total Used Cost")}</span>}
                                 value={reportData.cost_used}
                                 prefix={<DollarOutlined />}
                                 precision={2}
+                                valueStyle={{ color: darkMode ? '#93c5fd' : '' }}
                                 suffix='$'
                             />
-                            <p className='px-5'>{Number(reportData?.cost_used_kh || 0).toFixed(2)}៛</p>
+                            <p className="px-5 text-gray-500 dark:!text-gray-400">{Number(reportData?.cost_used_kh || 0).toFixed(2)}៛</p>
                         </Card>
                     </Col>
                     <Col xs={24} sm={12} md={6}>
-                        <Card borderless className="shadow-sm">
+                        <Card borderless className="shadow-sm dark:!bg-gray-800">
                             <Statistic
-                                title="Total Return Cost"
+                                title={<span className="text-gray-600 dark:!text-gray-300">{rt("Total Return Cost")}</span>}
                                 value={reportData.cost_return}
-                                valueStyle={{ color: '#096dd9' }}
+                                valueStyle={{ color: darkMode ? '#3b82f6' : '#096dd9' }}
                                 prefix={<ArrowUpOutlined />}
                                 suffix='$'
                             />
-                            <p className='px-5'>{Number(reportData?.cost_return_kh || 0).toFixed(2)}៛</p>
+                            <p className="px-5 text-gray-500 dark:!text-gray-400">{Number(reportData?.cost_return_kh || 0).toFixed(2)}៛</p>
                         </Card>
                     </Col>
                     <Col xs={24} sm={12} md={6}>
-                        <Card borderless className="shadow-sm">
+                        <Card borderless className="shadow-sm dark:!bg-gray-800">
                             <Statistic
-                                title="Total Waste Cost"
+                                title={<span className="text-gray-600 dark:!text-gray-300">{rt("Total Waste Cost")}</span>}
                                 value={reportData.cost_waste}
-                                valueStyle={{ color: '#cf1322' }}
+                                valueStyle={{ color: darkMode ? '#f87171' : '#cf1322' }}
                                 prefix={<ArrowDownOutlined />}
                                 suffix='$'
                             />
-                            <p className='px-5'>{Number(reportData?.cost_waste_kh || 0).toFixed(2)}៛</p>
+                            <p className="px-5 text-gray-500 dark:!text-gray-400">{Number(reportData?.cost_waste_kh || 0).toFixed(2)}៛</p>
                         </Card>
                     </Col>
                     <Col xs={24} sm={12} md={6}>
-                        <Card borderless className="shadow-sm">
+                        <Card borderless className="shadow-sm dark:!bg-gray-800">
                             <Statistic
-                                title="Total Out Cost"
+                                title={<span className="text-gray-600 dark:!text-gray-300">{rt("Total Out Cost")}</span>}
                                 value={reportData.cost_out}
-                                valueStyle={{ color: '#cf1322' }}
+                                valueStyle={{ color: darkMode ? '#f87171' : '#cf1322' }}
                                 prefix={<ArrowDownOutlined />}
                                 suffix='$'
                             />
-                            <p className='px-5'>{Number(reportData?.cost_out_kh || 0).toFixed(2)}៛</p>
+                            <p className="px-5 text-gray-500 dark:!text-gray-400">{Number(reportData?.cost_out_kh || 0).toFixed(2)}៛</p>
                         </Card>
                     </Col>
                     <Col xs={24} sm={12} md={6}>
-                        <Card borderless className="shadow-sm">
+                        <Card borderless className="shadow-sm dark:!bg-gray-800">
                             <Statistic
-                                title="Calculate Cost"
+                                title={<span className="text-gray-600 dark:!text-gray-300">{rt("Calculate Cost")}</span>}
                                 value={reportData.calculate_cost}
                                 valueStyle={{
-                                    color: reportData.calculate_cost < 0 ? '#cf1322' : '#52c41a'
+                                    color: reportData.calculate_cost < 0 ? (darkMode ? '#f87171' : '#cf1322') : (darkMode ? '#4ade80' : '#52c41a')
                                 }}
                                 prefix={reportData.calculate_cost < 0 ? <ArrowDownOutlined /> : <ArrowUpOutlined />}
                                 suffix="$"
                             />
-                            <p className='px-5'>{Number(reportData?.calculate_cost_kh || 0).toFixed(2)}៛</p>
+                            <p className="px-5 text-gray-500 dark:!text-gray-400">{Number(reportData?.calculate_cost_kh || 0).toFixed(2)}៛</p>
                         </Card>
                     </Col>
                 </Row>
 
                 {/* Charts Section */}
                 <Row gutter={[16, 16]}>
-                    {/* Bar Chart - Quantity and Cost Flow */}
                     <Col xs={24} lg={16}>
-                        <Card title="Stock Flow Analysis (Qty vs Cost)" className="shadow-sm border-none rounded-xl h-full">
+                        <Card title={<span className="dark:!text-white">{rt("Stock Flow Analysis (Qty vs Cost)")}</span>} className="shadow-sm border-none rounded-xl h-full dark:!bg-gray-800">
                             <div style={{ width: '100%', height: 400 }}>
                                 <ResponsiveContainer>
                                     <BarChart data={barData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                                        <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                                        <XAxis dataKey="name" />
-                                        <YAxis yAxisId="left" orientation="left" stroke="#8884d8" />
-                                        <YAxis yAxisId="right" orientation="right" stroke="#82ca9d" />
+                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={darkMode ? '#374151' : '#f0f0f0'} />
+                                        <XAxis dataKey="name" stroke={darkMode ? '#9ca3af' : '#666'} tickFormatter={(name) => rt(name)} />
+                                        <YAxis yAxisId="left" orientation="left" stroke={darkMode ? '#8884d8' : '#8884d8'} />
+                                        <YAxis yAxisId="right" orientation="right" stroke={darkMode ? '#82ca9d' : '#82ca9d'} />
                                         <Tooltip
-                                            contentStyle={{ borderRadius: '10px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                                            contentStyle={{
+                                                borderRadius: '10px',
+                                                border: 'none',
+                                                boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                                                backgroundColor: darkMode ? '#1f2937' : '#fff',
+                                                color: darkMode ? '#fff' : '#000'
+                                            }}
+                                            itemStyle={{ color: darkMode ? '#fff' : '#000' }}
+                                            formatter={(value, name) => [value, rt(name)]}
                                         />
-                                        <Legend />
+                                        <Legend formatter={(value) => <span className="dark:!text-gray-300">{rt(value)}</span>} />
                                         <Bar yAxisId="left" dataKey="quantity" name="Quantity Units" fill="#8884d8" radius={[4, 4, 0, 0]} />
                                         <Bar yAxisId="right" dataKey="cost" name="Cost Amount ($)" fill="#82ca9d" radius={[4, 4, 0, 0]} />
                                     </BarChart>
@@ -290,9 +302,8 @@ const RawMaterialReport = () => {
                         </Card>
                     </Col>
 
-                    {/* Pie Chart - Cost Distribution */}
                     <Col xs={24} lg={8}>
-                        <Card title="Cost Contribution" className="shadow-sm border-none rounded-xl h-full">
+                        <Card title={<span className="dark:!text-white">{rt("Cost Contribution")}</span>} className="shadow-sm border-none rounded-xl h-full dark:!bg-gray-800">
                             <div style={{ width: '100%', height: 400 }}>
                                 <ResponsiveContainer>
                                     <PieChart>
@@ -310,8 +321,21 @@ const RawMaterialReport = () => {
                                                 <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                             ))}
                                         </Pie>
-                                        <Tooltip />
-                                        <Legend verticalAlign="bottom" height={36} />
+                                        <Tooltip
+                                            contentStyle={{
+                                                backgroundColor: darkMode ? '#1f2937' : '#fff',
+                                                border: 'none',
+                                                borderRadius: '8px',
+                                                color: darkMode ? '#fff' : '#000'
+                                            }}
+                                            itemStyle={{ color: darkMode ? '#fff' : '#000' }}
+                                            formatter={(value, name) => [value, rt(name)]}
+                                        />
+                                        <Legend
+                                            verticalAlign="bottom"
+                                            height={36}
+                                            formatter={(value) => <span className="dark:!text-gray-300">{rt(value)}</span>}
+                                        />
                                     </PieChart>
                                 </ResponsiveContainer>
                             </div>

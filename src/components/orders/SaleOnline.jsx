@@ -1179,10 +1179,12 @@ const Sales = () => {
   };
 
   const showQrPayment = async () => {
-    const rawAmount = orders.order_payment_status === "paid" ? orders.order_total : orders.payment;
+    const rawAmount = orders.order_total || 0;
     const rate = exchangeRate?.data?.usd_to_khr || null;
     const amount = rate ? Math.round(rawAmount * rate) : rawAmount;
     const currency = rate ? "KHR" : "USD";
+    console.log(rawAmount, rate, amount);
+
 
     if (!amount || amount <= 0) {
       toast.error("Payment amount must be greater than 0");

@@ -358,7 +358,7 @@ const SaleReportByItem = () => {
 
                                     {/* Row Totals */}
                                     {reportData.length > 0 && (
-                                        <tr className="bg-gray-100 font-bold">
+                                        <tr className="bg-gray-100 dark:bg-gray-800 font-bold">
                                             <td className="border border-gray-300 px-6 py-4 text-right" colSpan={4}>Total</td>
                                             <td className="border border-gray-300 px-6 py-4">{totals.quantity}</td>
                                             <td className="border border-gray-300 px-6 py-4">{formatCurrency(totals.order_discount)}</td>

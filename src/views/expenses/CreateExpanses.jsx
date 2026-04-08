@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import AlertBox from "../../services/AlertBox";
 import { useOutletsContext } from "../../layouts/Management";
 import { useNavigate, useParams } from "react-router";
@@ -61,9 +61,6 @@ const CreateExpanses = () => {
   //   { id, token },
   //   { skip: !isEditMode }
   // );
-  console.log(existingExpanse);
-
-
   const { refetch } = useGetAllExpansesQuery(token);
   const [createExpanse, expenseCreated] = useCreateExpanseMutation();
   const [updateExpanse, expenseUpdated] = useUpdateExpanseMutation();
@@ -193,9 +190,13 @@ const CreateExpanses = () => {
       if (response.data.status === 200) {
         refetch();
         toast.success(isEditMode ? "Expense updated successfully" : "Expense created successfully");
-        setLoading(false);
-        onAdd();
-        navigator(-1);
+        handleReset();
+
+        if (hasDialogCloseHandler) {
+          onAdd();
+        } else {
+          navigator(-1);
+        }
       }
     } catch (error) {
       toast.error(
@@ -203,8 +204,9 @@ const CreateExpanses = () => {
         error ||
         `An error occurred while ${isEditMode ? 'updating' : 'creating'} the expense`
       );
-      setLoading(false);
       setAlertBox(false);
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -246,8 +248,7 @@ const CreateExpanses = () => {
     );
 
   };
-  console.log(expense_type);
-
+  const hasDialogCloseHandler = useMemo(() => typeof onAdd === "function", [onAdd]);
 
   const handleDecreaseQuantity = (index) => {
     setexpense_type(prev =>

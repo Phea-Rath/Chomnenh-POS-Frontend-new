@@ -64,9 +64,9 @@ const RawMaterials = () => {
 
         setPagination(prev => ({
             ...prev,
-            current: raw?.data?.current_page || 1,
-            pageSize: raw?.data?.per_page || prev.pageSize,
-            total: raw?.data?.total || 0
+            current: raw?.pagination?.current_page || prev.current,
+            pageSize: raw?.pagination?.per_page || prev.pageSize,
+            total: raw?.pagination?.total || 0
         }));
         setMaterials(data);
         setFilteredMaterials(data);
@@ -111,7 +111,6 @@ const RawMaterials = () => {
             });
         }
 
-        console.log(materials);
         setFilteredMaterials(filtered);
     }, [materials, searchTerm, selectedCategory, showDeleted, sortConfig]);
 
@@ -160,6 +159,30 @@ const RawMaterials = () => {
         return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount || 0);
     };
     const formatDate = (date) => dayjs(date).format('MMM D, YYYY');
+    const formatQuantity = (amount) => Number(amount || 0).toLocaleString('en-US', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    });
+    const getImageSrc = (material) => {
+        if (typeof material?.material_image === 'string' && material.material_image.trim()) return material.material_image;
+        if (typeof material?.image === 'string' && material.image.trim()) return material.image;
+        return '';
+    };
+    const getStockData = (material) => material?.stock || {};
+    const getStockValue = (material, field) => getStockData(material)?.[field] ?? 0;
+    const stockSummaryFields = [
+        { key: 'stock_in', label: 'Stock In (IN)', tone: 'text-emerald-600' },
+        { key: 'stock_return', label: 'Return (RET)', tone: 'text-sky-600' },
+        { key: 'stock_out', label: 'Stock Out (OUT)', tone: 'text-orange-500' },
+        { key: 'stock_wasted', label: 'Wasted', tone: 'text-rose-500' },
+    ];
+    const stockFields = [
+        { key: 'in_stock', label: 'In Stock' },
+        { key: 'stock_in', label: 'Stock In' },
+        { key: 'stock_out', label: 'Stock Out' },
+        { key: 'stock_return', label: 'Return' },
+        { key: 'stock_wasted', label: 'Wasted' },
+    ];
 
     // Export data
     const exportData = filteredMaterials.map(m => ({
@@ -176,14 +199,14 @@ const RawMaterials = () => {
     }));
 
     // Custom components
-    const Avatar = ({ src, alt, size = 40 }) => {
+    const Avatar = ({ src, alt, size = 40, className = '' }) => {
         const [error, setError] = useState(false);
         if (src && !error) {
-            return <img src={src} alt={alt} className={`w-${size / 4} h-${size / 4} rounded object-cover border border-gray-200`} onError={() => setError(true)} />;
+            return <img src={src} alt={alt} className={className || 'h-10 w-10 rounded object-cover border border-gray-200'} onError={() => setError(true)} />;
         }
         return (
-            <div className={`w-${size / 4} h-${size / 4} bg-blue-100 rounded flex items-center justify-center text-blue-600`}>
-                <LuPackage className={`text-${size / 4 - 2}`} />
+            <div className={`${className || 'h-10 w-10 rounded'} flex items-center justify-center bg-gradient-to-br from-slate-200 via-slate-100 to-blue-50 text-blue-700`}>
+                <LuPackage className="text-xl" />
             </div>
         );
     };
@@ -282,7 +305,7 @@ const RawMaterials = () => {
     // Table View
     const TableView = () => {
         const start = (pagination.current - 1) * pagination.pageSize;
-        const paginatedData = filteredMaterials.slice(start, start + pagination.pageSize);
+        const paginatedData = filteredMaterials;
 
         return (
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
@@ -295,6 +318,7 @@ const RawMaterials = () => {
                                     Material {sortConfig.field === 'material_name' && (sortConfig.order === 'asc' ? '↑' : '↓')}
                                 </th>
                                 <th className="p-3 text-left font-semibold text-gray-700 border-r border-gray-300">Units</th>
+                                <th className="p-3 text-left font-semibold text-gray-700 border-r border-gray-300">Stock</th>
                                 <th className="p-3 text-right font-semibold text-gray-700 border-r border-gray-300 cursor-pointer" onClick={() => handleSort('material_cost')}>
                                     Cost {sortConfig.field === 'material_cost' && (sortConfig.order === 'asc' ? '↑' : '↓')}
                                 </th>
@@ -335,6 +359,18 @@ const RawMaterials = () => {
                                                         )}
                                                     </>
                                                 )}
+                                            </div>
+                                        </td>
+                                        <td className="p-3">
+                                            <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+                                                {stockFields.map(({ key, label }) => (
+                                                    <div key={key} className="flex items-center justify-between gap-2">
+                                                        <span className="text-gray-500">{label}:</span>
+                                                        <span className={key === 'in_stock' ? 'font-bold text-blue-600' : 'font-medium text-gray-700'}>
+                                                            {formatQuantity(getStockValue(item, key))}
+                                                        </span>
+                                                    </div>
+                                                ))}
                                             </div>
                                         </td>
                                         <td className="p-3 text-right">
@@ -383,68 +419,97 @@ const RawMaterials = () => {
 
     // Card View
     const CardView = () => {
-        const start = (pagination.current - 1) * pagination.pageSize;
-        const paginatedData = filteredMaterials.slice(start, start + pagination.pageSize);
+        const paginatedData = filteredMaterials;
 
         return (
             <>
-                <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
                     {paginatedData.map((item) => (
                         <motion.div
                             key={item.id}
                             initial={{ opacity: 0, scale: 0.9 }}
                             animate={{ opacity: 1, scale: 1 }}
-                            className="border border-gray-200 rounded-lg bg-white shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden"
+                            className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_18px_50px_-28px_rgba(15,23,42,0.35)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_20px_55px_-28px_rgba(37,99,235,0.35)]"
                         >
-                            <div className="p-4">
-                                <div className="flex justify-center mb-3">
-                                    <Avatar src={item.material_image} alt={item.material_name} size={64} />
+                            <div className="relative h-44 overflow-hidden bg-slate-900">
+                                <Avatar
+                                    src={getImageSrc(item)}
+                                    alt={item.material_name}
+                                    className="h-full w-full rounded-none border-0 object-cover"
+                                />
+                                <div className="absolute inset-0 bg-gradient-to-t from-slate-900/70 via-slate-900/20 to-transparent" />
+                            </div>
+                            <div className="space-y-4 p-4">
+                                <div>
+                                    <h3 className="text-xl font-bold tracking-tight text-slate-900">{item.material_name}</h3>
+                                    <p className="mt-1 text-sm text-slate-500">{item.material_code}</p>
+                                    <p className="mt-2 text-[15px] text-slate-600">
+                                        Unit: <span className="font-semibold text-slate-800">{item.primary_unit}</span>
+                                        {item.secondary_unit && (
+                                            <span className="text-slate-500"> | 1 {item.primary_unit} = {item.conversion_value} {item.secondary_unit}</span>
+                                        )}
+                                    </p>
                                 </div>
-                                <div className="text-center mb-3">
-                                    <h3 className="font-bold text-lg text-gray-900">{item.material_name}</h3>
-                                    <p className="text-sm text-gray-500">{item.material_code}</p>
+
+                                <div className="rounded-[20px] bg-slate-50 p-4 shadow-inner">
+                                    <div className="grid grid-cols-2 gap-x-4 gap-y-3">
+                                        {stockSummaryFields.slice(0, 4).map(({ key, label, tone }) => (
+                                            <div key={key}>
+                                                <p className="text-[13px] font-medium text-slate-500">{label}</p>
+                                                <p className={`mt-1 text-md font-bold ${tone}`}>
+                                                    {key === 'stock_in' || key === 'stock_return' ? '+' : '-'} {formatQuantity(getStockValue(item, key))}
+                                                </p>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    {/* <div className="mt-4 border-t border-dashed border-slate-300 pt-3">
+                                        <p className="text-[13px] font-medium text-slate-500">{stockSummaryFields[4].label}</p>
+                                        <p className={`mt-1 text-lg font-bold ${stockSummaryFields[4].tone}`}>
+                                            - {formatQuantity(getStockValue(item, stockSummaryFields[4].key))}
+                                        </p>
+                                    </div> */}
                                 </div>
-                                <div className="space-y-2 mb-4 text-sm">
-                                    <div className="flex items-center justify-between">
-                                        <span className="text-gray-600">Unit:</span>
-                                        <span className="font-medium">{item.primary_unit}</span>
-                                    </div>
-                                    {item.secondary_unit && (
-                                        <div className="flex items-center justify-between">
-                                            <span className="text-gray-600">Conversion:</span>
-                                            <span className="font-medium">1 {item.primary_unit} = {item.conversion_value} {item.secondary_unit}</span>
-                                        </div>
-                                    )}
-                                    <div className="flex items-center justify-between">
-                                        <span className="text-gray-600">Cost:</span>
-                                        <span className="font-bold text-green-600">{formatCurrency(item.material_cost)}</span>
-                                    </div>
-                                    <div className="flex items-center justify-between">
-                                        <span className="text-gray-600">Created:</span>
-                                        <span className="text-sm">{formatDate(item.created_at)}</span>
-                                    </div>
+
+                                <div className="rounded-[20px] border border-blue-100 bg-gradient-to-b from-sky-50 to-blue-50 px-4 py-2 text-center">
+                                    <p className="text-sm font-semibold text-blue-600">Available Stock</p>
+                                    <p className="mt-2 text-xl font-black tracking-tight text-slate-900">
+                                        {formatQuantity(getStockValue(item, 'in_stock'))} {item.primary_unit}
+                                    </p>
+                                    <p className="mt-2 text-sm text-slate-500">
+                                        Cost: <span className="font-semibold text-slate-700">{formatCurrency(item.material_cost * getStockValue(item, 'in_stock'))}</span>
+                                    </p>
                                 </div>
-                                <div className="flex justify-between pt-3 border-t border-gray-200">
+
+                                <div className="flex items-center justify-between border-t border-slate-200 pt-3 text-xs text-slate-500">
+                                    <span>{formatDate(item.created_at)}</span>
+                                    <Badge isDeleted={item.is_deleted} />
+                                </div>
+
+                                <div className="grid grid-cols-3 gap-2">
                                     <button
                                         onClick={() => navigate(`view/${item.id}`)}
-                                        className="p-2 bg-blue-100 text-blue-600 rounded hover:bg-blue-200"
+                                        className="flex items-center justify-center gap-2 rounded-xl border border-blue-500 bg-white px-3 py-2 text-sm font-semibold text-blue-600 transition-colors hover:bg-blue-50"
                                         title="View"
                                     >
                                         <LuEye size={14} />
+                                        View
                                     </button>
                                     <button
                                         onClick={() => navigate(`edit/${item.id}`)}
-                                        className="p-2 bg-green-100 text-green-600 rounded hover:bg-green-200"
+                                        className="flex items-center justify-center gap-2 rounded-xl border border-emerald-500 bg-white px-3 py-2 text-sm font-semibold text-emerald-600 transition-colors hover:bg-emerald-50"
                                         title="Edit"
                                     >
                                         <BiEdit size={14} />
+                                        Edit
                                     </button>
                                     <button
                                         onClick={() => setDeleteConfirmId(item.id)}
-                                        className="p-2 bg-red-100 text-red-600 rounded hover:bg-red-200"
+                                        className="flex items-center justify-center gap-2 rounded-xl border border-red-500 bg-white px-3 py-2 text-sm font-semibold text-red-600 transition-colors hover:bg-red-50"
                                         title="Delete"
                                     >
                                         <LuTrash2 size={14} />
+                                        Delete
                                     </button>
                                 </div>
                             </div>

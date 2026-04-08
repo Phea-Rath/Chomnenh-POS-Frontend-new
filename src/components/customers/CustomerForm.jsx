@@ -36,7 +36,7 @@ const CustomerForm = () => {
     communes: null,
     villages: null,
   });
-  console.log(id, isUpdate);
+  console.log(initialData);
 
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
@@ -47,7 +47,7 @@ const CustomerForm = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (isUpdate == 1 && initialData) {
+    if (isUpdate && initialData) {
       setViewImage(initialData.image);
       setFormData({
         image: null,

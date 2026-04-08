@@ -102,6 +102,7 @@ import Inventories from "./components/Inventories";
 import StockByRaw from "./components/Reports/StockByRaw";
 import StockRaws from "./components/stocks/StockRaws";
 import StockRawForm from "./views/stocks/StockRawForm";
+import StockByWarehouse from "./components/stocks/StockByWarehouse";
 
 
 function ProtectedRoute({ children }) {
@@ -182,6 +183,10 @@ const router = createBrowserRouter([
       {
         path: "/inventories/werehouse",
         element: <Werehouses />,
+      },
+      {
+        path: "/inventories/product-in-warehouse",
+        element: <StockByWarehouse />,
       },
       {
         path: "/stock-type",
@@ -653,9 +658,10 @@ function App() {
     token: localStorage.getItem("token") || localStorage.getItem("guestToken") || "",
     guestId: localStorage.getItem("guestId") || JSON.parse(localStorage.getItem("guest") || "null")?.id || "",
     profileId: localStorage.getItem("profileId") || "",
+    userId: localStorage.getItem("userId") || "",
   }));
 
-  const { token, guestId, profileId } = authState;
+  const { token, guestId, profileId, userId } = authState;
 
   useEffect(() => {
     const syncAuthState = () => {
@@ -663,6 +669,7 @@ function App() {
         token: localStorage.getItem("token") || localStorage.getItem("guestToken") || "",
         guestId: localStorage.getItem("guestId") || JSON.parse(localStorage.getItem("guest") || "null")?.id || "",
         profileId: localStorage.getItem("profileId") || "",
+        userId: localStorage.getItem("userId") || "",
       });
     };
 
@@ -719,6 +726,7 @@ function App() {
       Echo.private(onlineChannel).listen("OnlineEvent", (data) => {
         // toast.info(`Order tracking updated ${data.data}`);
 
+        toast.info(`New orders by ${data.data}`);
         if (token) {
           refetchSale();
           refetchOnline();

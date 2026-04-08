@@ -33,6 +33,7 @@ const SupplierForm = () => {
     supplier_address: "",
     supplier_tel: "",
     supplier_email: "",
+    description: "",
     province: null,
     province_id: null,
     district: null,
@@ -59,6 +60,7 @@ const SupplierForm = () => {
         supplier_address: supplier?.supplier_address || "",
         supplier_tel: supplier?.supplier_tel || "",
         supplier_email: supplier?.supplier_email || "",
+        description: supplier?.description || "",
         province: supplier?.provinces || null,
         district: supplier?.districts || null,
         commune: supplier?.communes || null,
@@ -301,6 +303,7 @@ const SupplierForm = () => {
       formData.append("supplier_address", dataForm.supplier_address.trim());
       formData.append("supplier_tel", dataForm.supplier_tel?.trim() || "");
       formData.append("supplier_email", dataForm.supplier_email?.trim() || "");
+      formData.append("description", dataForm.description?.trim() || "");
       formData.append("provinces", dataForm.province ?? "");
       formData.append("districts", dataForm.district ?? "");
       formData.append("communes", dataForm.commune ?? "");
@@ -325,7 +328,7 @@ const SupplierForm = () => {
         toast.success("Supplier created successfully!");
       }
       refetch();
-      navigate("/suppliers");
+      navigate(-1);
     } catch (err) {
       const errorMessage = err.response?.data?.message ||
         `Error ${isEditMode ? "updating" : "creating"} supplier.`;
@@ -639,6 +642,24 @@ const SupplierForm = () => {
                           {fieldErrors.supplier_email}
                         </div>
                       )}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Description
+                    </label>
+                    <textarea
+                      name="description"
+                      value={dataForm.description}
+                      onChange={handleInputChange}
+                      className={getInputClass('description')}
+                      rows={2}
+                      maxLength={255}
+                      placeholder="Add a brief description about the supplier"
+                    />
+                    <div className="text-xs text-gray-500 mt-2 flex justify-end">
+                      <span>{dataForm.description?.length || 0}/255 characters</span>
                     </div>
                   </div>
                 </div>

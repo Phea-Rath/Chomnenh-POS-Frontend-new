@@ -632,6 +632,7 @@ const Sales = () => {
   async function handleConfirm() {
     const toDay = new Date();
 
+
     // Prepare items with attribute selections
     const itemsWithAttributes = orders.items.map(item => {
       console.log(item);
@@ -710,7 +711,7 @@ const Sales = () => {
       setAlertBox(false);
       setLoading(false);
       toast.error(
-        error.response?.data?.message || t("failedToCreateOrder")
+        error.message || t("failedToCreateOrder")
       );
     }
   }
@@ -881,7 +882,8 @@ const Sales = () => {
       },
       onCancel: (e) => {
         // If they didn't just close the modal via 'X' or ESC, show the confirmation for direct report
-        if (e.triggerCancel) return;
+        // if (e.triggerCancel) return;
+        // e.cancel();
         setAlertBox(true);
       },
     });
@@ -1193,12 +1195,12 @@ const Sales = () => {
             </div>
 
             <div className="flex items-center gap-3">
-              <Link to="/order-list">
+              {/* <Link to="/order-list">
                 <button className="inline-flex items-center gap-2 px-4 py-2 border border-green-600 bg-green-600 text-white rounded hover:bg-green-700 text-sm font-medium">
                   <LuListChecks />
                   {t("viewOrders")}
                 </button>
-              </Link>
+              </Link> */}
 
               <div className="relative">
                 <button
@@ -1753,18 +1755,16 @@ const Sales = () => {
             <button
               onClick={() => { setCurrentPage(1); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
               disabled={currentPage === 1}
-              className={`px-3 py-1 border rounded disabled:opacity-50 ${
-                darkMode ? "border-gray-700 hover:bg-gray-700 text-gray-300" : "border-gray-300 hover:bg-gray-100 text-gray-700"
-              }`}
+              className={`px-3 py-1 border rounded disabled:opacity-50 ${darkMode ? "border-gray-700 hover:bg-gray-700 text-gray-300" : "border-gray-300 hover:bg-gray-100 text-gray-700"
+                }`}
             >
               ⟪
             </button>
             <button
               onClick={() => { setCurrentPage(prev => Math.max(prev - 1, 1)); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
               disabled={currentPage === 1}
-              className={`px-3 py-1 border rounded disabled:opacity-50 ${
-                darkMode ? "border-gray-700 hover:bg-gray-700 text-gray-300" : "border-gray-300 hover:bg-gray-100 text-gray-700"
-              }`}
+              className={`px-3 py-1 border rounded disabled:opacity-50 ${darkMode ? "border-gray-700 hover:bg-gray-700 text-gray-300" : "border-gray-300 hover:bg-gray-100 text-gray-700"
+                }`}
             >
               ⟨
             </button>
@@ -1774,18 +1774,16 @@ const Sales = () => {
             <button
               onClick={() => { setCurrentPage(prev => Math.min(prev + 1, Math.ceil(totalItems / pageSize))); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
               disabled={currentPage === Math.ceil(totalItems / pageSize)}
-              className={`px-3 py-1 border rounded disabled:opacity-50 ${
-                darkMode ? "border-gray-700 hover:bg-gray-700 text-gray-300" : "border-gray-300 hover:bg-gray-100 text-gray-700"
-              }`}
+              className={`px-3 py-1 border rounded disabled:opacity-50 ${darkMode ? "border-gray-700 hover:bg-gray-700 text-gray-300" : "border-gray-300 hover:bg-gray-100 text-gray-700"
+                }`}
             >
               ⟩
             </button>
             <button
               onClick={() => { setCurrentPage(Math.ceil(totalItems / pageSize)); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
               disabled={currentPage === Math.ceil(totalItems / pageSize)}
-              className={`px-3 py-1 border rounded disabled:opacity-50 ${
-                darkMode ? "border-gray-700 hover:bg-gray-700 text-gray-300" : "border-gray-300 hover:bg-gray-100 text-gray-700"
-              }`}
+              className={`px-3 py-1 border rounded disabled:opacity-50 ${darkMode ? "border-gray-700 hover:bg-gray-700 text-gray-300" : "border-gray-300 hover:bg-gray-100 text-gray-700"
+                }`}
             >
               ⟫
             </button>

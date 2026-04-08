@@ -22,7 +22,10 @@ import { GiSugarCane } from "react-icons/gi";
 import { useDebounce } from "use-debounce";
 import { FaBox } from "react-icons/fa";
 
+import { useTranslation } from "react-i18next";
+
 const UpdateOrders = () => {
+  const { t } = useTranslation();
   const navigator = useNavigate();
   const [returnItem, setReturnItem] = useState([]);
   const [saleItem, setSaleItem] = useState([]);
@@ -30,7 +33,7 @@ const UpdateOrders = () => {
   const [items, setItems] = useState([]);
   const [alertBox, setAlertBox] = useState(false);
   const [selectedItems, setSelectedItems] = useState([]);
-  const { setLoading } = useOutletsContext();
+  const { setLoading, darkMode } = useOutletsContext();
   const token = localStorage.getItem("token");
   const [searchItem, setSearchItem] = useState('');
   const [debouncedSearch] = useDebounce(searchItem, 500);
@@ -225,7 +228,7 @@ const UpdateOrders = () => {
     if (!item) return;
 
     if (item?.in_stock <= 0) {
-      toast.info('Not enough stock available');
+      toast.info(t('notEnoughStock'));
       return;
     }
 
@@ -243,7 +246,7 @@ const UpdateOrders = () => {
 
 
             if (newQuantity > maxQuantity) {
-              messageApi.warning(`Maximum available quantity is ${maxQuantity}`);
+              messageApi.warning(`${t('maxQuantityIs')} ${maxQuantity}`);
               return i;
             }
 
@@ -326,7 +329,7 @@ const UpdateOrders = () => {
       // Check stock availability
       const maxQuantity = item.in_stock + (orderData?.data?.items[index]?.quantity || 0);
       if (quantityValue > maxQuantity) {
-        messageApi.warning(`Maximum available quantity is ${maxQuantity}`);
+        messageApi.warning(`${t('maxQuantityIs')} ${maxQuantity}`);
         return;
       }
 
@@ -542,56 +545,57 @@ const UpdateOrders = () => {
       if (orderRes.data.status === 200) {
         orderContext.refetch();
         refetch();
-        toast.success(orderRes.data.message || "Order updated successfully");
+        toast.success(orderRes.data.message || t("orderUpdatedSuccessfully"));
         navigator("/order-list");
       }
     } catch (error) {
       toast.error(
-        error?.message || error || "An error occurred while updating the order"
+        error?.message || error || t("errorUpdatingOrder")
       );
     } finally {
       setLoading(false);
     }
   };
 
-
-
-
-
-  console.log('Items:', items);
-  console.log('selectItems:', selectedItems);
-
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
-      className="view-page"
+      className={`view-page ${darkMode ? "dark text-white" : ""}`}
     >
       <section className="px-4 md:px-6 lg:px-8 py-6">
         {contextHolder}
         <AlertBox
           isOpen={alertBox}
-          title="Confirm Update"
-          message="Are you sure you want to update this order?"
+          title={t("confirmUpdate")}
+          message={t("confirmUpdateOrderMessage")}
           onConfirm={handleConfirmUpdate}
           onCancel={() => setAlertBox(false)}
-          confirmText="Update"
-          cancelText="Cancel"
+          confirmText={t("update")}
+          cancelText={t("cancel")}
         />
 
         <div className="mb-6">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
             <div>
-              <h1 className="text-3xl font-bold text-gray-800">Update Order</h1>
-              <p className="text-gray-600">Modify order #{orderData?.data?.order_no} details</p>
+              <h1 className={`text-3xl font-bold ${darkMode ? "text-white" : "text-gray-800"}`}>
+                {t("editOrder")}
+              </h1>
+              <p className={darkMode ? "text-gray-400" : "text-gray-600"}>
+                {t("modifyOrderDetails", { orderNo: orderData?.data?.order_no })}
+              </p>
             </div>
             <div className="flex items-center gap-3">
               <Link
                 to="/order-list"
-                className="px-4 py-2 bg-gray-200 text-gray-800 font-medium rounded-lg hover:bg-gray-300 transition-colors"
+                className={`px-4 py-2 font-medium rounded-lg transition-colors ${
+                  darkMode 
+                    ? "bg-gray-800 text-gray-200 hover:bg-gray-700" 
+                    : "bg-gray-200 text-gray-800 hover:bg-gray-300"
+                }`}
               >
-                Back to Orders
+                {t("backToOrders")}
               </Link>
             </div>
           </div>
@@ -601,30 +605,29 @@ const UpdateOrders = () => {
               {/* Left Column - Item Selection */}
               <div className="lg:col-span-2 space-y-6">
                 {/* Item Selection Card */}
-                <Card className="shadow-lg border-0">
+                <Card className={`shadow-lg border-0 ${darkMode ? "!bg-gray-800 !text-white" : ""}`}>
                   <div className="mb-4">
-                    <h3 className="text-lg font-semibold text-gray-700 mb-2">Add Items to Order</h3>
+                    <h3 className={`text-lg font-semibold mb-2 ${darkMode ? "text-gray-200" : "text-gray-700"}`}>
+                      {t("addItemsToOrder")}
+                    </h3>
                     <Select
                       onSelect={handleSelectItem}
                       onSearch={(value) => setSearchItem(value)}
                       onPopupScroll={onScrollFetch}
                       showSearch
                       style={{ width: "100%" }}
-                      placeholder="Search and select items to add..."
+                      placeholder={t("searchAndSelectItems")}
                       optionLabelProp="name"
                       size="large"
                       optionFilterProp="name"
-                      filterSort={(optionA, optionB) =>
-                        (optionA?.name ?? "")
-                          .toLowerCase()
-                          .localeCompare((optionB?.name ?? "").toLowerCase())
-                      }
+                      dropdownStyle={{ backgroundColor: darkMode ? '#1f2937' : '#fff' }}
+                      className={darkMode ? "dark-select" : ""}
                       options={items.map((item) => ({
                         value: item.id,
                         name: item.name,
                         label: (
-                          <div className="flex items-center gap-3 p-2">
-                            <div className="h-12 w-12 rounded-lg border border-gray-200 overflow-hidden flex-shrink-0">
+                          <div className={`flex items-center gap-3 p-2 ${darkMode ? "text-white" : ""}`}>
+                            <div className={`h-12 w-12 rounded-lg border overflow-hidden flex-shrink-0 ${darkMode ? "border-gray-700" : "border-gray-200"}`}>
                               <img
                                 src={item.image}
                                 alt={item.name}
@@ -637,13 +640,17 @@ const UpdateOrders = () => {
                             </div>
                             <div className="flex-1 min-w-0">
                               <div className="flex justify-between items-center">
-                                <span className="font-medium text-gray-800 truncate">{item.name}</span>
+                                <span className={`font-medium truncate ${darkMode ? "text-gray-200" : "text-gray-800"}`}>
+                                  {item.name}
+                                </span>
                                 <span className="text-green-600 font-bold text-sm">
                                   ${Number(getItemPrice(item, form.sale_type) || 0).toFixed(2)}
                                 </span>
                               </div>
                               <div className="flex items-center gap-2 mt-1">
-                                <span className="text-xs text-gray-500">{item.code}</span>
+                                <span className={`text-xs ${darkMode ? "text-gray-500" : "text-gray-500"}`}>
+                                  {item.code}
+                                </span>
                                 {item.discount > 0 && (
                                   <Badge
                                     count={`-${item.discount}%`}
@@ -652,9 +659,9 @@ const UpdateOrders = () => {
                                   />
                                 )}
                                 {item.in_stock > 0 ? (
-                                  <span className="text-xs text-green-600">Stock: {item.in_stock}</span>
+                                  <span className="text-xs text-green-600">{t("stock")}: {item.in_stock}</span>
                                 ) : (
-                                  <span className="text-xs text-red-600">Out of stock</span>
+                                  <span className="text-xs text-red-600">{t("outOfStock")}</span>
                                 )}
                               </div>
                             </div>
@@ -666,37 +673,52 @@ const UpdateOrders = () => {
                 </Card>
 
                 {/* Items Table Card */}
-                <Card className="shadow-lg border-0">
-                  <h3 className="text-lg font-semibold text-gray-700 mb-4">Order Items</h3>
+                <Card className={`shadow-lg border-0 ${darkMode ? "!bg-gray-800 !text-white" : ""}`}>
+                  <h3 className={`text-lg font-semibold mb-4 ${darkMode ? "text-gray-200" : "text-gray-700"}`}>
+                    {t("orderItems")}
+                  </h3>
                   <div className="overflow-x-auto">
                     {selectedItems?.length === 0 ? (
                       <div className="text-center py-12">
-                        <div className="text-gray-400 mb-4">
+                        <div className={darkMode ? "text-gray-600 mb-4" : "text-gray-400 mb-4"}>
                           <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z" />
                           </svg>
                         </div>
-                        <p className="text-gray-500">No items added to order</p>
-                        <p className="text-gray-400 text-sm mt-2">Select items from the dropdown above</p>
+                        <p className={darkMode ? "text-gray-400" : "text-gray-500"}>
+                          {t("noItemsAddedToOrder")}
+                        </p>
+                        <p className={darkMode ? "text-gray-500 text-sm mt-2" : "text-gray-400 text-sm mt-2"}>
+                          {t("selectItemsFromDropdown")}
+                        </p>
                       </div>
                     ) : (
-                      <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gradient-to-r from-gray-50 to-blue-50">
+                      <table className={`min-w-full divide-y ${darkMode ? "divide-gray-700" : "divide-gray-200"}`}>
+                        <thead className={darkMode ? "bg-gray-700" : "bg-gradient-to-r from-gray-50 to-blue-50"}>
                           <tr>
-                            <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Product</th>
-                            {/* <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Attributes</th> */}
-                            <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Quantity</th>
-                            <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Unit Price</th>
-                            <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Total</th>
-                            <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Actions</th>
+                            <th scope="col" className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${darkMode ? "text-gray-300" : "text-gray-600"}`}>
+                              {t("product")}
+                            </th>
+                            <th scope="col" className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${darkMode ? "text-gray-300" : "text-gray-600"}`}>
+                              {t("quantity")}
+                            </th>
+                            <th scope="col" className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${darkMode ? "text-gray-300" : "text-gray-600"}`}>
+                              {t("unitPrice")}
+                            </th>
+                            <th scope="col" className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${darkMode ? "text-gray-300" : "text-gray-600"}`}>
+                              {t("total")}
+                            </th>
+                            <th scope="col" className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${darkMode ? "text-gray-300" : "text-gray-600"}`}>
+                              {t("actions")}
+                            </th>
                           </tr>
                         </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
+                        <tbody className={`divide-y ${darkMode ? "bg-gray-800 divide-gray-700" : "bg-white divide-gray-200"}`}>
                           {selectedItems?.map((item, index) => (
-                            <tr key={`${item.id}-${index}`} className="hover:bg-gray-50 transition-colors">
+                            <tr key={`${item.id}-${index}`} className={`transition-colors ${darkMode ? "hover:bg-gray-700" : "hover:bg-gray-50"}`}>
                               <td className="px-4 py-4">
                                 <div className="flex items-center">
-                                  <div className="h-14 w-14 rounded-lg border border-gray-200 overflow-hidden flex-shrink-0">
+                                  <div className={`h-14 w-14 rounded-lg border overflow-hidden flex-shrink-0 ${darkMode ? "border-gray-700" : "border-gray-200"}`}>
                                     <img
                                       src={item.item_image || item.image}
                                       alt={item.item_name}
@@ -708,20 +730,23 @@ const UpdateOrders = () => {
                                     />
                                   </div>
                                   <div className="ml-3">
-                                    <div className="font-medium text-gray-900">{item.item_name || item.name}</div>
-                                    <div className="text-sm text-gray-500">{item.item_code || item.code}</div>
+                                    <div className={`font-medium ${darkMode ? "text-gray-200" : "text-gray-900"}`}>
+                                      {item.item_name || item.name}
+                                    </div>
+                                    <div className={`text-sm ${darkMode ? "text-gray-500" : "text-gray-500"}`}>
+                                      {item.item_code || item.code}
+                                    </div>
                                     {item.discount > 0 && (
                                       <div className="flex items-center gap-1 mt-1">
                                         <FaPercent className="w-3 h-3 text-green-600" />
-                                        <span className="text-xs text-green-600 font-medium">{item.discount}% discount</span>
+                                        <span className="text-xs text-green-600 font-medium">
+                                          {item.discount}% {t("discount")}
+                                        </span>
                                       </div>
                                     )}
                                   </div>
                                 </div>
                               </td>
-                              {/* <td className="px-4 py-4">
-                                {renderAttributesDisplay(item)}
-                              </td> */}
                               <td className="px-4 py-4">
                                 <div className="flex items-center">
                                   <input
@@ -730,23 +755,27 @@ const UpdateOrders = () => {
                                     max={item?.in_stock + (orderData?.data?.items[index]?.quantity || 0)}
                                     value={item.quantity}
                                     onChange={(e) => handleItemChange(index, "quantity", e.target.value, item.id)}
-                                    className="w-20 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-center"
+                                    className={`w-20 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-center ${
+                                      darkMode 
+                                        ? "bg-gray-700 border-gray-600 text-white" 
+                                        : "bg-white border-gray-300"
+                                    }`}
                                   />
                                   <div className="ml-2 text-xs text-gray-500">
-                                    Max: {item?.in_stock + (orderData?.data?.items[index]?.quantity || 0)}
+                                    {t("max")}: {item?.in_stock + (orderData?.data?.items[index]?.quantity || 0)}
                                   </div>
                                 </div>
                               </td>
                               <td className="px-4 py-4">
-                                <div className="text-gray-900 font-medium">
+                                <div className={`font-medium ${darkMode ? "text-gray-300" : "text-gray-900"}`}>
                                   ${form.sale_type === "sale"
                                     ? Number(item.price_per_unit || item.item_price || 0).toFixed(2)
                                     : Number(item.item_wholesale_price || 0).toFixed(2)}
                                 </div>
                               </td>
                               <td className="px-4 py-4">
-                                <div className="text-gray-900 font-bold">
-                                  {Number(
+                                <div className={`font-bold ${darkMode ? "text-white" : "text-gray-900"}`}>
+                                  ${Number(
                                     form.sale_type === "sale"
                                       ? (Number(item.price_per_unit || item.item_price || 0) * Number(item.quantity || 0))
                                       : (Number(item.item_wholesale_price || 0) * Number(item.quantity || 0))
@@ -757,9 +786,13 @@ const UpdateOrders = () => {
                                 <button
                                   type="button"
                                   onClick={() => handleRemoveItem(item)}
-                                  className="px-4 py-2 text-sm bg-gradient-to-r from-red-50 to-red-100 text-red-600 border border-red-200 rounded-lg hover:from-red-100 hover:to-red-200 hover:border-red-300 transition-all duration-200 font-medium"
+                                  className={`px-4 py-2 text-sm border rounded-lg transition-all duration-200 font-medium ${
+                                    darkMode
+                                      ? "bg-red-900/20 text-red-400 border-red-900/50 hover:bg-red-900/40"
+                                      : "bg-gradient-to-r from-red-50 to-red-100 text-red-600 border-red-200 hover:from-red-100 hover:to-red-200"
+                                  }`}
                                 >
-                                  Remove
+                                  {t("remove")}
                                 </button>
                               </td>
                             </tr>
@@ -774,40 +807,48 @@ const UpdateOrders = () => {
               {/* Right Column - Order & Payment Details */}
               <div className="space-y-6">
                 {/* Order Summary Card */}
-                <Card className="shadow-lg border-0 bg-gradient-to-br from-blue-50 to-indigo-50">
-                  <h3 className="text-lg font-semibold text-gray-700 mb-4">Order Summary</h3>
+                <Card className={`shadow-lg border-0 ${darkMode ? "!bg-gray-800/50 !text-white" : "bg-gradient-to-br from-blue-50 to-indigo-50"}`}>
+                  <h3 className={`text-lg font-semibold mb-4 ${darkMode ? "text-gray-200" : "text-gray-700"}`}>
+                    {t("orderSummary")}
+                  </h3>
                   <div className="space-y-4">
                     <div className="space-y-3">
-                      <div className="flex justify-between items-center pb-2 border-b border-gray-200">
-                        <span className="text-gray-600">Items Subtotal</span>
-                        <span className="font-medium text-gray-800">${Number(form.order_subtotal || 0).toFixed(2)}</span>
+                      <div className={`flex justify-between items-center pb-2 border-b ${darkMode ? "border-gray-700" : "border-gray-200"}`}>
+                        <span className={darkMode ? "text-gray-400" : "text-gray-600"}>{t("itemsSubtotal")}</span>
+                        <span className={`font-medium ${darkMode ? "text-gray-200" : "text-gray-800"}`}>
+                          ${Number(form.order_subtotal || 0).toFixed(2)}
+                        </span>
                       </div>
 
                       <div className="space-y-2">
                         <div className="flex justify-between items-center">
-                          <span className="text-gray-600">Sale Type</span>
+                          <span className={darkMode ? "text-gray-400" : "text-gray-600"}>{t("saleType")}</span>
                           <span className={`font-medium ${form.sale_type === 'sale' ? 'text-green-600' : 'text-blue-600'}`}>
-                            {form.sale_type === 'sale' ? 'Retail' : 'Wholesale'}
+                            {form.sale_type === 'sale' ? t("retail") : t("wholesale")}
                           </span>
                         </div>
 
                         {form.sale_type === 'wholesale' && (
                           <div className="flex justify-between items-center">
-                            <span className="text-gray-600">Tax ({form.order_tax}%)</span>
-                            <span className="font-medium text-gray-800">
+                            <span className={darkMode ? "text-gray-400" : "text-gray-600"}>
+                              {t("tax")} ({form.order_tax}%)
+                            </span>
+                            <span className={`font-medium ${darkMode ? "text-gray-200" : "text-gray-800"}`}>
                               ${Number((Number(form.order_subtotal || 0) * (Number(form.order_tax || 0) / 100))).toFixed(2)}
                             </span>
                           </div>
                         )}
 
                         <div className="flex justify-between items-center">
-                          <span className="text-gray-600">Delivery Fee</span>
-                          <span className="font-medium text-gray-800">${Number(form.delivery_fee || 0).toFixed(2)}</span>
+                          <span className={darkMode ? "text-gray-400" : "text-gray-600"}>{t("deliveryFee")}</span>
+                          <span className={`font-medium ${darkMode ? "text-gray-200" : "text-gray-800"}`}>
+                            ${Number(form.delivery_fee || 0).toFixed(2)}
+                          </span>
                         </div>
 
                         {form.order_discount > 0 && (
                           <div className="flex justify-between items-center text-green-600">
-                            <span>Discount</span>
+                            <span>{t("discount")}</span>
                             <span className="font-bold">
                               -${parseFloat(form?.order_discount).toFixed(2)}
                             </span>
@@ -815,24 +856,26 @@ const UpdateOrders = () => {
                         )}
                       </div>
 
-                      <div className="border-t border-gray-200 pt-3">
+                      <div className={`border-t pt-3 ${darkMode ? "border-gray-700" : "border-gray-200"}`}>
                         <div className="flex justify-between items-center text-lg">
-                          <span className="font-bold text-gray-800">Total Amount</span>
+                          <span className={`font-bold ${darkMode ? "text-white" : "text-gray-800"}`}>{t("totalAmount")}</span>
                           <span className="font-bold text-green-600">${Number(form.order_total || 0).toFixed(2)}</span>
                         </div>
                         <div className="flex justify-between items-center mt-2">
-                          <span className="text-gray-600">Payment</span>
-                          <span className="font-medium text-gray-800">${Number(form.payment || 0).toFixed(2)}</span>
+                          <span className={darkMode ? "text-gray-400" : "text-gray-600"}>{t("payment")}</span>
+                          <span className={`font-medium ${darkMode ? "text-gray-200" : "text-gray-800"}`}>
+                            ${Number(form.payment || 0).toFixed(2)}
+                          </span>
                         </div>
                         <div className="flex justify-between items-center mt-2">
-                          <span className="text-gray-600">Balance</span>
+                          <span className={darkMode ? "text-gray-400" : "text-gray-600"}>{t("balance")}</span>
                           <span className={`font-bold ${form.balance > 0 ? 'text-orange-600' : 'text-green-600'}`}>
                             ${Number(form.balance || 0).toFixed(2)}
                           </span>
                         </div>
-                        <div className="mt-2 text-sm text-gray-500">
-                          Payment Status: <span className={`font-medium ${form.balance > 0 ? 'text-orange-600' : 'text-green-600'}`}>
-                            {form.balance > 0 ? 'Partial Payment' : 'Paid in Full'}
+                        <div className={`mt-2 text-sm ${darkMode ? "text-gray-500" : "text-gray-500"}`}>
+                          {t("paymentStatus")}: <span className={`font-medium ${form.balance > 0 ? 'text-orange-600' : 'text-green-600'}`}>
+                            {form.balance > 0 ? t("partialPayment") : t("paidInFull")}
                           </span>
                         </div>
                       </div>
@@ -841,54 +884,70 @@ const UpdateOrders = () => {
                 </Card>
 
                 {/* Order Details Card */}
-                <Card className="shadow-lg border-0">
-                  <h3 className="text-lg font-semibold text-gray-700 mb-4">Order Details</h3>
+                <Card className={`shadow-lg border-0 ${darkMode ? "!bg-gray-800 !text-white" : ""}`}>
+                  <h3 className={`text-lg font-semibold mb-4 ${darkMode ? "text-gray-200" : "text-gray-700"}`}>
+                    {t("orderDetails")}
+                  </h3>
                   <div className="space-y-4">
                     {/* Sale Type Selection */}
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Sale Type</label>
+                      <label className={`block text-sm font-medium mb-2 ${darkMode ? "text-gray-400" : "text-gray-700"}`}>
+                        {t("saleType")}
+                      </label>
                       <div className="flex gap-3">
                         <button
                           type="button"
                           onClick={() => handleFormChange({ target: { name: 'sale_type', value: 'sale' } })}
-                          className={`flex-1 py-3 rounded-lg border transition-all duration-200 ${form.sale_type === 'sale'
-                            ? 'bg-blue-500 text-white border-blue-500 shadow-md'
-                            : 'border-gray-300 text-gray-600 hover:border-blue-300 hover:bg-blue-50'
-                            }`}
+                          className={`flex-1 py-3 rounded-lg border transition-all duration-200 ${
+                            form.sale_type === 'sale'
+                              ? 'bg-blue-500 text-white border-blue-500 shadow-md'
+                              : darkMode
+                                ? 'border-gray-700 text-gray-400 hover:border-blue-500 hover:bg-blue-500/10'
+                                : 'border-gray-300 text-gray-600 hover:border-blue-300 hover:bg-blue-50'
+                          }`}
                         >
-                          Retail Sale
+                          {t("retailSale")}
                         </button>
                         <button
                           type="button"
                           onClick={() => handleFormChange({ target: { name: 'sale_type', value: 'wholesale' } })}
-                          className={`flex-1 py-3 rounded-lg border transition-all duration-200 ${form.sale_type === 'wholesale'
-                            ? 'bg-blue-500 text-white border-blue-500 shadow-md'
-                            : 'border-gray-300 text-gray-600 hover:border-blue-300 hover:bg-blue-50'
-                            }`}
+                          className={`flex-1 py-3 rounded-lg border transition-all duration-200 ${
+                            form.sale_type === 'wholesale'
+                              ? 'bg-blue-500 text-white border-blue-500 shadow-md'
+                              : darkMode
+                                ? 'border-gray-700 text-gray-400 hover:border-blue-500 hover:bg-blue-500/10'
+                                : 'border-gray-300 text-gray-600 hover:border-blue-300 hover:bg-blue-50'
+                          }`}
                         >
-                          Wholesale
+                          {t("wholesale")}
                         </button>
                       </div>
                     </div>
 
                     {/* Customer Selection (for wholesale) */}
                     <div className={form.sale_type === "wholesale" ? "block" : "hidden"}>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Customer</label>
+                      <label className={`block text-sm font-medium mb-2 ${darkMode ? "text-gray-400" : "text-gray-700"}`}>
+                        {t("customer")}
+                      </label>
                       <Select
                         onChange={handleSelectFCustomer}
                         showSearch
                         value={form.order_customer_id}
                         style={{ width: "100%" }}
-                        placeholder="Select customer..."
+                        placeholder={t("selectCustomer")}
                         optionLabelProp="name"
                         optionFilterProp="name"
                         size="large"
+                        dropdownStyle={{ backgroundColor: darkMode ? '#1f2937' : '#fff' }}
+                        className={darkMode ? "dark-select" : ""}
                         options={customers?.data?.map((customer) => ({
                           value: customer.customer_id,
                           name: customer.customer_name,
                           label: (
-                            <div className="flex items-center gap-3 py-1">
-                              <div className="h-10 w-10 rounded-full bg-gradient-to-r from-blue-100 to-indigo-100 flex items-center justify-center">
+                            <div className={`flex items-center gap-3 py-1 ${darkMode ? "text-white" : ""}`}>
+                              <div className={`h-10 w-10 rounded-full flex items-center justify-center ${
+                                darkMode ? "bg-gray-700" : "bg-gradient-to-r from-blue-100 to-indigo-100"
+                              }`}>
                                 {customer.image ? (
                                   <img src={customer.image} alt={customer.customer_name} className="h-full w-full rounded-full object-cover" />
                                 ) : (
@@ -898,7 +957,9 @@ const UpdateOrders = () => {
                                 )}
                               </div>
                               <div className="flex-1 min-w-0">
-                                <div className="font-medium text-gray-800 truncate">{customer.customer_name}</div>
+                                <div className={`font-medium truncate ${darkMode ? "text-gray-200" : "text-gray-800"}`}>
+                                  {customer.customer_name}
+                                </div>
                                 <div className="text-xs text-gray-500 truncate">{customer.customer_tel}</div>
                               </div>
                             </div>
@@ -909,78 +970,93 @@ const UpdateOrders = () => {
 
                     {/* Contact Information */}
                     <div className={form.sale_type === "sale" ? "block" : "hidden"}>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
+                      <label className={`block text-sm font-medium mb-2 ${darkMode ? "text-gray-400" : "text-gray-700"}`}>
+                        {t("customerTel")}
+                      </label>
                       <input
                         type="tel"
                         name="order_tel"
                         value={form.order_tel}
                         onChange={handleFormChange}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        placeholder="Enter phone number"
+                        className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                          darkMode 
+                            ? "bg-gray-700 border-gray-600 text-white placeholder-gray-500" 
+                            : "bg-white border-gray-300"
+                        }`}
+                        placeholder={t("enterPhoneNumber")}
                       />
                     </div>
 
-                    {/* Email (for wholesale) */}
-                    {/* <div className={form.sale_type === "wholesale" ? "block" : "hidden"}>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
-                      <input
-                        type="email"
-                        name="order_email"
-                        value={form.order_email}
-                        onChange={handleFormChange}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        placeholder="Enter email address"
-                      />
-                    </div> */}
-
                     {/* Address */}
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Delivery Address</label>
+                      <label className={`block text-sm font-medium mb-2 ${darkMode ? "text-gray-400" : "text-gray-700"}`}>
+                        {t("deliveryAddress")}
+                      </label>
                       <textarea
                         name="order_address"
                         value={form.order_address}
                         onChange={handleFormChange}
                         rows={3}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-                        placeholder="Enter delivery address"
+                        className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none ${
+                          darkMode 
+                            ? "bg-gray-700 border-gray-600 text-white placeholder-gray-500" 
+                            : "bg-white border-gray-300"
+                        }`}
+                        placeholder={t("enterDeliveryAddress")}
                       />
                     </div>
 
                     {/* Order Date */}
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Order Date</label>
+                      <label className={`block text-sm font-medium mb-2 ${darkMode ? "text-gray-400" : "text-gray-700"}`}>
+                        {t("orderDate")}
+                      </label>
                       <input
                         type="date"
                         name="order_date"
                         value={form.order_date}
                         onChange={handleFormChange}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                          darkMode 
+                            ? "bg-gray-700 border-gray-600 text-white" 
+                            : "bg-white border-gray-300"
+                        }`}
                       />
                     </div>
                   </div>
                 </Card>
 
                 {/* Payment Details Card */}
-                <Card className="shadow-lg border-0">
-                  <h3 className="text-lg font-semibold text-gray-700 mb-4">Payment Details</h3>
+                <Card className={`shadow-lg border-0 ${darkMode ? "!bg-gray-800 !text-white" : ""}`}>
+                  <h3 className={`text-lg font-semibold mb-4 ${darkMode ? "text-gray-200" : "text-gray-700"}`}>
+                    {t("paymentInfo")}
+                  </h3>
                   <div className="space-y-4">
                     {/* Payment Method */}
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Payment Method</label>
+                      <label className={`block text-sm font-medium mb-2 ${darkMode ? "text-gray-400" : "text-gray-700"}`}>
+                        {t("paymentMethod")}
+                      </label>
                       <select
                         name="order_payment_method"
                         value={form.order_payment_method}
                         onChange={handleFormChange}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                          darkMode 
+                            ? "bg-gray-700 border-gray-600 text-white" 
+                            : "bg-white border-gray-300"
+                        }`}
                       >
-                        <option value="cash">Cash</option>
-                        <option value="bank">Bank Transfer</option>
+                        <option value="cash">{t("cash")}</option>
+                        <option value="bank">{t("bank")}</option>
                       </select>
                     </div>
 
                     {/* Tax (for wholesale) */}
                     <div className={form.sale_type === "wholesale" ? "block" : "hidden"}>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Tax Percentage</label>
+                      <label className={`block text-sm font-medium mb-2 ${darkMode ? "text-gray-400" : "text-gray-700"}`}>
+                        {t("taxPercentage")}
+                      </label>
                       <div className="relative">
                         <input
                           type="number"
@@ -990,7 +1066,11 @@ const UpdateOrders = () => {
                           step="0.1"
                           value={form.order_tax}
                           onChange={handleFormChange}
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                            darkMode 
+                              ? "bg-gray-700 border-gray-600 text-white" 
+                              : "bg-white border-gray-300"
+                          }`}
                           placeholder="0.00"
                         />
                         <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
@@ -1001,7 +1081,9 @@ const UpdateOrders = () => {
 
                     {/* Delivery Fee */}
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Delivery Fee</label>
+                      <label className={`block text-sm font-medium mb-2 ${darkMode ? "text-gray-400" : "text-gray-700"}`}>
+                        {t("deliveryFee")}
+                      </label>
                       <div className="relative">
                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                           <span className="text-gray-500">$</span>
@@ -1013,7 +1095,11 @@ const UpdateOrders = () => {
                           step="0.01"
                           value={form.delivery_fee}
                           onChange={handleFormChange}
-                          className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          className={`w-full pl-8 pr-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                            darkMode 
+                              ? "bg-gray-700 border-gray-600 text-white" 
+                              : "bg-white border-gray-300"
+                          }`}
                           placeholder="0.00"
                         />
                       </div>
@@ -1021,7 +1107,9 @@ const UpdateOrders = () => {
 
                     {/* Payment Amount */}
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Payment Amount</label>
+                      <label className={`block text-sm font-medium mb-2 ${darkMode ? "text-gray-400" : "text-gray-700"}`}>
+                        {t("paymentAmountLabel")}
+                      </label>
                       <div className="relative">
                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                           <span className="text-gray-500">$</span>
@@ -1033,7 +1121,11 @@ const UpdateOrders = () => {
                           step="0.01"
                           value={form.payment}
                           onChange={handleFormChange}
-                          className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          className={`w-full pl-8 pr-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                            darkMode 
+                              ? "bg-gray-700 border-gray-600 text-white" 
+                              : "bg-white border-gray-300"
+                          }`}
                           placeholder="0.00"
                         />
                       </div>
@@ -1047,13 +1139,17 @@ const UpdateOrders = () => {
                     type="submit"
                     className="w-full px-6 py-4 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-semibold rounded-lg hover:from-green-600 hover:to-emerald-700 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 shadow-lg"
                   >
-                    Update Order
+                    {t("update")}
                   </button>
                   <Link
                     to="/order-list"
-                    className="block w-full px-6 py-4 bg-gradient-to-r from-gray-100 to-gray-200 text-gray-800 font-semibold text-center rounded-lg hover:from-gray-200 hover:to-gray-300 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-offset-2"
+                    className={`block w-full px-6 py-4 font-semibold text-center rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+                      darkMode
+                        ? "bg-gray-700 text-gray-200 hover:bg-gray-600 focus:ring-gray-600"
+                        : "bg-gradient-to-r from-gray-100 to-gray-200 text-gray-800 hover:from-gray-200 hover:to-gray-300 focus:ring-gray-300"
+                    }`}
                   >
-                    Cancel
+                    {t("cancel")}
                   </Link>
                 </div>
               </div>

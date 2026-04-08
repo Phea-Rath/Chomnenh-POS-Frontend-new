@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FaSearch, FaEye, FaEdit, FaTrash, FaTimes, FaPlus, FaMapMarkerAlt } from 'react-icons/fa';
-import { Link } from 'react-router';
+import { Link, useNavigate } from 'react-router';
 import api from '../../services/api';
 import { useGetAllCustomerQuery } from '../../../app/Features/customersSlice';
 import { Image, Card, Skeleton, Badge, Tag, Empty } from 'antd';
@@ -9,6 +9,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 const CustomerList = () => {
   const token = localStorage.getItem('token');
+  const navigate = useNavigate();
   const { data: customerData, error, isLoading } = useGetAllCustomerQuery(token);
   const [customers, setCustomers] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -69,6 +70,11 @@ const CustomerList = () => {
     return parts.length > 0 ? parts.join(', ') : customer.customer_address || 'N/A';
   };
 
+  const handleEdit = (customer) => {
+    setShowDetailModal(false);
+    localStorage.setItem("itemEdit", JSON.stringify(customer));
+    navigate(`edit/${customer.customer_id}`);
+  };
   return (
     <div className="min-h-screen bg-transparent py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -160,13 +166,13 @@ const CustomerList = () => {
                           >
                             <FaEye />
                           </button>
-                          <Link
-                            to={`edit/${customer.customer_id}`}
+                          <button
+                            onClick={() => handleEdit(customer)}
                             className="text-green-600 hover:text-green-900 p-1"
                             title="Edit"
                           >
                             <FaEdit />
-                          </Link>
+                          </button>
                           <button
                             onClick={() => handleDelete(customer.customer_id)}
                             className="text-red-600 hover:text-red-900 p-1"
@@ -341,12 +347,11 @@ const CustomerList = () => {
                   >
                     Close
                   </button>
-                  <Link
-                    to={`edit/${selectedCustomer.customer_id}`}
+                  <button onClick={() => handleEdit(selectedCustomer)}
                     className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors flex items-center gap-2"
                   >
                     <FaEdit /> Edit Customer
-                  </Link>
+                  </button>
                 </div>
               </div>
             </motion.div>

@@ -24,11 +24,15 @@ import {
   FaCalendarAlt,
   FaDollarSign,
   FaCreditCard,
-  FaShoppingBag
+  FaShoppingBag,
+  FaMoneyBillWave
 } from "react-icons/fa";
 import { toast } from "react-toastify";
 import { totalSum } from "../../services/serviceFunction";
 import { useTranslation } from "react-i18next";
+import { MdPayment } from "react-icons/md";
+import api from "../../services/api";
+import { set } from "date-fns";
 
 const { Countdown } = Statistic;
 
@@ -41,7 +45,11 @@ const OrderList = () => {
   const [alertBox, setAlertBox] = useState(false);
   const [alertBoxCancel, setAlertBoxCancel] = useState(false);
   const [alertBoxUncancel, setAlertBoxUncancel] = useState(false);
-  const [viewMode, setViewMode] = useState(localStorage.getItem("orderViewMode") || "list");
+  const [viewMode, setViewMode] = useState(localStorage.getItem("orderViewMode") || "grid");
+
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [paymentAmount, setPaymentAmount] = useState(0);
+  const [balanceAmount, setBalanceAmount] = useState({ pay: 0, balance: 0 });
   const {
     setLoading,
     loading,
@@ -130,6 +138,30 @@ const OrderList = () => {
       setLoading(false);
     }
   }
+  async function handlePaymentOrder() {
+    try {
+      setLoading(true);
+      const res = await api.put(`/order_payment/${id}/${paymentAmount}`, null, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      console.log(res);
+
+      if (res.data.status == 200) {
+        refetch();
+        toast.success(res.data.message || t("orderPaymentedSuccessfully"));
+        setLoading(false);
+        setShowPaymentModal(false);
+      } else {
+        toast.error(res.data.message || t("orderPaymentFailed"));
+        setLoading(false);
+      }
+    } catch (error) {
+      toast.error(error.message || error || t("orderPaymentFailed"));
+      setLoading(false);
+    }
+  }
 
   function onSearch(event) {
     const value = event.target.value;
@@ -147,8 +179,8 @@ const OrderList = () => {
 
   const getStatusColor = (online, isCancelled) => {
     if (isCancelled) return "red";
-    if (online === 1) return "blue";
-    return "green";
+    if (online === 1) return "green";
+    return "blue";
   };
 
   const getStatusText = (online, isCancelled) => {
@@ -334,7 +366,7 @@ const OrderList = () => {
                   transition={{ duration: 0.3, delay: index * 0.1 }}
                 >
                   <Card
-                    className={`h-full border rounded-xl shadow-sm hover:shadow-sm transition-all duration-300 overflow-hidden ${order.is_cancelled ? "border-red-200 bg-red-50 dark:border-red-900 dark:bg-red-950/30" : "border-gray-200 dark:border-gray-700 dark:bg-gray-800"
+                    className={`h-full border rounded-xl shadow-sm hover:shadow-sm transition-all duration-300 overflow-hidden ${order.is_cancelled ? "border-red-200 bg-red-50 dark:!border-red-900 dark:!bg-red-950/30" : "border-gray-200 dark:!border-gray-700 dark:!bg-gray-800"
                       }`}
                   >
                     {/* Header */}
@@ -429,13 +461,28 @@ const OrderList = () => {
                         </button>
                       </Tooltip>
 
-                      {!order.is_cancelled && order.online !== 1 && (
+                      {!order.is_cancelled && (
                         <Tooltip title={t("editOrder")}>
                           <button
                             onClick={() => navigator("edit/" + order.order_id)}
                             className="p-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
                           >
                             <FaEdit />
+                          </button>
+                        </Tooltip>
+                      )}
+                      {!order.is_cancelled && order.balance > 0 && (
+                        <Tooltip title={t("pay")}>
+                          <button
+                            onClick={() => {
+                              setPaymentAmount(order.balance);
+                              setBalanceAmount({ "pay": order.payment, "balance": order.balance });
+                              setId(order.order_id);
+                              setShowPaymentModal(true);
+                            }}
+                            className="p-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
+                          >
+                            <MdPayment />
                           </button>
                         </Tooltip>
                       )}
@@ -540,8 +587,10 @@ const OrderList = () => {
                         <td className="px-6 py-4">
                           <Badge
                             status={order.is_cancelled ? "error" : order.online === 1 ? "processing" : "success"}
-                            text={getStatusText(order.online, order.is_cancelled)}
+                            color={getStatusColor(order.online, order.is_cancelled)}
+                            className="!mr-3"
                           />
+                          <span>{getStatusText(order.online, order.is_cancelled)}</span>
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex gap-2">
@@ -558,13 +607,28 @@ const OrderList = () => {
                               </button>
                             </Tooltip>
 
-                            {!order.is_cancelled && order.online !== 1 && (
+                            {!order.is_cancelled && (
                               <Tooltip title={t("editOrder")}>
                                 <button
                                   onClick={() => navigator("edit/" + order.order_id)}
                                   className="p-2 text-gray-600 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-700 rounded-lg transition-colors"
                                 >
                                   <FaEdit />
+                                </button>
+                              </Tooltip>
+                            )}
+                            {!order.is_cancelled && order.balance > 0 && (
+                              <Tooltip title={t("pay")}>
+                                <button
+                                  onClick={() => {
+                                    setPaymentAmount(order.balance);
+                                    setBalanceAmount({ "pay": order.payment, "balance": order.balance });
+                                    setId(order.order_id);
+                                    setShowPaymentModal(true);
+                                  }}
+                                  className="p-2 text-gray-600 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                                >
+                                  <MdPayment />
                                 </button>
                               </Tooltip>
                             )}
@@ -631,6 +695,54 @@ const OrderList = () => {
           </div>
         )}
       </div>
+      {showPaymentModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white dark:bg-slate-800 rounded-lg p-6 max-w-md w-full border border-gray-200 dark:border-gray-700 shadow-xl"
+          >
+            <h3 className="text-xl font-semibold mb-4 flex items-center gap-2 dark:text-white">
+              <FaMoneyBillWave className="text-green-500" />
+              {t('addPayment')}
+            </h3>
+            <div className="flex justify-between py-2">
+              <h1>{t('balance')}: <span className="text-red-500">{parseFloat(balanceAmount?.balance).toFixed(2)}</span></h1>
+              <h1>{t('paid')}: <span className="text-green-500">{parseFloat(balanceAmount?.pay).toFixed(2)}</span></h1>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-1">
+                  {t('amount')} <FaDollarSign />
+                </label>
+                <input
+                  type="number"
+                  value={paymentAmount}
+                  onChange={(e) => setPaymentAmount(parseFloat(e.target.value) || 0)}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100"
+                  step="0.01"
+                  min="0"
+                />
+              </div>
+              <div className="flex justify-end gap-3 pt-4">
+                <button
+                  onClick={() => setShowPaymentModal(false)}
+                  className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
+                >
+                  {t('cancel')}
+                </button>
+                <button
+                  onClick={handlePaymentOrder}
+                  disabled={loading}
+                  className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 transition-colors"
+                >
+                  {loading ? t('processing') : t('addPayment')}
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </motion.div>
   );
 };

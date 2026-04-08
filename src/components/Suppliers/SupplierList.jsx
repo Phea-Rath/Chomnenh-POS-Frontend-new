@@ -315,6 +315,14 @@ const SupplierList = () => {
                   </Card>
                 </div>
 
+                {selectedSupplier.description && (
+                  <div className="mt-6">
+                    <Card title="Description" size="small" className="shadow-sm">
+                      <p className="text-gray-700 italic">"{selectedSupplier.description}"</p>
+                    </Card>
+                  </div>
+                )}
+
                 <div className="mt-6">
                   <Card title="Full Address" size="small" className="shadow-sm">
                     <div className="flex items-start gap-2">
