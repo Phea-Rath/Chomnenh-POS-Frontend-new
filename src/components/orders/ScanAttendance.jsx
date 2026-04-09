@@ -302,6 +302,7 @@ const ScanAttendance = () => {
     const [loginLoading, setLoginLoading] = useState(false);
     const [isScanning, setIsScanning] = useState(false);
     const [isStarting, setIsStarting] = useState(false);
+    const [isProcessingScan, setIsProcessingScan] = useState(false);
     const [actionLoading, setActionLoading] = useState("");
     const [scanState, setScanState] = useState(null);
     const [lastScan, setLastScan] = useState(null);
@@ -309,6 +310,7 @@ const ScanAttendance = () => {
     const html5QrCodeRef = useRef(null);
     const isMountedRef = useRef(true);
     const isStartingRef = useRef(false);
+    const isProcessingScanRef = useRef(false);
     const scannerId = "reader";
 
     const scannerConfig = {
@@ -382,6 +384,8 @@ const ScanAttendance = () => {
             }
 
             setAuthUser(user);
+            setIsProcessingScan(false);
+            isProcessingScanRef.current = false;
             setScanState(null);
             setLastScan(null);
 
@@ -445,6 +449,8 @@ const ScanAttendance = () => {
     const handleLogout = async () => {
         try {
             await signOut(auth);
+            setIsProcessingScan(false);
+            isProcessingScanRef.current = false;
             setScanState(null);
             setLastScan(null);
             void stopScanner();
@@ -590,6 +596,15 @@ const ScanAttendance = () => {
     };
 
     const handleScanSuccess = async (decodedText) => {
+        if (isProcessingScanRef.current) {
+            return;
+        }
+
+        isProcessingScanRef.current = true;
+        if (isMountedRef.current) {
+            setIsProcessingScan(true);
+        }
+
         try {
             const payload = await resolveScanPayload(decodedText);
             setScanState(payload);
@@ -599,6 +614,11 @@ const ScanAttendance = () => {
         } catch (error) {
             console.error("Resolve scan error:", error);
             toast.error(error?.message || "Failed to resolve scanned user");
+        } finally {
+            isProcessingScanRef.current = false;
+            if (isMountedRef.current) {
+                setIsProcessingScan(false);
+            }
         }
     };
 
@@ -607,6 +627,9 @@ const ScanAttendance = () => {
             cameraConfig,
             scannerConfig,
             (decodedText) => {
+                if (isProcessingScanRef.current) {
+                    return;
+                }
                 void handleScanSuccess(decodedText);
             },
             () => { }
@@ -619,13 +642,15 @@ const ScanAttendance = () => {
             return;
         }
 
-        if (isStartingRef.current || isScanning) {
+        if (isStartingRef.current || isScanning || isProcessingScanRef.current) {
             return;
         }
 
         try {
             isStartingRef.current = true;
             setIsStarting(true);
+            setIsProcessingScan(false);
+            isProcessingScanRef.current = false;
             setScanState(null);
             setLastScan(null);
             await waitForScannerContainer();
@@ -829,12 +854,14 @@ const ScanAttendance = () => {
 
                         <button
                             onClick={isScanning ? () => void stopScanner() : startScanner}
-                            disabled={isStarting}
-                            className={`flex w-full items-center justify-center gap-2 rounded-xl px-6 py-3 font-bold text-white transition-all ${isScanning ? "bg-red-500" : "bg-blue-600"} ${isStarting ? "cursor-not-allowed opacity-70" : ""}`}
+                            disabled={isStarting || isProcessingScan}
+                            className={`flex w-full items-center justify-center gap-2 rounded-xl px-6 py-3 font-bold text-white transition-all ${isScanning ? "bg-red-500" : "bg-blue-600"} ${(isStarting || isProcessingScan) ? "cursor-not-allowed opacity-70" : ""}`}
                         >
                             {isScanning ? <BiCameraOff size={24} /> : <BiUserCheck size={24} />}
                             {isStarting
                                 ? "Opening camera..."
+                                : isProcessingScan
+                                    ? "Processing scan..."
                                 : isScanning
                                     ? t("stopScanning", "Stop Scanning")
                                     : t("scanAttendance", "Scan Attendance")}
@@ -851,7 +878,19 @@ const ScanAttendance = () => {
 
                     {isScanning && (
                         <div className="absolute top-0 w-full animate-pulse bg-blue-600 p-2 text-xs text-white">
-                            {t("scanningAttendance", "Scanning attendance...")}
+                            {isProcessingScan
+                                ? t("processingAttendance", "Processing attendance...")
+                                : t("scanningAttendance", "Scanning attendance...")}
+                        </div>
+                    )}
+
+                    {isProcessingScan && (
+                        <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/70">
+                            <div className="rounded-2xl bg-white/10 px-6 py-4 text-center text-white backdrop-blur">
+                                <div className="mx-auto mb-3 h-8 w-8 animate-spin rounded-full border-2 border-white/30 border-t-white"></div>
+                                <p className="text-sm font-semibold">Processing scan...</p>
+                                <p className="mt-1 text-xs text-white/80">Please hold still and wait</p>
+                            </div>
                         </div>
                     )}
                 </div>
