@@ -25,6 +25,7 @@ import {
     limit,
     query,
     serverTimestamp,
+    setDoc,
     Timestamp,
     updateDoc,
     where,
@@ -149,6 +150,19 @@ const getCameraErrorMessage = (error) => {
 };
 
 const normalizeId = (value) => String(value ?? "").trim();
+
+const normalizeEmail = (value) => String(value ?? "").trim().toLowerCase();
+
+const buildAuthIdentifier = (value) => {
+    const identifier = String(value ?? "").trim().replace(/\s+/g, "");
+    const isPhone = !identifier.includes("@");
+
+    return {
+        identifier,
+        isPhone,
+        email: isPhone ? `${identifier}@phone.com` : normalizeEmail(identifier),
+    };
+};
 
 const parseQrPayload = (decodedText) => {
     const normalized = normalizeId(decodedText);
@@ -398,27 +412,13 @@ const ScanAttendance = () => {
         };
     }, []);
 
-    const resolveEmailFromIdentifier = async (identifier) => {
-        if (identifier.includes("@")) {
-            return identifier;
-        }
-
-        const phoneSnapshot = await getDocs(
-            query(collection(db, "users"), where("phone", "==", identifier), limit(1))
-        );
-        const phoneUser = phoneSnapshot.docs[0]?.data();
-
-        if (!phoneUser?.email) {
-            throw new Error("No email found for this phone number");
-        }
-
-        return phoneUser.email;
-    };
-
     const handleLogin = async (event) => {
         event.preventDefault();
 
-        const identifier = loginForm.identifier.trim();
+        const data = buildAuthIdentifier(loginForm.identifier);
+        console.log(data);
+
+        const { identifier, isPhone, email } = buildAuthIdentifier(loginForm.identifier);
         const password = loginForm.password;
 
         if (!identifier || !password) {
@@ -429,16 +429,37 @@ const ScanAttendance = () => {
         setLoginLoading(true);
 
         try {
-            const email = await resolveEmailFromIdentifier(identifier);
-            await signInWithEmailAndPassword(auth, email, password);
+            const userCredential = await signInWithEmailAndPassword(auth, email, password);
+            const uid = userCredential.user?.uid;
+
+            if (!uid) {
+                throw new Error("Login failed. Missing user id.");
+            }
+
+            const userRef = doc(db, "users", uid);
+            const userSnapshot = await getDoc(userRef);
+
+            if (!userSnapshot.exists()) {
+                await setDoc(userRef, {
+                    name: isPhone ? identifier : email.split("@")[0],
+                    email: isPhone ? "" : email,
+                    phone: isPhone ? identifier : "",
+                    role: "employee",
+                    token: uid,
+                    isActive: 1,
+                    created_by: uid,
+                    last_login_at: serverTimestamp(),
+                });
+            } else {
+                await updateDoc(userRef, {
+                    last_login_at: serverTimestamp(),
+                });
+            }
+
             toast.success("Login successful");
         } catch (error) {
             console.error("Login error:", error);
-            toast.error(
-                error?.message?.includes("No email found")
-                    ? "Phone login needs a user record with email saved"
-                    : "Login failed. Please check your credentials"
-            );
+            toast.error(error?.message || "Login failed. Please check your credentials");
         } finally {
             if (isMountedRef.current) {
                 setLoginLoading(false);
@@ -779,17 +800,30 @@ const ScanAttendance = () => {
     };
 
     return (
-        <div className="mx-auto max-w-3xl p-4">
-            <div className="mb-6 rounded-2xl border bg-white p-5 shadow-sm">
-                <h2 className="mb-4 flex items-center gap-2 text-xl font-bold">
-                    <BiUserCheck className="text-2xl text-green-600" />
-                    {t("scanAttendance", "Scan Attendance")}
-                </h2>
+        <div className="mx-auto max-w-4xl bg-[#e9f2ff] h-screen px-4 py-6 text-slate-900 md:px-6">
+            <div className="mb-6 overflow-hidden rounded-[32px] border border-[#cfe0ff] bg-gradient-to-br from-[#f8fbff] via-white to-[#edf5ff] p-6 shadow-[0_20px_60px_rgba(48,104,187,0.12)]">
+                <div className="mb-5 flex items-center gap-3">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#229ed9] text-white shadow-[0_10px_30px_rgba(34,158,217,0.35)]">
+                        <BiUserCheck className="text-2xl" />
+                    </div>
+                    <div>
+                        <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#229ed9]">
+                            Telegram Style
+                        </p>
+                        <h2 className="text-2xl font-black tracking-tight text-[#183b67]">
+                            {t("scanAttendance", "Scan Attendance")}
+                        </h2>
+                    </div>
+                </div>
+
+                <div className="mb-5 rounded-[24px] border border-[#d8e7ff] bg-[#eef6ff] px-4 py-3 text-sm text-[#4a6b93]">
+                    Scan company QR, verify access, and record attendance in a clean Telegram-inspired workspace.
+                </div>
 
                 {!authUser ? (
                     <form onSubmit={handleLogin} className="space-y-4">
                         <div>
-                            <label className="mb-1 block text-sm font-medium text-gray-700">
+                            <label className="mb-2 block text-sm font-semibold text-[#355a87]">
                                 Phone or Email
                             </label>
                             <input
@@ -801,12 +835,12 @@ const ScanAttendance = () => {
                                     }))
                                 }
                                 placeholder="Phone or email"
-                                className="w-full rounded-xl border px-4 py-3 outline-none focus:border-blue-500"
+                                className="w-full rounded-[20px] border border-[#cfe0ff] bg-white px-4 py-3 text-[#183b67] outline-none transition focus:border-[#229ed9] focus:ring-4 focus:ring-[#229ed9]/15"
                             />
                         </div>
 
                         <div>
-                            <label className="mb-1 block text-sm font-medium text-gray-700">
+                            <label className="mb-2 block text-sm font-semibold text-[#355a87]">
                                 Password
                             </label>
                             <input
@@ -819,14 +853,14 @@ const ScanAttendance = () => {
                                     }))
                                 }
                                 placeholder="Password"
-                                className="w-full rounded-xl border px-4 py-3 outline-none focus:border-blue-500"
+                                className="w-full rounded-[20px] border border-[#cfe0ff] bg-white px-4 py-3 text-[#183b67] outline-none transition focus:border-[#229ed9] focus:ring-4 focus:ring-[#229ed9]/15"
                             />
                         </div>
 
                         <button
                             type="submit"
                             disabled={loginLoading}
-                            className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-6 py-3 font-bold text-white transition-all disabled:cursor-not-allowed disabled:opacity-70"
+                            className="flex w-full items-center justify-center gap-2 rounded-[20px] bg-[#229ed9] px-6 py-3 font-bold text-white shadow-[0_14px_30px_rgba(34,158,217,0.3)] transition hover:bg-[#1b8fc6] disabled:cursor-not-allowed disabled:opacity-70"
                         >
                             <BiLogIn size={22} />
                             {loginLoading ? "Signing in..." : "Login"}
@@ -834,18 +868,18 @@ const ScanAttendance = () => {
                     </form>
                 ) : (
                     <div className="space-y-4">
-                        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-slate-50 p-4">
+                        <div className="flex flex-wrap items-center justify-between gap-3 rounded-[24px] border border-[#d4e4ff] bg-white/90 p-4 shadow-[0_10px_30px_rgba(69,122,194,0.08)]">
                             <div>
-                                <p className="text-sm text-gray-500">Current user</p>
-                                <p className="font-semibold">{authUser.email || authUser.uid}</p>
-                                <p className="text-sm text-gray-500">
+                                <p className="text-sm font-medium text-[#6b88ad]">Current user</p>
+                                <p className="text-lg font-bold text-[#183b67]">{authUser.email || authUser.uid}</p>
+                                <p className="text-sm text-[#6b88ad]">
                                     Firebase UID: {authUser.uid}
                                 </p>
                             </div>
 
                             <button
                                 onClick={handleLogout}
-                                className="flex items-center gap-2 rounded-xl border px-4 py-2 font-medium text-gray-700"
+                                className="flex items-center gap-2 rounded-[18px] border border-[#d5e5ff] bg-[#f6faff] px-4 py-2 font-semibold text-[#355a87] transition hover:border-[#229ed9] hover:text-[#229ed9]"
                             >
                                 <BiLogOut size={20} />
                                 Logout
@@ -855,16 +889,16 @@ const ScanAttendance = () => {
                         <button
                             onClick={isScanning ? () => void stopScanner() : startScanner}
                             disabled={isStarting || isProcessingScan}
-                            className={`flex w-full items-center justify-center gap-2 rounded-xl px-6 py-3 font-bold text-white transition-all ${isScanning ? "bg-red-500" : "bg-blue-600"} ${(isStarting || isProcessingScan) ? "cursor-not-allowed opacity-70" : ""}`}
+                            className={`flex w-full items-center justify-center gap-2 rounded-[22px] px-6 py-4 font-bold text-white shadow-[0_16px_34px_rgba(34,158,217,0.28)] transition ${isScanning ? "bg-[#f05d5e]" : "bg-[#229ed9]"} ${(isStarting || isProcessingScan) ? "cursor-not-allowed opacity-70" : "hover:brightness-95"}`}
                         >
                             {isScanning ? <BiCameraOff size={24} /> : <BiUserCheck size={24} />}
                             {isStarting
                                 ? "Opening camera..."
                                 : isProcessingScan
                                     ? "Processing scan..."
-                                : isScanning
-                                    ? t("stopScanning", "Stop Scanning")
-                                    : t("scanAttendance", "Scan Attendance")}
+                                    : isScanning
+                                        ? t("stopScanning", "Stop Scanning")
+                                        : t("scanAttendance", "Scan Attendance")}
                         </button>
                     </div>
                 )}
@@ -872,12 +906,13 @@ const ScanAttendance = () => {
 
             {authUser && (
                 <div
-                    className={`relative overflow-hidden rounded-2xl border-2 transition-all ${isScanning ? "mb-6 aspect-square border-blue-500 bg-black" : "h-0 border-0 opacity-0"}`}
+                    className={`relative overflow-hidden rounded-[30px] border-2 transition-all ${isScanning ? "mb-6 aspect-square border-[#7ac8ee] bg-[#0d223d] shadow-[0_20px_50px_rgba(13,34,61,0.25)]" : "h-0 border-0 opacity-0"}`}
                 >
-                    <div id={scannerId} className="h-full w-full"></div>
+                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(34,158,217,0.25),_transparent_55%)]"></div>
+                    <div id={scannerId} className="relative z-[1] h-full w-full"></div>
 
                     {isScanning && (
-                        <div className="absolute top-0 w-full animate-pulse bg-blue-600 p-2 text-xs text-white">
+                        <div className="absolute top-0 z-10 w-full bg-[#229ed9] px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-white">
                             {isProcessingScan
                                 ? t("processingAttendance", "Processing attendance...")
                                 : t("scanningAttendance", "Scanning attendance...")}
@@ -885,10 +920,10 @@ const ScanAttendance = () => {
                     )}
 
                     {isProcessingScan && (
-                        <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/70">
-                            <div className="rounded-2xl bg-white/10 px-6 py-4 text-center text-white backdrop-blur">
-                                <div className="mx-auto mb-3 h-8 w-8 animate-spin rounded-full border-2 border-white/30 border-t-white"></div>
-                                <p className="text-sm font-semibold">Processing scan...</p>
+                        <div className="absolute inset-0 z-20 flex items-center justify-center bg-[#08192d]/75 backdrop-blur-sm">
+                            <div className="rounded-[24px] border border-white/15 bg-white/10 px-6 py-5 text-center text-white shadow-[0_10px_30px_rgba(0,0,0,0.2)]">
+                                <div className="mx-auto mb-3 h-9 w-9 animate-spin rounded-full border-2 border-white/30 border-t-white"></div>
+                                <p className="text-sm font-bold tracking-wide">Processing scan...</p>
                                 <p className="mt-1 text-xs text-white/80">Please hold still and wait</p>
                             </div>
                         </div>
@@ -897,27 +932,27 @@ const ScanAttendance = () => {
             )}
 
             {scanState && (
-                <div className="space-y-4 rounded-2xl border bg-white p-5 shadow-sm">
+                <div className="space-y-4 rounded-[30px] border border-[#cfe0ff] bg-white p-6 shadow-[0_20px_60px_rgba(48,104,187,0.12)]">
                     <div className="flex items-start justify-between gap-4">
                         <div>
-                            <p className="text-sm text-gray-500">Scanned employee</p>
-                            <h3 className="text-lg font-bold text-gray-900">
+                            <p className="text-sm font-medium text-[#6b88ad]">Scanned employee</p>
+                            <h3 className="text-xl font-black text-[#183b67]">
                                 {scanState.userName}
                             </h3>
-                            <p className="text-sm text-gray-600">
+                            <p className="text-sm text-[#52729a]">
                                 {scanState.employee.phone || "--"} | {scanState.employee.email || authUser?.email || "--"}
                             </p>
-                            <p className="text-sm text-gray-600">
+                            <p className="text-sm text-[#52729a]">
                                 Company: {scanState.company.company_name || scanState.companyId}
                             </p>
-                            <p className="text-sm text-gray-600">
+                            <p className="text-sm text-[#52729a]">
                                 Day: {scanState.dayName} | Section: {scanState.scheduleDetail.section || "--"}
                             </p>
                         </div>
 
                         <button
                             onClick={refreshCurrentScan}
-                            className="flex items-center gap-2 rounded-xl border px-3 py-2 text-sm font-medium text-gray-700"
+                            className="flex items-center gap-2 rounded-[18px] border border-[#d4e4ff] bg-[#f7fbff] px-4 py-2 text-sm font-semibold text-[#355a87] transition hover:border-[#229ed9] hover:text-[#229ed9]"
                         >
                             <BiRefresh size={18} />
                             Refresh
@@ -934,9 +969,9 @@ const ScanAttendance = () => {
                                     key={action.key}
                                     onClick={() => void submitAttendanceAction(action.key)}
                                     disabled={!state?.enabled || !!actionLoading}
-                                    className={`rounded-xl border px-4 py-3 text-left transition-all ${state?.enabled ? "border-green-500 bg-green-50 text-green-700" : "cursor-not-allowed border-gray-200 bg-gray-50 text-gray-400"}`}
+                                    className={`rounded-[22px] border px-4 py-4 text-left transition-all ${state?.enabled ? "border-[#8fd3f3] bg-[#eef9ff] text-[#0f5480] shadow-[0_8px_20px_rgba(34,158,217,0.12)]" : "cursor-not-allowed border-[#e1eaf7] bg-[#f6f9fc] text-[#9aaec8]"}`}
                                 >
-                                    <div className="font-semibold">
+                                    <div className="font-bold">
                                         {isBusy ? "Saving..." : action.label}
                                     </div>
                                     <div className="mt-1 text-sm">
@@ -947,9 +982,9 @@ const ScanAttendance = () => {
                         })}
                     </div>
 
-                    <div className="grid gap-3 rounded-xl bg-slate-50 p-4 text-sm text-gray-700 md:grid-cols-2">
-                        <div>
-                            <p className="font-semibold">Schedule</p>
+                    <div className="grid gap-3 md:grid-cols-2">
+                        <div className="rounded-[24px] border border-[#d9e8ff] bg-[#f5faff] p-4 text-sm text-[#45678f]">
+                            <p className="mb-2 font-bold text-[#183b67]">Schedule</p>
                             <p>Shift 1 Start: {formatDateTime(scanState.primarySchedule?.start_time, scanState.timeZone)}</p>
                             <p>Shift 1 End: {formatDateTime(scanState.primarySchedule?.end_time, scanState.timeZone)}</p>
                             <p>Shift 2 Start: {formatDateTime(scanState.secondarySchedule?.start_time, scanState.timeZone)}</p>
@@ -957,8 +992,8 @@ const ScanAttendance = () => {
                             <p>Timezone: {scanState.timeZone}</p>
                         </div>
 
-                        <div>
-                            <p className="font-semibold">Today Attendance</p>
+                        <div className="rounded-[24px] border border-[#d9e8ff] bg-[#f5faff] p-4 text-sm text-[#45678f]">
+                            <p className="mb-2 font-bold text-[#183b67]">Today Attendance</p>
                             <p>Check in: {formatDateTime(scanState.attendance?.check_in_time, scanState.timeZone)}</p>
                             <p>Check out: {formatDateTime(scanState.attendance?.check_out_time, scanState.timeZone)}</p>
                             <p>Check in 2: {formatDateTime(scanState.attendance?.check_in_time_2, scanState.timeZone)}</p>
@@ -969,18 +1004,22 @@ const ScanAttendance = () => {
             )}
 
             {lastScan && (
-                <div className="mt-6 flex items-center gap-3 rounded-xl border bg-green-100 p-4">
-                    <BiCheckCircle className="text-2xl text-green-600" />
+                <div className="mt-6 flex items-center gap-3 rounded-[24px] border border-[#bfe6d0] bg-[#ecfff3] p-4 shadow-[0_10px_30px_rgba(54,179,126,0.1)]">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#31b46f] text-white">
+                        <BiCheckCircle className="text-2xl" />
+                    </div>
                     <div>
-                        <p className="text-xs font-bold">{t("successfully", "Successfully")}</p>
-                        <p className="font-mono text-sm font-bold">{lastScan}</p>
+                        <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#31b46f]">{t("successfully", "Successfully")}</p>
+                        <p className="font-mono text-sm font-bold text-[#21543a]">{lastScan}</p>
                     </div>
                 </div>
             )}
 
             {!authUser && (
-                <div className="py-12 text-center text-gray-400">
-                    <BiUserCheck size={64} className="mx-auto mb-4 opacity-20" />
+                <div className="py-12 text-center text-[#7891b0]">
+                    <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-white shadow-[0_14px_30px_rgba(48,104,187,0.1)]">
+                        <BiUserCheck size={40} className="text-[#229ed9]" />
+                    </div>
                     <p>Login with phone or email and password to start attendance scanning.</p>
                 </div>
             )}
