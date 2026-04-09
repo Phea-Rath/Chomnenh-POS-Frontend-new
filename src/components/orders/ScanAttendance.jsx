@@ -234,50 +234,57 @@ const parseQrPayload = (decodedText) => {
     return fallbackPayload;
 };
 
+const CHECK_IN_WINDOW_MINUTES = 60; // Flutter uses 60 mins early/late
+
+// Helper to get total minutes from a JS Date
+const getMinutesOfDay = (date, timeZone = DEFAULT_TIMEZONE) => {
+    const parts = getTimeParts(date, timeZone);
+    return parts.totalMinutes;
+};
+
 const resolveAttendanceActionStates = (attendanceDoc, schedule, timeZone = DEFAULT_TIMEZONE) => {
-    const nowMinutes = getTimeParts(new Date(), timeZone).totalMinutes;
+    const now = new Date();
+    const nowMinutes = getMinutesOfDay(now, timeZone);
+
+    // Get schedule times
     const scheduleWindow = getScheduleWindow(schedule, timeZone);
+    const startMin = scheduleWindow?.start ?? 0;
+    const endMin = scheduleWindow?.end ?? 0;
+
     const checkInTime = toDate(attendanceDoc?.check_in_time);
     const checkOutTime = toDate(attendanceDoc?.check_out_time);
     const checkInTime2 = toDate(attendanceDoc?.check_in_time_2);
     const checkOutTime2 = toDate(attendanceDoc?.check_out_time_2);
-    const checkInMinutes = checkInTime ? getTimeParts(checkInTime, timeZone).totalMinutes : null;
-    const checkIn2Minutes = checkInTime2 ? getTimeParts(checkInTime2, timeZone).totalMinutes : null;
-    const shiftOpens = scheduleWindow ? scheduleWindow.start - CHECK_IN_EARLY_MINUTES : null;
-    const shiftEnds = scheduleWindow ? scheduleWindow.end : null;
-    const isWithinShift = scheduleWindow
-        ? nowMinutes >= shiftOpens && nowMinutes <= shiftEnds
-        : false;
 
     const makeState = (enabled, reason = "") => ({ enabled, reason });
 
+    // Logical checks based on Flutter scanner_screen.dart
     return {
         check_in: checkInTime
-            ? makeState(false, "Already checked in")
-            : isWithinShift
+            ? makeState(false, "Already checked in (1)")
+            : (nowMinutes >= startMin - CHECK_IN_WINDOW_MINUTES && nowMinutes <= endMin + CHECK_IN_WINDOW_MINUTES)
                 ? makeState(true)
-                : makeState(false, "Check in opens 15 minutes before the shift"),
+                : makeState(false, `Too early/late. Shift: ${formatDateTime(schedule?.start_time, timeZone)}`),
+
         check_out: !checkInTime
-            ? makeState(false, "Check in first")
+            ? makeState(false, "Must check-in first")
             : checkOutTime
-                ? makeState(false, "Already checked out")
-                : nowMinutes >= (checkInMinutes ?? 0) + CHECK_OUT_DELAY_MINUTES
+                ? makeState(false, "Already checked out (1)")
+                : nowMinutes >= startMin
                     ? makeState(true)
-                    : makeState(false, "Check out becomes available 15 minutes after check in"),
-        check_in_2: !checkOutTime
-            ? makeState(false, "Complete check out first")
-            : checkInTime2
-                ? makeState(false, "Second check in already recorded")
-                : scheduleWindow && nowMinutes <= shiftEnds
-                    ? makeState(true)
-                    : makeState(false, "Shift already ended"),
+                    : makeState(false, "Cannot check out before shift starts"),
+
+        check_in_2: checkInTime2
+            ? makeState(false, "Already checked in (2)")
+            : (checkOutTime && nowMinutes <= endMin + CHECK_IN_WINDOW_MINUTES)
+                ? makeState(true)
+                : makeState(false, "Check out 1 first or shift ended"),
+
         check_out_2: !checkInTime2
-            ? makeState(false, "Complete second check in first")
+            ? makeState(false, "Must check-in 2 first")
             : checkOutTime2
-                ? makeState(false, "Second check out already recorded")
-                : nowMinutes >= (checkIn2Minutes ?? 0) + CHECK_OUT_DELAY_MINUTES
-                    ? makeState(true)
-                    : makeState(false, "Check out 2 becomes available 15 minutes after check in 2"),
+                ? makeState(false, "Already checked out (2)")
+                : makeState(true),
     };
 };
 
@@ -705,64 +712,69 @@ const ScanAttendance = () => {
     };
 
     const submitAttendanceAction = async (actionKey) => {
-        if (!scanState) {
-            return;
-        }
+        if (!scanState) return;
 
         const actionState = scanState.actionStates?.[actionKey];
         if (!actionState?.enabled) {
-            toast.error(actionState?.reason || "This action is not available");
+            toast.error(actionState?.reason || "Action not allowed");
             return;
+        }
+
+        // Anti-spam check (Flutter 15-second rule)
+        if (scanState.attendance) {
+            const lastUpdate = toDate(scanState.attendance.updated_at || scanState.attendance.created_at);
+            const diffSeconds = (new Date().getTime() - lastUpdate.getTime()) / 1000;
+            if (diffSeconds < 15) {
+                toast.error("Please wait 15 seconds before scanning again");
+                return;
+            }
         }
 
         setActionLoading(actionKey);
 
         try {
-            const payload = {
-                updated_at: serverTimestamp(),
-            };
-
-            if (actionKey === "check_in") {
-                payload.check_in_time = serverTimestamp();
-            }
-
-            if (actionKey === "check_out") {
-                payload.check_out_time = serverTimestamp();
-            }
-
-            if (actionKey === "check_in_2") {
-                payload.check_in_time_2 = serverTimestamp();
-            }
-
-            if (actionKey === "check_out_2") {
-                payload.check_out_time_2 = serverTimestamp();
-            }
+            const timestamp = serverTimestamp();
 
             if (scanState.attendanceRef) {
-                await updateDoc(scanState.attendanceRef, payload);
+                // Update existing record
+                const fieldMap = {
+                    check_in: "check_in_time",
+                    check_out: "check_out_time",
+                    check_in_2: "check_in_time_2",
+                    check_out_2: "check_out_time_2"
+                };
+
+                await updateDoc(scanState.attendanceRef, {
+                    [fieldMap[actionKey]]: timestamp,
+                    updated_at: timestamp
+                });
             } else {
+                // Create new record (only if it's a Check-In)
+                if (!actionKey.startsWith("check_in")) {
+                    toast.error("Please check-in first");
+                    return;
+                }
+
                 await addDoc(collection(db, "attendances"), {
-                    check_in_time: actionKey === "check_in" ? serverTimestamp() : null,
-                    check_in_time_2: actionKey === "check_in_2" ? serverTimestamp() : null,
-                    check_out_time: actionKey === "check_out" ? serverTimestamp() : null,
-                    check_out_time_2: actionKey === "check_out_2" ? serverTimestamp() : null,
                     company_id: scanState.companyId,
-                    created_at: serverTimestamp(),
-                    created_by: scanState.employeeUid,
                     schedule_id: scanState.scheduleId,
-                    updated_at: serverTimestamp(),
+                    user_name: scanState.employee.name || "Unknown",
+                    status: "present",
+                    check_in_time: actionKey === "check_in" ? timestamp : null,
+                    check_in_time_2: actionKey === "check_in_2" ? timestamp : null,
+                    created_by: scanState.employeeUid,
+                    created_at: timestamp,
+                    updated_at: timestamp,
                 });
             }
 
-            toast.success(`${ACTIONS.find((item) => item.key === actionKey)?.label} saved`);
+            toast.success("Attendance Updated Successfully");
             await refreshCurrentScan();
         } catch (error) {
-            console.error("Attendance save error:", error);
+            console.error(error);
             toast.error("Failed to save attendance");
         } finally {
-            if (isMountedRef.current) {
-                setActionLoading("");
-            }
+            setActionLoading("");
         }
     };
 
