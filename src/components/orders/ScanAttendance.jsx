@@ -18,11 +18,14 @@ import {
 import {
     addDoc,
     collection,
+    doc,
+    getDoc,
     getDocs,
     getFirestore,
     limit,
     query,
     serverTimestamp,
+    Timestamp,
     updateDoc,
     where,
 } from "firebase/firestore";
@@ -51,14 +54,6 @@ const ACTIONS = [
     { key: "check_in_2", label: "Check In 2" },
     { key: "check_out_2", label: "Check Out 2" },
 ];
-
-const formatDateKey = (date, timeZone = DEFAULT_TIMEZONE) =>
-    new Intl.DateTimeFormat("en-CA", {
-        timeZone,
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-    }).format(date);
 
 const getDayName = (date, timeZone = DEFAULT_TIMEZONE) =>
     new Intl.DateTimeFormat("en-US", {
@@ -176,8 +171,6 @@ const parseQrPayload = (decodedText) => {
             value?.profileId
         );
         const employeeIdentifiers = [
-            value?.employee_id,
-            value?.employeeId,
             value?.user_id,
             value?.userId,
             value?.uid,
@@ -242,49 +235,59 @@ const getMinutesOfDay = (date, timeZone = DEFAULT_TIMEZONE) => {
     return parts.totalMinutes;
 };
 
-const resolveAttendanceActionStates = (attendanceDoc, schedule, timeZone = DEFAULT_TIMEZONE) => {
-    const now = new Date();
-    const nowMinutes = getMinutesOfDay(now, timeZone);
-
-    // Get schedule times
-    const scheduleWindow = getScheduleWindow(schedule, timeZone);
-    const startMin = scheduleWindow?.start ?? 0;
-    const endMin = scheduleWindow?.end ?? 0;
-
+const resolveAttendanceActionStates = (attendanceDoc, scanState, timeZone = DEFAULT_TIMEZONE) => {
+    const nowMinutes = getMinutesOfDay(new Date(), timeZone);
     const checkInTime = toDate(attendanceDoc?.check_in_time);
     const checkOutTime = toDate(attendanceDoc?.check_out_time);
     const checkInTime2 = toDate(attendanceDoc?.check_in_time_2);
     const checkOutTime2 = toDate(attendanceDoc?.check_out_time_2);
-
     const makeState = (enabled, reason = "") => ({ enabled, reason });
+    const resolveShiftState = (schedule, type) => {
+        if (!schedule) {
+            return makeState(false, "Shift schedule not configured");
+        }
 
-    // Logical checks based on Flutter scanner_screen.dart
+        const scheduleWindow = getScheduleWindow(schedule, timeZone);
+        if (!scheduleWindow) {
+            return makeState(false, "Schedule time not found");
+        }
+
+        const startMin = scheduleWindow.start;
+        const endMin = scheduleWindow.end;
+
+        if (type === "in") {
+            return nowMinutes >= startMin - CHECK_IN_WINDOW_MINUTES &&
+                nowMinutes <= endMin + CHECK_IN_WINDOW_MINUTES
+                ? makeState(true)
+                : makeState(false, `Too early/late. Shift starts ${formatDateTime(schedule.start_time, timeZone)}`);
+        }
+
+        return nowMinutes >= startMin
+            ? makeState(true)
+            : makeState(false, "Cannot check out before shift starts");
+    };
+
     return {
         check_in: checkInTime
             ? makeState(false, "Already checked in (1)")
-            : (nowMinutes >= startMin - CHECK_IN_WINDOW_MINUTES && nowMinutes <= endMin + CHECK_IN_WINDOW_MINUTES)
-                ? makeState(true)
-                : makeState(false, `Too early/late. Shift: ${formatDateTime(schedule?.start_time, timeZone)}`),
-
+            : resolveShiftState(scanState?.primarySchedule, "in"),
         check_out: !checkInTime
             ? makeState(false, "Must check-in first")
             : checkOutTime
                 ? makeState(false, "Already checked out (1)")
-                : nowMinutes >= startMin
-                    ? makeState(true)
-                    : makeState(false, "Cannot check out before shift starts"),
-
-        check_in_2: checkInTime2
-            ? makeState(false, "Already checked in (2)")
-            : (checkOutTime && nowMinutes <= endMin + CHECK_IN_WINDOW_MINUTES)
-                ? makeState(true)
-                : makeState(false, "Check out 1 first or shift ended"),
-
-        check_out_2: !checkInTime2
-            ? makeState(false, "Must check-in 2 first")
-            : checkOutTime2
-                ? makeState(false, "Already checked out (2)")
-                : makeState(true),
+                : resolveShiftState(scanState?.primarySchedule, "out"),
+        check_in_2: scanState?.section !== "2"
+            ? makeState(false, "Section 2 is not assigned")
+            : checkInTime2
+                ? makeState(false, "Already checked in (2)")
+                : resolveShiftState(scanState?.secondarySchedule, "in"),
+        check_out_2: scanState?.section !== "2"
+            ? makeState(false, "Section 2 is not assigned")
+            : !checkInTime2
+                ? makeState(false, "Must check-in 2 first")
+                : checkOutTime2
+                    ? makeState(false, "Already checked out (2)")
+                    : resolveShiftState(scanState?.secondarySchedule, "out"),
     };
 };
 
@@ -297,8 +300,6 @@ const ScanAttendance = () => {
         password: "",
     });
     const [loginLoading, setLoginLoading] = useState(false);
-    const [loadingEmployees, setLoadingEmployees] = useState(false);
-    const [employees, setEmployees] = useState([]);
     const [isScanning, setIsScanning] = useState(false);
     const [isStarting, setIsStarting] = useState(false);
     const [actionLoading, setActionLoading] = useState("");
@@ -309,7 +310,6 @@ const ScanAttendance = () => {
     const isMountedRef = useRef(true);
     const isStartingRef = useRef(false);
     const scannerId = "reader";
-    const currentCompanyId = normalizeId(authUser?.uid);
 
     const scannerConfig = {
         fps: 10,
@@ -330,36 +330,6 @@ const ScanAttendance = () => {
         }
 
         return html5QrCodeRef.current;
-    };
-
-    const loadManagedUsers = async (uid) => {
-        if (!uid) {
-            setEmployees([]);
-            return;
-        }
-
-        setLoadingEmployees(true);
-
-        try {
-            const snapshot = await getDocs(
-                query(collection(db, "users"), where("created_by", "==", uid))
-            );
-            const rows = snapshot.docs.map((docItem) => ({
-                id: docItem.id,
-                ...docItem.data(),
-            }));
-
-            if (isMountedRef.current) {
-                setEmployees(rows);
-            }
-        } catch (error) {
-            console.error("Load users error:", error);
-            toast.error("Failed to load users collection");
-        } finally {
-            if (isMountedRef.current) {
-                setLoadingEmployees(false);
-            }
-        }
     };
 
     const stopScanner = async () => {
@@ -415,11 +385,6 @@ const ScanAttendance = () => {
             setScanState(null);
             setLastScan(null);
 
-            if (user?.uid) {
-                await loadManagedUsers(user.uid);
-            } else {
-                setEmployees([]);
-            }
         });
 
         return () => {
@@ -498,115 +463,129 @@ const ScanAttendance = () => {
         }
 
         const qrPayload = parseQrPayload(normalized);
-        const scannedCompanyId = normalizeId(qrPayload.companyId);
+        const scannedCompanyId = normalizeId(qrPayload.companyId || normalized);
 
-        if (scannedCompanyId && currentCompanyId && scannedCompanyId !== currentCompanyId) {
-            throw new Error("This QR code belongs to another company");
+        if (!authUser?.uid) {
+            throw new Error("User not logged in");
         }
 
-        const employee = employees.find((row) =>
-            qrPayload.employeeIdentifiers.some((identifier) =>
-                [row.id, row.token, row.phone, row.email, row.created_by].some(
-                    (value) => normalizeId(value) === normalizeId(identifier)
-                )
-            )
-        );
-
-        if (!employee) {
-            throw new Error("Scanned user is not in your users collection");
+        if (!scannedCompanyId) {
+            throw new Error("QR company id not found");
         }
 
-        if (currentCompanyId && normalizeId(employee.created_by) !== currentCompanyId) {
-            throw new Error("Scanned user does not belong to the current logged in company");
+        const userDoc = await getDoc(doc(db, "users", authUser.uid));
+        const userData = userDoc.data();
+
+        if (!userData) {
+            throw new Error("Current user data not found");
         }
 
-        const employeeUid = employee.token || employee.id;
-        const dayName = getDayName(new Date(), DEFAULT_TIMEZONE);
-        const scheduleDetailSnapshot = await getDocs(
+        const requestSnapshot = await getDocs(
             query(
-                collection(db, "schedule_details"),
-                where("user_id", "==", employeeUid),
-                where("day_name", "==", dayName),
-                limit(10)
+                collection(db, "requests"),
+                where("user_id", "==", authUser.uid),
+                where("company_id", "==", scannedCompanyId),
+                where("status", "==", "approved"),
+                limit(1)
             )
         );
-        const scheduleDetailDoc = scheduleDetailSnapshot.docs[0];
-        const scheduleDetail = scheduleDetailDoc?.data();
 
-        if (!scheduleDetail) {
-            throw new Error(`No schedule detail found for ${dayName}`);
+        if (requestSnapshot.empty && normalizeId(userData.company_id) !== scannedCompanyId) {
+            throw new Error("You are not authorized for this company. Please join first.");
         }
 
-        const scheduleId = scheduleDetail.section === "2"
-            ? scheduleDetail.section_two || scheduleDetail.section_one
-            : scheduleDetail.section_one || scheduleDetail.section_two;
-
-        if (!scheduleId) {
-            throw new Error("No schedule linked to this user section");
-        }
-
-        const scheduleSnapshot = await getDocs(
-            query(collection(db, "schedules"), where("__name__", "==", scheduleId), limit(1))
-        );
-        const scheduleDoc = scheduleSnapshot.docs[0];
-        const schedule = scheduleDoc?.data();
-
-        if (!schedule) {
-            throw new Error("Schedule document not found");
-        }
-
-        const companyId = scheduleDetail.company_id || schedule.company_id;
-
-        if (!companyId) {
-            throw new Error("No company linked to this user schedule");
-        }
-
-        if (scannedCompanyId && normalizeId(companyId) !== scannedCompanyId) {
-            throw new Error("QR company id does not match the employee company");
-        }
-
-        const companySnapshot = await getDocs(
-            query(collection(db, "companies"), where("__name__", "==", companyId), limit(1))
-        );
-        const companyDoc = companySnapshot.docs[0];
-        const company = companyDoc?.data();
+        const companyDoc = await getDoc(doc(db, "companies", scannedCompanyId));
+        const company = companyDoc.data();
 
         if (!company) {
-            throw new Error("Company document not found");
+            throw new Error("Company data not found");
         }
 
         const timeZone = company.timezone || DEFAULT_TIMEZONE;
-        const todayKey = formatDateKey(new Date(), timeZone);
+        const now = new Date();
+        const dayName = getDayName(now, timeZone);
+        const scheduleDetailSnapshot = await getDocs(
+            query(
+                collection(db, "schedule_details"),
+                where("user_id", "==", authUser.uid),
+                where("company_id", "==", scannedCompanyId),
+                where("day_name", "==", dayName),
+                limit(1)
+            )
+        );
+        const scheduleDetail = scheduleDetailSnapshot.docs[0]?.data();
+
+        if (!scheduleDetail) {
+            throw new Error(`No schedule assigned for today (${dayName})`);
+        }
+
+        const section = String(scheduleDetail.section || "1");
+        const primaryScheduleId = scheduleDetail.section_one || null;
+        const secondaryScheduleId = section === "2" ? (scheduleDetail.section_two || null) : null;
+
+        if (!primaryScheduleId && !secondaryScheduleId) {
+            throw new Error("Shift schedule not configured");
+        }
+
+        const primaryScheduleDoc = primaryScheduleId
+            ? await getDoc(doc(db, "schedules", primaryScheduleId))
+            : null;
+        const secondaryScheduleDoc = secondaryScheduleId
+            ? await getDoc(doc(db, "schedules", secondaryScheduleId))
+            : null;
+        const primarySchedule = primaryScheduleDoc?.data() || null;
+        const secondarySchedule = secondaryScheduleDoc?.data() || null;
+
+        if (!primarySchedule && !secondarySchedule) {
+            throw new Error("Schedule details not found");
+        }
+
+        const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const endOfDay = new Date(startOfDay);
+        endOfDay.setDate(endOfDay.getDate() + 1);
         const attendanceSnapshot = await getDocs(
             query(
                 collection(db, "attendances"),
-                where("created_by", "==", employeeUid),
-                where("company_id", "==", companyId)
+                where("created_by", "==", authUser.uid),
+                where("company_id", "==", scannedCompanyId),
+                where("created_at", ">=", Timestamp.fromDate(startOfDay)),
+                where("created_at", "<", Timestamp.fromDate(endOfDay)),
+                limit(1)
             )
         );
-        const todayAttendanceDoc = attendanceSnapshot.docs.find((docItem) => {
-            const createdAt = docItem.data()?.created_at;
-            return formatDateKey(toDate(createdAt) || new Date(0), timeZone) === todayKey;
-        });
+        const todayAttendanceDoc = attendanceSnapshot.docs[0];
         const attendance = todayAttendanceDoc
             ? { id: todayAttendanceDoc.id, ref: todayAttendanceDoc.ref, ...todayAttendanceDoc.data() }
             : null;
 
-        return {
+        const scanState = {
             scannedValue: normalized,
-            employee,
-            employeeUid,
-            scheduleId,
-            schedule,
-            scheduleDetail,
             scannedCompanyId,
-            companyId,
+            companyId: scannedCompanyId,
             company,
+            employee: {
+                id: authUser.uid,
+                ...userData,
+            },
+            employeeUid: authUser.uid,
+            userName: userData.name || userData.email || authUser.email || "Unknown User",
             timeZone,
+            dayName,
+            section,
+            scheduleDetail,
+            primaryScheduleId,
+            secondaryScheduleId,
+            primarySchedule,
+            secondarySchedule,
+            scheduleId: primaryScheduleId || secondaryScheduleId || "",
+            schedule: primarySchedule || secondarySchedule || null,
             attendance,
             attendanceRef: todayAttendanceDoc?.ref || null,
-            actionStates: resolveAttendanceActionStates(attendance, schedule, timeZone),
-            dayName,
+        };
+
+        return {
+            ...scanState,
+            actionStates: resolveAttendanceActionStates(attendance, scanState, timeZone),
         };
     };
 
@@ -637,11 +616,6 @@ const ScanAttendance = () => {
     const startScanner = async () => {
         if (!authUser?.uid) {
             toast.error("Please log in first");
-            return;
-        }
-
-        if (!employees.length) {
-            toast.error("No users found in your users collection");
             return;
         }
 
@@ -720,10 +694,11 @@ const ScanAttendance = () => {
             return;
         }
 
-        // Anti-spam check (Flutter 15-second rule)
         if (scanState.attendance) {
             const lastUpdate = toDate(scanState.attendance.updated_at || scanState.attendance.created_at);
-            const diffSeconds = (new Date().getTime() - lastUpdate.getTime()) / 1000;
+            const diffSeconds = lastUpdate
+                ? (new Date().getTime() - lastUpdate.getTime()) / 1000
+                : Number.POSITIVE_INFINITY;
             if (diffSeconds < 15) {
                 toast.error("Please wait 15 seconds before scanning again");
                 return;
@@ -734,22 +709,22 @@ const ScanAttendance = () => {
 
         try {
             const timestamp = serverTimestamp();
+            const fieldMap = {
+                check_in: "check_in_time",
+                check_out: "check_out_time",
+                check_in_2: "check_in_time_2",
+                check_out_2: "check_out_time_2",
+            };
+            const targetScheduleId = actionKey === "check_in" || actionKey === "check_out"
+                ? scanState.primaryScheduleId
+                : scanState.secondaryScheduleId;
 
             if (scanState.attendanceRef) {
-                // Update existing record
-                const fieldMap = {
-                    check_in: "check_in_time",
-                    check_out: "check_out_time",
-                    check_in_2: "check_in_time_2",
-                    check_out_2: "check_out_time_2"
-                };
-
                 await updateDoc(scanState.attendanceRef, {
                     [fieldMap[actionKey]]: timestamp,
-                    updated_at: timestamp
+                    updated_at: timestamp,
                 });
             } else {
-                // Create new record (only if it's a Check-In)
                 if (!actionKey.startsWith("check_in")) {
                     toast.error("Please check-in first");
                     return;
@@ -757,8 +732,8 @@ const ScanAttendance = () => {
 
                 await addDoc(collection(db, "attendances"), {
                     company_id: scanState.companyId,
-                    schedule_id: scanState.scheduleId,
-                    user_name: scanState.employee.name || "Unknown",
+                    schedule_id: targetScheduleId,
+                    user_name: scanState.userName,
                     status: "present",
                     check_in_time: actionKey === "check_in" ? timestamp : null,
                     check_in_time_2: actionKey === "check_in_2" ? timestamp : null,
@@ -839,7 +814,7 @@ const ScanAttendance = () => {
                                 <p className="text-sm text-gray-500">Current user</p>
                                 <p className="font-semibold">{authUser.email || authUser.uid}</p>
                                 <p className="text-sm text-gray-500">
-                                    {loadingEmployees ? "Loading users..." : `${employees.length} users available`}
+                                    Firebase UID: {authUser.uid}
                                 </p>
                             </div>
 
@@ -854,8 +829,8 @@ const ScanAttendance = () => {
 
                         <button
                             onClick={isScanning ? () => void stopScanner() : startScanner}
-                            disabled={isStarting || loadingEmployees}
-                            className={`flex w-full items-center justify-center gap-2 rounded-xl px-6 py-3 font-bold text-white transition-all ${isScanning ? "bg-red-500" : "bg-blue-600"} ${(isStarting || loadingEmployees) ? "cursor-not-allowed opacity-70" : ""}`}
+                            disabled={isStarting}
+                            className={`flex w-full items-center justify-center gap-2 rounded-xl px-6 py-3 font-bold text-white transition-all ${isScanning ? "bg-red-500" : "bg-blue-600"} ${isStarting ? "cursor-not-allowed opacity-70" : ""}`}
                         >
                             {isScanning ? <BiCameraOff size={24} /> : <BiUserCheck size={24} />}
                             {isStarting
@@ -888,10 +863,10 @@ const ScanAttendance = () => {
                         <div>
                             <p className="text-sm text-gray-500">Scanned employee</p>
                             <h3 className="text-lg font-bold text-gray-900">
-                                {scanState.employee.name || scanState.employee.phone || scanState.employeeUid}
+                                {scanState.userName}
                             </h3>
                             <p className="text-sm text-gray-600">
-                                {scanState.employee.phone || "--"} | {scanState.employee.email || "--"}
+                                {scanState.employee.phone || "--"} | {scanState.employee.email || authUser?.email || "--"}
                             </p>
                             <p className="text-sm text-gray-600">
                                 Company: {scanState.company.company_name || scanState.companyId}
@@ -936,8 +911,10 @@ const ScanAttendance = () => {
                     <div className="grid gap-3 rounded-xl bg-slate-50 p-4 text-sm text-gray-700 md:grid-cols-2">
                         <div>
                             <p className="font-semibold">Schedule</p>
-                            <p>Start: {formatDateTime(scanState.schedule.start_time, scanState.timeZone)}</p>
-                            <p>End: {formatDateTime(scanState.schedule.end_time, scanState.timeZone)}</p>
+                            <p>Shift 1 Start: {formatDateTime(scanState.primarySchedule?.start_time, scanState.timeZone)}</p>
+                            <p>Shift 1 End: {formatDateTime(scanState.primarySchedule?.end_time, scanState.timeZone)}</p>
+                            <p>Shift 2 Start: {formatDateTime(scanState.secondarySchedule?.start_time, scanState.timeZone)}</p>
+                            <p>Shift 2 End: {formatDateTime(scanState.secondarySchedule?.end_time, scanState.timeZone)}</p>
                             <p>Timezone: {scanState.timeZone}</p>
                         </div>
 
