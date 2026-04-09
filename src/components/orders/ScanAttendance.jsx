@@ -28,7 +28,6 @@ import {
 } from "firebase/firestore";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
-import { useGetUserLoginQuery } from "../../../app/Features/usersSlice";
 
 const firebaseConfig = {
     apiKey: "AIzaSyA-auJnr3_rXmJr468jpbwF506nF9Xa0Ho",
@@ -284,11 +283,6 @@ const resolveAttendanceActionStates = (attendanceDoc, schedule, timeZone = DEFAU
 
 const ScanAttendance = () => {
     const { t } = useTranslation();
-    const token = localStorage.getItem("token");
-    const storedProfileId = normalizeId(localStorage.getItem("profileId"));
-    const { data: currentUserLogin } = useGetUserLoginQuery(token, {
-        skip: !token,
-    });
 
     const [authUser, setAuthUser] = useState(null);
     const [loginForm, setLoginForm] = useState({
@@ -308,9 +302,7 @@ const ScanAttendance = () => {
     const isMountedRef = useRef(true);
     const isStartingRef = useRef(false);
     const scannerId = "reader";
-    const currentCompanyId = normalizeId(
-        currentUserLogin?.data?.profile_id || storedProfileId
-    );
+    const currentCompanyId = normalizeId(authUser?.uid);
 
     const scannerConfig = {
         fps: 10,
@@ -507,7 +499,7 @@ const ScanAttendance = () => {
 
         const employee = employees.find((row) =>
             qrPayload.employeeIdentifiers.some((identifier) =>
-                [row.id].some(
+                [row.id, row.token, row.phone, row.email, row.created_by].some(
                     (value) => normalizeId(value) === normalizeId(identifier)
                 )
             )
@@ -515,6 +507,10 @@ const ScanAttendance = () => {
 
         if (!employee) {
             throw new Error("Scanned user is not in your users collection");
+        }
+
+        if (currentCompanyId && normalizeId(employee.created_by) !== currentCompanyId) {
+            throw new Error("Scanned user does not belong to the current logged in company");
         }
 
         const employeeUid = employee.token || employee.id;
@@ -558,8 +554,8 @@ const ScanAttendance = () => {
             throw new Error("No company linked to this user schedule");
         }
 
-        if (currentCompanyId && normalizeId(companyId) !== currentCompanyId) {
-            throw new Error("Scanned employee does not belong to the current company");
+        if (scannedCompanyId && normalizeId(companyId) !== scannedCompanyId) {
+            throw new Error("QR company id does not match the employee company");
         }
 
         const companySnapshot = await getDocs(
