@@ -507,7 +507,7 @@ const ScanAttendance = () => {
 
         const employee = employees.find((row) =>
             qrPayload.employeeIdentifiers.some((identifier) =>
-                [row.id, row.token, row.phone, row.email, row.created_by].some(
+                [row.id].some(
                     (value) => normalizeId(value) === normalizeId(identifier)
                 )
             )
