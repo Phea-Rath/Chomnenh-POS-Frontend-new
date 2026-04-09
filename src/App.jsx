@@ -49,7 +49,7 @@ import SupplierList from "./components/Suppliers/SupplierList";
 import SupplierForm from "./views/Suppliers/SupplierForm";
 import PurchaseReceipt from "./components/Purchases/PurchaseReceipt";
 import PurchaseReport from "./components/Reports/PurchaseReport";
-import CodeScanner from "./components/orders/CodeScanner";
+import ScanAttendance from "./components/orders/ScanAttendance";
 import PurchaseReportByItem from "./components/Reports/PurchaseByItem";
 import ExpenseReportByUser from "./components/Reports/ExpanseReport";
 import ExchangeRateForm from "./components/ExchangeRate";
@@ -332,10 +332,6 @@ const router = createBrowserRouter([
         element: <EMenu />,
       },
       {
-        path: "/code-scanner",
-        element: <CodeScanner />,
-      },
-      {
         path: "/notification",
         element: <Notification />,
       },
@@ -584,6 +580,11 @@ const router = createBrowserRouter([
   {
     path: "/market",
     element: <Main />,
+  },
+
+  {
+    path: "/scan-attendance",
+    element: <ScanAttendance />,
   },
 ]
 );
