@@ -726,8 +726,6 @@ function App() {
     if (onlineChannel) {
       Echo.private(onlineChannel).listen("OnlineEvent", (data) => {
         // toast.info(`Order tracking updated ${data.data}`);
-
-        toast.info(`New orders by ${data.data}`);
         if (token) {
           refetchSale();
           refetchOnline();

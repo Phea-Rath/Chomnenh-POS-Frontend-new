@@ -68,7 +68,7 @@ const PrintExpanse = () => {
     }
   };
 
-  const usdAmount = totalAmount / 4000;
+  const usdAmount = totalAmount * 4000;
 
   return (
     <section className="min-h-screen bg-transparent px-4 py-8 text-gray-800">
@@ -132,7 +132,7 @@ const PrintExpanse = () => {
               <div className="space-y-1">
                 <div className="flex gap-3">
                   <span className="min-w-[115px] font-semibold text-gray-600">Exchange:</span>
-                  <span>1$ = 4,000 ៛</span>
+                  <span>1$ = 4,000 $</span>
                 </div>
                 <div className="flex gap-3">
                   <span className="min-w-[115px] font-semibold text-gray-600">Note:</span>
@@ -149,7 +149,7 @@ const PrintExpanse = () => {
                     <th className="px-3 py-3 text-left font-bold text-slate-800">Description</th>
                     <th className="px-3 py-3 text-right font-bold text-slate-800">Qty</th>
                     <th className="px-3 py-3 text-right font-bold text-slate-800">Unit Price</th>
-                    <th className="px-3 py-3 text-right font-bold text-slate-800">Amount (៛)</th>
+                    <th className="px-3 py-3 text-right font-bold text-slate-800">Amount ($)</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -171,16 +171,16 @@ const PrintExpanse = () => {
                 <div className="flex items-baseline justify-between gap-4">
                   <span className="font-medium text-gray-700">Total Amount:</span>
                   <span className="font-bold text-slate-900">
-                    {formatMoney(totalAmount)} ៛ (${usdAmount.toFixed(2)})
+                    {formatMoney(totalAmount)} $ (៛{usdAmount.toFixed(2)})
                   </span>
                 </div>
                 <div className="flex items-baseline justify-between gap-4 text-emerald-700">
                   <span className="font-medium text-gray-700">Paid:</span>
-                  <span className="font-bold">{formatMoney(totalAmount)} ៛</span>
+                  <span className="font-bold">{formatMoney(totalAmount)} $</span>
                 </div>
                 <div className="flex items-baseline justify-between gap-4 text-red-600">
                   <span className="font-medium text-gray-700">Remaining:</span>
-                  <span className="font-bold">0 ៛</span>
+                  <span className="font-bold">0 $</span>
                 </div>
               </div>
             </div>

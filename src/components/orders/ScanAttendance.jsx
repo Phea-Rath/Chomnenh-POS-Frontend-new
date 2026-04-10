@@ -8,6 +8,7 @@ import {
     BiRefresh,
     BiUserCheck,
     BiChevronRight,
+    BiQrScan,
 } from "react-icons/bi";
 import { getApp, getApps, initializeApp } from "firebase/app";
 import {
@@ -195,6 +196,7 @@ const resolveAttendanceActionStates = (attendanceDoc, scanState, timeZone = DEFA
 const ScanAttendance = () => {
     const { t } = useTranslation();
     const [authUser, setAuthUser] = useState(null);
+    const [currentUser, setCurrentUser] = useState(null);
     const [loginForm, setLoginForm] = useState({ identifier: "", password: "" });
     const [loginLoading, setLoginLoading] = useState(false);
     const [isScanning, setIsScanning] = useState(false);
@@ -231,8 +233,15 @@ const ScanAttendance = () => {
 
     useEffect(() => {
         isMountedRef.current = true;
-        const unsubscribe = onAuthStateChanged(auth, (user) => {
+        const unsubscribe = onAuthStateChanged(auth, async (user) => {
             if (!isMountedRef.current) return;
+            if (user) {
+                const userDoc = await getDoc(doc(db, "users", user.uid));
+                const userData = userDoc.data();
+                setCurrentUser(userData);
+            } else {
+                setCurrentUser(null);
+            }
             setAuthUser(user);
         });
         return () => { isMountedRef.current = false; unsubscribe(); void stopScanner(); };
@@ -257,9 +266,9 @@ const ScanAttendance = () => {
     };
 
     const handleLogout = async () => {
+        await stopScanner();
         await signOut(auth);
         setScanState(null);
-        void stopScanner();
     };
 
     const resolveScanPayload = async (text) => {
@@ -267,9 +276,10 @@ const ScanAttendance = () => {
         const qr = parseQrPayload(normalized);
         const companyId = normalizeId(qr.companyId || normalized);
         if (!authUser?.uid) throw new Error("Not logged in");
-        
+
         const userDoc = await getDoc(doc(db, "users", authUser.uid));
         const userData = userDoc.data();
+
         const compSnap = await getDoc(doc(db, "companies", companyId));
         const company = compSnap.data();
         if (!company) throw new Error("Invalid Company QR");
@@ -290,12 +300,12 @@ const ScanAttendance = () => {
         const attDoc = attSnap.docs[0];
         const attendance = attDoc ? { id: attDoc.id, ref: attDoc.ref, ...attDoc.data() } : null;
 
-        const state = { 
-            scannedValue: normalized, companyId, company, userName: userData?.name || authUser.email, 
-            timeZone: tz, dayName: day, section: String(schedDetail.section || "1"), 
-            primarySchedule: s1, secondarySchedule: s2, 
+        const state = {
+            scannedValue: normalized, companyId, company, userName: userData?.name || authUser.email,
+            timeZone: tz, dayName: day, section: String(schedDetail.section || "1"),
+            primarySchedule: s1, secondarySchedule: s2,
             primaryScheduleId: schedDetail.section_one, secondaryScheduleId: schedDetail.section_two,
-            attendance, attendanceRef: attDoc?.ref, employeeUid: authUser.uid 
+            attendance, attendanceRef: attDoc?.ref, employeeUid: authUser.uid
         };
         return { ...state, actionStates: resolveAttendanceActionStates(attendance, state, tz) };
     };
@@ -323,7 +333,7 @@ const ScanAttendance = () => {
             const scanner = html5QrCodeRef.current || new Html5Qrcode(scannerId);
             html5QrCodeRef.current = scanner;
             setIsScanning(true);
-            await scanner.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, handleScanSuccess, () => {});
+            await scanner.start({ facingMode: "environment" }, { fps: 15, qrbox: 250 }, handleScanSuccess, () => { });
         } catch (e) { toast.error(getCameraErrorMessage(e)); await stopScanner(); } finally {
             isStartingRef.current = false; setIsStarting(false);
         }
@@ -340,10 +350,10 @@ const ScanAttendance = () => {
             if (scanState.attendanceRef) {
                 await updateDoc(scanState.attendanceRef, { [field]: now, updated_at: now });
             } else {
-                await addDoc(collection(db, "attendances"), { 
-                    company_id: scanState.companyId, schedule_id: scanState.primaryScheduleId, 
-                    user_name: scanState.userName, status: "present", 
-                    [field]: now, created_by: scanState.employeeUid, created_at: now, updated_at: now 
+                await addDoc(collection(db, "attendances"), {
+                    company_id: scanState.companyId, schedule_id: scanState.primaryScheduleId,
+                    user_name: scanState.userName, status: "present",
+                    [field]: now, created_by: scanState.employeeUid, created_at: now, updated_at: now
                 });
             }
             toast.success("Success");
@@ -405,21 +415,44 @@ const ScanAttendance = () => {
                         <div className="flex items-center justify-between rounded-2xl bg-[#17212b] p-4 border border-[#232e3c]">
                             <div className="flex items-center gap-3">
                                 <div className="h-10 w-10 rounded-full bg-[#2b5278] flex items-center justify-center font-bold text-[#24a1de]">
-                                    {authUser.email?.[0].toUpperCase() || "U"}
+                                    {currentUser?.name?.[0].toUpperCase() || authUser.email?.[0].toUpperCase() || "U"}
                                 </div>
                                 <div>
-                                    <p className="text-sm font-bold">{authUser.email || "Employee"}</p>
+                                    <p className="text-sm font-bold">{currentUser?.name || authUser.email || "Employee"}</p>
                                     <p className="text-[10px] text-[#8e959b] uppercase tracking-wider">Verified Account</p>
                                 </div>
                             </div>
                         </div>
 
                         {/* Scanner Area */}
-                        <div className={`relative overflow-hidden rounded-2xl bg-black transition-all ${isScanning ? "aspect-square border-2 border-[#24a1de]" : "h-0"}`}>
+                        <div className={`relative overflow-hidden rounded-3xl bg-black transition-all duration-500 shadow-2xl ${isScanning ? "aspect-square ring-4 ring-[#24a1de]/30" : "h-0"}`}>
                             <div id={scannerId} className="h-full w-full"></div>
+                            
+                            {/* Scanning Overlay UI */}
+                            {isScanning && (
+                                <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
+                                    {/* Corners */}
+                                    <div className="absolute top-8 left-8 h-10 w-10 border-t-4 border-l-4 border-[#24a1de] rounded-tl-lg"></div>
+                                    <div className="absolute top-8 right-8 h-10 w-10 border-t-4 border-r-4 border-[#24a1de] rounded-tr-lg"></div>
+                                    <div className="absolute bottom-8 left-8 h-10 w-10 border-b-4 border-l-4 border-[#24a1de] rounded-bl-lg"></div>
+                                    <div className="absolute bottom-8 right-8 h-10 w-10 border-b-4 border-r-4 border-[#24a1de] rounded-br-lg"></div>
+                                    
+                                    {/* Moving Laser Line */}
+                                    <div className="absolute h-1 w-[70%] bg-[#24a1de] opacity-60 blur-sm shadow-[0_0_15px_#24a1de] animate-scan-line"></div>
+                                    
+                                    {/* Scan Text Hint */}
+                                    <div className="absolute bottom-16 bg-black/40 backdrop-blur-md px-4 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-widest text-white/90">
+                                        Align QR within frame
+                                    </div>
+                                </div>
+                            )}
+
                             {isProcessingScan && (
-                                <div className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-                                    <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#24a1de] border-t-transparent"></div>
+                                <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/60 backdrop-blur-md">
+                                    <div className="flex flex-col items-center gap-4">
+                                        <div className="h-12 w-12 animate-spin rounded-full border-4 border-[#24a1de] border-t-transparent shadow-[0_0_15px_rgba(36,161,222,0.5)]"></div>
+                                        <p className="text-xs font-black uppercase tracking-widest text-[#24a1de]">Verifying...</p>
+                                    </div>
                                 </div>
                             )}
                         </div>
@@ -428,25 +461,31 @@ const ScanAttendance = () => {
                         <button
                             onClick={isScanning ? stopScanner : startScanner}
                             disabled={isStarting}
-                            className={`flex w-full items-center justify-center gap-2 rounded-2xl py-4 text-sm font-bold text-white transition-all active:scale-[0.98] ${isScanning ? "bg-[#e53935]" : "bg-[#24a1de] shadow-[0_4px_12px_rgba(36,161,222,0.3)]"}`}
+                            className={`flex w-full items-center justify-center gap-2 rounded-2xl py-4 text-sm font-bold text-white transition-all active:scale-[0.98] ${isScanning ? "bg-[#e53935] shadow-lg shadow-red-900/20" : "bg-[#24a1de] shadow-lg shadow-[#24a1de]/20"}`}
                         >
-                            {isScanning ? <BiCameraOff size={20} /> : <BiUserCheck size={20} />}
-                            {isScanning ? "Cancel Scanning" : "Start Attendance Scan"}
+                            {isScanning ? <BiCameraOff size={22} /> : <BiQrScan size={22} />}
+                            {isScanning ? "Close Scanner" : "Scan QR Attendance"}
                         </button>
 
                         {/* Results Card */}
                         {scanState && (
-                            <div className="animate-in fade-in slide-in-from-bottom-4 duration-300 rounded-2xl bg-[#17212b] border border-[#232e3c] overflow-hidden">
-                                <div className="p-4 border-b border-[#232e3c] flex items-center justify-between">
+                            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 rounded-3xl bg-[#17212b] border border-[#232e3c] overflow-hidden shadow-2xl">
+                                <div className="p-5 border-b border-[#232e3c] flex items-center justify-between bg-gradient-to-r from-transparent to-[#24a1de]/5">
                                     <div>
-                                        <h3 className="font-bold">{scanState.userName}</h3>
-                                        <p className="text-xs text-[#8e959b]">{scanState.company.company_name}</p>
+                                        <h3 className="font-bold text-lg">{scanState.userName}</h3>
+                                        <p className="text-xs text-[#8e959b] flex items-center gap-1.5">
+                                            <span className="h-1.5 w-1.5 rounded-full bg-[#24a1de]"></span>
+                                            {scanState.company.company_name}
+                                        </p>
                                     </div>
-                                    <button onClick={() => void resolveScanPayload(scanState.scannedValue).then(setScanState)} className="text-[#24a1de]">
-                                        <BiRefresh size={20} />
+                                    <button 
+                                        onClick={() => void resolveScanPayload(scanState.scannedValue).then(setScanState)} 
+                                        className="h-10 w-10 flex items-center justify-center rounded-full bg-[#242f3d] text-[#24a1de] hover:bg-[#2c394a] transition-colors"
+                                    >
+                                        <BiRefresh size={22} />
                                     </button>
                                 </div>
-                                
+
                                 <div className="grid grid-cols-2 gap-px bg-[#232e3c]">
                                     {ACTIONS.map(a => {
                                         const s = scanState.actionStates[a.key];
@@ -455,26 +494,30 @@ const ScanAttendance = () => {
                                                 key={a.key}
                                                 onClick={() => submitAction(a.key)}
                                                 disabled={!s.enabled || !!actionLoading}
-                                                className={`bg-[#17212b] p-4 text-left transition-colors active:bg-[#242f3d] disabled:opacity-40`}
+                                                className={`bg-[#17212b] p-5 text-left transition-all active:bg-[#242f3d] disabled:opacity-30 group`}
                                             >
-                                                <div className="flex items-center justify-between mb-1">
-                                                    <span className="text-xs font-bold uppercase text-[#24a1de]">{a.label}</span>
-                                                    <BiChevronRight size={16} className="text-[#8e959b]" />
+                                                <div className="flex items-center justify-between mb-1.5">
+                                                    <span className="text-[10px] font-black uppercase tracking-widest text-[#24a1de]">{a.label}</span>
+                                                    <BiChevronRight size={18} className="text-[#8e959b] group-hover:translate-x-1 transition-transform" />
                                                 </div>
-                                                <p className="text-[10px] text-[#8e959b] line-clamp-1">{s.enabled ? "Tap to record" : s.reason}</p>
+                                                <p className="text-[11px] font-medium text-[#8e959b] leading-snug">{s.enabled ? "Tap to record" : s.reason}</p>
                                             </button>
                                         );
                                     })}
                                 </div>
 
-                                <div className="p-4 bg-[#242f3d]/30 space-y-2">
-                                    <div className="flex justify-between text-[11px]">
-                                        <span className="text-[#8e959b]">Status</span>
-                                        <span className="text-[#31b46f] font-bold uppercase">Present Today</span>
+                                <div className="p-5 bg-[#242f3d]/30 space-y-3">
+                                    <div className="flex justify-between items-center text-[12px]">
+                                        <span className="text-[#8e959b] font-medium">Daily Status</span>
+                                        <span className="px-2.5 py-0.5 rounded-full bg-[#31b46f]/10 text-[#31b46f] text-[10px] font-black uppercase tracking-wider border border-[#31b46f]/20">Present</span>
                                     </div>
-                                    <div className="flex justify-between text-[11px]">
-                                        <span className="text-[#8e959b]">Shift 1</span>
-                                        <span>{scanState.attendance?.check_in_time ? "Check-in at " + formatDateTime(scanState.attendance.check_in_time, scanState.timeZone).split(',')[1] : "--:--"}</span>
+                                    <div className="flex justify-between items-center text-[12px]">
+                                        <span className="text-[#8e959b] font-medium">Last Recorded</span>
+                                        <span className="text-[#f5f5f5] font-bold">
+                                            {scanState.attendance?.check_in_time 
+                                                ? formatDateTime(scanState.attendance.check_in_time, scanState.timeZone).split(',').pop().trim() 
+                                                : "--:--"}
+                                        </span>
                                     </div>
                                 </div>
                             </div>
@@ -482,11 +525,13 @@ const ScanAttendance = () => {
 
                         {/* Success Message */}
                         {lastScan && !isScanning && !scanState && (
-                            <div className="flex items-center gap-3 rounded-2xl bg-[#31b46f]/10 border border-[#31b46f]/20 p-4">
-                                <BiCheckCircle className="text-[#31b46f]" size={24} />
-                                <div>
-                                    <p className="text-xs font-bold text-[#31b46f]">Last scan successful</p>
-                                    <p className="text-[10px] text-[#8e959b] font-mono">{lastScan.slice(0, 30)}...</p>
+                            <div className="flex items-center gap-4 rounded-3xl bg-[#31b46f]/5 border border-[#31b46f]/20 p-5 shadow-lg shadow-green-900/5">
+                                <div className="h-12 w-12 flex items-center justify-center rounded-2xl bg-[#31b46f]/20 text-[#31b46f]">
+                                    <BiCheckCircle size={28} />
+                                </div>
+                                <div className="flex-1">
+                                    <p className="text-xs font-black uppercase tracking-widest text-[#31b46f]">Success</p>
+                                    <p className="text-[11px] text-[#8e959b] font-mono mt-0.5 line-clamp-1 opacity-70">Recorded: {lastScan.slice(0, 20)}...</p>
                                 </div>
                             </div>
                         )}
@@ -495,11 +540,24 @@ const ScanAttendance = () => {
 
                 {/* Footer */}
                 {!isScanning && (
-                    <footer className="mt-8 text-center">
-                        <p className="text-[10px] text-[#54687a] uppercase tracking-widest">Powered by Gemini AI • Secure Attendance</p>
+                    <footer className="mt-12 text-center">
+                        <p className="text-[10px] text-[#54687a] font-black uppercase tracking-[0.3em] opacity-40">Attendance v2.0 • Secure</p>
                     </footer>
                 )}
             </div>
+
+            {/* Global Animation Styles */}
+            <style dangerouslySetInnerHTML={{ __html: `
+                @keyframes scan-line {
+                    0% { top: 20%; opacity: 0; }
+                    5% { opacity: 1; }
+                    95% { opacity: 1; }
+                    100% { top: 80%; opacity: 0; }
+                }
+                .animate-scan-line {
+                    animation: scan-line 2.5s ease-in-out infinite;
+                }
+            ` }} />
         </div>
     );
 };
