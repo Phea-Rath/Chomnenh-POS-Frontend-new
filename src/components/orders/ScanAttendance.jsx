@@ -7,6 +7,7 @@ import {
     BiLogOut,
     BiRefresh,
     BiUserCheck,
+    BiChevronRight,
 } from "react-icons/bi";
 import { getApp, getApps, initializeApp } from "firebase/app";
 import {
@@ -47,8 +48,6 @@ const db = getFirestore(firebaseApp);
 const auth = getAuth(firebaseApp);
 
 const DEFAULT_TIMEZONE = "Asia/Phnom_Penh";
-const CHECK_OUT_DELAY_MINUTES = 15;
-const CHECK_IN_EARLY_MINUTES = 15;
 const ACTIONS = [
     { key: "check_in", label: "Check In" },
     { key: "check_out", label: "Check Out" },
@@ -81,28 +80,15 @@ const getTimeParts = (date, timeZone = DEFAULT_TIMEZONE) => {
 };
 
 const toDate = (value) => {
-    if (!value) {
-        return null;
-    }
-
-    if (typeof value.toDate === "function") {
-        return value.toDate();
-    }
-
-    if (value instanceof Date) {
-        return value;
-    }
-
+    if (!value) return null;
+    if (typeof value.toDate === "function") return value.toDate();
+    if (value instanceof Date) return value;
     return null;
 };
 
 const formatDateTime = (value, timeZone = DEFAULT_TIMEZONE) => {
     const date = toDate(value);
-
-    if (!date) {
-        return "--";
-    }
-
+    if (!date) return "--";
     return new Intl.DateTimeFormat("en-GB", {
         timeZone,
         year: "numeric",
@@ -116,11 +102,7 @@ const formatDateTime = (value, timeZone = DEFAULT_TIMEZONE) => {
 const getScheduleWindow = (schedule, timeZone = DEFAULT_TIMEZONE) => {
     const startDate = toDate(schedule?.start_time);
     const endDate = toDate(schedule?.end_time);
-
-    if (!startDate || !endDate) {
-        return null;
-    }
-
+    if (!startDate || !endDate) return null;
     return {
         start: getTimeParts(startDate, timeZone).totalMinutes,
         end: getTimeParts(endDate, timeZone).totalMinutes,
@@ -129,34 +111,18 @@ const getScheduleWindow = (schedule, timeZone = DEFAULT_TIMEZONE) => {
 
 const getCameraErrorMessage = (error) => {
     const message = String(error?.message || error || "").toLowerCase();
-
-    if (!window.isSecureContext && window.location.hostname !== "localhost") {
-        return "Camera needs HTTPS or localhost";
-    }
-
-    if (message.includes("permission") || message.includes("notallowed")) {
-        return "Camera permission was denied";
-    }
-
-    if (message.includes("notfound") || message.includes("requested device not found")) {
-        return "No usable camera was found on this device";
-    }
-
-    if (message.includes("notreadable") || message.includes("trackstart")) {
-        return "Camera is being used by another app or browser tab";
-    }
-
-    return "Unable to start the camera on this device";
+    if (!window.isSecureContext && window.location.hostname !== "localhost") return "Camera needs HTTPS";
+    if (message.includes("permission")) return "Camera permission denied";
+    if (message.includes("notfound")) return "No camera found";
+    return "Unable to start camera";
 };
 
 const normalizeId = (value) => String(value ?? "").trim();
-
 const normalizeEmail = (value) => String(value ?? "").trim().toLowerCase();
 
 const buildAuthIdentifier = (value) => {
     const identifier = String(value ?? "").trim().replace(/\s+/g, "");
     const isPhone = !identifier.includes("@");
-
     return {
         identifier,
         isPhone,
@@ -166,88 +132,38 @@ const buildAuthIdentifier = (value) => {
 
 const parseQrPayload = (decodedText) => {
     const normalized = normalizeId(decodedText);
-    const fallbackPayload = {
-        rawValue: normalized,
-        companyId: "",
-        employeeIdentifiers: normalized ? [normalized] : [],
-    };
-
-    if (!normalized) {
-        return fallbackPayload;
-    }
+    const fallbackPayload = { rawValue: normalized, companyId: "", employeeIdentifiers: [normalized] };
+    if (!normalized) return fallbackPayload;
 
     const collectObjectPayload = (value) => {
-        const companyId = normalizeId(
-            value?.company_id ??
-            value?.companyId ??
-            value?.company ??
-            value?.profile_id ??
-            value?.profileId
-        );
-        const employeeIdentifiers = [
-            value?.user_id,
-            value?.userId,
-            value?.uid,
-            value?.id,
-            value?.token,
-            value?.phone,
-            value?.email,
-            value?.code,
-        ]
-            .map((item) => normalizeId(item))
-            .filter(Boolean);
-
+        const companyId = normalizeId(value?.company_id ?? value?.companyId ?? value?.company ?? value?.profile_id);
+        const employeeIdentifiers = [value?.user_id, value?.userId, value?.uid, value?.phone, value?.email]
+            .map(normalizeId).filter(Boolean);
         return {
             rawValue: normalized,
             companyId,
-            employeeIdentifiers: employeeIdentifiers.length
-                ? employeeIdentifiers
-                : fallbackPayload.employeeIdentifiers,
+            employeeIdentifiers: employeeIdentifiers.length ? employeeIdentifiers : fallbackPayload.employeeIdentifiers,
         };
     };
 
+    try { return collectObjectPayload(JSON.parse(normalized)); } catch { }
     try {
-        return collectObjectPayload(JSON.parse(normalized));
-    } catch {
-        // Fall back to URL/query parsing for QR payloads encoded as links.
-    }
-
-    try {
-        const url = normalized.startsWith("http://") || normalized.startsWith("https://")
-            ? new URL(normalized)
-            : new URL(`https://attendance.local/?${normalized.replace(/^\?/, "")}`);
-        const params = url.searchParams;
-
-        if ([...params.keys()].length) {
+        const url = normalized.startsWith("http") ? new URL(normalized) : new URL(`https://a.l/?${normalized.replace(/^\?/, "")}`);
+        const p = url.searchParams;
+        if ([...p.keys()].length) {
             return collectObjectPayload({
-                company_id: params.get("company_id") || params.get("companyId") || params.get("profile_id"),
-                employee_id:
-                    params.get("employee_id") ||
-                    params.get("employeeId") ||
-                    params.get("user_id") ||
-                    params.get("userId") ||
-                    params.get("uid") ||
-                    params.get("id"),
-                token: params.get("token"),
-                phone: params.get("phone"),
-                email: params.get("email"),
-                code: params.get("code"),
+                company_id: p.get("company_id") || p.get("companyId") || p.get("profile_id"),
+                employee_id: p.get("employee_id") || p.get("user_id") || p.get("uid"),
+                phone: p.get("phone"),
+                email: p.get("email"),
             });
         }
-    } catch {
-        // Keep supporting legacy QR codes that are just a single token/string.
-    }
-
+    } catch { }
     return fallbackPayload;
 };
 
-const CHECK_IN_WINDOW_MINUTES = 60; // Flutter uses 60 mins early/late
-
-// Helper to get total minutes from a JS Date
-const getMinutesOfDay = (date, timeZone = DEFAULT_TIMEZONE) => {
-    const parts = getTimeParts(date, timeZone);
-    return parts.totalMinutes;
-};
+const CHECK_IN_WINDOW_MINUTES = 60;
+const getMinutesOfDay = (date, timeZone = DEFAULT_TIMEZONE) => getTimeParts(date, timeZone).totalMinutes;
 
 const resolveAttendanceActionStates = (attendanceDoc, scanState, timeZone = DEFAULT_TIMEZONE) => {
     const nowMinutes = getMinutesOfDay(new Date(), timeZone);
@@ -256,63 +172,30 @@ const resolveAttendanceActionStates = (attendanceDoc, scanState, timeZone = DEFA
     const checkInTime2 = toDate(attendanceDoc?.check_in_time_2);
     const checkOutTime2 = toDate(attendanceDoc?.check_out_time_2);
     const makeState = (enabled, reason = "") => ({ enabled, reason });
+
     const resolveShiftState = (schedule, type) => {
-        if (!schedule) {
-            return makeState(false, "Shift schedule not configured");
-        }
-
-        const scheduleWindow = getScheduleWindow(schedule, timeZone);
-        if (!scheduleWindow) {
-            return makeState(false, "Schedule time not found");
-        }
-
-        const startMin = scheduleWindow.start;
-        const endMin = scheduleWindow.end;
-
+        if (!schedule) return makeState(false, "Shift not configured");
+        const window = getScheduleWindow(schedule, timeZone);
+        if (!window) return makeState(false, "No schedule time");
         if (type === "in") {
-            return nowMinutes >= startMin - CHECK_IN_WINDOW_MINUTES &&
-                nowMinutes <= endMin + CHECK_IN_WINDOW_MINUTES
-                ? makeState(true)
-                : makeState(false, `Too early/late. Shift starts ${formatDateTime(schedule.start_time, timeZone)}`);
+            return nowMinutes >= window.start - CHECK_IN_WINDOW_MINUTES && nowMinutes <= window.end + CHECK_IN_WINDOW_MINUTES
+                ? makeState(true) : makeState(false, "Outside shift window");
         }
-
-        return nowMinutes >= startMin
-            ? makeState(true)
-            : makeState(false, "Cannot check out before shift starts");
+        return nowMinutes >= window.start ? makeState(true) : makeState(false, "Too early for checkout");
     };
 
     return {
-        check_in: checkInTime
-            ? makeState(false, "Already checked in (1)")
-            : resolveShiftState(scanState?.primarySchedule, "in"),
-        check_out: !checkInTime
-            ? makeState(false, "Must check-in first")
-            : checkOutTime
-                ? makeState(false, "Already checked out (1)")
-                : resolveShiftState(scanState?.primarySchedule, "out"),
-        check_in_2: scanState?.section !== "2"
-            ? makeState(false, "Section 2 is not assigned")
-            : checkInTime2
-                ? makeState(false, "Already checked in (2)")
-                : resolveShiftState(scanState?.secondarySchedule, "in"),
-        check_out_2: scanState?.section !== "2"
-            ? makeState(false, "Section 2 is not assigned")
-            : !checkInTime2
-                ? makeState(false, "Must check-in 2 first")
-                : checkOutTime2
-                    ? makeState(false, "Already checked out (2)")
-                    : resolveShiftState(scanState?.secondarySchedule, "out"),
+        check_in: checkInTime ? makeState(false, "Already in") : resolveShiftState(scanState?.primarySchedule, "in"),
+        check_out: !checkInTime ? makeState(false, "Check-in first") : checkOutTime ? makeState(false, "Already out") : resolveShiftState(scanState?.primarySchedule, "out"),
+        check_in_2: scanState?.section !== "2" ? makeState(false, "No Section 2") : checkInTime2 ? makeState(false, "Already in") : resolveShiftState(scanState?.secondarySchedule, "in"),
+        check_out_2: scanState?.section !== "2" ? makeState(false, "No Section 2") : !checkInTime2 ? makeState(false, "Check-in 2 first") : checkOutTime2 ? makeState(false, "Already out") : resolveShiftState(scanState?.secondarySchedule, "out"),
     };
 };
 
 const ScanAttendance = () => {
     const { t } = useTranslation();
-
     const [authUser, setAuthUser] = useState(null);
-    const [loginForm, setLoginForm] = useState({
-        identifier: "",
-        password: "",
-    });
+    const [loginForm, setLoginForm] = useState({ identifier: "", password: "" });
     const [loginLoading, setLoginLoading] = useState(false);
     const [isScanning, setIsScanning] = useState(false);
     const [isStarting, setIsStarting] = useState(false);
@@ -327,702 +210,296 @@ const ScanAttendance = () => {
     const isProcessingScanRef = useRef(false);
     const scannerId = "reader";
 
-    const scannerConfig = {
-        fps: 10,
-        qrbox: { width: 250, height: 250 },
-        aspectRatio: 1,
-    };
-
-    const waitForScannerContainer = () =>
-        new Promise((resolve) => {
-            requestAnimationFrame(() => {
-                requestAnimationFrame(resolve);
-            });
-        });
-
-    const getScannerInstance = () => {
-        if (!html5QrCodeRef.current) {
-            html5QrCodeRef.current = new Html5Qrcode(scannerId);
-        }
-
-        return html5QrCodeRef.current;
-    };
-
     const stopScanner = async () => {
         const scanner = html5QrCodeRef.current;
-
         if (!scanner) {
-            if (isMountedRef.current) {
-                setIsScanning(false);
-                setIsStarting(false);
-            }
+            if (isMountedRef.current) { setIsScanning(false); setIsStarting(false); }
             return;
         }
-
         try {
             const state = scanner.getState();
-
-            if (
-                state === Html5QrcodeScannerState.SCANNING ||
-                state === Html5QrcodeScannerState.PAUSED
-            ) {
+            if (state === Html5QrcodeScannerState.SCANNING || state === Html5QrcodeScannerState.PAUSED) {
                 await scanner.stop();
             }
-        } catch (error) {
-            console.error("Stop error:", error);
-        } finally {
-            try {
-                scanner.clear();
-            } catch (clearError) {
-                console.error("Clear error:", clearError);
-            }
-
-            if (html5QrCodeRef.current === scanner) {
-                html5QrCodeRef.current = null;
-            }
-
+        } catch (e) { console.error(e); } finally {
+            try { scanner.clear(); } catch { }
+            html5QrCodeRef.current = null;
             isStartingRef.current = false;
-            if (isMountedRef.current) {
-                setIsScanning(false);
-                setIsStarting(false);
-            }
+            if (isMountedRef.current) { setIsScanning(false); setIsStarting(false); }
         }
     };
 
     useEffect(() => {
         isMountedRef.current = true;
-
-        const unsubscribe = onAuthStateChanged(auth, async (user) => {
-            if (!isMountedRef.current) {
-                return;
-            }
-
+        const unsubscribe = onAuthStateChanged(auth, (user) => {
+            if (!isMountedRef.current) return;
             setAuthUser(user);
-            setIsProcessingScan(false);
-            isProcessingScanRef.current = false;
-            setScanState(null);
-            setLastScan(null);
-
         });
-
-        return () => {
-            isMountedRef.current = false;
-            unsubscribe();
-            void stopScanner();
-        };
+        return () => { isMountedRef.current = false; unsubscribe(); void stopScanner(); };
     }, []);
 
-    const handleLogin = async (event) => {
-        event.preventDefault();
-
-        const data = buildAuthIdentifier(loginForm.identifier);
-        console.log(data);
-
+    const handleLogin = async (e) => {
+        e.preventDefault();
         const { identifier, isPhone, email } = buildAuthIdentifier(loginForm.identifier);
-        const password = loginForm.password;
-
-        if (!identifier || !password) {
-            toast.error("Please enter phone or email and password");
-            return;
-        }
-
+        if (!identifier || !loginForm.password) return toast.error("Missing credentials");
         setLoginLoading(true);
-
         try {
-            const userCredential = await signInWithEmailAndPassword(auth, email, password);
-            const uid = userCredential.user?.uid;
-
-            if (!uid) {
-                throw new Error("Login failed. Missing user id.");
-            }
-
+            const cred = await signInWithEmailAndPassword(auth, email, loginForm.password);
+            const uid = cred.user.uid;
             const userRef = doc(db, "users", uid);
-            const userSnapshot = await getDoc(userRef);
-
-            if (!userSnapshot.exists()) {
-                await setDoc(userRef, {
-                    name: isPhone ? identifier : email.split("@")[0],
-                    email: isPhone ? "" : email,
-                    phone: isPhone ? identifier : "",
-                    role: "employee",
-                    token: uid,
-                    isActive: 1,
-                    created_by: uid,
-                    last_login_at: serverTimestamp(),
-                });
+            const snap = await getDoc(userRef);
+            if (!snap.exists()) {
+                await setDoc(userRef, { name: isPhone ? identifier : email.split("@")[0], email: isPhone ? "" : email, phone: isPhone ? identifier : "", role: "employee", token: uid, isActive: 1, created_by: uid, last_login_at: serverTimestamp() });
             } else {
-                await updateDoc(userRef, {
-                    last_login_at: serverTimestamp(),
-                });
+                await updateDoc(userRef, { last_login_at: serverTimestamp() });
             }
-
-            toast.success("Login successful");
-        } catch (error) {
-            console.error("Login error:", error);
-            toast.error(error?.message || "Login failed. Please check your credentials");
-        } finally {
-            if (isMountedRef.current) {
-                setLoginLoading(false);
-            }
-        }
+        } catch (e) { toast.error(e.message); } finally { if (isMountedRef.current) setLoginLoading(false); }
     };
 
     const handleLogout = async () => {
-        try {
-            await signOut(auth);
-            setIsProcessingScan(false);
-            isProcessingScanRef.current = false;
-            setScanState(null);
-            setLastScan(null);
-            void stopScanner();
-            toast.success("Logged out");
-        } catch (error) {
-            console.error("Logout error:", error);
-            toast.error("Failed to log out");
-        }
+        await signOut(auth);
+        setScanState(null);
+        void stopScanner();
     };
 
-    const resolveScanPayload = async (decodedText) => {
-        const normalized = normalizeId(decodedText);
-
-        if (!normalized) {
-            throw new Error("Scanned code is empty");
-        }
-
-        const qrPayload = parseQrPayload(normalized);
-        const scannedCompanyId = normalizeId(qrPayload.companyId || normalized);
-
-        if (!authUser?.uid) {
-            throw new Error("User not logged in");
-        }
-
-        if (!scannedCompanyId) {
-            throw new Error("QR company id not found");
-        }
-
+    const resolveScanPayload = async (text) => {
+        const normalized = normalizeId(text);
+        const qr = parseQrPayload(normalized);
+        const companyId = normalizeId(qr.companyId || normalized);
+        if (!authUser?.uid) throw new Error("Not logged in");
+        
         const userDoc = await getDoc(doc(db, "users", authUser.uid));
         const userData = userDoc.data();
+        const compSnap = await getDoc(doc(db, "companies", companyId));
+        const company = compSnap.data();
+        if (!company) throw new Error("Invalid Company QR");
 
-        if (!userData) {
-            throw new Error("Current user data not found");
-        }
-
-        const requestSnapshot = await getDocs(
-            query(
-                collection(db, "requests"),
-                where("user_id", "==", authUser.uid),
-                where("company_id", "==", scannedCompanyId),
-                where("status", "==", "approved"),
-                limit(1)
-            )
-        );
-
-        if (requestSnapshot.empty && normalizeId(userData.company_id) !== scannedCompanyId) {
-            throw new Error("You are not authorized for this company. Please join first.");
-        }
-
-        const companyDoc = await getDoc(doc(db, "companies", scannedCompanyId));
-        const company = companyDoc.data();
-
-        if (!company) {
-            throw new Error("Company data not found");
-        }
-
-        const timeZone = company.timezone || DEFAULT_TIMEZONE;
+        const tz = company.timezone || DEFAULT_TIMEZONE;
         const now = new Date();
-        const dayName = getDayName(now, timeZone);
-        const scheduleDetailSnapshot = await getDocs(
-            query(
-                collection(db, "schedule_details"),
-                where("user_id", "==", authUser.uid),
-                where("company_id", "==", scannedCompanyId),
-                where("day_name", "==", dayName),
-                limit(1)
-            )
-        );
-        const scheduleDetail = scheduleDetailSnapshot.docs[0]?.data();
+        const day = getDayName(now, tz);
+        const schedSnap = await getDocs(query(collection(db, "schedule_details"), where("user_id", "==", authUser.uid), where("company_id", "==", companyId), where("day_name", "==", day), limit(1)));
+        const schedDetail = schedSnap.docs[0]?.data();
+        if (!schedDetail) throw new Error(`No schedule for ${day}`);
 
-        if (!scheduleDetail) {
-            throw new Error(`No schedule assigned for today (${dayName})`);
-        }
+        const s1 = schedDetail.section_one ? (await getDoc(doc(db, "schedules", schedDetail.section_one))).data() : null;
+        const s2 = schedDetail.section_two ? (await getDoc(doc(db, "schedules", schedDetail.section_two))).data() : null;
 
-        const section = String(scheduleDetail.section || "1");
-        const primaryScheduleId = scheduleDetail.section_one || null;
-        const secondaryScheduleId = section === "2" ? (scheduleDetail.section_two || null) : null;
+        const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const end = new Date(start); end.setDate(end.getDate() + 1);
+        const attSnap = await getDocs(query(collection(db, "attendances"), where("created_by", "==", authUser.uid), where("company_id", "==", companyId), where("created_at", ">=", Timestamp.fromDate(start)), where("created_at", "<", Timestamp.fromDate(end)), limit(1)));
+        const attDoc = attSnap.docs[0];
+        const attendance = attDoc ? { id: attDoc.id, ref: attDoc.ref, ...attDoc.data() } : null;
 
-        if (!primaryScheduleId && !secondaryScheduleId) {
-            throw new Error("Shift schedule not configured");
-        }
-
-        const primaryScheduleDoc = primaryScheduleId
-            ? await getDoc(doc(db, "schedules", primaryScheduleId))
-            : null;
-        const secondaryScheduleDoc = secondaryScheduleId
-            ? await getDoc(doc(db, "schedules", secondaryScheduleId))
-            : null;
-        const primarySchedule = primaryScheduleDoc?.data() || null;
-        const secondarySchedule = secondaryScheduleDoc?.data() || null;
-
-        if (!primarySchedule && !secondarySchedule) {
-            throw new Error("Schedule details not found");
-        }
-
-        const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        const endOfDay = new Date(startOfDay);
-        endOfDay.setDate(endOfDay.getDate() + 1);
-        const attendanceSnapshot = await getDocs(
-            query(
-                collection(db, "attendances"),
-                where("created_by", "==", authUser.uid),
-                where("company_id", "==", scannedCompanyId),
-                where("created_at", ">=", Timestamp.fromDate(startOfDay)),
-                where("created_at", "<", Timestamp.fromDate(endOfDay)),
-                limit(1)
-            )
-        );
-        const todayAttendanceDoc = attendanceSnapshot.docs[0];
-        const attendance = todayAttendanceDoc
-            ? { id: todayAttendanceDoc.id, ref: todayAttendanceDoc.ref, ...todayAttendanceDoc.data() }
-            : null;
-
-        const scanState = {
-            scannedValue: normalized,
-            scannedCompanyId,
-            companyId: scannedCompanyId,
-            company,
-            employee: {
-                id: authUser.uid,
-                ...userData,
-            },
-            employeeUid: authUser.uid,
-            userName: userData.name || userData.email || authUser.email || "Unknown User",
-            timeZone,
-            dayName,
-            section,
-            scheduleDetail,
-            primaryScheduleId,
-            secondaryScheduleId,
-            primarySchedule,
-            secondarySchedule,
-            scheduleId: primaryScheduleId || secondaryScheduleId || "",
-            schedule: primarySchedule || secondarySchedule || null,
-            attendance,
-            attendanceRef: todayAttendanceDoc?.ref || null,
+        const state = { 
+            scannedValue: normalized, companyId, company, userName: userData?.name || authUser.email, 
+            timeZone: tz, dayName: day, section: String(schedDetail.section || "1"), 
+            primarySchedule: s1, secondarySchedule: s2, 
+            primaryScheduleId: schedDetail.section_one, secondaryScheduleId: schedDetail.section_two,
+            attendance, attendanceRef: attDoc?.ref, employeeUid: authUser.uid 
         };
-
-        return {
-            ...scanState,
-            actionStates: resolveAttendanceActionStates(attendance, scanState, timeZone),
-        };
+        return { ...state, actionStates: resolveAttendanceActionStates(attendance, state, tz) };
     };
 
-    const handleScanSuccess = async (decodedText) => {
-        if (isProcessingScanRef.current) {
-            return;
-        }
-
+    const handleScanSuccess = async (text) => {
+        if (isProcessingScanRef.current) return;
         isProcessingScanRef.current = true;
-        if (isMountedRef.current) {
-            setIsProcessingScan(true);
-        }
-
+        setIsProcessingScan(true);
         try {
-            const payload = await resolveScanPayload(decodedText);
+            const payload = await resolveScanPayload(text);
             setScanState(payload);
-            setLastScan(decodedText);
-            toast.success(`Scanned ${payload.employee.name || payload.employee.phone}`);
+            setLastScan(text);
             await stopScanner();
-        } catch (error) {
-            console.error("Resolve scan error:", error);
-            toast.error(error?.message || "Failed to resolve scanned user");
-        } finally {
+        } catch (e) { toast.error(e.message); } finally {
             isProcessingScanRef.current = false;
-            if (isMountedRef.current) {
-                setIsProcessingScan(false);
-            }
+            setIsProcessingScan(false);
         }
-    };
-
-    const startWithCamera = async (scanner, cameraConfig) => {
-        await scanner.start(
-            cameraConfig,
-            scannerConfig,
-            (decodedText) => {
-                if (isProcessingScanRef.current) {
-                    return;
-                }
-                void handleScanSuccess(decodedText);
-            },
-            () => { }
-        );
     };
 
     const startScanner = async () => {
-        if (!authUser?.uid) {
-            toast.error("Please log in first");
-            return;
-        }
-
-        if (isStartingRef.current || isScanning || isProcessingScanRef.current) {
-            return;
-        }
-
+        if (isStartingRef.current || isScanning) return;
+        isStartingRef.current = true; setIsStarting(true);
+        setScanState(null);
         try {
-            isStartingRef.current = true;
-            setIsStarting(true);
-            setIsProcessingScan(false);
-            isProcessingScanRef.current = false;
-            setScanState(null);
-            setLastScan(null);
-            await waitForScannerContainer();
-            await stopScanner();
-
-            if (!window.isSecureContext && window.location.hostname !== "localhost") {
-                throw new Error("Camera requires secure context");
-            }
-
-            const scanner = getScannerInstance();
+            const scanner = html5QrCodeRef.current || new Html5Qrcode(scannerId);
+            html5QrCodeRef.current = scanner;
             setIsScanning(true);
-
-            try {
-                await startWithCamera(scanner, { facingMode: { exact: "environment" } });
-                return;
-            } catch (environmentError) {
-                try {
-                    await startWithCamera(scanner, { facingMode: "environment" });
-                    return;
-                } catch {
-                    const devices = await Html5Qrcode.getCameras();
-
-                    if (!devices?.length) {
-                        throw environmentError;
-                    }
-
-                    const preferredCamera = devices.find((device) =>
-                        /back|rear|environment/i.test(device.label)
-                    );
-
-                    await startWithCamera(scanner, preferredCamera?.id || devices[0].id);
-                }
-            }
-        } catch (error) {
-            console.error("Start error:", error);
-            toast.error(getCameraErrorMessage(error));
-            await stopScanner();
-        } finally {
-            isStartingRef.current = false;
-            if (isMountedRef.current) {
-                setIsStarting(false);
-            }
+            await scanner.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, handleScanSuccess, () => {});
+        } catch (e) { toast.error(getCameraErrorMessage(e)); await stopScanner(); } finally {
+            isStartingRef.current = false; setIsStarting(false);
         }
     };
 
-    const refreshCurrentScan = async () => {
-        if (!scanState?.scannedValue) {
-            return;
-        }
-
-        try {
-            const payload = await resolveScanPayload(scanState.scannedValue);
-            setScanState(payload);
-        } catch (error) {
-            console.error("Refresh scan error:", error);
-            toast.error(error?.message || "Failed to refresh attendance");
-        }
-    };
-
-    const submitAttendanceAction = async (actionKey) => {
+    const submitAction = async (key) => {
         if (!scanState) return;
-
-        const actionState = scanState.actionStates?.[actionKey];
-        if (!actionState?.enabled) {
-            toast.error(actionState?.reason || "Action not allowed");
-            return;
-        }
-
-        if (scanState.attendance) {
-            const lastUpdate = toDate(scanState.attendance.updated_at || scanState.attendance.created_at);
-            const diffSeconds = lastUpdate
-                ? (new Date().getTime() - lastUpdate.getTime()) / 1000
-                : Number.POSITIVE_INFINITY;
-            if (diffSeconds < 15) {
-                toast.error("Please wait 15 seconds before scanning again");
-                return;
-            }
-        }
-
-        setActionLoading(actionKey);
-
+        const state = scanState.actionStates?.[key];
+        if (!state?.enabled) return toast.error(state?.reason);
+        setActionLoading(key);
         try {
-            const timestamp = serverTimestamp();
-            const fieldMap = {
-                check_in: "check_in_time",
-                check_out: "check_out_time",
-                check_in_2: "check_in_time_2",
-                check_out_2: "check_out_time_2",
-            };
-            const targetScheduleId = actionKey === "check_in" || actionKey === "check_out"
-                ? scanState.primaryScheduleId
-                : scanState.secondaryScheduleId;
-
+            const now = serverTimestamp();
+            const field = { check_in: "check_in_time", check_out: "check_out_time", check_in_2: "check_in_time_2", check_out_2: "check_out_time_2" }[key];
             if (scanState.attendanceRef) {
-                await updateDoc(scanState.attendanceRef, {
-                    [fieldMap[actionKey]]: timestamp,
-                    updated_at: timestamp,
-                });
+                await updateDoc(scanState.attendanceRef, { [field]: now, updated_at: now });
             } else {
-                if (!actionKey.startsWith("check_in")) {
-                    toast.error("Please check-in first");
-                    return;
-                }
-
-                await addDoc(collection(db, "attendances"), {
-                    company_id: scanState.companyId,
-                    schedule_id: targetScheduleId,
-                    user_name: scanState.userName,
-                    status: "present",
-                    check_in_time: actionKey === "check_in" ? timestamp : null,
-                    check_in_time_2: actionKey === "check_in_2" ? timestamp : null,
-                    created_by: scanState.employeeUid,
-                    created_at: timestamp,
-                    updated_at: timestamp,
+                await addDoc(collection(db, "attendances"), { 
+                    company_id: scanState.companyId, schedule_id: scanState.primaryScheduleId, 
+                    user_name: scanState.userName, status: "present", 
+                    [field]: now, created_by: scanState.employeeUid, created_at: now, updated_at: now 
                 });
             }
-
-            toast.success("Attendance Updated Successfully");
-            await refreshCurrentScan();
-        } catch (error) {
-            console.error(error);
-            toast.error("Failed to save attendance");
-        } finally {
-            setActionLoading("");
-        }
+            toast.success("Success");
+            const next = await resolveScanPayload(scanState.scannedValue);
+            setScanState(next);
+        } catch { toast.error("Update failed"); } finally { setActionLoading(""); }
     };
 
     return (
-        <div className="mx-auto max-w-4xl bg-[#e9f2ff] h-screen px-4 py-6 text-slate-900 md:px-6">
-            <div className="mb-6 overflow-hidden rounded-[32px] border border-[#cfe0ff] bg-gradient-to-br from-[#f8fbff] via-white to-[#edf5ff] p-6 shadow-[0_20px_60px_rgba(48,104,187,0.12)]">
-                <div className="mb-5 flex items-center gap-3">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#229ed9] text-white shadow-[0_10px_30px_rgba(34,158,217,0.35)]">
-                        <BiUserCheck className="text-2xl" />
+        <div className="min-h-screen bg-[#0e1621] p-4 text-[#f5f5f5] font-sans antialiased selection:bg-[#24a1de]/30">
+            <div className="mx-auto max-w-md">
+                {/* Header */}
+                <header className="mb-6 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#24a1de] text-white">
+                            <BiUserCheck size={24} />
+                        </div>
+                        <div>
+                            <h1 className="text-lg font-bold leading-tight">Attendance</h1>
+                            <p className="text-xs text-[#8e959b]">Smart Scanner</p>
+                        </div>
                     </div>
-                    <div>
-                        <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#229ed9]">
-                            Telegram Style
-                        </p>
-                        <h2 className="text-2xl font-black tracking-tight text-[#183b67]">
-                            {t("scanAttendance", "Scan Attendance")}
-                        </h2>
-                    </div>
-                </div>
-
-                <div className="mb-5 rounded-[24px] border border-[#d8e7ff] bg-[#eef6ff] px-4 py-3 text-sm text-[#4a6b93]">
-                    Scan company QR, verify access, and record attendance in a clean Telegram-inspired workspace.
-                </div>
+                    {authUser && (
+                        <button onClick={handleLogout} className="p-2 text-[#8e959b] hover:text-white transition-colors">
+                            <BiLogOut size={20} />
+                        </button>
+                    )}
+                </header>
 
                 {!authUser ? (
-                    <form onSubmit={handleLogin} className="space-y-4">
-                        <div>
-                            <label className="mb-2 block text-sm font-semibold text-[#355a87]">
-                                Phone or Email
-                            </label>
+                    <div className="rounded-2xl bg-[#17212b] p-6 shadow-xl border border-[#232e3c]">
+                        <h2 className="mb-4 text-xl font-bold">Sign In</h2>
+                        <form onSubmit={handleLogin} className="space-y-4">
                             <input
                                 value={loginForm.identifier}
-                                onChange={(event) =>
-                                    setLoginForm((prev) => ({
-                                        ...prev,
-                                        identifier: event.target.value,
-                                    }))
-                                }
+                                onChange={e => setLoginForm(p => ({ ...p, identifier: e.target.value }))}
                                 placeholder="Phone or email"
-                                className="w-full rounded-[20px] border border-[#cfe0ff] bg-white px-4 py-3 text-[#183b67] outline-none transition focus:border-[#229ed9] focus:ring-4 focus:ring-[#229ed9]/15"
+                                className="w-full rounded-xl bg-[#242f3d] px-4 py-3 text-sm outline-none border border-transparent focus:border-[#24a1de] transition-all"
                             />
-                        </div>
-
-                        <div>
-                            <label className="mb-2 block text-sm font-semibold text-[#355a87]">
-                                Password
-                            </label>
                             <input
                                 type="password"
                                 value={loginForm.password}
-                                onChange={(event) =>
-                                    setLoginForm((prev) => ({
-                                        ...prev,
-                                        password: event.target.value,
-                                    }))
-                                }
+                                onChange={e => setLoginForm(p => ({ ...p, password: e.target.value }))}
                                 placeholder="Password"
-                                className="w-full rounded-[20px] border border-[#cfe0ff] bg-white px-4 py-3 text-[#183b67] outline-none transition focus:border-[#229ed9] focus:ring-4 focus:ring-[#229ed9]/15"
+                                className="w-full rounded-xl bg-[#242f3d] px-4 py-3 text-sm outline-none border border-transparent focus:border-[#24a1de] transition-all"
                             />
-                        </div>
-
-                        <button
-                            type="submit"
-                            disabled={loginLoading}
-                            className="flex w-full items-center justify-center gap-2 rounded-[20px] bg-[#229ed9] px-6 py-3 font-bold text-white shadow-[0_14px_30px_rgba(34,158,217,0.3)] transition hover:bg-[#1b8fc6] disabled:cursor-not-allowed disabled:opacity-70"
-                        >
-                            <BiLogIn size={22} />
-                            {loginLoading ? "Signing in..." : "Login"}
-                        </button>
-                    </form>
+                            <button
+                                type="submit"
+                                disabled={loginLoading}
+                                className="w-full rounded-xl bg-[#24a1de] py-3 text-sm font-bold text-white transition-opacity active:scale-[0.98] disabled:opacity-50"
+                            >
+                                {loginLoading ? "..." : "Login"}
+                            </button>
+                        </form>
+                    </div>
                 ) : (
                     <div className="space-y-4">
-                        <div className="flex flex-wrap items-center justify-between gap-3 rounded-[24px] border border-[#d4e4ff] bg-white/90 p-4 shadow-[0_10px_30px_rgba(69,122,194,0.08)]">
-                            <div>
-                                <p className="text-sm font-medium text-[#6b88ad]">Current user</p>
-                                <p className="text-lg font-bold text-[#183b67]">{authUser.email || authUser.uid}</p>
-                                <p className="text-sm text-[#6b88ad]">
-                                    Firebase UID: {authUser.uid}
-                                </p>
+                        {/* Profile Summary */}
+                        <div className="flex items-center justify-between rounded-2xl bg-[#17212b] p-4 border border-[#232e3c]">
+                            <div className="flex items-center gap-3">
+                                <div className="h-10 w-10 rounded-full bg-[#2b5278] flex items-center justify-center font-bold text-[#24a1de]">
+                                    {authUser.email?.[0].toUpperCase() || "U"}
+                                </div>
+                                <div>
+                                    <p className="text-sm font-bold">{authUser.email || "Employee"}</p>
+                                    <p className="text-[10px] text-[#8e959b] uppercase tracking-wider">Verified Account</p>
+                                </div>
                             </div>
-
-                            <button
-                                onClick={handleLogout}
-                                className="flex items-center gap-2 rounded-[18px] border border-[#d5e5ff] bg-[#f6faff] px-4 py-2 font-semibold text-[#355a87] transition hover:border-[#229ed9] hover:text-[#229ed9]"
-                            >
-                                <BiLogOut size={20} />
-                                Logout
-                            </button>
                         </div>
 
+                        {/* Scanner Area */}
+                        <div className={`relative overflow-hidden rounded-2xl bg-black transition-all ${isScanning ? "aspect-square border-2 border-[#24a1de]" : "h-0"}`}>
+                            <div id={scannerId} className="h-full w-full"></div>
+                            {isProcessingScan && (
+                                <div className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+                                    <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#24a1de] border-t-transparent"></div>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Scan Button */}
                         <button
-                            onClick={isScanning ? () => void stopScanner() : startScanner}
-                            disabled={isStarting || isProcessingScan}
-                            className={`flex w-full items-center justify-center gap-2 rounded-[22px] px-6 py-4 font-bold text-white shadow-[0_16px_34px_rgba(34,158,217,0.28)] transition ${isScanning ? "bg-[#f05d5e]" : "bg-[#229ed9]"} ${(isStarting || isProcessingScan) ? "cursor-not-allowed opacity-70" : "hover:brightness-95"}`}
+                            onClick={isScanning ? stopScanner : startScanner}
+                            disabled={isStarting}
+                            className={`flex w-full items-center justify-center gap-2 rounded-2xl py-4 text-sm font-bold text-white transition-all active:scale-[0.98] ${isScanning ? "bg-[#e53935]" : "bg-[#24a1de] shadow-[0_4px_12px_rgba(36,161,222,0.3)]"}`}
                         >
-                            {isScanning ? <BiCameraOff size={24} /> : <BiUserCheck size={24} />}
-                            {isStarting
-                                ? "Opening camera..."
-                                : isProcessingScan
-                                    ? "Processing scan..."
-                                    : isScanning
-                                        ? t("stopScanning", "Stop Scanning")
-                                        : t("scanAttendance", "Scan Attendance")}
+                            {isScanning ? <BiCameraOff size={20} /> : <BiUserCheck size={20} />}
+                            {isScanning ? "Cancel Scanning" : "Start Attendance Scan"}
                         </button>
+
+                        {/* Results Card */}
+                        {scanState && (
+                            <div className="animate-in fade-in slide-in-from-bottom-4 duration-300 rounded-2xl bg-[#17212b] border border-[#232e3c] overflow-hidden">
+                                <div className="p-4 border-b border-[#232e3c] flex items-center justify-between">
+                                    <div>
+                                        <h3 className="font-bold">{scanState.userName}</h3>
+                                        <p className="text-xs text-[#8e959b]">{scanState.company.company_name}</p>
+                                    </div>
+                                    <button onClick={() => void resolveScanPayload(scanState.scannedValue).then(setScanState)} className="text-[#24a1de]">
+                                        <BiRefresh size={20} />
+                                    </button>
+                                </div>
+                                
+                                <div className="grid grid-cols-2 gap-px bg-[#232e3c]">
+                                    {ACTIONS.map(a => {
+                                        const s = scanState.actionStates[a.key];
+                                        return (
+                                            <button
+                                                key={a.key}
+                                                onClick={() => submitAction(a.key)}
+                                                disabled={!s.enabled || !!actionLoading}
+                                                className={`bg-[#17212b] p-4 text-left transition-colors active:bg-[#242f3d] disabled:opacity-40`}
+                                            >
+                                                <div className="flex items-center justify-between mb-1">
+                                                    <span className="text-xs font-bold uppercase text-[#24a1de]">{a.label}</span>
+                                                    <BiChevronRight size={16} className="text-[#8e959b]" />
+                                                </div>
+                                                <p className="text-[10px] text-[#8e959b] line-clamp-1">{s.enabled ? "Tap to record" : s.reason}</p>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+
+                                <div className="p-4 bg-[#242f3d]/30 space-y-2">
+                                    <div className="flex justify-between text-[11px]">
+                                        <span className="text-[#8e959b]">Status</span>
+                                        <span className="text-[#31b46f] font-bold uppercase">Present Today</span>
+                                    </div>
+                                    <div className="flex justify-between text-[11px]">
+                                        <span className="text-[#8e959b]">Shift 1</span>
+                                        <span>{scanState.attendance?.check_in_time ? "Check-in at " + formatDateTime(scanState.attendance.check_in_time, scanState.timeZone).split(',')[1] : "--:--"}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Success Message */}
+                        {lastScan && !isScanning && !scanState && (
+                            <div className="flex items-center gap-3 rounded-2xl bg-[#31b46f]/10 border border-[#31b46f]/20 p-4">
+                                <BiCheckCircle className="text-[#31b46f]" size={24} />
+                                <div>
+                                    <p className="text-xs font-bold text-[#31b46f]">Last scan successful</p>
+                                    <p className="text-[10px] text-[#8e959b] font-mono">{lastScan.slice(0, 30)}...</p>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 )}
+
+                {/* Footer */}
+                {!isScanning && (
+                    <footer className="mt-8 text-center">
+                        <p className="text-[10px] text-[#54687a] uppercase tracking-widest">Powered by Gemini AI • Secure Attendance</p>
+                    </footer>
+                )}
             </div>
-
-            {authUser && (
-                <div
-                    className={`relative overflow-hidden rounded-[30px] border-2 transition-all ${isScanning ? "mb-6 aspect-square border-[#7ac8ee] bg-[#0d223d] shadow-[0_20px_50px_rgba(13,34,61,0.25)]" : "h-0 border-0 opacity-0"}`}
-                >
-                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(34,158,217,0.25),_transparent_55%)]"></div>
-                    <div id={scannerId} className="relative z-[1] h-full w-full"></div>
-
-                    {isScanning && (
-                        <div className="absolute top-0 z-10 w-full bg-[#229ed9] px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-white">
-                            {isProcessingScan
-                                ? t("processingAttendance", "Processing attendance...")
-                                : t("scanningAttendance", "Scanning attendance...")}
-                        </div>
-                    )}
-
-                    {isProcessingScan && (
-                        <div className="absolute inset-0 z-20 flex items-center justify-center bg-[#08192d]/75 backdrop-blur-sm">
-                            <div className="rounded-[24px] border border-white/15 bg-white/10 px-6 py-5 text-center text-white shadow-[0_10px_30px_rgba(0,0,0,0.2)]">
-                                <div className="mx-auto mb-3 h-9 w-9 animate-spin rounded-full border-2 border-white/30 border-t-white"></div>
-                                <p className="text-sm font-bold tracking-wide">Processing scan...</p>
-                                <p className="mt-1 text-xs text-white/80">Please hold still and wait</p>
-                            </div>
-                        </div>
-                    )}
-                </div>
-            )}
-
-            {scanState && (
-                <div className="space-y-4 rounded-[30px] border border-[#cfe0ff] bg-white p-6 shadow-[0_20px_60px_rgba(48,104,187,0.12)]">
-                    <div className="flex items-start justify-between gap-4">
-                        <div>
-                            <p className="text-sm font-medium text-[#6b88ad]">Scanned employee</p>
-                            <h3 className="text-xl font-black text-[#183b67]">
-                                {scanState.userName}
-                            </h3>
-                            <p className="text-sm text-[#52729a]">
-                                {scanState.employee.phone || "--"} | {scanState.employee.email || authUser?.email || "--"}
-                            </p>
-                            <p className="text-sm text-[#52729a]">
-                                Company: {scanState.company.company_name || scanState.companyId}
-                            </p>
-                            <p className="text-sm text-[#52729a]">
-                                Day: {scanState.dayName} | Section: {scanState.scheduleDetail.section || "--"}
-                            </p>
-                        </div>
-
-                        <button
-                            onClick={refreshCurrentScan}
-                            className="flex items-center gap-2 rounded-[18px] border border-[#d4e4ff] bg-[#f7fbff] px-4 py-2 text-sm font-semibold text-[#355a87] transition hover:border-[#229ed9] hover:text-[#229ed9]"
-                        >
-                            <BiRefresh size={18} />
-                            Refresh
-                        </button>
-                    </div>
-
-                    <div className="grid gap-3 md:grid-cols-2">
-                        {ACTIONS.map((action) => {
-                            const state = scanState.actionStates?.[action.key];
-                            const isBusy = actionLoading === action.key;
-
-                            return (
-                                <button
-                                    key={action.key}
-                                    onClick={() => void submitAttendanceAction(action.key)}
-                                    disabled={!state?.enabled || !!actionLoading}
-                                    className={`rounded-[22px] border px-4 py-4 text-left transition-all ${state?.enabled ? "border-[#8fd3f3] bg-[#eef9ff] text-[#0f5480] shadow-[0_8px_20px_rgba(34,158,217,0.12)]" : "cursor-not-allowed border-[#e1eaf7] bg-[#f6f9fc] text-[#9aaec8]"}`}
-                                >
-                                    <div className="font-bold">
-                                        {isBusy ? "Saving..." : action.label}
-                                    </div>
-                                    <div className="mt-1 text-sm">
-                                        {state?.enabled ? "Available now" : state?.reason || "Not available"}
-                                    </div>
-                                </button>
-                            );
-                        })}
-                    </div>
-
-                    <div className="grid gap-3 md:grid-cols-2">
-                        <div className="rounded-[24px] border border-[#d9e8ff] bg-[#f5faff] p-4 text-sm text-[#45678f]">
-                            <p className="mb-2 font-bold text-[#183b67]">Schedule</p>
-                            <p>Shift 1 Start: {formatDateTime(scanState.primarySchedule?.start_time, scanState.timeZone)}</p>
-                            <p>Shift 1 End: {formatDateTime(scanState.primarySchedule?.end_time, scanState.timeZone)}</p>
-                            <p>Shift 2 Start: {formatDateTime(scanState.secondarySchedule?.start_time, scanState.timeZone)}</p>
-                            <p>Shift 2 End: {formatDateTime(scanState.secondarySchedule?.end_time, scanState.timeZone)}</p>
-                            <p>Timezone: {scanState.timeZone}</p>
-                        </div>
-
-                        <div className="rounded-[24px] border border-[#d9e8ff] bg-[#f5faff] p-4 text-sm text-[#45678f]">
-                            <p className="mb-2 font-bold text-[#183b67]">Today Attendance</p>
-                            <p>Check in: {formatDateTime(scanState.attendance?.check_in_time, scanState.timeZone)}</p>
-                            <p>Check out: {formatDateTime(scanState.attendance?.check_out_time, scanState.timeZone)}</p>
-                            <p>Check in 2: {formatDateTime(scanState.attendance?.check_in_time_2, scanState.timeZone)}</p>
-                            <p>Check out 2: {formatDateTime(scanState.attendance?.check_out_time_2, scanState.timeZone)}</p>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {lastScan && (
-                <div className="mt-6 flex items-center gap-3 rounded-[24px] border border-[#bfe6d0] bg-[#ecfff3] p-4 shadow-[0_10px_30px_rgba(54,179,126,0.1)]">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#31b46f] text-white">
-                        <BiCheckCircle className="text-2xl" />
-                    </div>
-                    <div>
-                        <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#31b46f]">{t("successfully", "Successfully")}</p>
-                        <p className="font-mono text-sm font-bold text-[#21543a]">{lastScan}</p>
-                    </div>
-                </div>
-            )}
-
-            {!authUser && (
-                <div className="py-12 text-center text-[#7891b0]">
-                    <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-white shadow-[0_14px_30px_rgba(48,104,187,0.1)]">
-                        <BiUserCheck size={40} className="text-[#229ed9]" />
-                    </div>
-                    <p>Login with phone or email and password to start attendance scanning.</p>
-                </div>
-            )}
         </div>
     );
 };
