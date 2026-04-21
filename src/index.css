@@ -8,9 +8,15 @@
   td {
     @apply border-gray-500;
   }
+
+  /* .bg-primary-light {
+    @apply bg-gray-50;
+  } */
 }
 
 @theme {
+  --bg-main-light: rgb(13, 26, 99);
+  --bg-side-light: #0D1A63;
   --bg-dark: hsl(0 0% 90%);
   --bg: hsl(300 0% 95%);
   --bg-light: hsl(300 50% 100%);
@@ -47,6 +53,7 @@
   --info: hsl(217 22% 41%);
   --shadow: 0px 4px 4px #00000015, 0px 12px 12px #00000015;
   --bg-gradient: linear-gradient(0deg, var(--bg) 100%, var(--bg-light));
+  --primary-dark: #1E293B;
 }
 
 /* Dark mode CSS variables */
@@ -69,10 +76,96 @@
   --bg-gradient: linear-gradient(0deg, var(--bg) 100%, var(--bg-light));
 }
 
+@layer utilities {
+  .border-gradient-gold {
+    border: 2px solid transparent;
+    background-origin: border-box;
+    background-clip: padding-box, border-box;
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+    color: #1E293B;
+    background-image:
+      linear-gradient(to right, white, #ffffff),
+      /* Inner background color */
+      linear-gradient(to right, #BF953F, #FCF6BA, #B38728);
+    /* Gold gradient */
+
+    @variant dark {
+      border: 2px solid transparent;
+      background-origin: border-box;
+      background-clip: padding-box, border-box;
+      background-image:
+        linear-gradient(to right, var(--primary-dark), var(--primary-dark)),
+        /* Inner background color */
+        linear-gradient(to right, #BF953F, #FCF6BA, #B38728);
+      /* Gold gradient */
+    }
+  }
+
+  .border-gradient-gold-sidebar {
+    border: 2px solid transparent;
+    background-origin: border-box;
+    background-clip: padding-box, border-box;
+    background-image:
+      linear-gradient(to right, var(--bg-side-light), var(--bg-side-light)),
+      /* Inner background color */
+      linear-gradient(to right, #BF953F, #FCF6BA, #B38728);
+    /* Gold gradient */
+
+    @variant dark {
+      border: 2px solid transparent;
+      background-origin: border-box;
+      background-clip: padding-box, border-box;
+      background-image:
+        linear-gradient(to right, var(--primary-dark), var(--primary-dark)),
+        /* Inner background color */
+        linear-gradient(to right, #BF953F, #FCF6BA, #B38728);
+      /* Gold gradient */
+    }
+
+  }
+
+  .no-spinner::-webkit-outer-spin-button,
+  .no-spinner::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  /* Firefox */
+  .no-spinner {
+    -moz-appearance: textfield;
+  }
+
+  .bg-primary {
+    background: #FFFFFF;
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+    color: var(--bg-primary);
+
+    @variant dark {
+      background: var(--bg-primary);
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
+      color: #E2E8F0;
+    }
+  }
+
+}
+
 @layer components {
   .combined {
     box-shadow: 0px 4px 4px #00000015;
   }
+
+  .bg-primary-dark {
+    background: var(--primary-dark);
+  }
+
+  .bg-main-light {
+    background: var(--bg-main-light);
+  }
+
+  .bg-side-light {
+    background: var(--bg-side-light);
+  }
+
 
   input[type="date"]::-webkit-calendar-picker-indicator {
     cursor: pointer;
@@ -213,7 +306,7 @@
   }
 
   .dark .view-page,
-  .dark .view-page > div,
+  .dark .view-page>div,
   .dark .view-page section {
     @apply !text-white;
   }
@@ -283,7 +376,7 @@
   }
 
   .dark main .component-page,
-  .dark main .component-page > div,
+  .dark main .component-page>div,
   .dark main .component-page section {
     @apply text-white;
   }

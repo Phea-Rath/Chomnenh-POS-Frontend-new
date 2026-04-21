@@ -72,7 +72,7 @@ const ItemDetails = () => {
           try {
             await deleteItem({ id: currentItem.id, token });
             toast.success(it("Item removed"));
-            navigator("/list");
+            navigator(-1);
           } catch (e) { toast.error(it("Delete failed")); }
           setLoading(false);
         }}
@@ -84,7 +84,7 @@ const ItemDetails = () => {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
         <div className="flex items-center gap-4">
           <button
-            onClick={() => navigator("/list")}
+            onClick={() => navigator(-1)}
             className="p-2 hover:bg-gray-100 rounded-full transition-colors"
           >
             <RiArrowLeftSLine size={24} />
@@ -101,7 +101,7 @@ const ItemDetails = () => {
             <RiDeleteBin6Line size={20} />
           </button>
           <button
-            onClick={() => navigator(`/list/update/${currentItem.id}`)}
+            onClick={() => navigator(`/inventories/list/update/${currentItem.id}`)}
             className="flex items-center gap-2 bg-blue-600 text-white px-6 py-2.5 rounded-xl hover:bg-blue-700 shadow-md transition-all font-medium"
           >
             <RiEditLine /> {it("Edit Product")}

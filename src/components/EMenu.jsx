@@ -57,7 +57,6 @@ const QRCodeGenerator = () => {
     try {
       await navigator.clipboard.writeText(qrValue);
       setCopied(true);
-      toast.success('Link copied!');
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
       console.error(err);
@@ -69,7 +68,7 @@ const QRCodeGenerator = () => {
     <div className="bg-transparent flex items-center justify-center p-6">
       <div className="max-w-md w-full">
         {/* Main Single Card Container */}
-        <div className="bg-white rounded-[2.5rem] shadow-md border border-slate-100 overflow-hidden">
+        <div className="rounded-[2.5rem] shadow-md border border-slate-100 overflow-hidden">
 
           {/* Header Section */}
           <div className="p-4 text-center bg-slate-50 border-b border-slate-100">

@@ -52,15 +52,15 @@ const ExchangeRate = () => {
   };
 
   return (
-    <div className=" h-full bg-gray-100 flex items-center justify-center">
-      <div className="bg-white p-6 rounded-lg shadow-lg w-full">
+    <div className=" h-full flex items-center justify-center">
+      <div className="border-gradient-gold p-6 rounded-lg shadow-lg w-full">
         <div className="flex flex-col justify-center items-center">
           <FcCurrencyExchange className="text-5xl" />
-          <h1 className="text-2xl font-bold mb-4 text-center text-gray-800">
+          <h1 className="text-2xl font-bold mb-4 text-center text-gray-800 dark:text-white">
             USD to KHR Exchange Rate
           </h1>
         </div>
-        <div className="flex items-center justify-between p-4 bg-gray-50 rounded-md">
+        <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-900 rounded-md">
           {isEditing ? (
             <div className="flex items-center w-full">
               <input
@@ -79,7 +79,7 @@ const ExchangeRate = () => {
             </div>
           ) : (
             <>
-              <span className="text-lg font-semibold text-gray-700">
+              <span className="text-lg font-semibold text-gray-700 dark:text-gray-300">
                 1 USD = {usdToKhr} KHR
               </span>
               <button

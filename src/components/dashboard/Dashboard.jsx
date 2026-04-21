@@ -78,9 +78,9 @@ const definePersents = (currentValue, previousValue) => {
 };
 
 const MetricCard = ({ title, value, persent, isLoss, icon: Icon, colorClass, chartData, chartColor, loading }) => (
-  <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 transition-all hover:shadow-md relative overflow-hidden">
+  <div className="bg-white bg-primary p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 transition-all hover:shadow-md relative overflow-hidden">
     {loading && (
-      <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/40 dark:bg-gray-800/40">
+      <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/40 bg-primary/40">
         <div className="w-6 h-6 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
       </div>
     )}
@@ -109,12 +109,12 @@ const MetricCard = ({ title, value, persent, isLoss, icon: Icon, colorClass, cha
 );
 
 const ChartArea = ({ title, children, loading }) => (
-  <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 relative">
+  <div className="bg-white bg-primary p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 relative">
     <div className="flex justify-between items-center mb-8">
       <h3 className="text-lg font-bold text-gray-900 dark:text-white">{title}</h3>
     </div>
     {loading && (
-      <div className="absolute inset-0 z-10 flex items-center justify-center rounded-2xl bg-white/40 dark:bg-gray-800/40">
+      <div className="absolute inset-0 z-10 flex items-center justify-center rounded-2xl bg-white/40 bg-primary/40">
         <div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
       </div>
     )}
@@ -225,7 +225,7 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="p-8 space-y-8 bg-transparent dark:bg-gray-900 min-h-screen">
+    <div className="p-8 space-y-8 bg-transparent min-h-screen">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t("dashboard")}</h1>
@@ -235,7 +235,7 @@ const Dashboard = () => {
           {/* Language Toggle */}
           <button
             onClick={toggleLanguage}
-            className="px-3 py-2 rounded-lg font-medium text-sm transition-colors bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700"
+            className="px-3 py-2 rounded-lg font-medium text-sm transition-colors bg-gray-100 bg-primary text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700"
           >
             {i18n.language === "en" ? "KH" : "EN"}
           </button>
@@ -245,19 +245,19 @@ const Dashboard = () => {
               type="date"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
-              className="bg-white dark:bg-gray-800 px-4 py-2 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 text-sm text-gray-700 dark:text-gray-200"
+              className="bg-primary px-4 py-2 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 text-sm text-gray-700 dark:text-gray-200"
             />
             <input
               type="date"
               value={endDate}
               min={startDate}
               onChange={(e) => setEndDate(e.target.value)}
-              className="bg-white dark:bg-gray-800 px-4 py-2 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 text-sm text-gray-700 dark:text-gray-200"
+              className="bg-primary px-4 py-2 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 text-sm text-gray-700 dark:text-gray-200"
             />
             <select
               value={userId}
               onChange={(e) => setUserId(e.target.value)}
-              className="bg-white dark:bg-gray-800 px-4 py-2 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 text-sm text-gray-700 dark:text-gray-200"
+              className="bg-primary px-4 py-2 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 text-sm text-gray-700 dark:text-gray-200"
             >
               <option value="">All Users</option>
               {usersData?.data?.map((user) => (
@@ -314,7 +314,7 @@ const Dashboard = () => {
         </div>
 
         <div className="space-y-8">
-          <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
+          <div className="bg-white bg-primary p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
             <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6">{t("topSellingItems")}</h3>
             <div className="space-y-6">
               {popularSales?.data?.map((s, i) => (
@@ -335,7 +335,7 @@ const Dashboard = () => {
             </div>
           </div>
 
-          <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 text-center">
+          <div className="bg-white bg-primary p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 text-center">
             <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">{t("marketShare")}</h3>
             <div className="flex justify-center mb-4">
               <PieChart width={160} height={160}>
@@ -358,7 +358,7 @@ const Dashboard = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 relative">
+        <div className="lg:col-span-2  relative">
           <ChartArea title={t("purchaseInventory")} loading={purchaseQuery.isFetching}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={purchaseChart}>
@@ -372,7 +372,7 @@ const Dashboard = () => {
             </ResponsiveContainer>
           </ChartArea>
         </div>
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
+        <div className="bg-primary p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
           <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6">{t("recentStockIn")}</h3>
           <div className="space-y-6">
             {popularStock?.data?.map((s, idx) => (
@@ -392,7 +392,7 @@ const Dashboard = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 relative">
+        <div className=" relative">
           <ChartArea title={t("expenseAnalysis")} loading={expenseQuery.isFetching}>
             <ResponsiveContainer width="100%" height="100%">
               <RadarChart cx="50%" cy="50%" outerRadius="80%" data={expenseChart}>
@@ -405,7 +405,7 @@ const Dashboard = () => {
             </ResponsiveContainer>
           </ChartArea>
         </div>
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
+        <div className="bg-primary p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
           <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6">{t("majorExpenses")}</h3>
           <div className="space-y-6">
             {popularExpanses?.data?.map((ex, idx) => (

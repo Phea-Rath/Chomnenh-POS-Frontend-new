@@ -258,25 +258,25 @@ const StockByWarehouse = () => {
                     <div className="grid grid-cols-2 gap-x-4 gap-y-3">
                         <div>
                             <p className="text-[12px] font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{t('stockIn')} (IN)</p>
-                            <p className="mt-1 text-md font-bold text-emerald-600 dark:text-emerald-400">+ {formatNumber(item?.stock?.stock_in)}</p>
+                            <p className="mt-1 text-md font-bold text-emerald-600 dark:text-emerald-400">+ {Number(item?.stock?.stock_in)}</p>
                         </div>
                         <div>
                             <p className="text-[12px] font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{t('stockReturn')} (RET)</p>
-                            <p className="mt-1 text-md font-bold text-sky-600 dark:text-sky-400">+ {formatNumber(item?.stock?.stock_return)}</p>
+                            <p className="mt-1 text-md font-bold text-sky-600 dark:text-sky-400">+ {Number(item?.stock?.stock_return)}</p>
                         </div>
                         <div>
                             <p className="text-[12px] font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{t('stockOut')} (OUT)</p>
-                            <p className="mt-1 text-md font-bold text-orange-500 dark:text-orange-400">- {formatNumber(item?.stock?.stock_out)}</p>
+                            <p className="mt-1 text-md font-bold text-orange-500 dark:text-orange-400">- {Number(item?.stock?.stock_out)}</p>
                         </div>
                         <div>
                             <p className="text-[12px] font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{t('stockWasted')}</p>
-                            <p className="mt-1 text-md font-bold text-rose-500 dark:text-rose-400">- {formatNumber(item?.stock?.stock_wasted)}</p>
+                            <p className="mt-1 text-md font-bold text-rose-500 dark:text-rose-400">- {Number(item?.stock?.stock_wasted)}</p>
                         </div>
                     </div>
 
                     <div className="mt-4 border-t border-dashed border-slate-300 dark:border-slate-700 pt-3">
                         <p className="text-[12px] font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{t('sold')}</p>
-                        <p className="mt-1 text-md font-bold text-violet-600 dark:text-violet-400">- {formatNumber(item?.stock?.sold)}</p>
+                        <p className="mt-1 text-md font-bold text-violet-600 dark:text-violet-400">- {Number(item?.stock?.sold)}</p>
                     </div>
                 </div>
 
@@ -288,13 +288,13 @@ const StockByWarehouse = () => {
                     </p>
                 </div>
 
-                <button
+                {/* <button
                     type="button"
                     className="flex w-full items-center justify-center gap-2 rounded-xl border border-blue-500 bg-white dark:bg-slate-700 px-4 py-3 text-sm font-semibold text-blue-600 dark:text-blue-300 transition-colors hover:bg-blue-50 dark:hover:bg-slate-600"
                 >
                     <FaListUl className="text-base" />
                     {t('viewStockDetails', 'View Stock Details')}
-                </button>
+                </button> */}
             </div>
         </motion.div>
     );

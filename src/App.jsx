@@ -49,7 +49,6 @@ import SupplierList from "./components/Suppliers/SupplierList";
 import SupplierForm from "./views/Suppliers/SupplierForm";
 import PurchaseReceipt from "./components/Purchases/PurchaseReceipt";
 import PurchaseReport from "./components/Reports/PurchaseReport";
-import ScanAttendance from "./components/orders/ScanAttendance";
 import PurchaseReportByItem from "./components/Reports/PurchaseByItem";
 import ExpenseReportByUser from "./components/Reports/ExpanseReport";
 import ExchangeRateForm from "./components/ExchangeRate";
@@ -103,6 +102,7 @@ import StockByRaw from "./components/Reports/StockByRaw";
 import StockRaws from "./components/stocks/StockRaws";
 import StockRawForm from "./views/stocks/StockRawForm";
 import StockByWarehouse from "./components/stocks/StockByWarehouse";
+import ScanAttendance from "./components/attendances/ScanAttendance";
 
 
 function ProtectedRoute({ children }) {
@@ -699,6 +699,14 @@ function App() {
     { skip: !token || !guestId }
   );
 
+  const shouldMuteRealtimeOrderAlerts = () =>
+    typeof document !== "undefined" &&
+    document.body?.dataset?.muteRealtimeOrderAlerts === "true";
+
+  const shouldMuteRealtimeOrderAudio = () =>
+    typeof document !== "undefined" &&
+    document.body?.dataset?.muteRealtimeOrderAudio === "true";
+
   useEffect(() => {
     const privateChannel = profileId ? `my-private-channel.user.${profileId}` : null;
     const onlineChannel = profileId ? `check-online.user.${profileId}` : null;
@@ -709,10 +717,15 @@ function App() {
 
     if (privateChannel) {
       Echo.private(privateChannel).listen("PrivateChannelEvent", (data) => {
-        const audio = new Audio("/sounds/auto.wav");
-        audio.currentTime = 0;
-        audio.play().catch((err) => console.log("Sound blocked:", err));
-        toast.info(`New orders by ${data.data}`);
+        if (!shouldMuteRealtimeOrderAudio()) {
+          const audio = new Audio("/sounds/auto.wav");
+          audio.currentTime = 0;
+          audio.play().catch((err) => console.log("Sound blocked:", err));
+        }
+
+        if (!shouldMuteRealtimeOrderAlerts()) {
+          toast.info(`New orders by ${data.data}`);
+        }
 
         if (token) {
           refetchWaste();
@@ -739,10 +752,15 @@ function App() {
     }
 
     Echo.channel("my-public-channel").listen("PublicChannelEvent", (data) => {
-      const audio = new Audio("/sounds/auto.wav");
-      audio.currentTime = 0;
-      audio.play().catch((err) => console.log("Sound blocked:", err));
-      toast.info(`New orders by ${data.message}`);
+      if (!shouldMuteRealtimeOrderAudio()) {
+        const audio = new Audio("/sounds/auto.wav");
+        audio.currentTime = 0;
+        audio.play().catch((err) => console.log("Sound blocked:", err));
+      }
+
+      if (!shouldMuteRealtimeOrderAlerts()) {
+        toast.info(`New orders by ${data.message}`);
+      }
     });
 
     return () => {

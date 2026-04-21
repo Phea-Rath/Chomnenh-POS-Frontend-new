@@ -1089,7 +1089,7 @@ const Sales = () => {
           zIndex={3000}
           width={400}
           footer={[
-            <div className={`flex flex-col gap-2 w-full p-4 border-t bg-white border-gray-100 dark:bg-gray-800 dark:border-gray-700`} key="footer-group">
+            <div className={`flex flex-col gap-2 w-full p-4 border-t border-gray-100 bg-primary dark:border-gray-700`} key="footer-group">
               <div className="flex gap-2 w-full">
                 <Button key="download" className={`flex-1 h-10 font-bold border-red-600 text-red-600 hover:bg-red-50 dark:border-red-500 dark:text-red-500 dark:hover:bg-red-950`} onClick={downloadQR}>
                   {t("download")}
@@ -1140,7 +1140,7 @@ const Sales = () => {
           </div>
 
           <div className="px-8 -mt-8 relative z-10">
-            <div className={`p-4 rounded-3xl shadow-2xl border-4 flex flex-col items-center bg-white border-white dark:bg-gray-800 dark:border-gray-700`}>
+            <div className={`p-4 rounded-3xl shadow-2xl border-4 flex flex-col items-center border-white bg-primary dark:border-gray-700`}>
               {qrLoading ? (
                 <div className="h-64 flex items-center justify-center">
                   <div className="w-10 h-10 border-4 border-red-600 border-t-transparent rounded-full animate-spin"></div>
@@ -1205,7 +1205,7 @@ const Sales = () => {
               <div className="relative">
                 <button
                   onClick={showDrawer}
-                  className="inline-flex items-center gap-2 px-4 py-2 border rounded text-sm font-medium transition-colors border-gray-300 bg-white text-gray-700 hover:border-blue-500 hover:text-blue-600 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:border-blue-500 dark:hover:text-blue-400"
+                  className="inline-flex items-center gap-2 px-4 py-2 border rounded text-sm font-medium transition-colors border-gray-300 text-gray-700 hover:border-blue-500 hover:text-blue-600 dark:border-gray-700 bg-primary dark:text-gray-200 dark:hover:border-blue-500 dark:hover:text-blue-400"
                 >
                   <PiShoppingCartBold />
                   {t("viewCart")}
@@ -1220,13 +1220,13 @@ const Sales = () => {
           </div>
 
           {/* Search and Filter Bar */}
-          <div className="border rounded p-4 mb-6 bg-white border-gray-200 dark:bg-gray-800 dark:border-gray-700">
+          <div className="border rounded p-2 mb-6 border-gray-200 bg-primary dark:border-gray-700">
             <div className="flex flex-col sm:flex-row gap-4">
               <div className="flex-1">
                 <div className="relative">
                   <input
                     onChange={(e) => setSearch(e.target.value)}
-                    className="w-full px-4 py-2 pl-10 border rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm bg-white border-gray-300 text-gray-900 dark:bg-gray-900 dark:border-gray-700 dark:text-white dark:placeholder-gray-500"
+                    className="w-full px-4 py-2 pl-10 border rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm bg-white border-gray-300 text-gray-900 dark:bg-gray-700 dark:border-gray-700 dark:text-white dark:placeholder-gray-500"
                     placeholder={t("searchProducts")}
                   />
                   <div className="absolute left-3 top-2.5 text-gray-400">
@@ -1236,19 +1236,19 @@ const Sales = () => {
                   </div>
                 </div>
               </div>
-              <select
-                onChange={onFilterCategory}
-                defaultValue="all"
-                className="px-3 py-2 border rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm bg-white border-gray-300 text-gray-900 dark:bg-gray-900 dark:border-gray-700 dark:text-white"
-              >
-                <option value="all">{t("allCategories")}</option>
-                {Category.map((item) => (
-                  <option key={item.category_id} value={item.category_id}>
-                    {item.category_name}
-                  </option>
-                ))}
-              </select>
             </div>
+          </div>
+          <div className="flex items-center gap-2 flex-wrap">
+            {[{ category_id: "all", category_name: t("allCategories") }, ...Category].map((cat) => (
+              <button
+                key={cat.category_id}
+                value={cat.category_id}
+                onClick={onFilterCategory}
+                className="px-3 py-1 bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-white rounded-full text-sm font-medium hover:bg-gray-300 dark:hover:bg-gray-600"
+              >
+                {cat.category_name}
+              </button>
+            ))}
           </div>
         </div>
 
@@ -1258,7 +1258,7 @@ const Sales = () => {
             saleItemContext?.isLoading ? (
               <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
                 {[...Array(8)].map((_, index) => (
-                  <div key={index} className="border rounded p-4 animate-pulse bg-white border-gray-200 dark:bg-gray-800 dark:border-gray-700">
+                  <div key={index} className="border rounded p-4 animate-pulse border-gray-200 bg-primary dark:border-gray-700">
                     <div className="h-48 rounded mb-4 bg-gray-200 dark:bg-gray-700"></div>
                     <div className="h-4 rounded w-3/4 mb-2 bg-gray-200 dark:bg-gray-700"></div>
                     <div className="h-3 rounded w-1/2 mb-4 bg-gray-200 dark:bg-gray-700"></div>
@@ -1270,7 +1270,7 @@ const Sales = () => {
                 ))}
               </div>
             ) : (
-              <div className="border rounded p-8 text-center bg-white border-gray-200 dark:bg-gray-800 dark:border-gray-700">
+              <div className="border rounded p-8 text-center border-gray-200 bg-primary dark:border-gray-700">
                 <div className="w-16 h-16 mx-auto mb-4 text-gray-400 dark:text-gray-600">
                   <PiShoppingCartBold className="w-full h-full" />
                 </div>
@@ -1285,7 +1285,7 @@ const Sales = () => {
               </div>
             )
           ) : (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-2">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-2">
               {itemsSech?.map((item) => (
                 <motion.div
                   key={item.id}
@@ -1293,11 +1293,11 @@ const Sales = () => {
                   animate={{ opacity: 1, y: 0 }}
                   whileHover={{ y: -5 }}
                   transition={{ duration: 0.2 }}
-                  className="border rounded hover:shadow-sm transition-all duration-300 h-full bg-white border-gray-200 dark:bg-gray-800 dark:border-gray-700"
+                  className="border rounded hover:shadow-sm transition-all duration-300 h-full border-gray-200 bg-primary dark:border-gray-700"
                 >
                   <div className="p-4">
                     {/* Product Image */}
-                    <div className="relative mb-4 overflow-hidden rounded bg-gray-100 dark:bg-gray-900">
+                    <div className="relative mb-4 overflow-hidden rounded bg-gray-100 dark:bg-gray-700">
                       <img
                         src={item.image}
                         alt={item.name}
@@ -1378,7 +1378,7 @@ const Sales = () => {
         {open && (
           <>
             <div className="fixed inset-0 bg-black/50 z-40" onClick={onClose} />
-            <div className="fixed top-0 right-0 z-50 h-full w-full max-w-md border-l shadow-xl transform transition-transform bg-white border-gray-200 dark:bg-gray-800 dark:border-gray-700">
+            <div className="fixed top-0 right-0 z-50 h-full w-full max-w-md border-l shadow-xl transform transition-transform bg-white border-gray-200 bg-primary dark:border-gray-700">
               <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
                 <h2 className="text-lg font-semibold flex items-center gap-2 text-gray-800 dark:text-white">
                   <PiShoppingCartBold className="text-blue-500" />
@@ -1409,7 +1409,7 @@ const Sales = () => {
                     orders?.items?.map((item, index) => (
                       <div
                         key={`${item.id}-${index}`}
-                        className="relative border rounded p-3 bg-gray-50 border-gray-200 dark:bg-gray-900 dark:border-gray-700"
+                        className="relative border rounded p-3 bg-gray-50 border-gray-200 dark:bg-gray-700 dark:border-gray-700"
                       >
                         <button
                           onClick={() => handleDelete(item.id, index)}
@@ -1419,7 +1419,7 @@ const Sales = () => {
                         </button>
                         <div className="flex gap-3">
                           {/* Item Image */}
-                          <div className="flex-shrink-0 w-16 h-16 border rounded p-1 bg-white border-gray-300 dark:bg-gray-800 dark:border-gray-600">
+                          <div className="flex-shrink-0 w-16 h-16 border rounded p-1 bg-white border-gray-300 bg-primary dark:border-gray-600">
                             <img
                               src={item.image}
                               alt={item.name}
@@ -1519,7 +1519,7 @@ const Sales = () => {
                               localStorage.setItem("orderItems", JSON.stringify(results));
                               setOrders(results);
                             }}
-                            className="w-20 px-2 py-1 border rounded text-right text-sm bg-white border-gray-300 text-gray-900 dark:bg-gray-900 dark:border-gray-700 dark:text-white"
+                            className="w-20 px-2 py-1 border rounded text-right text-sm bg-white border-gray-300 text-gray-900 dark:bg-gray-700 dark:border-gray-700 dark:text-white"
                             placeholder="0.00"
                             min="0"
                             step="0.01"
@@ -1534,7 +1534,7 @@ const Sales = () => {
                             onClick={() => handleSaleType({ target: { value: 'sale' } })}
                             className={`flex-1 py-1.5 text-sm border rounded transition-colors ${orders?.sale_type === 'sale'
                               ? 'bg-blue-600 text-white border-blue-600'
-                              : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 dark:bg-gray-900 dark:text-gray-400 dark:border-gray-700 dark:hover:bg-gray-800'
+                              : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 dark:bg-gray-700 dark:text-gray-400 dark:border-gray-700 dark:hover:bg-gray-800'
                               }`}
                           >
                             {t("retail")}
@@ -1543,7 +1543,7 @@ const Sales = () => {
                             onClick={() => handleSaleType({ target: { value: 'wholesale' } })}
                             className={`flex-1 py-1.5 text-sm border rounded transition-colors ${orders?.sale_type === 'wholesale'
                               ? 'bg-blue-600 text-white border-blue-600'
-                              : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 dark:bg-gray-900 dark:text-gray-400 dark:border-gray-700 dark:hover:bg-gray-800'
+                              : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 dark:bg-gray-700 dark:text-gray-400 dark:border-gray-700 dark:hover:bg-gray-800'
                               }`}
                           >
                             {t("wholesale")}
@@ -1574,7 +1574,7 @@ const Sales = () => {
                             localStorage.setItem("orderItems", JSON.stringify(results));
                             setOrders(results);
                           }}
-                          className="w-20 px-2 py-1 border rounded text-right text-sm bg-white border-gray-300 text-gray-900 dark:bg-gray-900 dark:border-gray-700 dark:text-white"
+                          className="w-20 px-2 py-1 border rounded text-right text-sm bg-white border-gray-300 text-gray-900 dark:bg-gray-700 dark:border-gray-700 dark:text-white"
                           min="0"
                           step="0.01"
                         />
@@ -1589,7 +1589,7 @@ const Sales = () => {
                             localStorage.setItem("orderItems", JSON.stringify(results));
                             setOrders(results);
                           }}
-                          className="px-2 py-1 border rounded text-sm bg-white border-gray-300 text-gray-900 dark:bg-gray-900 dark:border-gray-700 dark:text-white"
+                          className="px-2 py-1 border rounded text-sm bg-white border-gray-300 text-gray-900 dark:bg-gray-700 dark:border-gray-700 dark:text-white"
                         >
                           <option value="cash">{t("cash")}</option>
                           <option value="bank">{t("bank")}</option>
@@ -1612,7 +1612,7 @@ const Sales = () => {
                             setOrders(results);
                             setPayment(value);
                           }}
-                          className="px-2 py-1 border rounded text-sm bg-white border-gray-300 text-gray-900 dark:bg-gray-900 dark:border-gray-700 dark:text-white"
+                          className="px-2 py-1 border rounded text-sm bg-white border-gray-300 text-gray-900 dark:bg-gray-700 dark:border-gray-700 dark:text-white"
                         >
                           <option value="paid">{t("paid")}</option>
                           <option value="cod">{t("cod")}</option>
@@ -1636,7 +1636,7 @@ const Sales = () => {
                             localStorage.setItem("orderItems", JSON.stringify(results));
                             setOrders(results);
                           }}
-                          className="px-2 py-1 border rounded text-sm bg-white border-gray-300 text-gray-900 dark:bg-gray-900 dark:border-gray-700 dark:text-white"
+                          className="px-2 py-1 border rounded text-sm bg-white border-gray-300 text-gray-900 dark:bg-gray-700 dark:border-gray-700 dark:text-white"
                         >
                           <option value={0}>{t("customer")}...</option>
                           {customers?.data?.map((customer) => (
@@ -1662,7 +1662,7 @@ const Sales = () => {
                             localStorage.setItem("orderItems", JSON.stringify(results));
                             setOrders(results);
                           }}
-                          className="w-24 px-2 py-1 border rounded text-right text-sm bg-white border-gray-300 text-gray-900 dark:bg-gray-900 dark:border-gray-700 dark:text-white"
+                          className="w-24 px-2 py-1 border rounded text-right text-sm bg-white border-gray-300 text-gray-900 dark:bg-gray-700 dark:border-gray-700 dark:text-white"
                           placeholder="0.00"
                           min="0"
                           step="0.01"
@@ -1684,7 +1684,7 @@ const Sales = () => {
                             localStorage.setItem("orderItems", JSON.stringify(results));
                             setOrders(results);
                           }}
-                          className="w-full px-2 py-1 border rounded text-sm bg-white border-gray-300 text-gray-900 dark:bg-gray-900 dark:border-gray-700 dark:text-white dark:placeholder-gray-600"
+                          className="w-full px-2 py-1 border rounded text-sm bg-white border-gray-300 text-gray-900 dark:bg-gray-700 dark:border-gray-700 dark:text-white dark:placeholder-gray-600"
                           placeholder="000-0000-000"
                         />
                       </div>
@@ -1698,7 +1698,7 @@ const Sales = () => {
                             localStorage.setItem("orderItems", JSON.stringify(results));
                             setOrders(results);
                           }}
-                          className="w-full px-2 py-1 border rounded text-sm bg-white border-gray-300 text-gray-900 dark:bg-gray-900 dark:border-gray-700 dark:text-white dark:placeholder-gray-600"
+                          className="w-full px-2 py-1 border rounded text-sm bg-white border-gray-300 text-gray-900 dark:bg-gray-700 dark:border-gray-700 dark:text-white dark:placeholder-gray-600"
                           placeholder={t("address")}
                           rows="3"
                         />
@@ -1737,7 +1737,7 @@ const Sales = () => {
                           setOrderCount(0);
                           toast.success(`${t("clearCart")} ${t("successfully")}`);
                         }}
-                        className="w-full py-2 border rounded text-sm transition-colors border-gray-300 bg-white text-gray-700 hover:border-red-300 hover:text-red-600 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-400 dark:hover:border-red-500 dark:hover:text-red-500"
+                        className="w-full py-2 border rounded text-sm transition-colors border-gray-300 bg-white text-gray-700 hover:border-red-300 hover:text-red-600 dark:border-gray-700 dark:bg-gray-700 dark:text-gray-400 dark:hover:border-red-500 dark:hover:text-red-500"
                       >
                         {t("clearCart")}
                       </button>

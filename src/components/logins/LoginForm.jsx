@@ -38,7 +38,6 @@ const LoginForm = () => {
       return;
     }
     setLoading(true);
-
     try {
       const response = await api.post("/login", login);
       const {

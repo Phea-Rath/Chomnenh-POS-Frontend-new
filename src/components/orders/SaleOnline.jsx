@@ -15,7 +15,7 @@ import { toast } from "react-toastify";
 import { useGetAllCustomerQuery } from "../../../app/Features/customersSlice";
 import { useGetExchangeRateByIdQuery } from "../../../app/Features/exchangeRatesSlice";
 import { currencyFormat } from "../../services/serviceFunction";
-import { FaPercent, FaPalette, FaRuler, FaMapMarkerAlt, FaHistory, FaUser, FaPhone, FaCheck } from "react-icons/fa";
+import { FaPercent, FaPalette, FaRuler, FaMapMarkerAlt, FaHistory, FaUser, FaPhone, FaCheck, FaMoon, FaSun, FaLanguage } from "react-icons/fa";
 import { GiScales, GiSugarCane } from "react-icons/gi";
 import { BiCategory } from "react-icons/bi";
 import api from "../../services/api";
@@ -36,6 +36,7 @@ import bakong from "../../assets/bakong.png";
 import * as qrService from "../../services/qrPaymentService";
 import handleDownload from "../../services/imageDowload";
 import Echo from "../../echo";
+import { useTranslation } from "react-i18next";
 
 // const { Option } = Select;
 
@@ -81,19 +82,23 @@ const Badge = ({ count, children, color = 'blue', className = '' }) => {
 };
 
 // Custom Button component
-const Button = ({ children, onClick, variant = 'default', size = 'md', icon, disabled, className = '', type = 'button' }) => {
-  const base = 'inline-flex items-center justify-center gap-2 font-medium transition-colors rounded';
+const Button = ({ children, onClick, variant = 'default', size = 'md', icon, disabled, className = '', type = 'button', darkMode = false }) => {
+  const base = 'inline-flex items-center justify-center gap-2 font-medium transition-colors rounded-lg';
   const sizes = {
-    sm: 'px-3 py-1.5 text-sm',
-    md: 'px-4 py-2 text-sm',
-    lg: 'px-6 py-3 text-base',
+    sm: 'px-2.5 py-1.5 text-xs',
+    md: 'px-3 py-2 text-sm',
+    lg: 'px-4 py-2.5 text-sm',
   };
   const variants = {
-    default: 'border border-gray-300 bg-white hover:bg-gray-100 text-gray-700',
+    default: darkMode
+      ? '!border-slate-700 !bg-slate-800 !text-slate-100 hover:!bg-slate-700'
+      : 'border border-gray-300 bg-white hover:bg-gray-100 text-gray-700',
     primary: 'border border-blue-600 bg-blue-600 hover:bg-blue-700 text-white',
     danger: 'border border-red-600 bg-red-600 hover:bg-red-700 text-white',
     success: 'border border-green-600 bg-green-600 hover:bg-green-700 text-white',
-    outline: 'border border-gray-300 bg-transparent hover:bg-gray-100 text-gray-700',
+    outline: darkMode
+      ? '!border-slate-700 !bg-transparent !text-slate-200 hover:!bg-slate-800'
+      : 'border border-gray-300 bg-transparent hover:bg-gray-100 text-gray-700',
   };
   return (
     <button
@@ -109,43 +114,43 @@ const Button = ({ children, onClick, variant = 'default', size = 'md', icon, dis
 };
 
 // Custom Input component
-const Input = ({ value, onChange, placeholder, type = 'text', icon, className = '' }) => (
+const Input = ({ value, onChange, placeholder, type = 'text', icon, className = '', darkMode = false }) => (
   <div className="relative">
-    {icon && <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">{icon}</div>}
+    {icon && <div className={`absolute left-3 top-1/2 -translate-y-1/2 ${darkMode ? '!text-slate-500' : 'text-gray-400'}`}>{icon}</div>}
     <input
       type={type}
       value={value}
       onChange={onChange}
       placeholder={placeholder}
-      className={`w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm ${icon ? 'pl-10' : ''} ${className}`}
+      className={`w-full rounded-xl border px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 ${icon ? 'pl-10' : ''} ${darkMode ? '!border-slate-700 !bg-slate-900 !text-slate-100 !placeholder-slate-500' : 'border-gray-300 bg-white text-gray-900'} ${className}`}
     />
   </div>
 );
 
 // Custom Textarea
-const Textarea = ({ value, onChange, placeholder, rows = 3 }) => (
+const Textarea = ({ value, onChange, placeholder, rows = 3, className = '', darkMode = false }) => (
   <textarea
     value={value}
     onChange={onChange}
     placeholder={placeholder}
     rows={rows}
-    className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm"
+    className={`w-full rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 ${darkMode ? '!border-slate-700 !bg-slate-900 !text-slate-100 !placeholder-slate-500' : 'border border-gray-300 bg-white text-gray-900'} ${className}`}
   />
 );
 
 // Custom Select
-const Select = ({ value, onChange, children, className = '' }) => (
+const Select = ({ value, onChange, children, className = '', darkMode = false }) => (
   <select
     value={value}
     onChange={onChange}
-    className={`px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm bg-white ${className}`}
+    className={`rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 ${darkMode ? '!border-slate-700 !bg-slate-900 !text-slate-100' : 'border border-gray-300 bg-white text-gray-900'} ${className}`}
   >
     {children}
   </select>
 );
 
 // Custom Divider
-const Divider = ({ className = '' }) => <hr className={`border-t border-gray-200 my-4 ${className}`} />;
+const Divider = ({ className = '', darkMode = false }) => <hr className={`border-t my-4 ${darkMode ? '!border-slate-700' : 'border-gray-200'} ${className}`} />;
 
 // Custom Tag/Chip
 const Tag = ({ children, color = 'blue', className = '' }) => {
@@ -164,7 +169,7 @@ const Tag = ({ children, color = 'blue', className = '' }) => {
 };
 
 // Custom Pagination
-const Pagination = ({ current, total, pageSize, onChange }) => {
+const Pagination = ({ current, total, pageSize, onChange, darkMode = false }) => {
   const totalPages = Math.ceil(total / pageSize);
   const pages = Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
     if (totalPages <= 5) return i + 1;
@@ -178,7 +183,7 @@ const Pagination = ({ current, total, pageSize, onChange }) => {
       <button
         onClick={() => onChange(current - 1)}
         disabled={current === 1}
-        className="px-3 py-1 border border-gray-300 rounded bg-white hover:bg-gray-100 disabled:opacity-50 text-sm"
+        className={`rounded-lg px-3 py-1.5 text-sm disabled:opacity-50 ${darkMode ? '!border !border-slate-700 !bg-slate-900 !text-slate-200 hover:!bg-slate-800' : 'border border-gray-300 bg-white hover:bg-gray-100 text-gray-700'}`}
       >
         Previous
       </button>
@@ -186,7 +191,7 @@ const Pagination = ({ current, total, pageSize, onChange }) => {
         <button
           key={page}
           onClick={() => onChange(page)}
-          className={`px-3 py-1 border rounded text-sm ${current === page ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'}`}
+          className={`rounded-lg px-3 py-1.5 text-sm ${current === page ? 'border border-blue-600 bg-blue-600 text-white' : darkMode ? '!border !border-slate-700 !bg-slate-900 !text-slate-200 hover:!bg-slate-800' : 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-100'}`}
         >
           {page}
         </button>
@@ -194,7 +199,7 @@ const Pagination = ({ current, total, pageSize, onChange }) => {
       <button
         onClick={() => onChange(current + 1)}
         disabled={current === totalPages}
-        className="px-3 py-1 border border-gray-300 rounded bg-white hover:bg-gray-100 disabled:opacity-50 text-sm"
+        className={`rounded-lg px-3 py-1.5 text-sm disabled:opacity-50 ${darkMode ? '!border !border-slate-700 !bg-slate-900 !text-slate-200 hover:!bg-slate-800' : 'border border-gray-300 bg-white hover:bg-gray-100 text-gray-700'}`}
       >
         Next
       </button>
@@ -203,7 +208,7 @@ const Pagination = ({ current, total, pageSize, onChange }) => {
 };
 
 // Custom Modal
-const Modal = ({ open, onClose, children, width = 500 }) => {
+const Modal = ({ open, onClose, children, width = 500, darkMode = false }) => {
   if (!open) return null;
 
   return (
@@ -217,12 +222,12 @@ const Modal = ({ open, onClose, children, width = 500 }) => {
         exit={{ opacity: 0, scale: 0.95 }}
         transition={{ duration: 0.2 }}
         onClick={(e) => e.stopPropagation()} // prevent closing when clicking inside
-        className="bg-white rounded shadow-lg max-h-[90vh] overflow-auto relative"
+        className={`relative max-h-[90vh] overflow-auto rounded-3xl shadow-lg ${darkMode ? '!border !border-slate-700 !bg-slate-900 !text-slate-100' : 'bg-white'}`}
         style={{ width: typeof width === "number" ? `${width}px` : width }}
       >
         <button
           onClick={onClose}
-          className="absolute top-3 right-3 z-5 text-gray-400 hover:text-gray-600"
+          className={`absolute top-3 right-3 z-5 ${darkMode ? '!text-slate-500 hover:!text-slate-200' : 'text-gray-400 hover:text-gray-600'}`}
         >
           ✕
         </button>
@@ -234,7 +239,7 @@ const Modal = ({ open, onClose, children, width = 500 }) => {
 };
 
 // Custom Drawer
-const Drawer = ({ open, onClose, title, children, width = 400 }) => {
+const Drawer = ({ open, onClose, title, children, width = 400, darkMode = false }) => {
   if (!open) return null;
   return (
     <>
@@ -244,22 +249,23 @@ const Drawer = ({ open, onClose, title, children, width = 400 }) => {
         animate={{ x: 0 }}
         exit={{ x: '100%' }}
         transition={{ type: 'tween' }}
-        className="fixed top-0 right-0 z-50 h-full bg-white shadow-xl overflow-auto"
+        className={`fixed top-0 right-0 z-50 h-full overflow-auto shadow-xl ${darkMode ? '!border-l !border-slate-700 !bg-slate-900 !text-slate-100' : 'bg-white'}`}
         style={{ width }}
       >
-        <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-gray-800">{title}</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+        <div className={`sticky top-0 flex items-center justify-between border-b px-5 py-4 ${darkMode ? '!border-slate-700 !bg-slate-900' : 'border-gray-200 bg-white'}`}>
+          <h2 className={`text-base font-semibold ${darkMode ? '!text-slate-100' : 'text-gray-800'}`}>{title}</h2>
+          <button onClick={onClose} className={darkMode ? '!text-slate-500 hover:!text-slate-200' : 'text-gray-400 hover:text-gray-600'}>
             ✕
           </button>
         </div>
-        <div className="p-6">{children}</div>
+        <div className="p-4">{children}</div>
       </motion.div>
     </>
   );
 };
 
 const Sales = () => {
+  const { t, i18n } = useTranslation();
   const { id, token } = useParams();
   const profileId = localStorage.getItem('profileId');
   const localOrderItems = JSON.parse(localStorage.getItem("orderItems"));
@@ -304,6 +310,10 @@ const Sales = () => {
   const qrVerifyRef = useRef(null);
   const qrStatusRef = useRef("idle");
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [darkMode, setDarkMode] = useState(() => {
+    const saved = localStorage.getItem("darkMode");
+    return saved ? JSON.parse(saved) : false;
+  });
   const [product, setProduct] = useState(null);
   const { data: item } = useGetItemByIdQuery({ id: id, token },
     { skip: !id })
@@ -323,6 +333,38 @@ const Sales = () => {
 
   const items = useMemo(() => saleItemContext?.data?.data || [], [saleItemContext?.data]);
   const totalItems = saleItemContext?.data?.pagination?.total || 0;
+
+  useEffect(() => {
+    const savedLang = localStorage.getItem("language");
+    if (savedLang && savedLang !== i18n.language) {
+      i18n.changeLanguage(savedLang);
+    }
+  }, [i18n]);
+
+  useEffect(() => {
+    localStorage.setItem("darkMode", JSON.stringify(darkMode));
+    if (darkMode) {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  }, [darkMode]);
+
+  useEffect(() => {
+    document.body.dataset.muteRealtimeOrderAlerts = "true";
+    document.body.dataset.muteRealtimeOrderAudio = "true";
+    return () => {
+      delete document.body.dataset.muteRealtimeOrderAlerts;
+      delete document.body.dataset.muteRealtimeOrderAudio;
+    };
+  }, []);
+
+  const toggleLanguage = () => {
+    const newLang = i18n.language === "en" ? "kh" : "en";
+    i18n.changeLanguage(newLang);
+    localStorage.setItem("language", newLang);
+    localStorage.setItem("i18nextLng", newLang);
+  };
 
   useEffect(() => {
     setProduct(item?.data);
@@ -918,10 +960,13 @@ const Sales = () => {
       status: 1,
       online: 1,
       deliver_id: 1,
-      deliver_fee: orders.deliver_fee ?? 0,
+      delivery_fee: orders.deliver_fee ?? 0,
       through: userLogin?.data?.id,
       order_payment_status: "cod",
+      order_payment_method: "bank",
       payment: 0,
+      sale_type: 'sale',
+      order_customer_id: 1,
       order_discount: calculateTotalDiscount() || 0,
       order_address: orders.order_address || "unknown",
       items: itemsWithAttributes
@@ -1227,9 +1272,9 @@ const Sales = () => {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="min-h-screen bg-gray-300 p-3"
+      className={`min-h-screen p-2 transition-colors ${darkMode ? "bg-slate-950 [&_.ant-modal-content]:!bg-slate-900 [&_.ant-modal-content]:!text-slate-100 [&_.ant-modal-header]:!bg-slate-900 [&_.ant-modal-header]:!border-slate-700 [&_.ant-modal-title]:!text-slate-100 [&_.ant-drawer-content]:!bg-slate-900 [&_.ant-drawer-header]:!bg-slate-900 [&_.ant-drawer-header]:!border-slate-700 [&_.ant-drawer-title]:!text-slate-100 [&_.ant-drawer-body]:!bg-slate-900 [&_.ant-input]:!bg-slate-900 [&_.ant-input]:!text-slate-100 [&_.ant-input]:!border-slate-700 [&_.ant-select-selector]:!bg-slate-900 [&_.ant-select-selector]:!text-slate-100 [&_.ant-select-selector]:!border-slate-700" : "bg-slate-100"}`}
     >
-      <section className="px-2">
+      <section className="mx-auto max-w-[1500px] px-1">
         <AlertBox
           isOpen={alertBox}
           title="Confirm Order"
@@ -1241,23 +1286,64 @@ const Sales = () => {
         />
 
         {/* Header */}
-        <div className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div className="flex items-center gap-3 p-4 bg-slate-200 rounded-2xl border border-slate-100">
-            <div className="w-10 h-10 rounded-full overflow-hidden">
+        <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div className={`flex items-center gap-3 rounded-2xl border px-4 py-3 ${darkMode ? "border-slate-700 bg-slate-900" : "border-slate-200 bg-white"}`}>
+            <div className="h-10 w-10 rounded-full overflow-hidden ring-1 ring-black/5">
               <img src={profile?.data?.image} alt={profile?.data?.profile_name} className="w-full h-full object-cover" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-gray-800">{profile?.data?.profile_name}</h1>
-              <p className="text-gray-600 text-sm">Select products and create orders</p>
+              <h1 className={`text-lg font-bold ${darkMode ? "text-white" : "text-gray-800"}`}>{profile?.data?.profile_name}</h1>
+              <p className={`text-xs ${darkMode ? "text-slate-400" : "text-gray-500"}`}>{t("selectProducts")}</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center flex-wrap gap-2">
+            <button
+              onClick={() => setDarkMode((prev) => !prev)}
+              className={`flex h-9 w-9 items-center justify-center rounded-xl border transition-colors ${darkMode
+                ? "border-slate-700 bg-slate-800 text-yellow-400 hover:bg-slate-700"
+                : "border-gray-300 bg-white text-gray-700 hover:bg-gray-100"
+                }`}
+              title={darkMode ? t("lightMode") : t("darkMode")}
+            >
+              {darkMode ? <FaSun className="text-lg" /> : <FaMoon className="text-lg" />}
+            </button>
+            <button
+              onClick={toggleLanguage}
+              className={`inline-flex h-9 items-center gap-2 rounded-xl border px-3 text-xs font-semibold transition-colors ${darkMode
+                ? "border-slate-700 bg-slate-800 text-white hover:bg-slate-700"
+                : "border-gray-300 bg-white text-gray-700 hover:bg-gray-100"
+                }`}
+              title={i18n.language === "en" ? t("switchToKhmer") : t("switchToEnglish")}
+            >
+              <FaLanguage className="text-base" />
+              <span>{i18n.language === "en" ? "KH" : "EN"}</span>
+            </button>
+            <Button
+              onClick={() => setShowSignInModal(true)}
+              variant="danger"
+              icon={<IoLogOutOutline />}
+              darkMode={darkMode}
+              className="h-9 w-9 p-0"
+            />
+            {user && (
+              <Link to="order-tracking">
+                <Badge count={0} color="green">
+                  <Button variant="success" icon={<FaUser />} darkMode={darkMode} className="h-9 w-9 p-0" />
+                </Badge>
+              </Link>
+            )}
+            <div className="fixed bottom-6 right-4 z-50">
+              <Badge count={orderCount} color="red" offset={[-5, 5]} >
+                <Button onClick={showDrawer} variant="primary" icon={<PiShoppingCartBold />} darkMode={darkMode} className="h-9 w-9 p-0 bg-green-500" />
+              </Badge>
+            </div>
             <div className="relative flex-1">
               <Input
                 value={search}
                 onChange={onSearch}
-                className="text-black"
+                darkMode={darkMode}
+                className={`${darkMode ? '!text-slate-100' : 'text-black'} min-w-[220px]`}
                 placeholder="Search products by name or code..."
                 icon={
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1266,34 +1352,17 @@ const Sales = () => {
                 }
               />
             </div>
-            <Button
-              onClick={() => setShowSignInModal(true)}
-              variant="danger"
-              icon={<IoLogOutOutline />}
-              className="h-10 w-10 p-0"
-            />
-            {user && (
-              <Link to="order-tracking">
-                <Badge count={0} color="green">
-                  <Button variant="success" icon={<FaUser />} className="h-10 w-10 p-0" />
-                </Badge>
-              </Link>
-            )}
-            <div className=" fixed bottom-25 right-4 z-50">
-              <Badge count={orderCount} color="red" offset={[-5, 5]} >
-                <Button onClick={showDrawer} variant="primary" icon={<PiShoppingCartBold />} className="h-10 w-10 p-0 bg-green-500" />
-              </Badge>
-            </div>
+
           </div>
         </div>
 
         {/* Category Filter Buttons */}
-        <div className="flex gap-2 mb-6 overflow-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="mb-4 flex gap-2 overflow-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <button
             onClick={() => onFilterCategory('all')}
-            className={`px-4 rounded-full text-xs font-medium border transition-colors ${selectedCategory === 'all'
+            className={`rounded-full px-3 py-1.5 text-xs font-medium border transition-colors ${selectedCategory === 'all'
               ? 'bg-blue-600 text-white border-blue-600'
-              : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'
+              : darkMode ? '!bg-slate-900 !text-slate-200 !border-slate-700 hover:!bg-slate-800' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'
               }`}
           >
             All Categories
@@ -1302,9 +1371,9 @@ const Sales = () => {
             <button
               key={cat.category_id}
               onClick={() => onFilterCategory(cat.category_id)}
-              className={`px-4 py-1 rounded-full text-xs font-medium border transition-colors ${selectedCategory === cat.category_id
+              className={`rounded-full px-3 text-xs font-medium border transition-colors ${selectedCategory === cat.category_id
                 ? 'bg-blue-600 text-white border-blue-600'
-                : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'
+                : darkMode ? '!bg-slate-900 !text-slate-200 !border-slate-700 hover:!bg-slate-800' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'
                 }`}
             >
               {cat.category_name}
@@ -1316,20 +1385,20 @@ const Sales = () => {
         <div>
           {itemsSech?.length === 0 ? (
             // Loading or empty state
-            <div className="text-center py-16 border-2 border-dashed border-gray-300 rounded bg-white">
-              <div className="text-gray-400 mb-4">
+            <div className={`rounded-2xl border-2 border-dashed py-14 text-center ${darkMode ? '!border-slate-700 !bg-slate-900' : 'border-gray-300 bg-white'}`}>
+              <div className={`mb-4 ${darkMode ? '!text-slate-500' : 'text-gray-400'}`}>
                 <PiShoppingCartBold className="w-16 h-16 mx-auto" />
               </div>
-              <h3 className="text-xl font-semibold text-gray-700 mb-2">No products found</h3>
-              <p className="text-gray-500 max-w-md mx-auto mb-6">
+              <h3 className={`mb-2 text-lg font-semibold ${darkMode ? '!text-slate-100' : 'text-gray-700'}`}>No products found</h3>
+              <p className={`mx-auto mb-5 max-w-md text-sm ${darkMode ? '!text-slate-400' : 'text-gray-500'}`}>
                 Try adjusting your search or filter criteria
               </p>
-              <Button onClick={() => navigate('/add-to-stock')} variant="primary">
+              <Button onClick={() => navigate('/add-to-stock')} variant="primary" darkMode={darkMode}>
                 Add Products to Stock
               </Button>
             </div>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-2 sm:gap-4">
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 sm:gap-3">
               {itemsSech.map((item) => (
                 <motion.div
                   key={item.id}
@@ -1337,15 +1406,15 @@ const Sales = () => {
                   animate={{ opacity: 1, y: 0 }}
                   whileHover={{ y: -4 }}
                   transition={{ duration: 0.2 }}
-                  className="bg-white border border-gray-200 rounded shadow-sm hover:shadow-md transition-all"
+                  className={`rounded-2xl border transition-all ${darkMode ? '!border-slate-700 !bg-slate-900 hover:!border-slate-600' : 'border-gray-200 bg-white hover:shadow-md'}`}
                 >
-                  <div className="p-3">
+                  <div className="p-2.5">
                     {/* Image */}
-                    <div className="relative mb-3 bg-gray-100 rounded overflow-hidden">
+                    <div className={`relative mb-2 overflow-hidden rounded-xl ${darkMode ? '!bg-slate-800' : 'bg-gray-100'}`}>
                       <img
                         src={item.image}
                         alt={item.name}
-                        className="w-full h-28 object-contain cursor-pointer hover:scale-105 transition-transform"
+                        className="h-24 w-full cursor-pointer object-contain transition-transform hover:scale-105"
                         onClick={() => { setVisible(true); setItemId(item.id); }}
                         onError={(e) => {
                           e.target.onerror = null;
@@ -1360,11 +1429,11 @@ const Sales = () => {
                     </div>
 
                     {/* Info */}
-                    <div className="space-y-2">
+                    <div className="space-y-1.5">
                       <div className="flex justify-between items-start">
                         <div>
-                          <h3 className="font-bold text-gray-800 text-sm line-clamp-1">{item.name}</h3>
-                          <p className="text-xs text-gray-500 font-mono">{item.code}</p>
+                          <h3 className={`line-clamp-1 text-sm font-bold ${darkMode ? '!text-slate-100' : 'text-gray-800'}`}>{item.name}</h3>
+                          <p className={`font-mono text-[11px] ${darkMode ? '!text-slate-500' : 'text-gray-500'}`}>{item.code}</p>
                         </div>
                         {/* <div className="text-right">
                           <div className="text-xs text-gray-600">Wholesale</div>
@@ -1376,11 +1445,11 @@ const Sales = () => {
 
                       <div className="flex items-center justify-between">
                         <div>
-                          <div className="text-lg font-bold text-green-600">
+                          <div className="text-base font-bold text-green-600">
                             ${getItemPrice(item, 'sale').toFixed(2)}
                           </div>
                           {item.discount > 0 && (
-                            <div className="text-xs text-gray-400 line-through">
+                            <div className={`text-[11px] line-through ${darkMode ? '!text-slate-500' : 'text-gray-400'}`}>
                               ${item.price.toFixed(2)}
                             </div>
                           )}
@@ -1390,8 +1459,9 @@ const Sales = () => {
                           disabled={getItemStock(item) <= 0}
                           variant={getItemStock(item) <= 0 ? 'default' : 'primary'}
                           size="sm"
+                          darkMode={darkMode}
                           icon={getItemStock(item) <= 0 ? <TbShoppingCartOff /> : <MdOutlineAddShoppingCart />}
-                          className="!p-2"
+                          className="!h-8 !w-8 !p-0"
                         />
                       </div>
                     </div>
@@ -1404,11 +1474,12 @@ const Sales = () => {
 
         {/* Pagination */}
         {itemsSech?.length > 0 && (
-          <div className="mt-8 flex text-black justify-center">
+          <div className={`mt-6 flex justify-center ${darkMode ? '!text-slate-200' : 'text-black'}`}>
             <Pagination
               current={currentPage}
               total={totalItems}
               pageSize={pageSize}
+              darkMode={darkMode}
               onChange={(page) => { setCurrentPage(page); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
             />
           </div>
@@ -1421,26 +1492,26 @@ const Sales = () => {
             <span>Order Summary</span>
             {orderCount > 0 && <Badge count={orderCount} color="blue" className="ml-2" />}
           </div>
-        } width={350}>
-          <div className="border-2 overflow-hidden relat">
-            <div className="space-y-4 max-h-[50vh] overflow-y-auto pr-1">
+        } width={350} darkMode={darkMode}>
+          <div className="overflow-hidden relat">
+            <div className="max-h-[50vh] space-y-3 overflow-y-auto pr-1">
               {orders?.items?.length === 0 ? (
                 <div className="text-center py-12">
-                  <PiShoppingCartBold className="text-gray-400 text-4xl mx-auto mb-4" />
-                  <p className="text-gray-500">Your cart is empty</p>
-                  <p className="text-gray-400 text-sm mt-2">Add products from the list</p>
+                  <PiShoppingCartBold className={`mx-auto mb-4 text-4xl ${darkMode ? '!text-slate-500' : 'text-gray-400'}`} />
+                  <p className={darkMode ? '!text-slate-300' : 'text-gray-500'}>Your cart is empty</p>
+                  <p className={`mt-2 text-sm ${darkMode ? '!text-slate-500' : 'text-gray-400'}`}>Add products from the list</p>
                 </div>
               ) : (
                 orders?.items?.map((item, index) => (
-                  <div key={`${item.id}-${index}`} className="relative z-0 border-2 border-gray-200 rounded p-1 bg-gray-50">
+                  <div key={`${item.id}-${index}`} className={`relative z-0 rounded-2xl border p-2 ${darkMode ? '!border-slate-700 !bg-slate-800' : 'border-gray-200 bg-gray-50'}`}>
                     <button
                       onClick={() => handleDelete(item.id, index)}
-                      className="absolute -top-0 -right-2 w-5 h-5 font-extrabold text-red-500 rounded-full text-xs hover:text-red-600 flex items-center justify-center"
+                      className="absolute -top-2 cursor-pointer -right-0 w-5 h-5 font-extrabold text-red-500 rounded-full text-xs hover:text-red-600 flex items-center justify-center"
                     >
                       ✕
                     </button>
                     <div className="flex gap-3">
-                      <div className="w-16 h-16 border border-gray-300 rounded overflow-hidden bg-white flex-shrink-0">
+                      <div className={`h-14 w-14 flex-shrink-0 overflow-hidden rounded-xl border ${darkMode ? '!border-slate-700 !bg-slate-900' : 'border-gray-300 bg-white'}`}>
                         <img
                           src={item.image}
                           alt={item.name}
@@ -1454,8 +1525,8 @@ const Sales = () => {
                       <div className="flex-1">
                         <div className="flex justify-between">
                           <div>
-                            <h4 className="font-bold text-gray-800 text-sm">{item.name}</h4>
-                            <p className="text-xs text-gray-500">{item.barcode}</p>
+                            <h4 className={`text-sm font-bold ${darkMode ? '!text-slate-100' : 'text-gray-800'}`}>{item.name}</h4>
+                            <p className={`text-[11px] ${darkMode ? '!text-slate-500' : 'text-gray-500'}`}>{item.barcode}</p>
                           </div>
                           <div className="text-right">
                             <div className="text-sm font-bold text-green-600">
@@ -1467,14 +1538,15 @@ const Sales = () => {
                           <div className="flex items-center gap-2">
                             <button
                               onClick={() => handleQty(item.id, item.selectionKey)}
-                              className="w-5 h-5 rounded bg-red-500 text-white hover:bg-red-600"
+                              className="text-red-500 cursor-pointer"
                             >
                               -
                             </button>
-                            <span className="w-6 text-center font-bold text-gray-800">{item.quantity}</span>
+                            {/* <span className={`w-6 text-center font-bold ${darkMode ? '!text-slate-100' : 'text-gray-800'}`}>{item.quantity}</span> */}
+                            <input type="number" value={item.quantity} name="" id="" className="w-10 focus:outline-0 text-center no-spinner" />
                             <button
                               onClick={() => handleQtyPlus(item.id, item.selectionKey)}
-                              className="w-5 h-5 rounded bg-green-500 text-white hover:bg-green-600"
+                              className="text-green-500 cursor-pointer"
                             >
                               +
                             </button>
@@ -1488,11 +1560,11 @@ const Sales = () => {
               )}
             </div>
             {orders?.items?.length > 0 && (
-              <div className="mt-6 space-y-4 text-black">
-                <Divider />
+              <div className={`mt-5 space-y-4 ${darkMode ? '!text-slate-100' : 'text-black'}`}>
+                <Divider darkMode={darkMode} />
                 <div className="space-y-2">
                   <div className="flex justify-between">
-                    <span className="text-gray-600 text-xs">Subtotal</span>
+                    <span className={`text-xs ${darkMode ? '!text-slate-400' : 'text-gray-600'}`}>Subtotal</span>
                     <span className="font-bold">${currencyFormat(orders?.order_subtotal)}</span>
                   </div>
                   {calculateTotalDiscount() > 0 && (
@@ -1506,8 +1578,9 @@ const Sales = () => {
                   {(
                     <>
                       <div className="flex items-center justify-between gap-4">
-                        <label className="text-gray-600 text-xs">លេខទូរស័ព្ទអ្នកទទួល</label>
+                        <label className="text-gray-600 dark:text-gray-200 text-xs">លេខទូរស័ព្ទអ្នកទទួល</label>
                         <Input
+                          darkMode={darkMode}
                           value={orders?.order_tel || ''}
                           onChange={(e) => {
                             setOrders(prev => {
@@ -1524,8 +1597,9 @@ const Sales = () => {
                         />
                       </div>
                       <div>
-                        <label className="block text-gray-600 mb-1 text-xs">អាស័យដ្ឋានអតិថិជន</label>
+                        <label className="block text-gray-600 dark:text-gray-200 mb-1 text-xs">អាស័យដ្ឋានអតិថិជន</label>
                         <Textarea
+                          darkMode={darkMode}
                           value={orders?.order_address || ''}
                           onChange={(e) => {
                             setOrders(prev => {
@@ -1543,15 +1617,15 @@ const Sales = () => {
                           }}
                           placeholder="address"
                           rows={3}
-                          className={validationErrors.order_address ? 'border-red-500' : ''}
+                          className={validationErrors.order_address ? 'border-red-500' : 'border-gray-300'}
                         />
                       </div>
                     </>
                   )}
                   {location.latitude && location.longitude && (
                     <div className="mt-4">
-                      <h3 className="text-md font-semibold text-gray-700 mb-2">Location Preview:</h3>
-                      <div className="border border-gray-200 rounded p-2">
+                      <h3 className={`mb-2 text-md font-semibold ${darkMode ? '!text-slate-200' : 'text-gray-700'}`}>Location Preview:</h3>
+                      <div className={`rounded-xl border p-2 ${darkMode ? '!border-slate-700' : 'border-gray-200'}`}>
                         <iframe
                           src={`https://www.google.com/maps?q=${location.latitude},${location.longitude}&hl=es;z=14&output=embed`}
                           width="100%"
@@ -1559,13 +1633,13 @@ const Sales = () => {
                           className="rounded"
                           title="map"
                         />
-                        <p className="text-xs text-gray-600 mt-1">
+                        <p className={`mt-1 text-xs ${darkMode ? '!text-slate-400' : 'text-gray-600'}`}>
                           <span className="font-medium">Coordinates:</span> {location.latitude}, {location.longitude}
                         </p>
                       </div>
                     </div>
                   )}
-                  <Divider />
+                  <Divider darkMode={darkMode} />
                   <div className="flex justify-between items-center text-lg font-bold">
                     <span>Total Amount</span>
                     <div className="text-right">
@@ -1579,7 +1653,7 @@ const Sales = () => {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Button disabled={loading} onClick={handleSubmit} variant="success" size="lg" className="w-full">
+                  <Button disabled={loading} onClick={handleSubmit} variant="success" size="lg" darkMode={darkMode} className="w-full">
                     {loading ? 'Ordering. . .' : 'PreOrder'}
                   </Button>
                   <Button
@@ -1591,6 +1665,7 @@ const Sales = () => {
                     }}
                     variant="outline"
                     size="lg"
+                    darkMode={darkMode}
                     className="w-full"
                   >
                     Clear Cart
@@ -1602,26 +1677,27 @@ const Sales = () => {
         </Drawer>
 
         {/* Sign In Modal */}
-        <Modal open={showSignInModal} onClose={() => setShowSignInModal(false)} width={400}>
-          <div className="p-6">
-            <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+        <Modal open={showSignInModal} onClose={() => setShowSignInModal(false)} width={400} darkMode={darkMode}>
+          <div className="p-5">
+            <h3 className={`mb-4 flex items-center gap-2 text-lg font-bold ${darkMode ? '!text-slate-100' : 'text-gray-800'}`}>
               <FaUser className="text-green-500" /> Sign In Account
             </h3>
-            <div className="space-y-4 text-gray-700">
+            <div className={`space-y-4 ${darkMode ? '!text-slate-300' : 'text-gray-700'}`}>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+                <label className={`mb-1 block text-sm font-medium ${darkMode ? '!text-slate-300' : 'text-gray-700'}`}>Phone Number</label>
                 <Input
+                  darkMode={darkMode}
                   value={tel}
                   onChange={(e) => setTel(e.target.value)}
                   placeholder="Enter your phone number"
                   icon={<FaPhone className="text-gray-400" />}
                 />
               </div>
-              <div className="flex justify-end gap-3 pt-4 border-t">
-                <Button onClick={() => setShowSignInModal(false)} variant="outline">
+              <div className={`flex justify-end gap-3 pt-4 border-t ${darkMode ? '!border-slate-700' : ''}`}>
+                <Button onClick={() => setShowSignInModal(false)} variant="outline" darkMode={darkMode}>
                   Cancel
                 </Button>
-                <Button onClick={hanldeSignIn} variant="success" icon={<FaCheck />}>
+                <Button onClick={hanldeSignIn} variant="success" icon={<FaCheck />} darkMode={darkMode}>
                   Continue
                 </Button>
               </div>
@@ -1630,10 +1706,10 @@ const Sales = () => {
         </Modal>
 
         {/* Product Detail Modal */}
-        <Modal open={visible} onClose={onCloseModal} width={900}>
-          <div className="flex flex-col md:flex-row h-full">
+        <Modal open={visible} onClose={onCloseModal} width={900} darkMode={darkMode}>
+          <div className="flex h-full flex-col md:flex-row">
             {/* Left: Image */}
-            <div className="w-full md:w-1/2 bg-slate-50 p-6 flex flex-col items-center relative border-r border-slate-200">
+            <div className={`relative flex w-full flex-col items-center p-5 md:w-1/2 ${darkMode ? '!bg-slate-800 !border-slate-700' : 'bg-slate-50 border-r border-slate-200'}`}>
               <div className="absolute top-4 left-4">
                 <Tag color="blue">{product?.code}</Tag>
               </div>
@@ -1650,12 +1726,12 @@ const Sales = () => {
             </div>
 
             {/* Right: Details */}
-            <div className="w-full md:w-1/2 p-6 overflow-y-auto">
+            <div className="w-full overflow-y-auto p-5 md:w-1/2">
               <div className="mb-4">
-                <div className="flex items-center gap-2 text-xs text-gray-500 uppercase mb-1">
+                <div className={`mb-1 flex items-center gap-2 text-xs uppercase ${darkMode ? '!text-slate-500' : 'text-gray-500'}`}>
                   <MdOutlineCategory /> {product?.category_name} • <MdOutlineBrandingWatermark /> {product?.brand_name}
                 </div>
-                <h2 className="text-2xl font-bold text-gray-800">{product?.name}</h2>
+                <h2 className={`text-2xl font-bold ${darkMode ? '!text-slate-100' : 'text-gray-800'}`}>{product?.name}</h2>
                 <div className="flex items-center gap-4 mt-2">
                   <span className="text-2xl font-bold text-blue-600">${product?.price}</span>
                   {product?.price < product?.wholesale_price && (
@@ -1665,10 +1741,10 @@ const Sales = () => {
                 </div>
               </div>
 
-              <Divider />
+              <Divider darkMode={darkMode} />
 
               <div className="space-y-4">
-                <h4 className="text-sm font-bold text-gray-700 uppercase">Product Specifications</h4>
+                <h4 className={`text-sm font-bold uppercase ${darkMode ? '!text-slate-200' : 'text-gray-700'}`}>Product Specifications</h4>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="flex items-center gap-2 p-2 bg-gray-50 rounded border border-gray-200">
                     <BsQrCodeScan className="text-blue-500" />
@@ -1712,6 +1788,7 @@ const Sales = () => {
                   onClick={() => { handleOrder(product, 1); onCloseModal(); }}
                   variant="primary"
                   size="lg"
+                  darkMode={darkMode}
                   icon={<BsLightningChargeFill />}
                   className="flex-1"
                 >
@@ -1723,11 +1800,11 @@ const Sales = () => {
         </Modal>
 
         {/* QR Payment Modal */}
-        <Modal open={qrPaymentModal} onClose={closeQrModal} width={400}>
-          <div className="p-6">
+        <Modal open={qrPaymentModal} onClose={closeQrModal} width={400} darkMode={darkMode}>
+          <div className="p-5">
             <div className="text-center mb-6">
-              <h3 className="text-xl font-bold text-gray-800 mb-2">QR Payment</h3>
-              <p className="text-gray-600">Scan the QR code to complete your payment</p>
+              <h3 className={`mb-2 text-xl font-bold ${darkMode ? '!text-slate-100' : 'text-gray-800'}`}>QR Payment</h3>
+              <p className={darkMode ? '!text-slate-400' : 'text-gray-600'}>Scan the QR code to complete your payment</p>
             </div>
 
             {qrValue && (
@@ -1761,6 +1838,7 @@ const Sales = () => {
                     onClick={() => handleDownload(qrRef, 'png', 'QR_Payment', `QR_${orders.order_total}`)}
                     variant="outline"
                     size="md"
+                    darkMode={darkMode}
                     className="w-full"
                     disabled={qrLoading}
                   >
@@ -1779,6 +1857,7 @@ const Sales = () => {
                       onClick={handleConfirm}
                       variant="outline"
                       size="md"
+                      darkMode={darkMode}
                       className="w-full"
                       disabled={qrLoading}
                     >
@@ -1799,6 +1878,7 @@ const Sales = () => {
                         onClick={showQrPayment}
                         variant="primary"
                         size="lg"
+                        darkMode={darkMode}
                         className="w-full"
                         disabled={qrLoading}
                       >

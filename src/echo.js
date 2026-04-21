@@ -8,7 +8,7 @@ window.Echo = new Echo({
     broadcaster: "reverb",
     key: "mofytlf0bipddani4rrv",
 
-    wsHost: "api.chomnenhapp.com",
+    wsHost: import.meta.env.VITE_WS_HOST || "api.chomnenhapp.com",
     wsPort: 443,
     wssPort: 443,
     forceTLS: true,
@@ -16,7 +16,7 @@ window.Echo = new Echo({
     // ❗ DO NOT force transports for Reverb
     // enabledTransports: ["wss"], //❌ REMOVE
 
-    // wsHost: "127.0.0.1",
+    // wsHost: import.meta.env.VITE_WS_HOST,
     // wsPort: 6001,
     // wssPort: 6001,
     // forceTLS: false,

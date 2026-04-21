@@ -56,7 +56,7 @@ const Settings = () => {
         </header>
 
         {(userLogin?.data?.role_id == 2 || userLogin?.data?.role_id == 3) && (
-          <div className="mb-10 bg-white dark:bg-gray-800 p-6 rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm">
+          <div className="mb-3">
             <ExchangeRate />
           </div>
         )}
@@ -74,7 +74,7 @@ const Settings = () => {
                 <Link
                   to={perm?.menu_path}
                   className={`
-                    group flex flex-col items-center justify-center p-6 bg-white dark:bg-gray-800
+                    group flex flex-col items-center justify-center p-6 border-gradient-gold
                     rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm
                     hover:shadow-xl hover:shadow-gray-200/50 dark:hover:shadow-black/20 transition-all duration-300
                     w-full min-h-[160px] text-center space-y-4

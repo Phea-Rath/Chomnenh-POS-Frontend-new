@@ -65,12 +65,12 @@ const Inventories = () => {
                                 <Link
                                     to={perm?.menu_path}
                                     className={`
-                    group flex flex-col items-center justify-center p-6 bg-white dark:bg-gray-800
-                    rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm
-                    hover:shadow-xl hover:shadow-gray-200/50 dark:hover:shadow-black/20 transition-all duration-300
-                    w-full min-h-[160px] text-center space-y-4
-                    ${color.hoverBorder}
-                  `}
+                                        group flex flex-col items-center justify-center p-6 border-gradient-gold
+                                        rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm
+                                        hover:shadow-xl hover:shadow-gray-200/50 dark:hover:shadow-black/20 transition-all duration-300
+                                        w-full min-h-[160px] text-center space-y-4
+                                        ${color.hoverBorder}
+                                    `}
                                 >
                                     <div className={`p-4 rounded-2xl ${color.iconBg} transition-transform group-hover:scale-110 duration-300`}>
                                         <img

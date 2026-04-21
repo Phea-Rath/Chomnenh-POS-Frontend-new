@@ -1,5 +1,4 @@
 import React, { useRef, useState, useEffect } from "react";
-import { toPng } from "html-to-image";
 import { FaPrint, FaDownload } from "react-icons/fa";
 import { useReactToPrint } from "react-to-print";
 import { useGetOrderByIdQuery } from "../../../app/Features/ordersSlice";
@@ -25,12 +24,10 @@ const OrderReceipt = () => {
     id: profileId,
     token,
   });
-  const [isImageReady, setIsImageReady] = useState(false);
 
-  // Preload the logo image
   useEffect(() => {
-    if (profileData?.data?.image) {
-      convertImageToBase64(profileData?.data?.image).then(setLogoLoaded);
+    if (profileData?.data?.qr_code) {
+      convertImageToBase64(profileData?.data?.qr_code).then(setLogoLoaded);
     }
   }, [profileData?.data?.image]);
 
@@ -58,23 +55,30 @@ const OrderReceipt = () => {
   }
 
   const order = data.data;
+  const profile = profileData?.data || {};
+  const items = order.items || [];
+  const subtotal = Number(order.order_subtotal || 0);
+  const total = Number(order.order_total || 0);
+  const discount = Number(order.order_discount || 0);
+  const deliveryFee = Number(order.delivery_fee || 0);
 
-  // Format date for display
   const formatDate = (dateString) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", {
+    return date.toLocaleString("en-GB", {
       year: "numeric",
-      month: "long",
-      day: "numeric",
+      month: "short",
+      day: "2-digit",
       hour: "2-digit",
       minute: "2-digit",
+      hour12: true,
     });
   };
 
+  const formatMoney = (value) => `$${Number(value || 0).toFixed(2)}`;
+
   return (
     <div className="view-page p-4 bg-transparent min-h-screen">
-      {/* Header with navigation and action buttons */}
-      <div className="flex justify-between items-center mb-4 no-print max-w-md mx-auto">
+      <div className="flex justify-between items-center mb-4 no-print max-w-xl mx-auto">
         <button
           onClick={() => navigator(-1)}
           className="flex items-center text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
@@ -111,105 +115,78 @@ const OrderReceipt = () => {
       <div
         ref={receiptRef}
         id="receipt-print"
-        className="bg-white dark:bg-gray-800 px-5 py-6 rounded-lg shadow-md print:m-0 print:shadow-none max-w-md text-xs mx-auto w-[58mm] border border-gray-100 dark:border-gray-700"
+        className="mx-auto max-w-xl rounded-[28px] border border-slate-200 bg-white px-8 py-10 text-slate-900 shadow-[0_20px_60px_-28px_rgba(15,23,42,0.28)] print:m-0 print:max-w-none print:rounded-none print:border-0 print:shadow-none sm:px-10"
       >
-        {/* Company Logo and Header */}
-        <div className="text-center mb-6 border-b dark:border-gray-700 pb-4">
-          <div className="flex justify-center mb-2">
-            {profileData?.data?.image && !logoError ? (
+        <div className="text-center">
+          {profile.image && !logoError && (
+            <div className="mb-5 flex justify-center">
               <img
-                src={logoLoaded || profileData?.data?.image}
-                className="h-16 w-16 object-fit rounded-full"
-                alt=""
+                src={logoLoaded || profile.image}
+                className="h-16 w-16 rounded-full border border-slate-200 object-cover"
+                alt={profile.profile_name || "Company logo"}
+                onError={() => setLogoError(true)}
               />
-            ) : (
-              <div className="h-16 w-16 flex items-center justify-center bg-gray-200 dark:bg-gray-700 rounded">
-                <span className="text-gray-500 dark:text-gray-400 text-[10px]">{t("noImage")}</span>
-              </div>
-            )}
-          </div>
-          <h1 className="text-xl font-bold dark:text-white">
-            {profileData?.data?.profile_name || t("company")}
+            </div>
+          )}
+          <h1 className="text-[2.1rem] font-bold tracking-tight text-[#1e88e5]">
+            វិក្កយបត្រ
           </h1>
-          <p className="text-black dark:text-gray-300 mt-1">
-            {profileData?.data?.address || "#123 Business Street, Phnom Penh, Cambodia"}
+          <p className="mt-1 text-[2rem] font-light uppercase tracking-[0.08em] text-[#1e88e5]">
+            Invoice
           </p>
-          <p className="text-black dark:text-gray-300">
-            {t("tel")}: {profileData?.data?.telephone}
-          </p>
-          <div className="mt-4">
-            <h2 className="text-lg font-semibold dark:text-white">{t("orderReceipt")}</h2>
-            <p className="text-black dark:text-gray-400 italic">{t("thankYouPurchase")}</p>
-          </div>
+          {profile.profile_name && (
+            <p className="mt-3 text-sm font-medium text-slate-600">{profile.profile_name}</p>
+          )}
         </div>
 
-        {/* Order Information */}
-        <div className="mb-6 space-y-1 dark:text-gray-200">
-          <div className="flex justify-between">
-            <span className="font-semibold">{t("orderNumber")}:</span>
-            <span>{order.order_no}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="font-semibold">{t("orderDate")}:</span>
-            <span className="text-right">{formatDate(order.order_date)}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="font-semibold">{t("paymentMethod")}:</span>
-            <span className="capitalize">{t(order.order_payment_method)}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="font-semibold">{t("paymentStatus")}:</span>
-            <span
-              className={`capitalize font-bold ${order.order_payment_status === "paid"
-                ? "text-green-600 dark:text-green-400 print:text-black"
-                : "text-red-600 dark:text-red-400 print:text-black"
-                }`}
-            >
-              {t(order.order_payment_status)}
-            </span>
-          </div>
-        </div>
-
-        {/* Customer Information */}
-        <div className="mb-6 border-t dark:border-gray-700 pt-4 dark:text-gray-200">
-          <h2 className="font-bold mb-2 uppercase text-[10px] text-gray-500 dark:text-gray-400">{t("customerInformation")}</h2>
-          <div className="mb-1">
-            <span className="font-semibold">{t("customer")}:</span> {order.customer_name || order.customer?.customer_name || t("walkInCustomer")}
-          </div>
-          <div className="mb-1">
-            <span className="font-semibold">{t("tel")}:</span> {order.order_tel || "N/A"}
+        <div className="mt-10 grid grid-cols-2 gap-x-8 gap-y-6 text-[15px] leading-8 sm:text-[17px]">
+          <div>
+            <p className="font-semibold text-slate-900">លេខរៀងបញ្ជាទិញ#:</p>
+            <p className="text-[1.1em]">{order.order_no || id}</p>
           </div>
           <div>
-            <span className="font-semibold">{t("address")}:</span>{" "}
-            {order.order_address || "N/A"}
+            <p className="font-semibold text-slate-900">កាលបរិច្ឆេទ:</p>
+            <p className="text-[1.1em]">{formatDate(order.order_date)}</p>
+          </div>
+          <div>
+            <p className="font-semibold text-slate-900">លេខទូរស័ព្ទ:</p>
+            <p className="text-[1.1em]">{order.order_tel || profile.telephone || "N/A"}</p>
+          </div>
+          <div>
+            <p className="font-semibold text-slate-900">អតិថិជន:</p>
+            <p className="text-[1.1em]">{order.customer_name || order.customer?.customer_name || order.order_tel || t("walkInCustomer")}</p>
+          </div>
+          <div>
+            <p className="font-semibold text-slate-900">ទីតាំង:</p>
+            <p className="text-[1.1em]">{order.order_address || profile.address || "N/A"}</p>
           </div>
         </div>
 
-        {/* Order Items */}
-        <div className="mb-6 border-t dark:border-gray-700 pt-4">
-          <h2 className="font-bold mb-3 uppercase text-[10px] text-gray-500 dark:text-gray-400">{t("orderItems")}</h2>
-          <table className="w-full dark:text-gray-200">
+        <div className="my-8 h-px bg-slate-200" />
+
+        <div>
+          <table className="w-full border-separate border-spacing-0 text-[15px] sm:text-[16px]">
             <thead>
-              <tr className="border-b dark:border-gray-700">
-                <th className="text-left pb-2 font-bold">{t("item")}</th>
-                <th className="text-right pb-2 font-bold">{t("quantity")}</th>
-                <th className="text-right pb-2 font-bold">{t("price")}</th>
-                <th className="text-right pb-2 font-bold">{t("total")}</th>
+              <tr className="bg-[#eef6ff] dark:bg-gray-700 text-slate-900">
+                <th className="border-b-[3px] border-[#1e88e5] px-3 py-4 text-left text-lg font-semibold">ទំនិញ</th>
+                <th className="border-b-[3px] border-[#1e88e5] px-3 py-4 text-center text-lg font-semibold">បរិមាណ</th>
+                <th className="border-b-[3px] border-[#1e88e5] px-3 py-4 text-right text-lg font-semibold">តម្លៃ</th>
               </tr>
             </thead>
             <tbody>
-              {order.items.map((item, index) => (
-                <tr key={index} className="border-b dark:border-gray-700 last:border-0">
-                  <td className="py-2 pr-1">
-                    <div className="font-medium">{item.item_name}</div>
-                    <div className="text-[10px] text-gray-500 dark:text-gray-400">
-                      {item.size_name && `${t("size") || "Size"}: ${item.size_name}`}
-                    </div>
+              {items.map((item, index) => (
+                <tr key={index}>
+                  <td className="border-b border-dashed border-slate-300 px-3 py-5 align-top text-lg">
+                    <div className="font-medium uppercase tracking-[0.01em]">{item.item_name}</div>
+                    {item.size_name && (
+                      <div className="mt-1 text-sm text-slate-500">{t("size")}: {item.size_name}</div>
+                    )}
                   </td>
-                  <td className="text-center py-2">{item.quantity}</td>
-                  <td className="text-right py-2">${parseFloat(item.price).toFixed(2)}</td>
-                  <td className="text-right py-2 font-semibold">
-                    ${(item.price * item.quantity).toFixed(2)}
+                  <td className="border-b border-dashed border-slate-300 px-3 py-5 text-center align-top text-lg">
+                    {item.quantity}
+                  </td>
+                  <td className="border-b border-dashed border-slate-300 px-3 py-5 text-right align-top text-lg">
+                    {formatMoney(Number(item.price || 0) * Number(item.quantity || 0))}
                   </td>
                 </tr>
               ))}
@@ -217,36 +194,49 @@ const OrderReceipt = () => {
           </table>
         </div>
 
-        {/* Order Summary */}
-        <div className="border-t dark:border-gray-700 pt-4 dark:text-gray-200">
-          <div className="flex justify-between mb-1">
-            <span className="font-semibold">{t("subtotal")}:</span>
-            <span>${parseFloat(order.order_subtotal).toFixed(2)}</span>
+        <div className="mt-6 space-y-0 text-[18px]">
+          <div className="flex items-center justify-between border-b-[3px] border-[#1e88e5] px-2 py-4 font-medium">
+            <span>សរុបដើម</span>
+            <span>{formatMoney(subtotal)}</span>
           </div>
-          {order.order_discount > 0 && (
-            <div className="flex justify-between mb-1">
-              <span className="font-semibold">{t("discount")} ($):</span>
-              <span className="text-red-600 dark:text-red-400">
-                -$
-                {parseFloat(order.order_discount).toFixed(2)}
-              </span>
+          {discount > 0 && (
+            <div className="flex items-center justify-between border-b border-dashed border-slate-300 px-2 py-4 font-medium">
+              <span>បញ្ចុះតម្លៃ</span>
+              <span>-{formatMoney(discount)}</span>
             </div>
           )}
-          <div className="flex justify-between mb-1">
-            <span className="font-semibold">{t("deliveryFee")}:</span>
-            <span>${parseFloat(order.delivery_fee).toFixed(2)}</span>
-          </div>
-          <div className="flex justify-between font-bold text-sm border-t dark:border-gray-700 pt-2 mt-2 dark:text-white">
-            <span className="uppercase">{t("total")}:</span>
-            <span>${parseFloat(order.order_total).toFixed(2)}</span>
+          {deliveryFee > 0 && (
+            <div className="flex items-center justify-between border-b border-dashed border-slate-300 px-2 py-4 font-medium">
+              <span>{t("deliveryFee")}</span>
+              <span>{formatMoney(deliveryFee)}</span>
+            </div>
+          )}
+          <div className="flex items-center justify-between border-b border-dashed border-slate-300 px-2 py-4 text-[20px] font-bold">
+            <span>សរុបចុងក្រោយ</span>
+            <span>{formatMoney(total)}</span>
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="text-center mt-8 pt-4 border-t dark:border-gray-700 text-black dark:text-gray-400 text-[10px]">
-          <p>{t("forQuestions")}</p>
-          <p className="mt-1 font-medium">{t("thankYouBusiness")}</p>
-          <p className="mt-2 opacity-70">{t("receiptId")}: {order.order_no}</p>
+        <div className="mt-9 flex justify-center">
+          <div className="flex h-[265px] w-[265px] relative items-center justify-center border border-slate-200 bg-white">
+            {profile.qr_code && !logoError ? (
+              <img
+                src={logoLoaded || profile.qr_code}
+                className="h-[265px] w-[265px] object-contain"
+                alt={profile.profile_name || "Company"}
+              />
+            ) : (
+              <div className="text-center text-sm text-slate-300">
+                <div className="mx-auto mb-2 h-16 w-16 rounded-full border border-slate-200" />
+                QR / Stamp
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="mt-7 text-center text-[15px] text-slate-500">
+          <p>សូមអរគុណអ្នកទាំងអស់គ្នា!</p>
+          <p className="mt-6 text-[16px]">🙏 សូមអរគុណចំពោះការគាំទ្រ!</p>
         </div>
       </div>
     </div>

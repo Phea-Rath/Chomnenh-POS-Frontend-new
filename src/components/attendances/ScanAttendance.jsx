@@ -34,6 +34,7 @@ import {
 } from "firebase/firestore";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
+import TelegramBot, { buildAttendanceTelegramMessage, getTelegramChatIdFromCompany, sendTelegramMessage } from "./TelegramBot";
 
 const firebaseConfig = {
     apiKey: "AIzaSyA-auJnr3_rXmJr468jpbwF506nF9Xa0Ho",
@@ -55,6 +56,13 @@ const ACTIONS = [
     { key: "check_in_2", label: "Check In 2" },
     { key: "check_out_2", label: "Check Out 2" },
 ];
+
+const TELEGRAM_ACTION_LABELS = {
+    check_in: "Check-in 1",
+    check_out: "Check-out 1",
+    check_in_2: "Check-in 2",
+    check_out_2: "Check-out 2",
+};
 
 const getDayName = (date, timeZone = DEFAULT_TIMEZONE) =>
     new Intl.DateTimeFormat("en-US", {
@@ -166,6 +174,53 @@ const parseQrPayload = (decodedText) => {
 const CHECK_IN_WINDOW_MINUTES = 60;
 const getMinutesOfDay = (date, timeZone = DEFAULT_TIMEZONE) => getTimeParts(date, timeZone).totalMinutes;
 
+const toNumber = (value) => {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
+};
+
+const resolveCompanyLocationConfig = (company) => ({
+    lat: toNumber(company?.lat ?? company?.latitude),
+    lng: toNumber(company?.lng ?? company?.longitude),
+    distance: toNumber(company?.distance ?? company?.distance_limit ?? company?.radius),
+});
+
+const calculateDistanceMeters = (fromLat, fromLng, toLat, toLng) => {
+    const earthRadius = 6371000;
+    const toRadians = (degrees) => (degrees * Math.PI) / 180;
+    const latDiff = toRadians(toLat - fromLat);
+    const lngDiff = toRadians(toLng - fromLng);
+    const a =
+        Math.sin(latDiff / 2) * Math.sin(latDiff / 2) +
+        Math.cos(toRadians(fromLat)) * Math.cos(toRadians(toLat)) *
+        Math.sin(lngDiff / 2) * Math.sin(lngDiff / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return earthRadius * c;
+};
+
+const getCurrentPosition = () =>
+    new Promise((resolve, reject) => {
+        if (!navigator.geolocation) {
+            reject(new Error("Geolocation is not supported on this device"));
+            return;
+        }
+
+        navigator.geolocation.getCurrentPosition(
+            (position) => resolve(position.coords),
+            (error) => {
+                if (error.code === error.PERMISSION_DENIED) reject(new Error("Location permission denied"));
+                else if (error.code === error.POSITION_UNAVAILABLE) reject(new Error("Location unavailable"));
+                else if (error.code === error.TIMEOUT) reject(new Error("Location request timed out"));
+                else reject(new Error("Unable to get current location"));
+            },
+            {
+                enableHighAccuracy: true,
+                timeout: 10000,
+                maximumAge: 0,
+            }
+        );
+    });
+
 const resolveAttendanceActionStates = (attendanceDoc, scanState, timeZone = DEFAULT_TIMEZONE) => {
     const nowMinutes = getMinutesOfDay(new Date(), timeZone);
     const checkInTime = toDate(attendanceDoc?.check_in_time);
@@ -245,6 +300,15 @@ const ScanAttendance = () => {
             setAuthUser(user);
         });
         return () => { isMountedRef.current = false; unsubscribe(); void stopScanner(); };
+    }, []);
+
+    useEffect(() => {
+        document.body.dataset.muteRealtimeOrderAlerts = "true";
+        document.body.dataset.muteRealtimeOrderAudio = "true";
+        return () => {
+            delete document.body.dataset.muteRealtimeOrderAlerts;
+            delete document.body.dataset.muteRealtimeOrderAudio;
+        };
     }, []);
 
     const handleLogin = async (e) => {
@@ -345,6 +409,22 @@ const ScanAttendance = () => {
         if (!state?.enabled) return toast.error(state?.reason);
         setActionLoading(key);
         try {
+            const companyLocation = resolveCompanyLocationConfig(scanState.company);
+            if (companyLocation.lat !== null && companyLocation.lng !== null && companyLocation.distance !== null) {
+                const coords = await getCurrentPosition();
+                const currentDistance = calculateDistanceMeters(
+                    companyLocation.lat,
+                    companyLocation.lng,
+                    coords.latitude,
+                    coords.longitude
+                );
+
+                if (currentDistance > companyLocation.distance) {
+                    throw new Error(`Outside company range (${Math.round(currentDistance)}m / ${companyLocation.distance}m)`);
+                }
+            }
+
+            const actionTimestamp = new Date();
             const now = serverTimestamp();
             const field = { check_in: "check_in_time", check_out: "check_out_time", check_in_2: "check_in_time_2", check_out_2: "check_out_time_2" }[key];
             if (scanState.attendanceRef) {
@@ -356,10 +436,28 @@ const ScanAttendance = () => {
                     [field]: now, created_by: scanState.employeeUid, created_at: now, updated_at: now
                 });
             }
+
+            try {
+                const companyChatId = getTelegramChatIdFromCompany(scanState.company);
+                await sendTelegramMessage(
+                    buildAttendanceTelegramMessage({
+                        employeeName: scanState.userName,
+                        actionKey: key,
+                        actionLabel: TELEGRAM_ACTION_LABELS[key],
+                        timestamp: actionTimestamp,
+                        timeZone: scanState.timeZone,
+                    }),
+                    companyChatId
+                );
+            } catch (telegramError) {
+                console.error(telegramError);
+                toast.warning("Attendance saved, but Telegram notification failed");
+            }
+
             toast.success("Success");
             const next = await resolveScanPayload(scanState.scannedValue);
             setScanState(next);
-        } catch { toast.error("Update failed"); } finally { setActionLoading(""); }
+        } catch (error) { toast.error(error?.message || "Update failed"); } finally { setActionLoading(""); }
     };
 
     return (
@@ -408,6 +506,7 @@ const ScanAttendance = () => {
                                 {loginLoading ? "..." : "Login"}
                             </button>
                         </form>
+                        {/* <TelegramBot /> */}
                     </div>
                 ) : (
                     <div className="space-y-4">
@@ -427,7 +526,7 @@ const ScanAttendance = () => {
                         {/* Scanner Area */}
                         <div className={`relative overflow-hidden rounded-3xl bg-black transition-all duration-500 shadow-2xl ${isScanning ? "aspect-square ring-4 ring-[#24a1de]/30" : "h-0"}`}>
                             <div id={scannerId} className="h-full w-full"></div>
-                            
+
                             {/* Scanning Overlay UI */}
                             {isScanning && (
                                 <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
@@ -436,10 +535,10 @@ const ScanAttendance = () => {
                                     <div className="absolute top-8 right-8 h-10 w-10 border-t-4 border-r-4 border-[#24a1de] rounded-tr-lg"></div>
                                     <div className="absolute bottom-8 left-8 h-10 w-10 border-b-4 border-l-4 border-[#24a1de] rounded-bl-lg"></div>
                                     <div className="absolute bottom-8 right-8 h-10 w-10 border-b-4 border-r-4 border-[#24a1de] rounded-br-lg"></div>
-                                    
+
                                     {/* Moving Laser Line */}
                                     <div className="absolute h-1 w-[70%] bg-[#24a1de] opacity-60 blur-sm shadow-[0_0_15px_#24a1de] animate-scan-line"></div>
-                                    
+
                                     {/* Scan Text Hint */}
                                     <div className="absolute bottom-16 bg-black/40 backdrop-blur-md px-4 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-widest text-white/90">
                                         Align QR within frame
@@ -478,8 +577,8 @@ const ScanAttendance = () => {
                                             {scanState.company.company_name}
                                         </p>
                                     </div>
-                                    <button 
-                                        onClick={() => void resolveScanPayload(scanState.scannedValue).then(setScanState)} 
+                                    <button
+                                        onClick={() => void resolveScanPayload(scanState.scannedValue).then(setScanState)}
                                         className="h-10 w-10 flex items-center justify-center rounded-full bg-[#242f3d] text-[#24a1de] hover:bg-[#2c394a] transition-colors"
                                     >
                                         <BiRefresh size={22} />
@@ -514,8 +613,8 @@ const ScanAttendance = () => {
                                     <div className="flex justify-between items-center text-[12px]">
                                         <span className="text-[#8e959b] font-medium">Last Recorded</span>
                                         <span className="text-[#f5f5f5] font-bold">
-                                            {scanState.attendance?.check_in_time 
-                                                ? formatDateTime(scanState.attendance.check_in_time, scanState.timeZone).split(',').pop().trim() 
+                                            {scanState.attendance?.check_in_time
+                                                ? formatDateTime(scanState.attendance.check_in_time, scanState.timeZone).split(',').pop().trim()
                                                 : "--:--"}
                                         </span>
                                     </div>
@@ -547,7 +646,8 @@ const ScanAttendance = () => {
             </div>
 
             {/* Global Animation Styles */}
-            <style dangerouslySetInnerHTML={{ __html: `
+            <style dangerouslySetInnerHTML={{
+                __html: `
                 @keyframes scan-line {
                     0% { top: 20%; opacity: 0; }
                     5% { opacity: 1; }

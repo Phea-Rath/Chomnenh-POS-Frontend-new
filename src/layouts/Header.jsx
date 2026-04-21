@@ -2,18 +2,19 @@ import { FaAngleDown, FaSun, FaMoon } from "react-icons/fa";
 import { IoPersonCircleOutline } from "react-icons/io5";
 import { Link } from "react-router";
 import { useOutletsContext } from "./Management";
-import { BiBell, BiMenuAltLeft } from "react-icons/bi";
+import { BiBell, BiMenuAltLeft, BiMenuAltRight, BiX } from "react-icons/bi";
 import { useGetUserLoginQuery } from "../../app/Features/usersSlice";
 import { useEffect, useState } from "react";
 import { Badge, Space } from "antd";
+import logo from "../assets/logo.jpg";
 import { useTranslation } from "react-i18next";
 
 const Header = ({ darkMode, setDarkMode }) => {
   const { t, i18n } = useTranslation();
-  const { setSidebar, notification } = useOutletsContext();
+  const { setSidebar, notification, sidebar } = useOutletsContext();
   const token = localStorage.getItem("token");
   const uId = localStorage.getItem("userId");
-  const { data, refetch } = useGetUserLoginQuery(token);
+  const { data } = useGetUserLoginQuery(token);
   const [profile, setProfile] = useState();
 
   useEffect(() => {
@@ -34,20 +35,27 @@ const Header = ({ darkMode, setDarkMode }) => {
     }
   }, [i18n]);
 
-  function showDrawer() {
-    setSidebar(true);
+  function toggleSidebar() {
+    setSidebar(!sidebar);
   }
 
+  const headerWidthClass = data?.data?.role_id !== 1 ? (sidebar ? "lg:w-[calc(100vw-250px)]" : "lg:w-[calc(100vw-80px)]") : "w-full";
+
   return (
-    <header className={`fixed shadow-sm drop-shadow-md w-full ${data?.data?.role_id !== 1 && "lg:w-[calc(100vw-346px)]"} top-0 z-50 ${darkMode ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"}`}>
+    <header className={`fixed shadow-sm no-print drop-shadow-md ${headerWidthClass} top-0 z-50 ${darkMode ? "bg-primary-dark border-gray-700" : "bg-white border-gray-200"}`}>
       <div className="flex justify-between items-center px-4 lg:px-8 py-3">
         {/* Left Section - Logo and Menu */}
         <div className="flex items-center gap-4">
           <button
-            onClick={showDrawer}
-            className={`lg:hidden p-2 rounded-lg transition-colors ${darkMode ? "hover:bg-gray-800" : "hover:bg-gray-100"}`}
+            onClick={toggleSidebar}
+            className={` p-2 rounded-lg transition-colors ${darkMode ? "hover:bg-gray-800" : "hover:bg-gray-100"}`}
+            title={sidebar ? t("hideSidebar") : t("showSidebar")}
           >
-            <BiMenuAltLeft className={`text-2xl ${darkMode ? "text-blue-400" : "text-blue-600"}`} />
+            {sidebar ? (
+              <BiMenuAltRight className={`text-2xl ${darkMode ? "text-blue-400" : "text-blue-600"}`} />
+            ) : (
+              <BiMenuAltLeft className={`text-2xl ${darkMode ? "text-blue-400" : "text-blue-600"}`} />
+            )}
           </button>
 
           <Link
@@ -57,13 +65,13 @@ const Header = ({ darkMode, setDarkMode }) => {
             <div className="">
               <div className="flex items-center gap-3">
                 <div className={`w-5 h-5 rounded-2xl flex items-center justify-center shadow-inner ${darkMode ? "bg-blue-500 shadow-blue-400" : "bg-blue-600 shadow-blue-400"}`}>
-                  <span className="text-white font-black text-xl">C</span>
+                  <span className="text-white font-black text-xl"><img src={logo} alt="" /></span>
                 </div>
                 <div>
                   <h1 className={`font-black text-xs leading-tight tracking-tight ${darkMode ? "text-white" : "text-slate-900"}`}>
                     CHOMNENH <span className={`${darkMode ? "text-blue-400" : "text-blue-600"}`}>POS</span>
                   </h1>
-                  <p className={`text-[10px] uppercase font-bold tracking-[0.1em] ${darkMode ? "text-gray-400" : "text-slate-400"}`}>Management v2.0</p>
+                  <p className={`text-[10px] hidden lg:block uppercase font-bold tracking-[0.1em] ${darkMode ? "text-gray-400" : "text-slate-400"}`}>Management v2.0</p>
                 </div>
               </div>
             </div>

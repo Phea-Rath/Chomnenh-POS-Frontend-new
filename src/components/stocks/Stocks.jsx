@@ -248,10 +248,7 @@ const Stocks = () => {
   const GridItem = ({ stock }) => {
     const typeColor = getStockTypeColor(stock.stock_type_name);
     return (
-      <motion.div
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.3 }}
+      <div
         className="border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden"
       >
         <div className="p-4">
@@ -307,7 +304,7 @@ const Stocks = () => {
             </button>
           </div>
         </div>
-      </motion.div>
+      </div>
     );
   };
 
@@ -582,9 +579,9 @@ const Stocks = () => {
         {data?.pagination && data.pagination.last_page > 1 && (
           <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-8 bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
             <div className="text-sm text-gray-600 dark:text-gray-400">
-              {t('showingPageOf', { 
-                page: `${(page - 1) * limit + 1} - ${Math.min(page * limit, data.pagination.total)}`, 
-                total: data.pagination.total 
+              {t('showingPageOf', {
+                page: `${(page - 1) * limit + 1} - ${Math.min(page * limit, data.pagination.total)}`,
+                total: data.pagination.total
               })}
             </div>
             <div className="flex items-center gap-2">

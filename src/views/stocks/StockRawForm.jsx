@@ -16,12 +16,14 @@ import { DatePicker, Select, Tag, Avatar, Input } from "antd";
 import { useDebounce } from "use-debounce";
 import dayjs from 'dayjs';
 import { toast } from "react-toastify";
+import { useTranslation } from "react-i18next";
 import { FaTrash, FaEdit, FaSave, FaTimes, FaBox, FaFlask } from "react-icons/fa";
 import { MdLocalShipping } from "react-icons/md";
 
 const { Option } = Select;
 
 const StockRawForm = () => {
+    const { t } = useTranslation();
     const { id } = useParams();
     const isEditMode = Boolean(id);
     const [alertBox, setAlertBox] = useState(false);
@@ -245,7 +247,7 @@ const StockRawForm = () => {
                 refetchRawMaterials();
                 setLoading(false);
                 toast.success(
-                    response.data.message || `Stock Raw ${isEditMode ? 'updated' : 'created'} successfully`
+                    response.data.message || (isEditMode ? t('updatePurchaseSuccess') : t('createPurchaseSuccess'))
                 );
                 navigator(-1);
             } else {
@@ -256,7 +258,7 @@ const StockRawForm = () => {
             toast.error(
                 error?.response?.data?.message ||
                 error?.message ||
-                `An error occurred while ${isEditMode ? 'updating' : 'creating'} the stock raw`
+                t('errorProcessingPurchase')
             );
         }
     }
@@ -268,7 +270,7 @@ const StockRawForm = () => {
     function handleSubmit(e) {
         e.preventDefault();
         if (selectMaterials.length === 0) {
-            toast.error("Please add at least one raw material to the stock");
+            toast.error(t('pleaseAddAtLeastOneRaw'));
             return;
         }
         setAlertBox(true);
@@ -286,24 +288,24 @@ const StockRawForm = () => {
         <section className="view-page px-6 py-6 bg-transparent min-h-screen">
             <AlertBox
                 isOpen={alertBox}
-                title="Confirmation"
-                message={`Are you sure you want to ${isEditMode ? 'update' : 'create'} this stock raw record?`}
+                title={t('confirmation')}
+                message={isEditMode ? t('confirmUpdateRawStock') : t('confirmCreateRawStock')}
                 onConfirm={handleConfirm}
                 onCancel={handleCancel}
-                confirmText={isEditMode ? "Update" : "Create"}
-                cancelText="Cancel"
+                confirmText={isEditMode ? t('update') : t('create')}
+                cancelText={t('cancel')}
             />
 
             <div className=" mx-auto">
                 {/* Header */}
                 <div className="flex justify-between items-center mb-8">
                     <div>
-                        <MdLocalShipping className="text-2xl text-blue-600" />
-                        <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                            {isEditMode ? 'Edit Raw Material Stock' : 'Create Raw Material Stock In'}
+                        <MdLocalShipping className="text-2xl text-blue-600 dark:text-blue-400" />
+                        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+                            {isEditMode ? t('editRawMaterialStock') : t('createRawMaterialStockIn')}
                         </h1>
-                        <p className="text-gray-600">
-                            {isEditMode ? 'Update existing raw material stock transfer' : 'Add new raw materials to inventory'}
+                        <p className="text-gray-600 dark:text-gray-400">
+                            {isEditMode ? t('updateExistingRawTransfer') : t('addNewItemsToInventory')}
                         </p>
                     </div>
                 </div>
@@ -316,8 +318,8 @@ const StockRawForm = () => {
                                 <div className="lg:col-span-1 space-y-6">
                                     {/* Search Raw Materials */}
                                     <div className="space-y-2">
-                                        <label className="block text-sm font-medium text-gray-700">
-                                            <span className="text-red-500">*</span> Search Raw Materials
+                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                            <span className="text-red-500">*</span> {t('searchRawMaterials')}
                                         </label>
                                         <Select
                                             onSelect={onSelectMaterial}
@@ -325,27 +327,29 @@ const StockRawForm = () => {
                                             showSearch
                                             onSearch={(value) => setSearchMaterial(value)}
                                             style={{ width: '100%' }}
-                                            placeholder="Search raw materials by name..."
+                                            placeholder={t('searchRawMaterialsPlaceholder')}
                                             size="large"
+                                            className="dark:!bg-gray-800 dark:!border-gray-700"
                                             filterOption={(input, option) =>
                                                 option.name.toLowerCase().indexOf(input.toLowerCase()) >= 0
                                             }
                                             optionLabelProp="name"
+                                            dropdownClassName="dark:!bg-gray-800 dark:!border-gray-700"
                                         >
                                             {fieldMaterials?.map((item) => (
-                                                <Option key={item.id} value={item.id} name={item.material_name}>
+                                                <Option key={item.id} value={item.id} name={item.material_name} className="dark:hover:!bg-gray-700">
                                                     <div className="flex items-center gap-3 py-1">
                                                         <Avatar
                                                             size="small"
                                                             src={item.image}
                                                             icon={<FaFlask />}
-                                                            className="border border-gray-200"
+                                                            className="border border-gray-200 dark:border-gray-700"
                                                         />
                                                         <div className="flex-1 min-w-0">
-                                                            <div className="font-medium text-gray-900 truncate">
+                                                            <div className="font-medium text-gray-900 dark:text-white truncate">
                                                                 {item.material_name}
                                                             </div>
-                                                            <div className="text-xs text-gray-500 truncate">
+                                                            <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
                                                                 {item.material_code}
                                                             </div>
                                                         </div>
@@ -356,21 +360,21 @@ const StockRawForm = () => {
                                     </div>
 
                                     {/* Stock Details Card */}
-                                    <div className="bg-gradient-to-br from-gray-50 to-blue-50 rounded-xl p-6 border shadow-sm border-gray-200 space-y-4">
-                                        <h3 className="font-medium text-gray-800 flex items-center gap-2">
-                                            <FaEdit className="text-blue-500" />
-                                            Stock Details
+                                    <div className="bg-gradient-to-br from-gray-50 to-blue-50 dark:from-gray-800 dark:to-blue-900/20 rounded-xl p-6 border shadow-sm border-gray-200 dark:border-gray-700 space-y-4">
+                                        <h3 className="font-medium text-gray-800 dark:text-white flex items-center gap-2">
+                                            <FaEdit className="text-blue-500 dark:text-blue-400" />
+                                            {t('stockDetails')}
                                         </h3>
 
                                         <div className="space-y-4">
                                             <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                    From Warehouse
+                                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                                    {t('fromWarehouse')}
                                                 </label>
                                                 <select
                                                     onChange={(e) => setForm(prev => ({ ...prev, from_warehouse: e.target.value }))}
                                                     value={form.from_warehouse}
-                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-sm"
+                                                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 dark:text-white text-sm"
                                                     required
                                                 >
                                                     <option value={2}>PO</option>
@@ -378,31 +382,31 @@ const StockRawForm = () => {
                                             </div>
 
                                             <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                    Stock Type
+                                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                                    {t('stockType')}
                                                 </label>
                                                 <select
                                                     value={form.stock_type_id}
                                                     onChange={(e) => setForm(prev => ({ ...prev, stock_type_id: e.target.value }))}
-                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-sm"
+                                                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 dark:text-white text-sm"
                                                     required
                                                 >
-                                                    <option value="">Select stock type</option>
-                                                    {stockTypeRes?.data?.data?.map(s => <option value={s.stock_type_id}>{s.stock_type_name}</option>)}
+                                                    <option value="">{t('selectStockType') || "Select stock type"}</option>
+                                                    {stockTypeRes?.data?.data?.map(s => <option key={s.stock_type_id} value={s.stock_type_id}>{s.stock_type_name}</option>)}
                                                 </select>
                                             </div>
 
                                             <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                    To Warehouse <span className="text-red-500">*</span>
+                                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                                    {t('toWarehouse')} <span className="text-red-500">*</span>
                                                 </label>
                                                 <select
                                                     value={form.warehouse_id}
                                                     onChange={(e) => setForm(prev => ({ ...prev, warehouse_id: e.target.value }))}
-                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-sm"
+                                                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 dark:text-white text-sm"
                                                     required
                                                 >
-                                                    <option value="" disabled>Select warehouse</option>
+                                                    <option value="" disabled>{t('selectWarehouse')}</option>
                                                     {toWarehouse?.map((item) => (
                                                         <option key={item.warehouse_id} value={item.warehouse_id}>
                                                             {item.warehouse_name}
@@ -412,27 +416,27 @@ const StockRawForm = () => {
                                             </div>
 
                                             <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                    Stock Date
+                                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                                    {t('stockDate')}
                                                 </label>
                                                 <DatePicker
                                                     format="YYYY-MM-DD"
                                                     value={form.stock_date ? dayjs(form.stock_date) : dayjs()}
                                                     onChange={(date, dateString) => setForm(prev => ({ ...prev, stock_date: dateString }))}
-                                                    className="w-full"
+                                                    className="w-full dark:!bg-gray-700 dark:!border-gray-600 dark:!text-white"
                                                     size="middle"
                                                 />
                                             </div>
 
                                             <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                    Remarks
+                                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                                    {t('remark')}
                                                 </label>
                                                 <textarea
                                                     value={form.stock_remark}
                                                     onChange={(e) => setForm(prev => ({ ...prev, stock_remark: e.target.value }))}
-                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none text-sm"
-                                                    placeholder="Enter any remarks or notes..."
+                                                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none text-sm bg-white dark:bg-gray-700 dark:text-white"
+                                                    placeholder={t('remarksPlaceholder')}
                                                     rows="3"
                                                 />
                                             </div>
@@ -445,12 +449,12 @@ const StockRawForm = () => {
                                             type="submit"
                                             disabled={selectMaterials.length === 0}
                                             className={`flex-1 py-3 px-4 rounded-xl font-medium transition-all duration-200 flex items-center justify-center gap-2 ${selectMaterials.length === 0
-                                                ? 'bg-gray-300 cursor-not-allowed text-gray-500'
+                                                ? 'bg-gray-300 dark:bg-gray-700 cursor-not-allowed text-gray-500 dark:text-gray-400'
                                                 : 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white shadow-lg hover:shadow-xl'
                                                 }`}
                                         >
                                             {isEditMode ? <FaSave /> : <MdLocalShipping />}
-                                            {isEditMode ? 'Update Stock' : 'Create Stock'}
+                                            {isEditMode ? t('updateStock') : t('createStock')}
                                         </button>
                                         <Link to={-1} className="flex-1">
                                             <button
@@ -458,7 +462,7 @@ const StockRawForm = () => {
                                                 className="w-full bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 text-white py-3 px-4 rounded-xl font-medium transition-all duration-200 flex items-center justify-center gap-2"
                                             >
                                                 <FaTimes />
-                                                Cancel
+                                                {t('cancel')}
                                             </button>
                                         </Link>
                                     </div>
@@ -466,16 +470,16 @@ const StockRawForm = () => {
 
                                 {/* Right Column - Selected Materials */}
                                 <div className="lg:col-span-3">
-                                    <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+                                    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden shadow-sm">
                                         {/* Items Header */}
-                                        <div className="px-6 py-4 bg-gradient-to-r from-blue-50 to-purple-50 border-b border-gray-200">
+                                        <div className="px-6 py-4 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 border-b border-gray-200 dark:border-gray-700">
                                             <div className="flex justify-between items-center">
                                                 <div>
-                                                    <h3 className="text-lg font-semibold text-gray-800">Selected Raw Materials</h3>
-                                                    <p className="text-sm text-gray-600 mt-1">
-                                                        {selectMaterials.length} item(s) selected •
-                                                        Total Quantity: {selectMaterials.reduce((sum, item) => sum + (parseFloat(item.quantity) || 0), 0)} •
-                                                        Total Cost: ${selectMaterials.reduce((sum, item) => sum + ((parseFloat(item.quantity) || 0) * (parseFloat(item.item_cost) || 0)), 0).toFixed(2)}
+                                                    <h3 className="text-lg font-semibold text-gray-800 dark:text-white">{t('selectedRawMaterials')}</h3>
+                                                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                                                        {selectMaterials.length} {t('itemsCount')} {t('selected')} •
+                                                        {t('totalQuantity')}: {selectMaterials.reduce((sum, item) => sum + (parseFloat(item.quantity) || 0), 0)} •
+                                                        {t('totalCost') || "Total Cost"}: ${selectMaterials.reduce((sum, item) => sum + ((parseFloat(item.quantity) || 0) * (parseFloat(item.item_cost) || 0)), 0).toFixed(2)}
                                                     </p>
                                                 </div>
                                             </div>
@@ -485,22 +489,22 @@ const StockRawForm = () => {
                                         {selectMaterials.length > 0 ? (
                                             <div className="overflow-x-auto">
                                                 <table className="w-full">
-                                                    <thead className="bg-gray-50">
+                                                    <thead className="bg-gray-50 dark:bg-gray-900/50">
                                                         <tr>
-                                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">#</th>
-                                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Raw Material</th>
-                                                            {/* <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Cost</th> */}
-                                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Quantity</th>
-                                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Expire Date</th>
-                                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Actions</th>
+                                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">#</th>
+                                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">{t('rawMaterials')}</th>
+                                                            {/* <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">Cost</th> */}
+                                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">{t('quantity')}</th>
+                                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">{t('expireDate')}</th>
+                                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">{t('actions')}</th>
                                                         </tr>
                                                     </thead>
-                                                    <tbody className="divide-y divide-gray-200">
+                                                    <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                                                         {selectMaterials.map((item, index) => {
                                                             return (
-                                                                <tr key={index} className="hover:bg-blue-50/30 transition-colors">
+                                                                <tr key={index} className="hover:bg-blue-50/30 dark:hover:bg-blue-900/10 transition-colors">
                                                                     <td className="px-6 py-4">
-                                                                        <div className="text-sm font-medium text-gray-900">{index + 1}</div>
+                                                                        <div className="text-sm font-medium text-gray-900 dark:text-white">{index + 1}</div>
                                                                     </td>
                                                                     <td className="px-6 py-4">
                                                                         <div className="flex items-center gap-3">
@@ -508,11 +512,11 @@ const StockRawForm = () => {
                                                                                 size="large"
                                                                                 src={item.image}
                                                                                 icon={<FaFlask />}
-                                                                                className="border border-gray-200"
+                                                                                className="border border-gray-200 dark:border-gray-700"
                                                                             />
                                                                             <div>
-                                                                                <div className="font-medium text-gray-900">{item.material_name}</div>
-                                                                                <div className="text-xs text-gray-500">{item.code}</div>
+                                                                                <div className="font-medium text-gray-900 dark:text-white">{item.material_name}</div>
+                                                                                <div className="text-xs text-gray-500 dark:text-gray-400">{item.code}</div>
                                                                             </div>
                                                                         </div>
                                                                     </td>
@@ -526,7 +530,7 @@ const StockRawForm = () => {
                                                                             onChange={(e) =>
                                                                                 handleChange(index, "item_cost", e.target.value)
                                                                             }
-                                                                            className="w-24 text-center"
+                                                                            className="w-24 text-center dark:!bg-gray-700 dark:!border-gray-600 dark:!text-white"
                                                                             size="middle"
                                                                         />
                                                                     </td> */}
@@ -537,7 +541,7 @@ const StockRawForm = () => {
                                                                             value={item.quantity}
                                                                             onWheel={(e) => e.target.blur()}
                                                                             onChange={(e) => handleChange(index, 'quantity', e.target.value)}
-                                                                            className="w-24 text-center"
+                                                                            className="w-24 text-center dark:!bg-gray-700 dark:!border-gray-600 dark:!text-white"
                                                                             size="middle"
                                                                         />
                                                                     </td>
@@ -546,7 +550,7 @@ const StockRawForm = () => {
                                                                             format="YYYY-MM-DD"
                                                                             value={materialLists[index]?.expire_date ? dayjs(materialLists[index].expire_date) : null}
                                                                             onChange={(date, dateString) => handleChange(index, 'expire_date', dateString)}
-                                                                            className="w-full"
+                                                                            className="w-full dark:!bg-gray-700 dark:!border-gray-600 dark:!text-white"
                                                                             size="middle"
                                                                         />
                                                                     </td>
@@ -554,8 +558,8 @@ const StockRawForm = () => {
                                                                         <button
                                                                             onClick={() => handleRemove(index)}
                                                                             type="button"
-                                                                            className="p-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors"
-                                                                            title="Remove material"
+                                                                            className="p-2 text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                                                                            title={t('remove')}
                                                                         >
                                                                             <FaTrash />
                                                                         </button>
@@ -568,10 +572,10 @@ const StockRawForm = () => {
                                             </div>
                                         ) : (
                                             <div className="text-center py-16">
-                                                <div className="w-24 h-24 bg-gradient-to-r from-blue-100 to-purple-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                                                    <FaFlask className="text-3xl text-blue-500" />
+                                                <div className="w-24 h-24 bg-gradient-to-r from-blue-100 to-purple-100 dark:from-blue-900/20 dark:to-purple-900/20 rounded-full flex items-center justify-center mx-auto mb-6">
+                                                    <FaFlask className="text-3xl text-blue-500 dark:text-blue-400" />
                                                 </div>
-                                                <h3 className="text-xl font-semibold text-gray-700 mb-2">No Raw Materials Selected</h3>
+                                                <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-2">{t('noRawMaterialsSelected')}</h3>
                                             </div>
                                         )}
                                     </div>
@@ -579,19 +583,19 @@ const StockRawForm = () => {
                                     {/* Summary Footer */}
                                     {selectMaterials.length > 0 && (
                                         <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-                                            <div className="bg-green-50 border border-green-100 rounded-xl p-4">
-                                                <div className="text-sm text-green-800 mb-1">Total Items</div>
-                                                <div className="text-2xl font-bold text-green-900">{selectMaterials.length}</div>
+                                            <div className="bg-green-50 dark:bg-green-900/20 border border-green-100 dark:border-green-900/30 rounded-xl p-4">
+                                                <div className="text-sm text-green-800 dark:text-green-400 mb-1">{t('totalItems')}</div>
+                                                <div className="text-2xl font-bold text-green-900 dark:text-green-300">{selectMaterials.length}</div>
                                             </div>
-                                            <div className="bg-blue-50 border border-blue-100 rounded-xl p-4">
-                                                <div className="text-sm text-blue-800 mb-1">Total Quantity</div>
-                                                <div className="text-2xl font-bold text-blue-900">
+                                            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-900/30 rounded-xl p-4">
+                                                <div className="text-sm text-blue-800 dark:text-blue-400 mb-1">{t('totalQuantity')}</div>
+                                                <div className="text-2xl font-bold text-blue-900 dark:text-blue-300">
                                                     {selectMaterials.reduce((sum, item) => sum + (parseFloat(item.quantity) || 0), 0)}
                                                 </div>
                                             </div>
-                                            <div className="bg-purple-50 border border-purple-100 rounded-xl p-4">
-                                                <div className="text-sm text-purple-800 mb-1">Total Cost</div>
-                                                <div className="text-2xl font-bold text-purple-900">
+                                            <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-100 dark:border-purple-900/30 rounded-xl p-4">
+                                                <div className="text-sm text-purple-800 dark:text-purple-400 mb-1">{t('totalCost') || "Total Cost"}</div>
+                                                <div className="text-2xl font-bold text-purple-900 dark:text-purple-300">
                                                     ${selectMaterials.reduce((sum, item) => sum + ((parseFloat(item.quantity) || 0) * (parseFloat(item.item_cost) || 0)), 0).toFixed(2)}
                                                 </div>
                                             </div>

@@ -135,7 +135,7 @@ const GridCard = ({ item, onEdit, onDelete, onView, formatCurrency, getDiscount,
   const inStock = item?.stock?.in_stock || 0;
 
   return (
-    <div className="border border-gray-200 rounded bg-white hover:shadow-sm transition-all duration-300 overflow-hidden group">
+    <div className="border border-gray-200 rounded bg-white dark:bg-gray-700 hover:shadow-sm transition-all duration-300 overflow-hidden group">
       <div onClick={onView} className="relative h-48 bg-gray-50 flex items-center justify-center overflow-hidden cursor-pointer">
         <img
           src={item.image}
@@ -340,14 +340,14 @@ const ListItem = () => {
             </p>
           </div>
           <div className="flex gap-3 w-full md:w-auto">
-            <Button
+            {/* <Button
               onClick={() => navigate("import")}
               icon={<RiUploadCloudLine />}
               variant="default"
               className="flex-1 md:flex-none"
             >
               {it("Import")}
-            </Button>
+            </Button> */}
             <Button
               onClick={() => navigate("create")}
               icon={<RiAddLine />}
@@ -361,12 +361,12 @@ const ListItem = () => {
       </div>
 
       {/* Controls */}
-      <div className="mx-auto px-2">
+      <div className="mx-auto px-2 mt-2">
         <div className="flex flex-col lg:flex-row gap-4 mb-6">
           <div className="flex-1 relative">
             <input
               placeholder={it("Search database by name, code or category...")}
-              className="w-full h-12 pl-10 pr-4 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm"
+              className="w-full h-12 pl-10 pr-4 border !bg-white border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-transparent text-sm"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
