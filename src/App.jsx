@@ -103,6 +103,15 @@ import StockRaws from "./components/stocks/StockRaws";
 import StockRawForm from "./views/stocks/StockRawForm";
 import StockByWarehouse from "./components/stocks/StockByWarehouse";
 import ScanAttendance from "./components/attendances/ScanAttendance";
+import StockRawDetail from "./components/stocks/StockRawDetails";
+import ProductDetail from "./markets/pages/ProductDetail";
+import ProductListing from "./markets/pages/DealsPage";
+import BlockProducts from "./markets/components/BlockProducts";
+import HomePage from "./markets/Home";
+import DealsPage from "./markets/pages/DealsPage";
+import CompaniesPage from "./markets/CompaniesPage";
+import CompanyStore from "./markets/CompanyStore";
+import ShoppingCart from "./markets/ShoppingCart";
 
 
 function ProtectedRoute({ children }) {
@@ -278,6 +287,10 @@ const router = createBrowserRouter([
       {
         path: "/inventories/stock-raws/update/:id",
         element: <StockRawForm />,
+      },
+      {
+        path: "/inventories/stock-raws/detail/:id",
+        element: <StockRawDetail />,
       },
       {
         path: "/inventories/stock-raws/add",
@@ -580,6 +593,32 @@ const router = createBrowserRouter([
   {
     path: "/market",
     element: <Main />,
+    children: [
+      {
+        path: "",
+        element: <HomePage />,
+      },
+      {
+        path: "product_detail/:id",
+        element: <ProductDetail />,
+      },
+      {
+        path: 'deals',
+        element: <DealsPage />
+      },
+      {
+        path: 'companies',
+        element: <CompaniesPage />
+      },
+      {
+        path: 'companies/:proId',
+        element: <CompanyStore />
+      },
+      {
+        path: 'shopping-cart',
+        element: <ShoppingCart />
+      }
+    ]
   },
 
   {

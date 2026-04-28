@@ -214,7 +214,7 @@ const StockRaws = () => {
             blue: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
             purple: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400',
             yellow: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
-            gray: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400',
+            gray: 'bg-gray-100 text-gray-800 bg-primary dark:text-gray-400',
         };
         return <span className={`inline-block px-2 py-1 text-xs font-semibold rounded-full ${colorMap[color] || colorMap.gray}`}>{children}</span>;
     };
@@ -226,7 +226,7 @@ const StockRaws = () => {
                     <p className="text-sm text-gray-600 dark:text-gray-400">{title}</p>
                     <p className="text-2xl font-bold text-gray-900 dark:text-white">{value}</p>
                 </div>
-                <div className="p-2 bg-white dark:bg-gray-800 rounded-full">{icon}</div>
+                <div className="p-2 bg-white bg-primary rounded-full">{icon}</div>
             </div>
         </div>
     );
@@ -236,7 +236,7 @@ const StockRaws = () => {
         const typeColor = getStockTypeColor(stock.stock_type_name);
         return (
             <div
-                className="border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition-all duration-300"
+                className="border border-gray-200 dark:border-gray-700 rounded-xl bg-white bg-primary shadow-sm hover:shadow-md transition-all duration-300"
             >
                 <div className="p-4">
                     {/* Header */}
@@ -366,7 +366,7 @@ const StockRaws = () => {
 
     // Empty State
     const EmptyState = () => (
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-12 text-center">
+        <div className="bg-white bg-primary rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-12 text-center">
             <div className="flex justify-center mb-4">
                 <div className="w-24 h-24 bg-gradient-to-r from-blue-100 to-purple-100 dark:from-blue-900/20 dark:to-purple-900/20 rounded-full flex items-center justify-center">
                     <FaBoxOpen className="text-4xl text-blue-500 dark:text-blue-400" />
@@ -390,7 +390,7 @@ const StockRaws = () => {
 
     // Loading State
     const LoadingState = () => (
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-12 text-center">
+        <div className="bg-white bg-primary rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-12 text-center">
             <div className="flex flex-col items-center justify-center">
                 <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mb-6"></div>
                 <p className="text-gray-600 dark:text-gray-300 text-lg font-medium">{t('loadingRawStockData')}</p>
@@ -426,7 +426,7 @@ const StockRaws = () => {
 
                     <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
                         {/* View Mode Toggle */}
-                        <div className="flex bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-1 shadow-sm">
+                        <div className="flex bg-white bg-primary rounded-lg border border-gray-200 dark:border-gray-700 p-1 shadow-sm">
                             <button
                                 onClick={() => handleViewModeChange('grid')}
                                 className={`p-2 rounded-md transition-all ${viewMode === 'grid' ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'}`}
@@ -447,7 +447,7 @@ const StockRaws = () => {
                         <button
                             onClick={exportToExcel}
                             disabled={exportLoading}
-                            className="px-4 py-2 bg-white dark:bg-gray-800 border border-blue-300 dark:border-blue-700 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 flex items-center gap-2 shadow-sm disabled:opacity-50 transition-colors"
+                            className="px-4 py-2 bg-white bg-primary border border-blue-300 dark:border-blue-700 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 flex items-center gap-2 shadow-sm disabled:opacity-50 transition-colors"
                             title={t('exportExcel')}
                         >
                             <FaFileExport />
@@ -472,10 +472,10 @@ const StockRaws = () => {
                             placeholder={t('searchRawStockPlaceholder')}
                             value={searchTerm}
                             onChange={handleSearch}
-                            className="w-full pl-12 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 dark:text-white"
+                            className="w-full pl-12 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white bg-primary dark:text-white"
                         />
                     </div>
-                    <div className="flex items-center gap-3 bg-white dark:bg-gray-800 px-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
+                    <div className="flex items-center gap-3 bg-white bg-primary px-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
                         <span className="text-sm text-gray-600 dark:text-gray-400 font-medium">{t('show')}:</span>
                         <select
                             value={limit}
@@ -535,7 +535,7 @@ const StockRaws = () => {
                         ))}
                     </div>
                 ) : (
-                    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+                    <div className="bg-white bg-primary rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
                         <div className="overflow-x-auto">
                             <table className="w-full">
                                 <thead className="bg-gradient-to-r from-gray-50 to-blue-50 dark:from-gray-900 dark:to-blue-900/20 border-b border-gray-200 dark:border-gray-700">
@@ -561,7 +561,7 @@ const StockRaws = () => {
 
                 {/* Pagination Controls */}
                 {data?.pagination && data.pagination.last_page > 1 && (
-                    <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-8 bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+                    <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-8 bg-white bg-primary p-4 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
                         <div className="text-sm text-gray-600 dark:text-gray-400">
                             {t('showing')} <span className="font-bold text-gray-900 dark:text-white">{(page - 1) * limit + 1}</span> {t('to')}{' '}
                             <span className="font-bold text-gray-900 dark:text-white">{Math.min(page * limit, data.pagination.total)}</span> {t('of')}{' '}

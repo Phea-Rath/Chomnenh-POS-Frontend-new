@@ -2,8 +2,7 @@
 import React from 'react';
 import { FaFilter, FaTimes } from 'react-icons/fa';
 
-const ProductFilter = ({ filters, onFilterChange, onClearFilters }) => {
-    const categories = ['Electronics', 'Clothing', 'Home & Garden', 'Sports', 'Books', 'Beauty'];
+const ProductFilter = ({ categories = [], filters, onFilterChange, onClearFilters }) => {
     const priceRanges = [
         { label: 'Under $25', min: 0, max: 25 },
         { label: '$25 - $50', min: 25, max: 50 },
@@ -19,6 +18,7 @@ const ProductFilter = ({ filters, onFilterChange, onClearFilters }) => {
                     <span>Filters</span>
                 </h3>
                 <button
+                    type="button"
                     onClick={onClearFilters}
                     className="text-sm text-blue-600 hover:text-blue-800 flex items-center space-x-1"
                 >
@@ -27,30 +27,32 @@ const ProductFilter = ({ filters, onFilterChange, onClearFilters }) => {
                 </button>
             </div>
 
-            {/* Category Filter */}
             <div className="mb-6">
                 <h4 className="font-semibold mb-3">Categories</h4>
                 <div className="space-y-2">
-                    {categories.map((category) => (
-                        <label key={category} className="flex items-center space-x-2 cursor-pointer">
-                            <input
-                                type="checkbox"
-                                checked={filters.categories?.includes(category) || false}
-                                onChange={(e) => onFilterChange('categories', category, e.target.checked)}
-                                className="rounded text-blue-600 focus:ring-blue-500"
-                            />
-                            <span className="text-sm">{category}</span>
-                        </label>
-                    ))}
+                    {categories.length > 0 ? (
+                        categories.map((category) => (
+                            <label key={category} className="flex items-center space-x-2 cursor-pointer">
+                                <input
+                                    type="checkbox"
+                                    checked={filters.categories?.includes(category) || false}
+                                    onChange={(event) => onFilterChange('categories', category, event.target.checked)}
+                                    className="rounded text-blue-600 focus:ring-blue-500"
+                                />
+                                <span className="text-sm">{category}</span>
+                            </label>
+                        ))
+                    ) : (
+                        <p className="text-sm text-gray-400">No categories available.</p>
+                    )}
                 </div>
             </div>
 
-            {/* Price Range Filter */}
             <div className="mb-6">
                 <h4 className="font-semibold mb-3">Price Range</h4>
                 <div className="space-y-2">
-                    {priceRanges.map((range, index) => (
-                        <label key={index} className="flex items-center space-x-2 cursor-pointer">
+                    {priceRanges.map((range) => (
+                        <label key={range.label} className="flex items-center space-x-2 cursor-pointer">
                             <input
                                 type="radio"
                                 name="priceRange"
@@ -59,25 +61,6 @@ const ProductFilter = ({ filters, onFilterChange, onClearFilters }) => {
                                 className="text-blue-600 focus:ring-blue-500"
                             />
                             <span className="text-sm">{range.label}</span>
-                        </label>
-                    ))}
-                </div>
-            </div>
-
-            {/* Rating Filter */}
-            <div className="mb-6">
-                <h4 className="font-semibold mb-3">Minimum Rating</h4>
-                <div className="space-y-2">
-                    {[4, 3, 2, 1].map((rating) => (
-                        <label key={rating} className="flex items-center space-x-2 cursor-pointer">
-                            <input
-                                type="radio"
-                                name="minRating"
-                                checked={filters.minRating === rating}
-                                onChange={() => onFilterChange('minRating', rating)}
-                                className="text-blue-600 focus:ring-blue-500"
-                            />
-                            <span className="text-sm">{rating}+ Stars</span>
                         </label>
                     ))}
                 </div>

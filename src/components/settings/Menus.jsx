@@ -23,7 +23,7 @@ const Menus = () => {
     const [editData, setEditData] = useState({});
 
     const token = localStorage.getItem('token');
-    const { setLoading } = useOutletsContext();
+    const { setLoading, darkMode } = useOutletsContext();
     const { data: response, refetch, isLoading: loadings } = useGetAllMenuQuery(token);
     const { refetch: permRefetch } = useGetAllPermissionQuery(token);
 
@@ -105,7 +105,7 @@ const Menus = () => {
     };
 
     return (
-        <section className="bg-transparent min-h-screen p-6 font-sans text-slate-700">
+        <section className={`bg-transparent min-h-screen p-6 font-sans ${darkMode ? 'text-slate-200' : 'text-slate-700'}`}>
             <AlertBox
                 isOpen={alertBox}
                 title="Delete Confirmation"
@@ -117,10 +117,10 @@ const Menus = () => {
             {/* Simple Header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
                 <div>
-                    <h1 className="text-2xl font-semibold text-slate-900">Menus</h1>
-                    <p className="text-sm text-slate-500">Manage your application navigation and routes.</p>
+                    <h1 className={`text-2xl font-semibold ${darkMode ? 'text-white' : 'text-slate-900'}`}>Menus</h1>
+                    <p className={`text-sm ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>Manage your application navigation and routes.</p>
                 </div>
-                <button
+<button
                     className="inline-flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all shadow-sm"
                     onClick={() => addModalRef.current?.showModal()}
                 >
@@ -131,42 +131,42 @@ const Menus = () => {
 
             {/* Search Bar (Simple Style) */}
             <div className="relative max-w-md mb-6">
-                <IoIosSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xl" />
+                <IoIosSearch className={`absolute left-3 top-1/2 -translate-y-1/2 ${darkMode ? 'text-slate-500' : 'text-slate-400'} text-xl`} />
                 <input
                     onChange={onSearch}
                     type="text"
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 pl-10 pr-4 text-sm outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all"
+                    className={`w-full border rounded-xl py-2.5 pl-10 pr-4 text-sm outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all ${darkMode ? 'bg-slate-800 border-slate-600 text-slate-200 placeholder-slate-500' : 'bg-slate-50 border-slate-200'}`}
                     placeholder="Search by name..."
                 />
             </div>
 
             {/* Simple Table */}
-            <div className="border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+            <div className={`border rounded-xl overflow-hidden shadow-sm ${darkMode ? 'border-slate-700' : 'border-slate-200'}`}>
                 <table className="w-full text-left border-collapse">
                     <thead>
-                        <tr className="bg-slate-50 border-b border-slate-200">
-                            <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Name</th>
-                            <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Type</th>
-                            <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Route Path</th>
-                            <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Action</th>
+                        <tr className={`border-b ${darkMode ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
+                            <th className={`px-6 py-4 text-xs font-semibold uppercase tracking-wider ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>Name</th>
+                            <th className={`px-6 py-4 text-xs font-semibold uppercase tracking-wider ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>Type</th>
+                            <th className={`px-6 py-4 text-xs font-semibold uppercase tracking-wider ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>Route Path</th>
+                            <th className={`px-6 py-4 text-xs font-semibold uppercase tracking-wider text-right ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>Action</th>
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100">
+                    <tbody className={`divide-y ${darkMode ? 'divide-slate-700' : 'divide-slate-100'}`}>
                         {loadings ? (
                             <tr>
-                                <td colSpan={4} className="py-10 text-center text-slate-400 text-sm">Loading menus...</td>
+                                <td colSpan={4} className={`py-10 text-center text-sm ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>Loading menus...</td>
                             </tr>
                         ) : filteredMenu?.length === 0 ? (
                             <tr>
-                                <td colSpan={4} className="py-10 text-center text-slate-400 text-sm">No menus found.</td>
+                                <td colSpan={4} className={`py-10 text-center text-sm ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>No menus found.</td>
                             </tr>
                         ) : filteredMenu.map((item) => (
-                            <tr key={item.menu_id} className="hover:bg-slate-50/50 transition-colors">
+                            <tr key={item.menu_id} className={`transition-colors ${darkMode ? 'hover:bg-slate-800/50' : 'hover:bg-slate-50/50'}`}>
                                 <td className="px-6 py-4">
                                     <div style={{ paddingLeft: 12 + item._level * 16 }}>
-                                        <span className="font-medium text-slate-900">{item.menu_name}</span>
+                                        <span className={`font-medium ${darkMode ? 'text-slate-200' : 'text-slate-900'}`}>{item.menu_name}</span>
                                         {item._parentName && (
-                                            <div className="text-xs text-slate-400 mt-1">
+                                            <div className={`text-xs mt-1 ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>
                                                 Parent: {item._parentName}
                                             </div>
                                         )}
@@ -174,27 +174,27 @@ const Menus = () => {
                                 </td>
                                 <td className="px-6 py-4">
                                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                                        ${Number(item.menu_type) === 1 ? 'bg-blue-50 text-blue-700' :
-                                            Number(item.menu_type) === 2 ? 'bg-purple-50 text-purple-700' :
-                                                Number(item.menu_type) === 4 ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-700'}`}>
+                                        ${Number(item.menu_type) === 1 ? (darkMode ? 'bg-blue-900/30 text-blue-400' : 'bg-blue-50 text-blue-700') :
+                                            Number(item.menu_type) === 2 ? (darkMode ? 'bg-purple-900/30 text-purple-400' : 'bg-purple-50 text-purple-700') :
+                                                Number(item.menu_type) === 4 ? (darkMode ? 'bg-emerald-900/30 text-emerald-400' : 'bg-emerald-50 text-emerald-700') : (darkMode ? 'bg-slate-700 text-slate-300' : 'bg-slate-100 text-slate-700')}`}>
                                         {MENU_TYPE_LABELS[Number(item.menu_type)] || 'Unknown'}
                                     </span>
                                 </td>
                                 <td className="px-6 py-4">
-                                    <code className="text-xs bg-slate-100 px-2 py-1 rounded text-slate-600">{item.menu_path}</code>
+                                    <code className={`text-xs px-2 py-1 rounded ${darkMode ? 'bg-slate-700 text-slate-300' : 'bg-slate-100 text-slate-600'}`}>{item.menu_path}</code>
                                 </td>
                                 <td className="px-6 py-4 text-right">
                                     <div className="flex justify-end gap-3">
                                         <button
                                             onClick={() => openUpdate(item)}
-                                            className="text-slate-400 hover:text-indigo-600 transition-colors"
+                                            className={`transition-colors ${darkMode ? 'text-slate-500 hover:text-indigo-400' : 'text-slate-400 hover:text-indigo-600'}`}
                                             title="Edit"
                                         >
                                             <HiOutlinePencilAlt size={18} />
                                         </button>
                                         <button
                                             onClick={() => handleDelete(item.menu_id)}
-                                            className="text-slate-400 hover:text-red-600 transition-colors"
+                                            className={`transition-colors ${darkMode ? 'text-slate-500 hover:text-red-400' : 'text-slate-400 hover:text-red-600'}`}
                                             title="Delete"
                                         >
                                             <HiOutlineTrash size={18} />
@@ -208,8 +208,8 @@ const Menus = () => {
             </div>
 
             {/* Modals */}
-            <dialog ref={addModalRef} className="modal backdrop-blur-sm">
-                <div className="modal-box bg-white rounded-2xl shadow-2xl p-0 max-w-xl">
+<dialog ref={addModalRef} className="modal backdrop-blur-sm">
+                <div className={`modal-box rounded-2xl shadow-2xl p-0 max-w-xl ${darkMode ? 'bg-slate-800' : 'bg-white'}`}>
                     <CreateMenus
                         onClose={closeCreateModal}
                         onSuccess={() => {
@@ -221,7 +221,7 @@ const Menus = () => {
             </dialog>
 
             <dialog ref={updateModalRef} className="modal backdrop-blur-sm">
-                <div className="modal-box bg-white rounded-2xl shadow-2xl p-0 max-w-xl">
+                <div className={`modal-box rounded-2xl shadow-2xl p-0 max-w-xl ${darkMode ? 'bg-slate-800' : 'bg-white'}`}>
                     <UpdateMenus
                         dataMenu={editData}
                         onClose={closeUpdateModal}

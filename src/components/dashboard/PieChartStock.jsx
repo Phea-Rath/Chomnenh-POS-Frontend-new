@@ -1,29 +1,25 @@
 import React, { useContext } from 'react';
 import { Cell, Legend, Pie, PieChart, ResponsiveContainer, Sector } from 'recharts';
-import { useGetAllDashboardStockQuery } from '../../../app/Features/dashboardsSlice';
 import { stockChartContext } from './Analysis';
+import { useTranslation } from 'react-i18next';
 
-const data = [
-    { name: 'Group A', value: 400 },
-    { name: 'Group B', value: 300 },
-    { name: 'Group C', value: 300 },
-    { name: 'Group D', value: 200 },
-];
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#9d8f42'];
+const COLORS = ['#3B82F6', '#10B981', '#EF4444', '#8B5CF6', '#F59E0B'];
 
-const renderActiveShape = ({
-    cx,
-    cy,
-    midAngle,
-    innerRadius,
-    outerRadius,
-    startAngle,
-    endAngle,
-    fill,
-    payload,
-    percent,
-    value,
-}) => {
+const RenderActiveShape = (props) => {
+    const { t } = useTranslation();
+    const {
+        cx,
+        cy,
+        midAngle,
+        innerRadius,
+        outerRadius,
+        startAngle,
+        endAngle,
+        fill,
+        payload,
+        percent,
+        value,
+    } = props;
     const RADIAN = Math.PI / 180;
     const sin = Math.sin(-RADIAN * (midAngle ?? 1));
     const cos = Math.cos(-RADIAN * (midAngle ?? 1));
@@ -35,11 +31,16 @@ const renderActiveShape = ({
     const ey = my;
     const textAnchor = cos >= 0 ? 'start' : 'end';
 
+    const getTranslationKey = (name) => {
+        return name.split(' ').map((word, index) => 
+            index === 0 ? word.toLowerCase() : word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+        ).join('');
+    };
 
     return (
         <g>
-            <text x={cx} y={cy} dy={8} textAnchor="middle" fill={fill}>
-                {payload.name}
+            <text x={cx} y={cy} dy={8} textAnchor="middle" fill={fill} className="font-semibold dark:fill-gray-300">
+                {t(getTranslationKey(payload.name))}
             </text>
             <Sector
                 cx={cx}
@@ -61,12 +62,14 @@ const renderActiveShape = ({
             />
             <path d={`M${sx},${sy}L${mx},${my}L${ex},${ey}`} stroke={fill} fill="none" />
             <circle cx={ex} cy={ey} r={2} fill={fill} stroke="none" />
-            <text x={ex + (cos >= 0 ? 1 : -1) * 12} y={ey} textAnchor={textAnchor} fill="#333">{`ចំនួន ${value}`}</text>
-            <text x={ex + (cos >= 0 ? 1 : -1) * 12} y={ey} dy={18} textAnchor={textAnchor} fill="#999">
-                {`(សរុប ${(Number(payload?.total) ?? 1)})`}
+            <text x={ex + (cos >= 0 ? 1 : -1) * 12} y={ey} textAnchor={textAnchor} fill="currentColor" className="text-gray-900 dark:text-gray-100 font-medium">
+                {`${t("quantityCount")} ${value}`}
             </text>
-            <text x={ex + (cos >= 0 ? 1 : -1) * 12} y={ey} dy={36} textAnchor={textAnchor} fill="#999">
-                {`(Rate ${((percent ?? 1) * 100).toFixed(2)}%)`}
+            <text x={ex + (cos >= 0 ? 1 : -1) * 12} y={ey} dy={18} textAnchor={textAnchor} fill="#999" className="text-gray-500 dark:text-gray-400">
+                {`(${t("total")} ${(Number(payload?.total) ?? 1)})`}
+            </text>
+            <text x={ex + (cos >= 0 ? 1 : -1) * 12} y={ey} dy={36} textAnchor={textAnchor} fill="#999" className="text-gray-500 dark:text-gray-400">
+                {`(${t("rate")} ${((percent ?? 1) * 100).toFixed(2)}%)`}
             </text>
         </g>
     );
@@ -75,6 +78,14 @@ const renderActiveShape = ({
 export default function PieChartStock() {
     const { apiData } = useContext(stockChartContext);
     const [data, setData] = React.useState([]);
+    const { t } = useTranslation();
+
+    const getTranslationKey = (name) => {
+        return name.split(' ').map((word, index) => 
+            index === 0 ? word.toLowerCase() : word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+        ).join('');
+    };
+
     React.useEffect(() => {
         if (apiData) {
             setData([
@@ -86,12 +97,15 @@ export default function PieChartStock() {
             ]);
         }
     }, [apiData]);
+
     return (
         <ResponsiveContainer width="100%" height="100%" className='text-xs'>
             <PieChart width={'100%'} height={'100%'}>
-                <Legend />
+                <Legend 
+                    formatter={(value) => <span className="text-gray-700 dark:text-gray-300 capitalize">{t(getTranslationKey(value))}</span>}
+                />
                 <Pie
-                    activeShape={renderActiveShape}
+                    activeShape={(props) => <RenderActiveShape {...props} />}
                     data={data}
                     cx="50%"
                     cy="50%"

@@ -239,7 +239,7 @@ const Stocks = () => {
           <p className="text-sm text-gray-600 dark:text-gray-400">{title}</p>
           <p className="text-2xl font-bold text-gray-900 dark:text-white">{value}</p>
         </div>
-        <div className="p-2 bg-white dark:bg-gray-800 rounded-full shadow-sm">{icon}</div>
+        <div className="p-2  bg-primary rounded-full shadow-sm">{icon}</div>
       </div>
     </div>
   );
@@ -249,7 +249,7 @@ const Stocks = () => {
     const typeColor = getStockTypeColor(stock.stock_type_name);
     return (
       <div
-        className="border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden"
+        className="border border-gray-200 dark:border-gray-700 rounded-xl bg-primary shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden"
       >
         <div className="p-4">
           {/* Header */}
@@ -266,7 +266,7 @@ const Stocks = () => {
           </div>
 
           {/* Transfer info */}
-          <div className="flex items-center justify-between bg-gray-50 dark:bg-gray-900/50 p-3 rounded-lg mb-3 border border-gray-100 dark:border-gray-700">
+          <div className="flex items-center justify-between bg-gray-50 dark:bg-blue-500/30 p-3 rounded-lg mb-3 border border-gray-100 dark:border-gray-700">
             <div className="flex items-center gap-1.5 min-w-0">
               <FaWarehouse className="text-blue-500 shrink-0" />
               <span className="text-xs font-medium text-gray-700 dark:text-gray-300 truncate">{stock.from_warehouse_name}</span>
@@ -379,7 +379,7 @@ const Stocks = () => {
 
   // Empty State
   const EmptyState = () => (
-    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-12 text-center">
+    <div className=" bg-primary rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-12 text-center">
       <div className="flex justify-center mb-4">
         <div className="w-24 h-24 bg-gradient-to-r from-blue-100 to-purple-100 dark:from-blue-900/20 dark:to-purple-900/20 rounded-full flex items-center justify-center">
           <FaBoxOpen className="text-4xl text-blue-500" />
@@ -403,7 +403,7 @@ const Stocks = () => {
 
   // Loading State
   const LoadingState = () => (
-    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-12 text-center">
+    <div className=" bg-primary rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-12 text-center">
       <div className="flex flex-col items-center justify-center">
         <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mb-6"></div>
         <p className="text-gray-600 dark:text-gray-300 text-lg font-medium">{t('loadingStockData')}</p>
@@ -437,7 +437,7 @@ const Stocks = () => {
 
           <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
             {/* View Mode Toggle */}
-            <div className="flex bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-1 shadow-sm">
+            <div className="flex  bg-primary rounded-lg border border-gray-200 dark:border-gray-700 p-1 shadow-sm">
               <button
                 onClick={() => handleViewModeChange('grid')}
                 className={`p-2 rounded-md transition-all ${viewMode === 'grid' ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'}`}
@@ -458,7 +458,7 @@ const Stocks = () => {
             <button
               onClick={exportToExcel}
               disabled={exportLoading}
-              className="px-4 py-2 bg-white dark:bg-gray-800 border border-blue-300 dark:border-gray-600 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-50 dark:hover:bg-gray-700 flex items-center justify-center gap-2 shadow-sm disabled:opacity-50 transition-colors"
+              className="px-4 py-2  bg-primary border border-blue-300 dark:border-gray-600 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-50 dark:hover:bg-gray-700 flex items-center justify-center gap-2 shadow-sm disabled:opacity-50 transition-colors"
               title={t('exportExcel')}
             >
               <FaFileExport />
@@ -483,10 +483,10 @@ const Stocks = () => {
               placeholder={t('searchStockPlaceholder')}
               value={searchTerm}
               onChange={handleSearch}
-              className="w-full pl-12 pr-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white transition-all shadow-sm"
+              className="w-full pl-12 pr-4 py-2.5  bg-primary border border-gray-300 dark:border-gray-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white transition-all shadow-sm"
             />
           </div>
-          <div className="flex items-center gap-3 bg-white dark:bg-gray-800 px-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
+          <div className="flex items-center gap-3  bg-primary px-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
             <span className="text-sm text-gray-600 dark:text-gray-400 font-medium">{t('show')}:</span>
             <select
               value={limit}
@@ -551,7 +551,7 @@ const Stocks = () => {
               ))}
             </div>
           ) : (
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+            <div className=" bg-primary rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead className="bg-gray-50 dark:bg-gray-900/50 border-b border-gray-200 dark:border-gray-700">
@@ -577,7 +577,7 @@ const Stocks = () => {
 
         {/* Pagination Controls */}
         {data?.pagination && data.pagination.last_page > 1 && (
-          <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-8 bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-8  bg-primary p-4 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
             <div className="text-sm text-gray-600 dark:text-gray-400">
               {t('showingPageOf', {
                 page: `${(page - 1) * limit + 1} - ${Math.min(page * limit, data.pagination.total)}`,

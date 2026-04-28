@@ -6,22 +6,35 @@ import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useGetUserLoginQuery } from "../../../app/Features/usersSlice";
 import { useGetAllMenuQuery } from "../../../app/Features/menusSlice";
-import { useGetMenuHomeQuery, useGetMenuReportQuery, useGetMenuSettingQuery, useGetMenuSidebarQuery, useGetPermissionByIdQuery } from "../../../app/Features/permissionSlice";
-import logo from '../../assets/logo.jpg';
-
-// Placeholder logo (you can replace this with your actual logo URL)
-
+import {
+  useGetMenuHomeQuery,
+  useGetMenuReportQuery,
+  useGetMenuSettingQuery,
+  useGetMenuSidebarQuery,
+  useGetPermissionByIdQuery,
+} from "../../../app/Features/permissionSlice";
+import logo from "../../assets/logo.jpg";
 
 const LoginForm = () => {
   const [showOtpInput, setShowOtpInput] = useState(false);
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [Id, setId] = useState(0);
-  const { refetch, isLoading } = useGetUserLoginQuery(localStorage.getItem('token'));
-  const { refetch: refetchSidebar, data: sidebar } = useGetMenuSidebarQuery(localStorage.getItem('token'));
-  const { refetch: refetchSetting, data: setting } = useGetMenuSettingQuery(localStorage.getItem('token'));
-  const { refetch: refetchReport, data: report } = useGetMenuReportQuery(localStorage.getItem('token'));
-  const { refetch: refetchHome, data: home } = useGetMenuHomeQuery(localStorage.getItem('token'));
+  const { refetch, isLoading } = useGetUserLoginQuery(
+    localStorage.getItem("token")
+  );
+  const { refetch: refetchSidebar, data: sidebar } = useGetMenuSidebarQuery(
+    localStorage.getItem("token")
+  );
+  const { refetch: refetchSetting, data: setting } = useGetMenuSettingQuery(
+    localStorage.getItem("token")
+  );
+  const { refetch: refetchReport, data: report } = useGetMenuReportQuery(
+    localStorage.getItem("token")
+  );
+  const { refetch: refetchHome, data: home } = useGetMenuHomeQuery(
+    localStorage.getItem("token")
+  );
   const [alert, setAlert] = useState({ message: "", show: false });
   const [login, setLogin] = useState({ phone_number: "", password: "" });
 
@@ -29,7 +42,6 @@ const LoginForm = () => {
     console.log("Login Successful", otp);
     navigate("/dashboard");
   };
-
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -45,7 +57,6 @@ const LoginForm = () => {
         user: { profile_id, id },
       } = response.data;
 
-
       if (response.status === 200) {
         refetchSidebar();
         refetch();
@@ -53,29 +64,27 @@ const LoginForm = () => {
         refetchReport();
         refetchSetting();
         const res = await api.get(`/permission/${id}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { Authorization: `Bearer ${token}` },
         });
         setId(id);
         localStorage.setItem("profileId", profile_id);
         localStorage.setItem("userId", id);
         localStorage.setItem("token", token);
         if (res.status == 200) {
-          localStorage.setItem('menus', JSON.stringify(res?.data.data));
-          localStorage.setItem('menus-sidebar', JSON.stringify(sidebar?.data));
-          localStorage.setItem('menus-home', JSON.stringify(home?.data));
-          localStorage.setItem('menus-report', JSON.stringify(report?.data));
-          localStorage.setItem('menus-setting', JSON.stringify(setting?.data));
+          localStorage.setItem("menus", JSON.stringify(res?.data.data));
+          localStorage.setItem("menus-sidebar", JSON.stringify(sidebar?.data));
+          localStorage.setItem("menus-home", JSON.stringify(home?.data));
+          localStorage.setItem("menus-report", JSON.stringify(report?.data));
+          localStorage.setItem("menus-setting", JSON.stringify(setting?.data));
           toast.success("Login successful");
-          id == 1 ? navigate('/dashboard') : navigate("/dashboard");
+          id == 1 ? navigate("/dashboard") : navigate("/dashboard");
         }
       }
     } catch (err) {
       toast.error(
         err?.response?.data?.message ||
-        err.message ||
-        "An error occurred during login"
+          err.message ||
+          "An error occurred during login"
       );
       setAlert({
         message: err?.response?.data?.message || "Login failed",
@@ -86,9 +95,18 @@ const LoginForm = () => {
     }
   };
 
-
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-200 p-4">
+    <div
+      style={{
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        backgroundColor: "#0f172a",
+        padding: "1rem",
+        fontFamily: "'Inter', 'Segoe UI', sans-serif",
+      }}
+    >
       <ToastContainer
         position="top-right"
         autoClose={3000}
@@ -101,150 +119,288 @@ const LoginForm = () => {
         pauseOnHover
       />
 
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-sm p-6 sm:p-8 transition-all duration-300 hover:shadow-xl">
-        {/* Logo and Company Name */}
-        <div className="flex flex-col items-center mb-8">
-          <div className="bg-white rounded-full p-3 shadow-lg mb-3 overflow-hidden">
+      <div
+        style={{
+          width: "100%",
+          maxWidth: "360px",
+          backgroundColor: "#ffffff",
+          borderRadius: "12px",
+          boxShadow: "0 8px 32px rgba(0,0,0,0.35)",
+          overflow: "hidden",
+        }}
+      >
+        {/* Header stripe */}
+        <div
+          style={{
+            backgroundColor: "#1e3a5f",
+            padding: "20px 28px 16px",
+            display: "flex",
+            alignItems: "center",
+            gap: "12px",
+          }}
+        >
+          <div
+            style={{
+              width: "42px",
+              height: "42px",
+              borderRadius: "50%",
+              overflow: "hidden",
+              border: "2px solid rgba(255,255,255,0.3)",
+              flexShrink: 0,
+            }}
+          >
             <img
               src={logo}
               alt="CHOMNECH POS Logo"
-              className="h-25 transition-transform duration-300 hover:scale-105"
+              style={{ width: "100%", height: "100%", objectFit: "cover" }}
             />
           </div>
-          <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-700 bg-clip-text text-transparent">
-            CHOMNECH APP
-          </h1>
-          <p className="text-gray-500 text-sm mt-2">Welcome back</p>
+          <div>
+            <h1
+              style={{
+                margin: 0,
+                fontSize: "15px",
+                fontWeight: 700,
+                color: "#ffffff",
+                letterSpacing: "0.5px",
+              }}
+            >
+              CHOMNECH APP
+            </h1>
+            <p style={{ margin: 0, fontSize: "11px", color: "#93c5fd" }}>
+              Point of Sale System
+            </p>
+          </div>
         </div>
 
-        {/* Alert */}
-        {alert.show && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm flex items-center">
-            <svg className="w-5 h-5 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-            </svg>
-            {alert.message}
+        {/* Body */}
+        <div style={{ padding: "24px 28px 20px" }}>
+          {/* Sub-heading */}
+          <div style={{ marginBottom: "18px" }}>
+            <h2
+              style={{
+                margin: "0 0 2px",
+                fontSize: "14px",
+                fontWeight: 600,
+                color: "#1e3a5f",
+              }}
+            >
+              Sign in to your account
+            </h2>
+            <p style={{ margin: 0, fontSize: "11px", color: "#6b7280" }}>
+              Enter your credentials to continue
+            </p>
           </div>
-        )}
 
-        {/* Login or OTP Form */}
-        <div className="space-y-6">
-          {/* {showOtpInput ? (
-            <div className="space-y-6 flex flex-col items-center">
-              <div className="text-center">
-                <h2 className="text-2xl font-bold text-gray-800 mb-2">
-                  Verify Phone Number
-                </h2>
-                <p className="text-gray-600 text-sm">
-                  Enter OTP sent to <span className="font-semibold text-gray-800">{login.phone_number}</span>
-                </p>
-              </div>
-              <OtpInput length={4} onOtpSubmit={onOtpSubmit} /> 
-              <button
-                onClick={() => setShowOtpInput(false)}
-                className="text-blue-600 hover:text-blue-700 text-sm font-medium transition-colors duration-200"
+          {/* Alert */}
+          {alert.show && (
+            <div
+              style={{
+                marginBottom: "14px",
+                padding: "10px 12px",
+                backgroundColor: "#fef2f2",
+                border: "1px solid #fecaca",
+                borderRadius: "8px",
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                fontSize: "12px",
+                color: "#dc2626",
+              }}
+            >
+              <svg
+                width="14"
+                height="14"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+                style={{ flexShrink: 0 }}
               >
-                ← Back to login
-              </button>
+                <path
+                  fillRule="evenodd"
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                  clipRule="evenodd"
+                />
+              </svg>
+              {alert.message}
             </div>
-          ) : ( */}
-          <div className="space-y-6">
-            <div className="text-center">
-              <h2 className="text-2xl font-bold text-gray-800 mb-2">
-                Login to Your Account
-              </h2>
-              <p className="text-gray-500 text-sm">
-                Enter your credentials to continue
-              </p>
-            </div>
+          )}
 
-            <form onSubmit={handleLogin} className="space-y-5">
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Phone Number
-                  </label>
-                  <input
-                    type="tel"
-                    value={login.phone_number}
-                    onChange={(e) =>
-                      setLogin({ ...login, phone_number: e.target.value })
-                    }
-                    className="w-full px-4 py-3 text-gray-900 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-200 placeholder-gray-400"
-                    placeholder="Enter your phone number"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Password
-                  </label>
-                  <input
-                    type="password"
-                    value={login.password}
-                    onChange={(e) =>
-                      setLogin({ ...login, password: e.target.value })
-                    }
-                    className="w-full px-4 py-3 text-gray-900 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-200 placeholder-gray-400"
-                    placeholder="Enter your password"
-                  />
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between text-sm">
-                <Link
-                  to="/forgot-password"
-                  className="text-blue-600 hover:text-blue-700 font-medium transition-colors duration-200"
-                >
-                  Forgot Password?
-                </Link>
-                <Link
-                  to="/register"
-                  className="text-gray-600 hover:text-gray-800 transition-colors duration-200"
-                >
-                  Don't have an account?
-                </Link>
-              </div>
-
-              <button
-                type="submit"
-                disabled={loading}
-                className={`w-full py-3 px-4 rounded-xl text-white font-semibold transition-all duration-200 ${loading
-                  ? "bg-blue-400 cursor-not-allowed transform scale-95"
-                  : "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
-                  }`}
+          {/* Form */}
+          <form onSubmit={handleLogin} style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+            {/* Phone */}
+            <div>
+              <label
+                style={{
+                  display: "block",
+                  fontSize: "11px",
+                  fontWeight: 600,
+                  color: "#374151",
+                  marginBottom: "5px",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.4px",
+                }}
               >
-                {loading ? (
-                  <div className="flex items-center justify-center">
-                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Logging in...
-                  </div>
-                ) : (
-                  "Login"
-                )}
-              </button>
-            </form>
-          </div>
-          {/* )} */}
+                Phone Number
+              </label>
+              <input
+                type="tel"
+                value={login.phone_number}
+                onChange={(e) =>
+                  setLogin({ ...login, phone_number: e.target.value })
+                }
+                placeholder="e.g. 012 345 678"
+                style={{
+                  width: "100%",
+                  padding: "9px 12px",
+                  fontSize: "13px",
+                  color: "#111827",
+                  backgroundColor: "#f8fafc",
+                  border: "1px solid #cbd5e1",
+                  borderRadius: "7px",
+                  outline: "none",
+                  boxSizing: "border-box",
+                  transition: "border-color 0.15s",
+                }}
+                onFocus={(e) => (e.target.style.borderColor = "#1e3a5f")}
+                onBlur={(e) => (e.target.style.borderColor = "#cbd5e1")}
+              />
+            </div>
+
+            {/* Password */}
+            <div>
+              <label
+                style={{
+                  display: "block",
+                  fontSize: "11px",
+                  fontWeight: 600,
+                  color: "#374151",
+                  marginBottom: "5px",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.4px",
+                }}
+              >
+                Password
+              </label>
+              <input
+                type="password"
+                value={login.password}
+                onChange={(e) =>
+                  setLogin({ ...login, password: e.target.value })
+                }
+                placeholder="Enter your password"
+                style={{
+                  width: "100%",
+                  padding: "9px 12px",
+                  fontSize: "13px",
+                  color: "#111827",
+                  backgroundColor: "#f8fafc",
+                  border: "1px solid #cbd5e1",
+                  borderRadius: "7px",
+                  outline: "none",
+                  boxSizing: "border-box",
+                  transition: "border-color 0.15s",
+                }}
+                onFocus={(e) => (e.target.style.borderColor = "#1e3a5f")}
+                onBlur={(e) => (e.target.style.borderColor = "#cbd5e1")}
+              />
+            </div>
+
+            {/* Forgot password */}
+            <div style={{ textAlign: "right" }}>
+              <Link
+                to="/forgot-password"
+                style={{
+                  fontSize: "11px",
+                  color: "#1e3a5f",
+                  fontWeight: 500,
+                  textDecoration: "none",
+                }}
+              >
+                Forgot password?
+              </Link>
+            </div>
+
+            {/* Submit button */}
+            <button
+              type="submit"
+              disabled={loading}
+              style={{
+                width: "100%",
+                padding: "10px",
+                backgroundColor: loading ? "#4a6fa5" : "#1e3a5f",
+                color: "#ffffff",
+                fontSize: "13px",
+                fontWeight: 600,
+                border: "none",
+                borderRadius: "7px",
+                cursor: loading ? "not-allowed" : "pointer",
+                transition: "background-color 0.2s, transform 0.1s",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "8px",
+                letterSpacing: "0.3px",
+              }}
+              onMouseEnter={(e) => {
+                if (!loading) e.currentTarget.style.backgroundColor = "#163057";
+              }}
+              onMouseLeave={(e) => {
+                if (!loading) e.currentTarget.style.backgroundColor = "#1e3a5f";
+              }}
+            >
+              {loading ? (
+                <>
+                  <svg
+                    style={{ animation: "spin 1s linear infinite", width: "14px", height: "14px" }}
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      style={{ opacity: 0.25 }}
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    />
+                    <path
+                      style={{ opacity: 0.75 }}
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    />
+                  </svg>
+                  Signing in…
+                </>
+              ) : (
+                "Sign In"
+              )}
+            </button>
+          </form>
         </div>
 
         {/* Footer */}
-        <div className="mt-8 pt-6 border-t border-gray-200">
-          <p className="text-center text-xs text-gray-500">
-            By continuing, you agree to our{" "}
-            <Link to="/" className="text-blue-600 hover:text-blue-700 font-medium">
-              Terms of Service
-            </Link>{" "}
-            and{" "}
-            <Link to="/" className="text-blue-600 hover:text-blue-700 font-medium">
-              Privacy Policy
+        <div
+          style={{
+            padding: "12px 28px 16px",
+            borderTop: "1px solid #e2e8f0",
+            backgroundColor: "#f8fafc",
+          }}
+        >
+          <p style={{ margin: 0, textAlign: "center", fontSize: "11px", color: "#6b7280" }}>
+            Don't have an account?{" "}
+            <Link
+              to="/register"
+              style={{ color: "#1e3a5f", fontWeight: 600, textDecoration: "none" }}
+            >
+              Register
             </Link>
           </p>
         </div>
       </div>
+
+      {/* Spin keyframe */}
+      <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 };

@@ -131,7 +131,7 @@ const Management = () => {
         <div>
           <Header darkMode={darkMode} setDarkMode={setDarkMode} />
           <AlertMessage show={alert} message={renderAlertMessage(message)} status={alertStatus} className="z-[9999]" />
-          <main ref={topRef} className={`h-[calc(100vh)] ${data?.data?.role_id !== 1 ? (sidebar ? "lg:w-[calc(100vw-250px)]" : "lg:w-[calc(100vw-80px)]") : ""} pt-[86px] overflow-auto m-0 w-[100vw] p-4 ${darkMode ? "!bg-[#0F172A] !text-white" : "!bg-[#F8FAFC] !text-black"}`}>
+          <main ref={topRef} className={`h-[calc(100vh)] ${data?.data?.role_id !== 1 ? (sidebar ? "lg:w-[calc(100vw-250px)]" : "lg:w-[calc(100vw-80px)]") : ""} pt-[86px] overflow-auto m-0 w-[100vw] p-4 ${darkMode ? "!bg-[#21335e] !text-white" : "!bg-[#F8FAFC] !text-black"}`}>
             {/* <div className='absolute -z-0 top-0 right-0 w-2/5 h-full bg-gradient-to-b from-blue-50/50 to-transparent pointer-events-none' /> */}
             <Outlet />
           </main>

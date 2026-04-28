@@ -35,10 +35,12 @@ import { DeleteOutlined } from '@ant-design/icons';
 import api from '../../services/api';
 import { toast } from 'react-toastify';
 import { useGetAllRawMaterialQuery, useGetRawMaterialByIdQuery } from '../../../app/Features/RawMaterialSlice';
+import { useTranslation } from 'react-i18next';
 
 const { Option } = Select;
 
 const RawMaterialForm = () => {
+    const { t } = useTranslation();
     const [form] = Form.useForm();
     const navigate = useNavigate();
     const { id } = useParams();
@@ -107,8 +109,8 @@ const RawMaterialForm = () => {
         const isImage = file.type.startsWith('image/');
         if (!isImage) {
             notification.error({
-                message: 'Invalid file',
-                description: 'Only image files are allowed.'
+                message: t('invalidFile'),
+                description: t('onlyImageFilesAllowed')
             });
             return Upload.LIST_IGNORE;
         }
@@ -116,8 +118,8 @@ const RawMaterialForm = () => {
         const isLt2M = file.size / 1024 / 1024 < 2;
         if (!isLt2M) {
             notification.error({
-                message: 'File too large',
-                description: 'Image must be smaller than 2MB.'
+                message: t('fileTooLarge'),
+                description: t('imageMustBeSmaller2MB')
             });
             return Upload.LIST_IGNORE;
         }
@@ -138,7 +140,7 @@ const RawMaterialForm = () => {
 
     const validateSecondaryUnit = async (_, value) => {
         if (value && value === form.getFieldValue('primary_unit')) {
-            return Promise.reject(new Error('Secondary unit must be different from primary unit'));
+            return Promise.reject(new Error(t('secondaryUnitDifferentFromPrimary')));
         }
         return Promise.resolve();
     };
@@ -146,10 +148,10 @@ const RawMaterialForm = () => {
     const validateConversion = async (_, value) => {
         const hasSecondary = form.getFieldValue('secondary_unit');
         if (hasSecondary && (value === undefined || value === null || value === '')) {
-            return Promise.reject(new Error('Please enter conversion value'));
+            return Promise.reject(new Error(t('enterConversionValue')));
         }
         if (value !== undefined && value !== null && value !== '' && Number(value) <= 0) {
-            return Promise.reject(new Error('Conversion value must be greater than 0'));
+            return Promise.reject(new Error(t('conversionValueGreaterZero')));
         }
         return Promise.resolve();
     };
@@ -181,16 +183,16 @@ const RawMaterialForm = () => {
 
             if (response.status === 200) {
                 refetch();
-                toast.success(isEditMode ? 'Material updated successfully!' : 'Material created successfully!');
+                toast.success(isEditMode ? t('materialUpdatedSuccessfully') : t('materialCreatedSuccessfully'));
                 navigate(-1);
             }
         } catch (error) {
             const apiErrors = error?.response?.data?.errors || {};
             if (Object.keys(apiErrors).length) {
                 setFormErrors(apiErrors);
-                toast.error('Please fix the highlighted fields.');
+                toast.error(t('fixHighlightedFields'));
             } else {
-                toast.error(error?.response?.data?.message || 'Failed to save material. Please try again.');
+                toast.error(error?.response?.data?.message || t('failedSaveMaterial'));
             }
         } finally {
             setSaving(false);
@@ -202,7 +204,7 @@ const RawMaterialForm = () => {
             <div className="flex items-center justify-center min-h-screen">
                 <div className="text-center">
                     <Spin size="large" />
-                    <p className="mt-4 text-gray-600">Loading material data...</p>
+                    <p className="mt-4 text-gray-600 dark:text-gray-400">{t('loadingMaterialData')}...</p>
                 </div>
             </div>
         );
@@ -213,6 +215,7 @@ const RawMaterialForm = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
+            className="view-page"
         >
             <div className="min-h-screen bg-transparent p-4 md:p-6">
                 {/* Header */}
@@ -223,30 +226,30 @@ const RawMaterialForm = () => {
                                 type="text"
                                 icon={<LuArrowLeft />}
                                 onClick={() => navigate(-1)}
-                                className="mb-4 text-gray-600 hover:text-gray-800 p-0"
+                                className="mb-4 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 p-0"
                             >
-                                Back to Materials
+                                {t('backToMaterials')}
                             </Button>
-                            <h1 className="text-3xl font-bold text-gray-900 mb-2 flex items-center gap-3">
-                                <div className={`p-3 ${isEditMode ? 'bg-amber-100' : 'bg-emerald-100'} rounded-xl`}>
-                                    <LuPackage className={`text-2xl ${isEditMode ? 'text-amber-600' : 'text-emerald-600'}`} />
+                            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-3">
+                                <div className={`p-3 ${isEditMode ? 'bg-amber-100 dark:bg-amber-900/30' : 'bg-emerald-100 dark:bg-emerald-900/30'} rounded-xl transition-colors`}>
+                                    <LuPackage className={`text-2xl ${isEditMode ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400'}`} />
                                 </div>
-                                {isEditMode ? 'Edit Raw Material' : 'Create New Raw Material'}
+                                {isEditMode ? t('editRawMaterial') : t('createNewRawMaterial')}
                             </h1>
-                            <p className="text-gray-600">
+                            <p className="text-gray-600 dark:text-gray-400">
                                 {isEditMode
-                                    ? 'Update the material information below'
-                                    : 'Fill in the details to add a new raw material to inventory'}
+                                    ? t('updateMaterialInfo')
+                                    : t('fillDetailsAddMaterial')}
                             </p>
                         </div>
 
                         {isEditMode && currentMaterial && (
                             <div className="flex items-center gap-3">
-                                <Tag color="blue" className="text-sm py-1 px-3">
+                                <Tag color="blue" className="text-sm py-1 px-3 dark:bg-blue-900/30 dark:border-blue-800">
                                     ID: {currentMaterial.id}
                                 </Tag>
-                                <Tag color={currentMaterial.is_deleted === 1 ? 'red' : 'green'} className="text-sm py-1 px-3">
-                                    {currentMaterial.is_deleted === 1 ? 'Deleted' : 'Active'}
+                                <Tag color={currentMaterial.is_deleted === 1 ? 'red' : 'green'} className="text-sm py-1 px-3 dark:bg-red-900/30 dark:border-red-800">
+                                    {currentMaterial.is_deleted === 1 ? t('deleted') : t('active')}
                                 </Tag>
                             </div>
                         )}
@@ -263,11 +266,11 @@ const RawMaterialForm = () => {
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                         {/* Main Form Content */}
                         <div className="lg:col-span-2 space-y-6">
-                            <Card className="border-0 shadow-xl rounded-2xl">
+                            <Card className="border-0 shadow-xl rounded-2xl dark:!bg-gray-800 transition-colors">
                                 {Object.keys(formErrors).length > 0 && (
                                     <Alert
                                         type="error"
-                                        message="Please fix the following errors:"
+                                        message={t('fixErrorsMessage')}
                                         description={
                                             <ul className="mt-2 space-y-1">
                                                 {Object.entries(formErrors).map(([field, errors]) => (
@@ -283,68 +286,72 @@ const RawMaterialForm = () => {
                                 )}
 
                                 <section>
-                                    <h3 className="text-lg font-semibold text-gray-800 mb-6 flex items-center gap-2">
+                                    <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-6 flex items-center gap-2">
                                         <LuTag className="text-blue-500" />
-                                        Basic Information
+                                        {t('basicInformation')}
                                     </h3>
 
                                     <Row gutter={24}>
                                         <Col xs={24} md={12}>
                                             <Form.Item
-                                                label="Material Name"
+                                                label={<span className="dark:text-gray-300">{t('materialName')}</span>}
                                                 name="material_name"
                                                 rules={[
-                                                    { required: true, message: 'Please enter material name' },
-                                                    { min: 2, message: 'Name must be at least 2 characters' }
+                                                    { required: true, message: t('enterMaterialName') },
+                                                    { min: 2, message: t('nameAtLeast2Chars') }
                                                 ]}
                                             >
                                                 <Input
                                                     placeholder="e.g., Water, Sugar, Flour"
                                                     prefix={<LuPackage className="text-gray-400" />}
+                                                    className="dark:!bg-gray-900 dark:!text-white dark:!border-gray-700"
                                                 />
                                             </Form.Item>
                                         </Col>
 
                                         <Col xs={24} md={12}>
                                             <Form.Item
-                                                label="Material Code"
+                                                label={<span className="dark:text-gray-300">{t('materialCode')}</span>}
                                                 name="material_code"
-                                                rules={[{ max: 80, message: 'Code cannot exceed 80 characters' }]}
+                                                rules={[{ max: 80, message: t('codeExceed80Chars') }]}
                                             >
                                                 <Input
                                                     placeholder="Optional code (e.g., RM-SUGAR-001)"
                                                     prefix={<LuTag className="text-gray-400" />}
+                                                    className="dark:!bg-gray-900 dark:!text-white dark:!border-gray-700"
                                                 />
                                             </Form.Item>
                                         </Col>
                                     </Row>
                                 </section>
 
-                                <Divider className="my-8" />
+                                <Divider className="my-8 dark:border-gray-700" />
 
                                 <section>
                                     <div className="flex items-center justify-between mb-6">
-                                        <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                                        <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 flex items-center gap-2">
                                             <LuScale className="text-violet-500" />
-                                            Units & Conversion
+                                            {t('unitsConversion')}
                                         </h3>
-                                        <Tooltip title="Setting a secondary unit allows for automatic unit conversion in production.">
+                                        <Tooltip title={t('secondaryUnitTooltip')}>
                                             <LuInfo className="text-gray-400 cursor-help" />
                                         </Tooltip>
                                     </div>
 
-                                    <div className="bg-gray-50/50 p-6 rounded-2xl border border-gray-100">
+                                    <div className="bg-gray-50/50 dark:bg-gray-700/30 p-6 rounded-2xl border border-gray-100 dark:border-gray-700 transition-colors">
                                         <Row gutter={24}>
                                             <Col xs={24} md={8}>
                                                 <Form.Item
-                                                    label="Primary Unit"
+                                                    label={<span className="dark:text-gray-300">{t('primaryUnit')}</span>}
                                                     name="primary_unit"
-                                                    rules={[{ required: true, message: 'Please select primary unit' }]}
+                                                    rules={[{ required: true, message: t('selectPrimaryUnit') }]}
                                                 >
                                                     <Select
-                                                        placeholder="Select unit"
+                                                        placeholder={t('selectUnit')}
                                                         suffixIcon={<LuScale className="text-gray-400" />}
                                                         showSearch
+                                                        className="dark:!bg-gray-900"
+                                                        dropdownClassName="dark:bg-gray-800"
                                                     >
                                                         {unitOptions.map((unit) => (
                                                             <Option key={unit.value} value={unit.value}>{unit.label}</Option>
@@ -355,15 +362,16 @@ const RawMaterialForm = () => {
 
                                             <Col xs={24} md={8}>
                                                 <Form.Item
-                                                    label="Secondary Unit (Optional)"
+                                                    label={<span className="dark:text-gray-300">{t('secondaryUnitOptional')}</span>}
                                                     name="secondary_unit"
                                                     rules={[{ validator: validateSecondaryUnit }]}
                                                 >
                                                     <Select
-                                                        placeholder="Select unit"
+                                                        placeholder={t('selectUnit')}
                                                         suffixIcon={<LuScale className="text-gray-400" />}
                                                         showSearch
                                                         allowClear
+                                                        className="dark:!bg-gray-900"
                                                     >
                                                         {unitOptions.map((unit) => (
                                                             <Option key={unit.value} value={unit.value}>{unit.label}</Option>
@@ -374,14 +382,14 @@ const RawMaterialForm = () => {
 
                                             <Col xs={24} md={8}>
                                                 <Form.Item
-                                                    label="Conversion Value"
+                                                    label={<span className="dark:text-gray-300">{t('conversionValue')}</span>}
                                                     name="conversion_value"
                                                     rules={[{ validator: validateConversion }]}
                                                     disabled={!secondaryUnit}
                                                 >
                                                     <InputNumber
                                                         placeholder="e.g., 1000"
-                                                        className="w-full"
+                                                        className="w-full dark:!bg-gray-900 dark:!text-white dark:!border-gray-700"
                                                         min={0.0001}
                                                         step={0.0001}
                                                         precision={4}
@@ -391,7 +399,7 @@ const RawMaterialForm = () => {
                                         </Row>
 
                                         {primaryUnit && secondaryUnit && conversionValue > 0 && (
-                                            <div className="mt-4 p-4 bg-violet-50 rounded-xl border border-violet-100 flex items-center justify-center gap-2 text-violet-700 font-medium">
+                                            <div className="mt-4 p-4 bg-violet-50 dark:bg-violet-900/20 rounded-xl border border-violet-100 dark:border-violet-800 flex items-center justify-center gap-2 text-violet-700 dark:text-violet-400 font-medium transition-colors">
                                                 <span>1 {primaryUnit}</span>
                                                 <LuScale className="w-4 h-4 opacity-50" />
                                                 <span>{conversionValue} {secondaryUnit}</span>
@@ -401,24 +409,24 @@ const RawMaterialForm = () => {
                                 </section>
                             </Card>
 
-                            <Card className="border-0 shadow-xl rounded-2xl">
+                            <Card className="border-0 shadow-xl rounded-2xl dark:!bg-gray-800 transition-colors">
                                 <div className="flex flex-col sm:flex-row gap-4 justify-end">
                                     <Button
                                         type="default"
                                         icon={<LuArrowLeft />}
                                         onClick={() => navigate(-1)}
-                                        className="h-12 px-6 rounded-xl"
+                                        className="h-12 px-6 rounded-xl dark:!bg-gray-700 dark:!text-white dark:!border-gray-600 transition-colors"
                                     >
-                                        Cancel
+                                        {t('cancel')}
                                     </Button>
 
                                     <Button
                                         type="default"
                                         icon={<LuRefreshCw />}
                                         onClick={() => form.resetFields()}
-                                        className="h-12 px-6 rounded-xl"
+                                        className="h-12 px-6 rounded-xl dark:!bg-gray-700 dark:!text-white dark:!border-gray-600 transition-colors"
                                     >
-                                        Reset
+                                        {t('reset')}
                                     </Button>
 
                                     <Button
@@ -426,9 +434,9 @@ const RawMaterialForm = () => {
                                         icon={<LuSave />}
                                         htmlType="submit"
                                         loading={saving}
-                                        className="h-12 px-8 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 border-none shadow-lg shadow-blue-200"
+                                        className="h-12 px-8 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 border-none shadow-lg shadow-blue-200 dark:shadow-none"
                                     >
-                                        {saving ? 'Saving...' : isEditMode ? 'Update Material' : 'Create Material'}
+                                        {saving ? t('saving') : isEditMode ? t('updateMaterial') : t('createMaterial')}
                                     </Button>
                                 </div>
                             </Card>
@@ -437,41 +445,44 @@ const RawMaterialForm = () => {
                         {/* Sidebar */}
                         <div className="space-y-6">
                             {/* Summary Card */}
-                            <Card className="border-0 shadow-xl rounded-2xl overflow-hidden">
-                                <div className="p-4 bg-gray-50 border-b border-gray-100">
-                                    <h3 className="font-semibold text-gray-800 flex items-center gap-2">
+                            <Card className="border-0 shadow-xl rounded-2xl overflow-hidden dark:!bg-gray-800 transition-colors">
+                                <div className="p-4 bg-gray-50 dark:bg-gray-700/50 border-b border-gray-100 dark:border-gray-700 transition-colors">
+                                    <h3 className="font-semibold text-gray-800 dark:text-gray-200 flex items-center gap-2">
                                         <LuPackage className="text-blue-500" />
-                                        Summary
+                                        {t('summary')}
                                     </h3>
                                 </div>
                                 <div className="p-6 space-y-6">
                                     <Statistic
-                                        title="Material Name"
-                                        value={materialName || 'Not set'}
-                                        valueStyle={{ fontSize: '1.25rem', fontWeight: 600 }}
+                                        title={<span className="dark:text-gray-400">{t('materialName')}</span>}
+                                        value={materialName || t('notSet')}
+                                        valueStyle={{ fontSize: '1.25rem', fontWeight: 600, color: 'inherit' }}
+                                        className="dark:[&_.ant-statistic-content]:text-white"
                                     />
 
                                     <div className="grid grid-cols-2 gap-4">
                                         <Statistic
-                                            title="Primary Unit"
+                                            title={<span className="dark:text-gray-400">{t('primaryUnit')}</span>}
                                             value={primaryUnit || 'N/A'}
-                                            valueStyle={{ fontSize: '1rem' }}
+                                            valueStyle={{ fontSize: '1rem', color: 'inherit' }}
+                                            className="dark:[&_.ant-statistic-content]:text-white"
                                         />
                                         <Statistic
-                                            title="Conversion"
+                                            title={<span className="dark:text-gray-400">{t('conversionValue')}</span>}
                                             value={conversionValue || 0}
                                             suffix={secondaryUnit || ''}
-                                            valueStyle={{ fontSize: '1rem' }}
+                                            valueStyle={{ fontSize: '1rem', color: 'inherit' }}
+                                            className="dark:[&_.ant-statistic-content]:text-white"
                                         />
                                     </div>
 
                                     {imagePreview && (
                                         <div className="mt-4">
-                                            <p className="text-sm text-gray-500 mb-2">Image Preview</p>
+                                            <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">{t('imagePreview')}</p>
                                             <img
                                                 src={imagePreview}
                                                 alt="Preview"
-                                                className="w-full h-40 object-contain rounded-xl bg-gray-50 border border-gray-100"
+                                                className="w-full h-40 object-contain rounded-xl bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-700 transition-colors"
                                             />
                                         </div>
                                     )}
@@ -479,18 +490,18 @@ const RawMaterialForm = () => {
                             </Card>
 
                             {/* Image Upload Card */}
-                            <Card className="border-0 shadow-xl rounded-2xl overflow-hidden">
-                                <div className="p-4 bg-gray-50 border-b border-gray-100">
-                                    <h3 className="font-semibold text-gray-800 flex items-center gap-2">
+                            <Card className="border-0 shadow-xl rounded-2xl overflow-hidden dark:!bg-gray-800 transition-colors">
+                                <div className="p-4 bg-gray-50 dark:bg-gray-700/50 border-b border-gray-100 dark:border-gray-700 transition-colors">
+                                    <h3 className="font-semibold text-gray-800 dark:text-gray-200 flex items-center gap-2">
                                         <LuImage className="text-pink-500" />
-                                        Material Image
+                                        {t('materialImage')}
                                     </h3>
                                 </div>
                                 <div className="p-6">
                                     <Upload
                                         name="material_image"
                                         listType="picture-card"
-                                        className="w-full [&_.ant-upload]:!w-full [&_.ant-upload]:!h-48"
+                                        className="w-full [&_.ant-upload]:!w-full [&_.ant-upload]:!h-48 dark:[&_.ant-upload]:!bg-gray-900 dark:[&_.ant-upload]:!border-gray-700"
                                         showUploadList={false}
                                         beforeUpload={beforeUpload}
                                         accept="image/*"
@@ -518,8 +529,8 @@ const RawMaterialForm = () => {
                                         ) : (
                                             <div className="text-center">
                                                 <LuUpload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                                                <div className="text-sm font-medium text-gray-700">Upload Image</div>
-                                                <div className="text-xs text-gray-500 mt-1">PNG, JPG up to 2MB</div>
+                                                <div className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('uploadImage')}</div>
+                                                <div className="text-xs text-gray-500 dark:text-gray-500 mt-1">{t('imageSizeLimit')}</div>
                                             </div>
                                         )}
                                     </Upload>

@@ -28,15 +28,15 @@ import {
 import { MdOutlineCategory, MdDescription } from 'react-icons/md';
 import { motion } from 'framer-motion';
 import api from '../../services/api';
-import { useViewText } from '../viewText';
+import { useTranslation } from 'react-i18next';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
 
 const CreateExpanseTypes = ({ onAdd }) => {
-  const { vt } = useViewText();
+  const { t } = useTranslation();
   const token = localStorage.getItem('token');
-  const { setLoading } = useOutletsContext();
+  const { setLoading, darkMode } = useOutletsContext();
   const [alertBox, setAlertBox] = useState(false);
   const [expense_types, setExpanseTypes] = useState({
     expense_type_name: "",
@@ -53,7 +53,6 @@ const CreateExpanseTypes = ({ onAdd }) => {
     try {
       setLoading(true);
       setAlertBox(false);
-      // const response = await createExpanseType({ itemData: expense_types, token });
 
       const response = await api.post("/expense_types", expense_types, {
         headers: {
@@ -65,16 +64,16 @@ const CreateExpanseTypes = ({ onAdd }) => {
         refetch();
         onAdd();
         setLoading(false);
-        toast.success(vt('Expense category created successfully!'));
+        toast.success(t('expenseCategoryCreatedSuccess'));
         // Reset form
         form.resetFields();
         setExpanseTypes({ expense_type_name: "", description: "", created_by: "", status: "active" });
       } else {
-        toast.error(response.data.message || vt('Failed to create expense category'));
+        toast.error(response.data.message || t('failedToCreateExpenseCategory'));
         setAlertBox(false);
       }
     } catch (error) {
-      toast.error(error?.message || vt('An error occurred while creating the expense category'));
+      toast.error(error?.message || t('failedToCreateExpenseCategory'));
       setLoading(false);
       setAlertBox(false);
     }
@@ -82,7 +81,7 @@ const CreateExpanseTypes = ({ onAdd }) => {
 
   function handleSubmit() {
     if (!expense_types.expense_type_name.trim()) {
-      toast.error(vt('Please enter a category name'));
+      toast.error(t('pleaseEnterCategoryName'));
       return;
     }
     setAlertBox(true);
@@ -100,32 +99,24 @@ const CreateExpanseTypes = ({ onAdd }) => {
     }));
   }
 
-  function onDescriptionChange(e) {
-    setExpanseTypes(prev => ({ ...prev, description: e.target.value }));
-  }
-
-  function onStatusChange(value) {
-    setExpanseTypes(prev => ({ ...prev, status: value }));
-  }
-
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="view-page"
+      className={`view-page ${darkMode ? "dark" : ""}`}
     >
       <AlertBox
         isOpen={alertBox}
-        title={vt('Create New Expense Category')}
-        message={vt('Are you sure you want to create this expense category?')}
+        title={t('confirmCreateExpenseCategory')}
+        message={t('confirmCreateExpenseCategory')}
         onConfirm={handleConfirm}
         onCancel={handleCancel}
-        confirmText={vt('Create')}
-        cancelText={vt('Cancel')}
+        confirmText={t('create')}
+        cancelText={t('cancel')}
       />
 
-      <div className="max-w-4xl mx-auto p-5">
+      <div className={`max-w-4xl mx-auto p-5 ${darkMode ? "bg-gray-800 text-white" : "bg-white text-gray-900"}`}>
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-4">
@@ -133,8 +124,8 @@ const CreateExpanseTypes = ({ onAdd }) => {
               <FaLayerGroup className="text-2xl text-white" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">{vt('Create Expense Type')}</h1>
-              <p className="text-gray-600">{vt('Add a new category to organize your expenses')}</p>
+              <h1 className={`text-3xl font-bold ${darkMode ? "text-white" : "text-gray-900"}`}>{t('createExpenseType')}</h1>
+              <p className={darkMode ? "text-gray-400" : "text-gray-600"}>{t('addCategoryToOrganize')}</p>
             </div>
           </div>
         </div>
@@ -146,30 +137,28 @@ const CreateExpanseTypes = ({ onAdd }) => {
           className="space-y-6"
         >
           <Card
-            className="shadow-lg border-0"
+            className={`shadow-lg border-0 ${darkMode ? "bg-gray-700 text-white" : "bg-white"}`}
+            bodyStyle={{ padding: '24px' }}
           >
             <div className="space-y-6">
               {/* Category Name */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  <span className="text-red-500">*</span> {vt('Category Name')}
+                <label className={`block text-sm font-medium mb-2 ${darkMode ? "text-gray-200" : "text-gray-700"}`}>
+                  <span className="text-red-500">*</span> {t('categoryName')}
                 </label>
                 <Input
                   size="large"
-                  placeholder={vt('Enter category name (e.g., Office Supplies, Travel, Marketing)')}
+                  placeholder={t('enterCategoryNamePlaceholder')}
                   value={expense_types.expense_type_name}
                   onChange={onExpanseTypeName}
                   prefix={<FaTag className="text-gray-400" />}
-                  className="w-full"
-                  required
+                  className={`w-full ${darkMode ? "bg-gray-600 border-gray-500 text-white placeholder-gray-400" : ""}`}
                 />
-                <div className="flex items-center gap-2 mt-2 text-sm text-gray-500">
+                <div className={`flex items-center gap-2 mt-2 text-sm ${darkMode ? "text-gray-400" : "text-gray-500"}`}>
                   <FaInfoCircle />
-                  <span>{vt('Choose a descriptive name for easy identification')}</span>
+                  <span>{t('chooseDescriptiveName')}</span>
                 </div>
               </div>
-
-
             </div>
           </Card>
 
@@ -184,7 +173,7 @@ const CreateExpanseTypes = ({ onAdd }) => {
               className="h-12 flex-1 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 border-0 shadow-lg"
               disabled={!expense_types.expense_type_name.trim()}
             >
-              {vt('Create Category')}
+              {t('createCategory')}
             </Button>
 
             <Button
@@ -192,17 +181,17 @@ const CreateExpanseTypes = ({ onAdd }) => {
               icon={<FaTimes />}
               onClick={onAdd}
               size="large"
-              className="h-12 flex-1 border-gray-300 hover:border-gray-400"
+              className={`h-12 flex-1 ${darkMode ? "bg-gray-700 border-gray-600 text-gray-200 hover:bg-gray-600" : "border-gray-300 hover:border-gray-400"}`}
             >
-              {vt('Cancel')}
+              {t('cancel')}
             </Button>
           </div>
 
           {/* Validation Alert */}
           {!expense_types.expense_type_name.trim() && (
             <Alert
-              message={vt('Required Field')}
-              description={vt('Please enter a category name to continue')}
+              message={t('requiredField')}
+              description={t('pleaseEnterCategoryNameToContinue')}
               type="warning"
               showIcon
               className="mt-4"

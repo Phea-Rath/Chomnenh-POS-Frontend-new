@@ -7,8 +7,10 @@ import { toast } from 'react-toastify';
 import CreateCategory from '../../views/categorys/CreateCategory';
 import UpdateCategory from '../../views/categorys/UpdateCategory';
 import AlertBox from '../../services/AlertBox';
+import { useTranslation } from 'react-i18next';
 
 const CategoryList = () => {
+  const { t } = useTranslation();
   const [category, setCategory] = useState([]);
   const [filteredCategory, setFilteredCategory] = useState([]);
   const [id, setId] = useState(0);
@@ -52,9 +54,9 @@ const CategoryList = () => {
     try {
       await deleteCategory({ id, token });
       refetch();
-      toast.success('Category deleted successfully');
+      toast.success(t('categoryDeletedSuccessfully'));
     } catch (error) {
-      toast.error(error?.message || 'Failed to delete category');
+      toast.error(error?.message || t('failedToDeleteCategory'));
     } finally {
       setLoading(false);
     }
@@ -71,10 +73,10 @@ const CategoryList = () => {
   const Button = ({ children, onClick, variant = 'default', icon, disabled, className = '' }) => {
     const base = 'inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 active:scale-95';
     const variants = {
-      default: 'bg-gray-100 hover:bg-gray-200 text-gray-700',
-      primary: 'bg-purple-600 hover:bg-purple-700 text-white shadow-sm hover:shadow-purple-200',
-      danger: 'bg-red-50 hover:bg-red-100 text-red-600',
-      success: 'bg-green-600 hover:bg-green-700 text-white shadow-sm hover:shadow-green-200',
+      default: 'bg-gray-100 hover:bg-gray-200 text-gray-700 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-200',
+      primary: 'bg-purple-600 hover:bg-purple-700 text-white shadow-sm hover:shadow-purple-200 dark:shadow-none',
+      danger: 'bg-red-50 hover:bg-red-100 text-red-600 dark:bg-red-900/30 dark:hover:bg-red-900/50 dark:text-red-400',
+      success: 'bg-green-600 hover:bg-green-700 text-white shadow-sm hover:shadow-green-200 dark:shadow-none',
     };
     return (
       <button
@@ -96,37 +98,37 @@ const CategoryList = () => {
         value={value}
         onChange={onChange}
         placeholder={placeholder}
-        className="w-full pl-11 pr-4 py-2.5 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-purple-500 focus:bg-white transition-all text-sm outline-none shadow-sm"
+        className="w-full pl-11 pr-4 py-2.5 bg-gray-50 dark:bg-gray-700 border-none rounded-2xl focus:ring-2 focus:ring-purple-500 focus:bg-white dark:focus:bg-gray-600 dark:text-white transition-all text-sm outline-none shadow-sm placeholder:dark:text-gray-400"
       />
     </div>
   );
 
   const Badge = ({ children, color = 'purple' }) => {
     const colors = {
-      purple: 'bg-purple-50 text-purple-600',
-      gray: 'bg-gray-50 text-gray-600',
+      purple: 'bg-purple-50 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400',
+      gray: 'bg-gray-50 text-gray-600 dark:bg-gray-700 dark:text-gray-300',
     };
     return (
-      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold ${colors[color]}`}>
+      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold ${colors[color]} transition-colors`}>
         {children}
       </span>
     );
   };
 
   const EmptyState = ({ onCreate }) => (
-    <div className="flex flex-col items-center justify-center py-20 bg-white rounded-3xl border border-gray-100 shadow-sm">
-      <div className="w-24 h-24 bg-purple-50 rounded-full flex items-center justify-center mb-6">
-        <FaFolder className="text-4xl text-purple-400" />
+    <div className="flex flex-col items-center justify-center py-20 bg-white dark:bg-gray-800 rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm transition-colors">
+      <div className="w-24 h-24 bg-purple-50 dark:bg-purple-900/30 rounded-full flex items-center justify-center mb-6">
+        <FaFolder className="text-4xl text-purple-400 dark:text-purple-500" />
       </div>
-      <h3 className="text-xl font-bold text-gray-800 mb-2">No Categories Found</h3>
-      <p className="text-gray-500 text-center max-w-sm mb-8">
+      <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-2">{t('noCategoriesFound')}</h3>
+      <p className="text-gray-500 dark:text-gray-400 text-center max-w-sm mb-8">
         {searchTerm
-          ? 'No categories match your search criteria. Try adjusting your search term.'
-          : 'Start by creating your first category to organize your items.'}
+          ? t('noCategoriesMatchSearch')
+          : t('startByCreatingCategory')}
       </p>
       {!searchTerm && (
         <Button onClick={onCreate} variant="success" icon={<FaPlus />}>
-          Create Your First Category
+          {t('createFirstCategory')}
         </Button>
       )}
     </div>
@@ -137,13 +139,13 @@ const CategoryList = () => {
       return (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {Array(count).fill(0).map((_, i) => (
-            <div key={i} className="bg-white rounded-3xl p-6 border border-gray-100 animate-pulse">
-              <div className="h-12 w-12 bg-gray-100 rounded-2xl mb-4"></div>
-              <div className="h-5 bg-gray-100 rounded-full w-3/4 mb-3"></div>
-              <div className="h-3 bg-gray-100 rounded-full w-1/2 mb-6"></div>
+            <div key={i} className="bg-white dark:bg-gray-800 rounded-3xl p-6 border border-gray-100 dark:border-gray-700 animate-pulse transition-colors">
+              <div className="h-12 w-12 bg-gray-100 dark:bg-gray-700 rounded-2xl mb-4"></div>
+              <div className="h-5 bg-gray-100 dark:bg-gray-700 rounded-full w-3/4 mb-3"></div>
+              <div className="h-3 bg-gray-100 dark:bg-gray-700 rounded-full w-1/2 mb-6"></div>
               <div className="flex gap-2">
-                <div className="h-10 bg-gray-100 rounded-xl flex-1"></div>
-                <div className="h-10 bg-gray-100 rounded-xl flex-1"></div>
+                <div className="h-10 bg-gray-100 dark:bg-gray-700 rounded-xl flex-1"></div>
+                <div className="h-10 bg-gray-100 dark:bg-gray-700 rounded-xl flex-1"></div>
               </div>
             </div>
           ))}
@@ -153,7 +155,7 @@ const CategoryList = () => {
     return (
       <div className="space-y-3">
         {Array(count).fill(0).map((_, i) => (
-          <div key={i} className="h-16 bg-gray-100 rounded-2xl animate-pulse"></div>
+          <div key={i} className="h-16 bg-gray-100 dark:bg-gray-800 rounded-2xl animate-pulse border dark:border-gray-700"></div>
         ))}
       </div>
     );
@@ -161,18 +163,18 @@ const CategoryList = () => {
 
   // Grid card
   const CategoryCard = ({ category, index }) => (
-    <div className="group bg-white rounded-3xl border border-gray-100 p-6 hover:shadow-xl hover:shadow-gray-200/50 transition-all duration-300">
+    <div className="group bg-white dark:bg-gray-800 rounded-3xl border border-gray-100 dark:border-gray-700 p-6 hover:shadow-xl hover:shadow-gray-200/50 dark:hover:shadow-none transition-all duration-300">
       <div className="flex items-start justify-between mb-4">
-        <div className="p-3 bg-purple-50 rounded-2xl group-hover:scale-110 transition-transform duration-300">
-          <FaFolder className="text-purple-600 text-xl" />
+        <div className="p-3 bg-purple-50 dark:bg-purple-900/30 rounded-2xl group-hover:scale-110 transition-transform duration-300">
+          <FaFolder className="text-purple-600 dark:text-purple-400 text-xl" />
         </div>
         <Badge color="purple">#{index + 1}</Badge>
       </div>
       
-      <h3 className="text-lg font-bold text-gray-800 mb-1 truncate">{category.category_name}</h3>
-      <div className="flex items-center gap-1.5 text-xs text-gray-500 mb-6">
-        <FaUser className="text-gray-400" />
-        <span className="truncate">By {category.created_by_name}</span>
+      <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-1 truncate">{category.category_name}</h3>
+      <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 mb-6">
+        <FaUser className="text-gray-400 dark:text-gray-500" />
+        <span className="truncate">{t('by')} {category.created_by_name}</span>
       </div>
 
       <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
@@ -182,7 +184,7 @@ const CategoryList = () => {
           icon={<FaEdit />}
           className="flex-1 py-1.5"
         >
-          Edit
+          {t('edit')}
         </Button>
         <Button
           onClick={() => handleDelete(category.category_id)}
@@ -190,12 +192,12 @@ const CategoryList = () => {
           icon={<FaTrash />}
           className="flex-1 py-1.5"
         >
-          Delete
+          {t('delete')}
         </Button>
       </div>
 
       <div className="flex gap-2 group-hover:hidden mt-2">
-         <div className="w-full h-1 bg-gray-50 rounded-full overflow-hidden">
+         <div className="w-full h-1 bg-gray-50 dark:bg-gray-700 rounded-full overflow-hidden">
             <div className="w-2/3 h-full bg-purple-500"></div>
          </div>
       </div>
@@ -203,37 +205,37 @@ const CategoryList = () => {
   );
 
   return (
-    <div className="max-w-7xl mx-auto p-4 md:p-8">
+    <div className="max-w-7xl mx-auto p-4 md:p-8 view-page">
       {/* Header */}
       <div className="mb-8 flex flex-col sm:flex-row sm:items-end justify-between gap-6">
         <div>
-          <h1 className="text-3xl font-black text-gray-800 tracking-tight">
-            Category Management
+          <h1 className="text-3xl font-black text-gray-800 dark:text-white tracking-tight">
+            {t('categoryManagement')}
           </h1>
-          <p className="text-gray-500 mt-1 font-medium">Define and organize your product catalog</p>
+          <p className="text-gray-500 dark:text-gray-400 mt-1 font-medium">{t('defineOrganizeCatalog')}</p>
         </div>
-        <Button onClick={() => setIsAddOpen(true)} variant="success" icon={<FaPlus />} className="shadow-lg shadow-green-200/50">
-          Add New Category
+        <Button onClick={() => setIsAddOpen(true)} variant="success" icon={<FaPlus />} className="shadow-lg shadow-green-200/50 dark:shadow-none">
+          {t('addNewCategory')}
         </Button>
       </div>
 
       {/* Toolbar */}
-      <div className="bg-white rounded-[2rem] border border-gray-100 p-4 mb-8 shadow-sm">
+      <div className="bg-white dark:bg-gray-800 rounded-[2rem] border border-gray-100 dark:border-gray-700 p-4 mb-8 shadow-sm transition-colors">
         <div className="flex flex-col md:flex-row items-center gap-4">
-          <div className="flex p-1 bg-gray-100 rounded-2xl w-full md:w-auto">
+          <div className="flex p-1 bg-gray-100 dark:bg-gray-700 rounded-2xl w-full md:w-auto transition-colors">
             <button
               onClick={() => setViewMode('grid')}
-              className={`flex-1 md:flex-none px-6 py-2 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all ${viewMode === 'grid' ? 'bg-white text-purple-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+              className={`flex-1 md:flex-none px-6 py-2 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all ${viewMode === 'grid' ? 'bg-white dark:bg-gray-600 text-purple-600 dark:text-purple-400 shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}`}
             >
               <IoIosGrid size={18} />
-              Grid
+              {t('grid')}
             </button>
             <button
               onClick={() => setViewMode('list')}
-              className={`flex-1 md:flex-none px-6 py-2 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all ${viewMode === 'list' ? 'bg-white text-purple-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+              className={`flex-1 md:flex-none px-6 py-2 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all ${viewMode === 'list' ? 'bg-white dark:bg-gray-600 text-purple-600 dark:text-purple-400 shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}`}
             >
               <IoIosList size={18} />
-              List
+              {t('list')}
             </button>
           </div>
           
@@ -241,25 +243,25 @@ const CategoryList = () => {
             <Input
               value={searchTerm}
               onChange={onSearch}
-              placeholder="Search by category name..."
+              placeholder={t('searchByCategoryName')}
               icon={<IoIosSearch size={20} />}
             />
           </div>
           
-          <div className="px-4 text-sm font-bold text-gray-400">
-            {filteredCategory.length} Total
+          <div className="px-4 text-sm font-bold text-gray-400 dark:text-gray-500">
+            {filteredCategory.length} {t('total')}
           </div>
         </div>
       </div>
 
       <AlertBox
         isOpen={alertBox}
-        title="Delete Category"
-        message="Are you sure you want to delete this category? This action cannot be undone."
+        title={t('deleteCategory')}
+        message={t('confirmDeleteCategory')}
         onConfirm={handleConfirm}
         onCancel={handleCancel}
-        confirmText="Delete"
-        cancelText="Cancel"
+        confirmText={t('delete')}
+        cancelText={t('cancel')}
       />
 
       {/* Content */}
@@ -268,35 +270,35 @@ const CategoryList = () => {
       ) : filteredCategory.length === 0 ? (
         <EmptyState onCreate={() => setIsAddOpen(true)} />
       ) : viewMode === 'list' ? (
-        <div className="bg-white rounded-3xl border border-gray-100 overflow-hidden shadow-sm">
+        <div className="bg-white dark:bg-gray-800 rounded-3xl border border-gray-100 dark:border-gray-700 overflow-hidden shadow-sm transition-colors">
           <div className="overflow-x-auto">
             <table className="w-full text-left">
               <thead>
-                <tr className="bg-gray-50/50 border-b border-gray-100">
-                  <th className="px-6 py-5 text-xs font-black text-gray-400 uppercase tracking-wider">Index</th>
-                  <th className="px-6 py-5 text-xs font-black text-gray-400 uppercase tracking-wider">Category Details</th>
-                  <th className="px-6 py-5 text-xs font-black text-gray-400 uppercase tracking-wider">Author</th>
-                  <th className="px-6 py-5 text-right text-xs font-black text-gray-400 uppercase tracking-wider">Actions</th>
+                <tr className="bg-gray-50/50 dark:bg-gray-900/50 border-b border-gray-100 dark:border-gray-700 transition-colors">
+                  <th className="px-6 py-5 text-xs font-black text-gray-400 dark:text-gray-500 uppercase tracking-wider">{t('index')}</th>
+                  <th className="px-6 py-5 text-xs font-black text-gray-400 dark:text-gray-500 uppercase tracking-wider">{t('categoryDetails')}</th>
+                  <th className="px-6 py-5 text-xs font-black text-gray-400 dark:text-gray-500 uppercase tracking-wider">{t('author')}</th>
+                  <th className="px-6 py-5 text-right text-xs font-black text-gray-400 dark:text-gray-500 uppercase tracking-wider">{t('actions')}</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50">
+              <tbody className="divide-y divide-gray-50 dark:divide-gray-700">
                 {filteredCategory.map((cat, index) => (
-                  <tr key={cat.category_id} className="hover:bg-purple-50/30 transition-colors group">
+                  <tr key={cat.category_id} className="hover:bg-purple-50/30 dark:hover:bg-purple-900/10 transition-colors group">
                     <td className="px-6 py-4">
-                      <span className="text-sm font-bold text-gray-400">#{index + 1}</span>
+                      <span className="text-sm font-bold text-gray-400 dark:text-gray-500">#{index + 1}</span>
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="p-2 bg-purple-50 rounded-xl text-purple-600">
+                        <div className="p-2 bg-purple-50 dark:bg-purple-900/30 rounded-xl text-purple-600 dark:text-purple-400 transition-colors">
                           <FaFolder size={14} />
                         </div>
-                        <span className="font-bold text-gray-800">{cat.category_name}</span>
+                        <span className="font-bold text-gray-800 dark:text-gray-200 transition-colors">{cat.category_name}</span>
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="flex items-center gap-2 text-sm text-gray-500 font-medium">
-                        <div className="w-6 h-6 bg-gray-100 rounded-full flex items-center justify-center text-[10px]">
-                          <FaUser className="text-gray-400" />
+                      <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 font-medium transition-colors">
+                        <div className="w-6 h-6 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center text-[10px] transition-colors">
+                          <FaUser className="text-gray-400 dark:text-gray-500" />
                         </div>
                         {cat.created_by_name}
                       </div>
@@ -305,15 +307,15 @@ const CategoryList = () => {
                       <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button
                           onClick={() => handleUpdate(cat.category_name, cat.category_id)}
-                          className="p-2 text-purple-600 hover:bg-purple-100 rounded-xl transition-colors"
-                          title="Edit"
+                          className="p-2 text-purple-600 dark:text-purple-400 hover:bg-purple-100 dark:hover:bg-purple-900/30 rounded-xl transition-colors"
+                          title={t('edit')}
                         >
                           <FaEdit size={16} />
                         </button>
                         <button
                           onClick={() => handleDelete(cat.category_id)}
-                          className="p-2 text-red-600 hover:bg-red-100 rounded-xl transition-colors"
-                          title="Delete"
+                          className="p-2 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-xl transition-colors"
+                          title={t('delete')}
                         >
                           <FaTrash size={16} />
                         </button>
@@ -335,15 +337,15 @@ const CategoryList = () => {
 
       {/* Modals */}
       {isAddOpen && (
-        <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-2xl overflow-hidden rounded-3xl bg-white shadow-2xl">
-            <CreateCategory data={edit} onAdd={() => setIsAddOpen(false)} />
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/50 p-4 transition-opacity">
+          <div className="w-full max-w-2xl overflow-hidden rounded-3xl bg-white dark:bg-gray-800 shadow-2xl transition-all">
+            <CreateCategory onAdd={() => setIsAddOpen(false)} />
           </div>
         </div>
       )}
       {isUpdateOpen && (
-        <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-2xl overflow-hidden rounded-3xl bg-white shadow-2xl">
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/50 p-4 transition-opacity">
+          <div className="w-full max-w-2xl overflow-hidden rounded-3xl bg-white dark:bg-gray-800 shadow-2xl transition-all">
             <UpdateCategory data={edit} onAdd={() => setIsUpdateOpen(false)} />
           </div>
         </div>

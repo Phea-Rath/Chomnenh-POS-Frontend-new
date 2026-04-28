@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { FaTags, FaPlus, FaTimes } from 'react-icons/fa';
-import { motion } from 'framer-motion';
 import { Input, Button } from 'antd';
 import { toast } from 'react-toastify';
 
@@ -8,10 +7,10 @@ import { toast } from 'react-toastify';
 import AlertBox from '../../services/AlertBox';
 import { useOutletsContext } from '../../layouts/Management';
 import { useCreateBrandMutation, useGetAllBrandQuery } from '../../../app/Features/brandsSlice';
-import { useViewText } from '../viewText';
+import { useTranslation } from 'react-i18next';
 
 const CreateBrands = ({ onAdd }) => {
-  const { vt } = useViewText();
+  const { t } = useTranslation();
   const { setLoading } = useOutletsContext();
   const [alertBox, setAlertBox] = useState(false);
   const [brandData, setBrandData] = useState({ brand_name: "", created_by: 0 });
@@ -22,7 +21,7 @@ const CreateBrands = ({ onAdd }) => {
 
   const handleConfirm = async () => {
     if (!brandData.brand_name.trim()) {
-      toast.warning(vt('Please enter a brand name'));
+      toast.warning(t('brandNameEmptyWarning'));
       return;
     }
 
@@ -30,38 +29,38 @@ const CreateBrands = ({ onAdd }) => {
       setLoading(true);
       await createBrand({ itemData: brandData, token }).unwrap();
       refetch();
-      toast.success(vt('Brand created successfully'));
+      toast.success(t('brandCreatedSuccess'));
       setAlertBox(false);
       onAdd(); // Close modal
     } catch (error) {
-      toast.error(error?.data?.message || vt('An error occurred while creating the brand'));
+      toast.error(error?.data?.message || t('failedToCreateBrand'));
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <section className="view-page bg-white overflow-hidden">
+    <section className="view-page bg-white dark:bg-gray-800 overflow-hidden transition-colors">
       {/* Alert Confirmation */}
       <AlertBox
         isOpen={alertBox}
-        title={vt('Confirm Creation')}
-        message={`${vt('Do you want to add')} "${brandData.brand_name}" ${vt('to your brand list?')}`}
+        title={t('confirmCreation')}
+        message={`${t('doYouWantToAdd')} "${brandData.brand_name}" ${t('toBrandList')}`}
         onConfirm={handleConfirm}
         onCancel={() => setAlertBox(false)}
-        confirmText={vt('Confirm')}
-        cancelText={vt('Cancel')}
+        confirmText={t('confirm')}
+        cancelText={t('cancel')}
       />
 
       {/* Header Section */}
-      <div className="p-8 bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-blue-100 flex items-center justify-between">
+      <div className="p-8 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-b border-blue-100 dark:border-blue-800 flex items-center justify-between transition-colors">
         <div className="flex items-center gap-4">
-          <div className="w-12 h-12 bg-white rounded-2xl shadow-sm flex items-center justify-center text-blue-600">
+          <div className="w-12 h-12 bg-white dark:bg-gray-700 rounded-2xl shadow-sm flex items-center justify-center text-blue-600 dark:text-blue-400 transition-colors">
             <FaTags className="text-xl" />
           </div>
           <div>
-            <h2 className="text-2xl font-black text-slate-800 leading-none">{vt('New Brand')}</h2>
-            <p className="text-slate-500 text-sm mt-1 font-medium">{vt('Add a new manufacturer to your inventory')}</p>
+            <h2 className="text-2xl font-black text-slate-800 dark:text-white leading-none">{t('newBrand')}</h2>
+            <p className="text-slate-500 dark:text-gray-400 text-sm mt-1 font-medium">{t('addManufacturerInventory')}</p>
           </div>
         </div>
       </div>
@@ -70,21 +69,21 @@ const CreateBrands = ({ onAdd }) => {
       <div className="p-8">
         <div className="space-y-6">
           <div>
-            <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 ml-1">
-              {vt('Brand Identity')}
+            <label className="block text-xs font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest mb-3 ml-1">
+              {t('brandIdentity')}
             </label>
             <Input
               size="large"
-              placeholder={vt('e.g. Nike, Apple, Samsung...')}
+              placeholder={t('brandNamePlaceholder')}
               value={brandData.brand_name}
               onChange={(e) => setBrandData({ ...brandData, brand_name: e.target.value })}
-              className="h-14 rounded-2xl border-slate-200 bg-slate-50/50 hover:bg-white focus:bg-white transition-all font-medium text-lg px-6"
+              className="h-14 rounded-2xl border-slate-200 dark:border-gray-700 bg-slate-50/50 dark:bg-gray-900/50 hover:bg-white dark:hover:bg-gray-900 focus:bg-white dark:focus:bg-gray-900 dark:text-white transition-all font-medium text-lg px-6"
             />
           </div>
 
-          <div className="bg-blue-50/50 p-4 rounded-2xl border border-blue-100/50">
-            <p className="text-xs text-blue-600 font-medium leading-relaxed">
-              <strong>{vt('Tip:')}</strong> {vt('Ensure the brand name is unique to avoid duplicates in your reports.')}
+          <div className="bg-blue-50/50 dark:bg-blue-900/10 p-4 rounded-2xl border border-blue-100/50 dark:border-blue-800/50 transition-colors">
+            <p className="text-xs text-blue-600 dark:text-blue-400 font-medium leading-relaxed">
+              <strong>{t('tip')}</strong> {t('uniqueBrandWarning')}
             </p>
           </div>
         </div>
@@ -95,18 +94,16 @@ const CreateBrands = ({ onAdd }) => {
             type="primary"
             icon={<FaPlus />}
             onClick={() => setAlertBox(true)}
-            className="h-14 flex-1 rounded-2xl bg-blue-600 shadow-lg shadow-blue-200 border-none font-bold text-base order-2 sm:order-1"
+            className="h-14 flex-1 rounded-2xl bg-blue-600 dark:bg-blue-700 dark:hover:bg-blue-600 shadow-lg shadow-blue-200 dark:shadow-none border-none font-bold text-base order-2 sm:order-1 transition-all"
           >
-            {vt('Create Brand')}
+            {t('createBrand')}
           </Button>
 
-          <form method="dialog" className="order-1 sm:order-2">
-            <Button
-              icon={<FaTimes />}
-              className="h-14 w-full sm:w-14 rounded-2xl border-slate-200 text-slate-400 hover:text-rose-500 hover:border-rose-100 hover:bg-rose-50 flex items-center justify-center font-bold"
-              onClick={onAdd}
-            />
-          </form>
+          <Button
+            icon={<FaTimes />}
+            className="h-14 w-full sm:w-14 rounded-2xl border-slate-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-slate-400 dark:text-gray-500 hover:text-rose-500 dark:hover:text-rose-400 hover:border-rose-100 dark:hover:border-rose-900 hover:bg-rose-50 dark:hover:bg-rose-900/20 flex items-center justify-center font-bold transition-all"
+            onClick={onAdd}
+          />
         </div>
       </div>
     </section>

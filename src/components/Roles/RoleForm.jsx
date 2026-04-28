@@ -1,162 +1,181 @@
 import { useEffect, useState } from "react";
-import { FaSave, FaTimes } from "react-icons/fa";
+import { FiArrowLeft, FiSave, FiShield, FiFileText, FiAlertCircle } from "react-icons/fi";
 import { Link, useNavigate, useParams } from "react-router";
 import api from "../../services/api";
 import { toast } from "react-toastify";
 import { useGetAllRoleQuery } from "../../../app/Features/rolesSlice";
+import { useOutletsContext } from "../../layouts/Management";
+import { useTranslation } from "react-i18next";
+import { motion } from "framer-motion";
 
 const RoleForm = () => {
-  const { id } = useParams(); // Get role_id from URL for edit mode
+  const { t } = useTranslation();
+  const { darkMode } = useOutletsContext();
+  const { id } = useParams();
   const navigate = useNavigate();
   const token = localStorage.getItem("token");
   const { refetch } = useGetAllRoleQuery(token);
-  const isEditMode = !!id; // Determine if in edit mode
+  const isEditMode = !!id;
 
-  const [formData, setFormData] = useState({
-    role_name: "",
-    role_description: "",
-  });
+  const [formData, setFormData] = useState({ role_name: "", role_description: "" });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // Fetch role data for edit mode
   useEffect(() => {
     if (isEditMode) {
-      const fetchRole = async () => {
-        setLoading(true);
-        try {
-          const response = await api.get(`/roles/${id}`, {
-            headers: { Authorization: `Bearer ${token}` },
-          });
-          const role = response.data.data;
-          setFormData({
-            role_name: role.role_name || "",
-            role_description: role.role_description || "",
-          });
-        } catch (err) {
-          setError(err.response?.data?.message || "Error fetching role.");
-        } finally {
-          setLoading(false);
-        }
-      };
-      fetchRole();
+      setLoading(true);
+      api.get(`/roles/${id}`, { headers: { Authorization: `Bearer ${token}` } })
+        .then((res) => {
+          const role = res.data.data;
+          setFormData({ role_name: role.role_name || "", role_description: role.role_description || "" });
+        })
+        .catch((err) => setError(err.response?.data?.message || "Error fetching role."))
+        .finally(() => setLoading(false));
     }
   }, [id, token, isEditMode]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+    if (error) setError("");
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.role_name) {
-      setError("Role name is required.");
-      return;
-    }
-
+    if (!formData.role_name.trim()) { setError(t("roleNameRequired")); return; }
     setLoading(true);
     setError("");
-
     try {
-      const payload = {
-        role_name: formData.role_name,
-        role_description: formData.role_description || null,
-      };
-
+      const payload = { role_name: formData.role_name, role_description: formData.role_description || null };
       if (isEditMode) {
-        // Update existing role
-        await api.put(`/roles/${id}`, payload, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        toast.success("Role updated successfully!");
+        await api.put(`/roles/${id}`, payload, { headers: { Authorization: `Bearer ${token}` } });
+        toast.success(t("roleUpdatedSuccess"));
       } else {
-        // Create new role
-        await api.post("/roles", payload, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        toast.success("Role created successfully!");
+        await api.post("/roles", payload, { headers: { Authorization: `Bearer ${token}` } });
+        toast.success(t("roleCreatedSuccess"));
       }
       refetch();
-      navigate(-1); // Redirect to role list
+      navigate(-1);
     } catch (err) {
-      setError(
-        err.response?.data?.message ||
-        `Error ${isEditMode ? "updating" : "creating"} role.`
-      );
-    } finally {
-      setLoading(false);
-    }
+      setError(err.response?.data?.message || `Error ${isEditMode ? "updating" : "creating"} role.`);
+    } finally { setLoading(false); }
   };
 
+  const inputCls = `w-full px-4 py-3 border rounded-xl outline-none transition-all text-sm
+    bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100
+    placeholder-gray-400 dark:placeholder-gray-500
+    border-gray-200 dark:border-gray-600
+    focus:border-blue-500 dark:focus:border-blue-400
+    focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900/30`;
+
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-6">
-          {isEditMode ? "Edit Role" : "Create New Role"}
-        </h1>
-
-        <form
-          onSubmit={handleSubmit}
-          className="bg-white text-xs shadow-lg rounded-lg p-6"
-        >
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Role Name <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                name="role_name"
-                value={formData.role_name}
-                onChange={handleInputChange}
-                className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
-                required
-              />
+    <div className="py-8 px-4 sm:px-6 lg:px-8 min-h-screen">
+      <div className="max-w-2xl mx-auto">
+        {/* Header */}
+        <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}
+          className="mb-8">
+          <Link to="/setting/roles"
+            className="inline-flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 hover:text-[#1e3a5f] dark:hover:text-blue-400 transition-colors mb-6">
+            <FiArrowLeft />{t("backToRoles")}
+          </Link>
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-[#1e3a5f] rounded-2xl flex items-center justify-center shadow-lg">
+              <FiShield className="text-white text-xl" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Role Description
-              </label>
-              <input
-                type="text"
-                name="role_description"
-                value={formData.role_description}
-                onChange={handleInputChange}
-                className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
-              />
+              <h1 className="text-2xl font-bold text-gray-800 dark:text-white">
+                {isEditMode ? t("editRole") : t("createNewRole")}
+              </h1>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+                {isEditMode ? t("editRoleSubtitle") : t("createRoleSubtitle")}
+              </p>
             </div>
           </div>
+        </motion.div>
 
-          {/* Error Message */}
-          {error && (
-            <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded-md">
-              {error}
+        {/* Form Card */}
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.1 }}>
+          <form onSubmit={handleSubmit}
+            className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+
+            {/* Top accent */}
+            <div className="h-1 bg-gradient-to-r from-[#1e3a5f] to-blue-400" />
+
+            <div className="p-8 space-y-6">
+              {/* Role Name */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
+                  <FiShield className="text-gray-400" />
+                  {t("roleName")} <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="role_name"
+                  value={formData.role_name}
+                  onChange={handleInputChange}
+                  className={inputCls}
+                  placeholder={t("roleName")}
+                  required
+                />
+              </div>
+
+              {/* Role Description */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
+                  <FiFileText className="text-gray-400" />
+                  {t("roleDescription")}
+                </label>
+                <textarea
+                  name="role_description"
+                  value={formData.role_description}
+                  onChange={handleInputChange}
+                  rows={4}
+                  className={inputCls + " resize-none"}
+                  placeholder={t("roleDescription")}
+                />
+              </div>
+
+              {/* Error */}
+              {error && (
+                <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
+                  className="flex items-start gap-3 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl">
+                  <FiAlertCircle className="text-red-500 mt-0.5 flex-shrink-0" />
+                  <p className="text-sm text-red-700 dark:text-red-400">{error}</p>
+                </motion.div>
+              )}
+
+              {/* Tip box */}
+              <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 rounded-xl">
+                <p className="text-sm text-blue-700 dark:text-blue-400">
+                  <span className="font-semibold">{t("quickTips")}: </span>
+                  {isEditMode ? t("editRoleSubtitle") : t("createRoleSubtitle")}
+                </p>
+              </div>
             </div>
-          )}
 
-          {/* Submit and Cancel Buttons */}
-          <div className="flex justify-end space-x-4">
-            <Link
-              to="/setting/roles"
-              className="p-2 border border-gray-300 flex gap-2 items-center text-gray-700 rounded-md hover:bg-gray-100 transition-all duration-300 cursor-pointer"
-            >
-              <FaTimes /> Cancel
-            </Link>
-            <button
-              type="submit"
-              disabled={loading}
-              className="p-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 gap-2 flex items-center space-x-2 disabled:opacity-50 transition-all duration-300 cursor-pointer"
-            >
-              <FaSave className="text-xl" />{" "}
-              {loading
-                ? "Saving..."
-                : isEditMode
-                  ? "Update Role"
-                  : "Create Role"}
-            </button>
-          </div>
-        </form>
+            {/* Footer Actions */}
+            <div className="px-8 py-5 bg-gray-50 dark:bg-gray-700/50 border-t border-gray-100 dark:border-gray-700 flex justify-between items-center gap-3">
+              <Link to="/setting/roles"
+                className="inline-flex items-center gap-2 px-5 py-2.5 text-sm border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors font-medium">
+                {t("cancel")}
+              </Link>
+              <button type="submit" disabled={loading}
+                className="inline-flex items-center gap-2 px-6 py-2.5 bg-[#1e3a5f] hover:bg-[#163057] text-white rounded-xl shadow-sm transition-colors font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed">
+                {loading ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    {t("saving")}
+                  </>
+                ) : (
+                  <>
+                    <FiSave className="text-base" />
+                    {isEditMode ? t("updateRole") : t("createRole")}
+                  </>
+                )}
+              </button>
+            </div>
+          </form>
+        </motion.div>
       </div>
     </div>
   );

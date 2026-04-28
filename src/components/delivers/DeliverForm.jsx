@@ -10,13 +10,16 @@ import {
 } from "../../../app/Features/deliversSlice";
 import { IoMdCloudUpload } from "react-icons/io";
 import api from "../../services/api";
+import { useTranslation } from "react-i18next";
+import { useOutletsContext } from "../../layouts/Management";
 
 const DeliverForm = () => {
+    const { t } = useTranslation();
+    const { darkMode } = useOutletsContext();
     const token = localStorage.getItem("token");
     const { id } = useParams();
     const [viewImage, setViewImage] = useState();
     const isUpdate = id ?? 0;
-    const initialData = JSON.parse(localStorage.getItem("deliverEdit")) || null;
     const [dataForm, setFormData] = useState({
         image: null,
         deliver_name: "",
@@ -27,20 +30,22 @@ const DeliverForm = () => {
     const [fieldErrors, setFieldErrors] = useState({});
     const { refetch } = useGetAllDeliverQuery(token);
     const { data, refetch: reShow } = useGetDeliverByIdQuery({ id, token });
-    const [createDeliver] = useCreateDeliverMutation();
-    const [updateDeliver] = useUpdateDeliverMutation();
     const navigate = useNavigate();
 
     useEffect(() => {
-        if (isUpdate == 1 && data?.data) {
+        if (isUpdate != 0 && data?.data) {
             reShow();
             setViewImage(data?.data?.image);
-            setFormData(data?.data);
+            setFormData({
+                deliver_name: data.data.deliver_name,
+                image: null // We don't want to re-upload the same image unless changed
+            });
         } else {
             setFormData({
                 image: null,
                 deliver_name: "",
             });
+            setViewImage(null);
         }
     }, [isUpdate, data]);
 
@@ -51,23 +56,21 @@ const DeliverForm = () => {
         switch (name) {
             case 'deliver_name':
                 if (!value || value.trim() === '') {
-                    newFieldErrors.deliver_name = 'Deliver name is required';
+                    newFieldErrors.deliver_name = t('deliverNameRequired');
                 } else if (value.length > 255) {
-                    newFieldErrors.deliver_name = 'Deliver name must not exceed 255 characters';
+                    newFieldErrors.deliver_name = t('deliverNameLimit');
                 } else {
                     delete newFieldErrors.deliver_name;
                 }
                 break;
 
             case 'image':
-                // Image is optional according to PHP validation
                 if (value) {
-                    // Validate image type if provided
                     const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
                     if (!validTypes.includes(value.type)) {
-                        newFieldErrors.image = 'Please select a valid image file (JPEG, PNG, GIF, WebP)';
+                        newFieldErrors.image = t('maxSize2MB');
                     } else if (value.size > 2 * 1024 * 1024) {
-                        newFieldErrors.image = 'Image size must be less than 2MB';
+                        newFieldErrors.image = t('maxSize2MB');
                     } else {
                         delete newFieldErrors.image;
                     }
@@ -87,25 +90,18 @@ const DeliverForm = () => {
         const newErrors = {};
         const newFieldErrors = { ...fieldErrors };
 
-        // Required field validation matching PHP rules
         if (!dataForm.deliver_name || dataForm.deliver_name.trim() === '') {
-            newErrors.deliver_name = "Deliver name is required.";
-            newFieldErrors.deliver_name = 'Deliver name is required';
+            newErrors.deliver_name = t('deliverNameRequired');
+            newFieldErrors.deliver_name = t('deliverNameRequired');
         } else if (dataForm.deliver_name.length > 255) {
-            newErrors.deliver_name = "Deliver name must not exceed 255 characters.";
-            newFieldErrors.deliver_name = 'Deliver name must not exceed 255 characters';
+            newErrors.deliver_name = t('deliverNameLimit');
+            newFieldErrors.deliver_name = t('deliverNameLimit');
         }
 
-        // Image validation (optional but must be valid if provided)
         if (dataForm.image) {
-            // const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
-            // if (!validTypes.includes(dataForm.image.type)) {
-            //     newErrors.image = "Please select a valid image file (JPEG, PNG, GIF, WebP).";
-            //     newFieldErrors.image = 'Please select a valid image file (JPEG, PNG, GIF, WebP)';
-            // } else 
             if (dataForm.image.size > 2 * 1024 * 1024) {
-                newErrors.image = "Image size must be less than 2MB.";
-                newFieldErrors.image = 'Image size must be less than 2MB';
+                newErrors.image = t('maxSize2MB');
+                newFieldErrors.image = t('maxSize2MB');
             }
         }
 
@@ -128,15 +124,7 @@ const DeliverForm = () => {
         e.preventDefault();
 
         if (!validateForm()) {
-            toast.error("Please fix all validation errors before submitting.");
-            const firstErrorField = Object.keys(fieldErrors)[0];
-            if (firstErrorField) {
-                const element = document.querySelector(`[name="${firstErrorField}"]`);
-                if (element) {
-                    element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    element.focus();
-                }
-            }
+            toast.error(t('pleaseFixErrors'));
             return;
         }
 
@@ -149,30 +137,24 @@ const DeliverForm = () => {
                 formData.append("image", dataForm.image);
             }
 
-            if (isUpdate) {
+            if (isUpdate != 0) {
                 await api.post(`/delivers/${id}`, formData, {
                     headers: {
                         Authorization: `Bearer ${token}`,
                     },
                 });
-                toast.success("Deliver updated successfully!");
+                toast.success(t('deliverUpdatedSuccess'));
             } else {
                 await api.post("delivers", formData, {
                     headers: {
                         Authorization: `Bearer ${token}`,
                     },
                 });
-                toast.success("Deliver created successfully!");
+                toast.success(t('deliverCreatedSuccess'));
             }
 
             refetch();
-            setFormData({
-                image: null,
-                deliver_name: "",
-            });
-            localStorage.setItem("isUpdate", 0);
-            navigate('/delivers');
-            localStorage.setItem("deliverEdit", null);
+            navigate('/home/delivers');
         } catch (err) {
             const errorMessage = err?.data?.message || err?.message || "Operation failed";
             setErrors({ general: errorMessage });
@@ -187,14 +169,12 @@ const DeliverForm = () => {
         if (fileUpload) {
             const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
             if (!validTypes.includes(fileUpload.type)) {
-                setErrors(prev => ({ ...prev, image: 'Please select a valid image file (JPEG, PNG, GIF, WebP)' }));
-                setFieldErrors(prev => ({ ...prev, image: 'Please select a valid image file (JPEG, PNG, GIF, WebP)' }));
+                setFieldErrors(prev => ({ ...prev, image: t('maxSize2MB') }));
                 return;
             }
 
             if (fileUpload.size > 2 * 1024 * 1024) {
-                setErrors(prev => ({ ...prev, image: 'Image size must be less than 2MB' }));
-                setFieldErrors(prev => ({ ...prev, image: 'Image size must be less than 2MB' }));
+                setFieldErrors(prev => ({ ...prev, image: t('maxSize2MB') }));
                 return;
             }
 
@@ -202,7 +182,6 @@ const DeliverForm = () => {
             setFormData((p) => {
                 return { ...p, image: fileUpload };
             });
-            setErrors(prev => ({ ...prev, image: '' }));
             setFieldErrors(prev => ({ ...prev, image: '' }));
         }
     };
@@ -210,20 +189,24 @@ const DeliverForm = () => {
     const removeImage = () => {
         setViewImage("");
         setFormData(p => ({ ...p, image: null }));
-        setErrors(prev => ({ ...prev, image: '' }));
         setFieldErrors(prev => ({ ...prev, image: '' }));
     };
 
     // Helper function to get input classes with error styling
     const getInputClass = (fieldName) => {
         const baseClass = "w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200";
-        return fieldErrors[fieldName]
-            ? `${baseClass} border-red-500 bg-red-50`
-            : `${baseClass} border-gray-300 hover:border-gray-400`;
+        const darkClass = darkMode 
+            ? "bg-gray-700 border-gray-600 text-white placeholder-gray-400" 
+            : "bg-white border-gray-300 text-gray-900";
+        
+        if (fieldErrors[fieldName]) {
+            return `${baseClass} ${darkMode ? "border-red-500 bg-red-900/20" : "border-red-500 bg-red-50"} ${darkClass}`;
+        }
+        return `${baseClass} ${darkClass}`;
     };
 
     return (
-        <div className="min-h-screen bg-transparent py-8">
+        <div className={`min-h-screen bg-transparent py-8 ${darkMode ? "text-gray-100" : "text-gray-800"}`}>
             <div className="mx-auto px-2">
                 {/* Header */}
                 <div className="mb-8">
@@ -231,32 +214,32 @@ const DeliverForm = () => {
                         <div className="p-2 bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg">
                             <FaTruck className="text-white text-xl" />
                         </div>
-                        <h1 className="text-3xl font-bold text-gray-900">
-                            {isUpdate ? "Edit Deliver" : "Create New Deliver"}
+                        <h1 className={`text-3xl font-bold ${darkMode ? "text-white" : "text-gray-900"}`}>
+                            {isUpdate != 0 ? t('editDeliver') : t('createDeliver')}
                         </h1>
                     </div>
-                    <p className="text-gray-600">
-                        {isUpdate
-                            ? "Update deliver information"
-                            : "Add a new deliver to your system"
+                    <p className={`${darkMode ? "text-gray-400" : "text-gray-600"}`}>
+                        {isUpdate != 0
+                            ? t('updateDeliver')
+                            : t('addNewDeliver')
                         }
                     </p>
                 </div>
 
                 <form
                     onSubmit={handleSubmit}
-                    className="bg-white shadow-xl rounded-2xl p-4"
+                    className={`${darkMode ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"} shadow-xl rounded-2xl p-4 border`}
                 >
                     {/* Validation Summary */}
                     {(Object.keys(errors).length > 0 || Object.keys(fieldErrors).length > 0) && (
-                        <div className="mb-8 p-6 bg-red-50 border border-red-200 rounded-xl">
+                        <div className={`mb-8 p-6 border rounded-xl ${darkMode ? "bg-red-900/20 border-red-800" : "bg-red-50 border-red-200"}`}>
                             <div className="flex items-center mb-2">
                                 <div className="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center mr-3">
                                     <span className="text-white text-sm font-bold">!</span>
                                 </div>
-                                <h3 className="text-red-800 font-semibold text-lg">Please fix the following errors:</h3>
+                                <h3 className={`font-semibold text-lg ${darkMode ? "text-red-400" : "text-red-800"}`}>{t('pleaseFixErrors')}</h3>
                             </div>
-                            <ul className="list-disc list-inside text-red-700 text-sm space-y-1">
+                            <ul className={`list-disc list-inside text-sm space-y-1 ${darkMode ? "text-red-300" : "text-red-700"}`}>
                                 {Object.values(errors).map((error, index) => (
                                     error && <li key={index} className="ml-4">{error}</li>
                                 ))}
@@ -271,11 +254,11 @@ const DeliverForm = () => {
                         {/* Left Column - Image Upload */}
                         <div className="space-y-8">
                             {/* Image Upload Section */}
-                            <div className="bg-gray-50 rounded-xl p-6 border-2 border-dashed border-gray-300">
+                            <div className={`${darkMode ? "bg-gray-700/50 border-gray-600" : "bg-gray-50 border-gray-300"} rounded-xl p-6 border-2 border-dashed`}>
                                 <div className="flex items-center justify-between mb-4">
-                                    <h2 className="text-lg font-semibold text-gray-800">
-                                        Deliver Image
-                                        <span className="text-gray-500 text-sm ml-2 font-normal">(Optional)</span>
+                                    <h2 className={`text-lg font-semibold ${darkMode ? "text-gray-200" : "text-gray-800"}`}>
+                                        {t('deliverImage')}
+                                        <span className={`text-sm ml-2 font-normal ${darkMode ? "text-gray-400" : "text-gray-500"}`}>({t('optional')})</span>
                                     </h2>
                                     {viewImage && (
                                         <button
@@ -284,7 +267,7 @@ const DeliverForm = () => {
                                             className="px-3 py-1 text-sm bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors flex items-center gap-2"
                                         >
                                             <FaTimes className="text-xs" />
-                                            Remove
+                                            {t('remove')}
                                         </button>
                                     )}
                                 </div>
@@ -298,7 +281,7 @@ const DeliverForm = () => {
                                         ? 'border-red-500 bg-red-25'
                                         : viewImage
                                             ? 'border-blue-300 bg-blue-25'
-                                            : 'border-gray-400 hover:border-blue-400 hover:bg-blue-25'
+                                            : (darkMode ? 'border-gray-500 hover:border-blue-400 hover:bg-blue-900/20' : 'border-gray-400 hover:border-blue-400 hover:bg-blue-25')
                                         }`}>
                                         {viewImage ? (
                                             <div className="text-center">
@@ -307,15 +290,15 @@ const DeliverForm = () => {
                                                     src={viewImage}
                                                     alt="Deliver preview"
                                                 />
-                                                <p className="text-sm text-gray-600 mt-3">Click to change image</p>
+                                                <p className={`text-sm mt-3 ${darkMode ? "text-gray-400" : "text-gray-600"}`}>{t('clickToChange')}</p>
                                             </div>
                                         ) : (
                                             <div className="text-center py-8">
-                                                <IoMdCloudUpload className="text-5xl text-blue-400 mx-auto mb-4" />
-                                                <h3 className="text-lg font-medium text-gray-700 mb-2">Upload deliver image</h3>
-                                                <p className="text-sm text-gray-500 mb-4">Click to browse or drag and drop</p>
+                                                <IoMdCloudUpload className={`text-5xl mx-auto mb-4 ${darkMode ? "text-blue-500" : "text-blue-400"}`} />
+                                                <h3 className={`text-lg font-medium mb-2 ${darkMode ? "text-gray-300" : "text-gray-700"}`}>{t('uploadDeliverImage')}</h3>
+                                                <p className={`text-sm mb-4 ${darkMode ? "text-gray-400" : "text-gray-500"}`}>{t('dragAndDrop')}</p>
                                                 <div className="px-6 py-2 bg-blue-500 text-white rounded-lg inline-flex items-center gap-2 hover:bg-blue-600 transition-colors">
-                                                    Browse files
+                                                    {t('browseFiles')}
                                                 </div>
                                             </div>
                                         )}
@@ -338,27 +321,25 @@ const DeliverForm = () => {
                                     </div>
                                 )}
 
-                                <p className="text-xs text-gray-500 mt-3 text-center">
-                                    Max size 2MB • JPEG, PNG, GIF, WebP • Optional
+                                <p className={`text-xs mt-3 text-center ${darkMode ? "text-gray-500" : "text-gray-500"}`}>
+                                    {t('maxSize2MB')}
                                 </p>
                             </div>
-
-
                         </div>
 
                         {/* Right Column - Form Fields */}
                         <div className="space-y-6">
                             {/* Deliver Information */}
-                            <div className="bg-gray-50 rounded-xl p-6 border border-gray-200">
+                            <div className={`${darkMode ? "bg-gray-700/50 border-gray-600" : "bg-gray-50 border-gray-200"} rounded-xl p-6 border`}>
                                 <div className="flex items-center gap-3 mb-4">
                                     <FaTruck className="text-blue-500 text-xl" />
-                                    <h2 className="text-lg font-semibold text-gray-800">Deliver Information</h2>
+                                    <h2 className={`text-lg font-semibold ${darkMode ? "text-gray-200" : "text-gray-800"}`}>{t('basicInformation')}</h2>
                                 </div>
 
                                 <div className="space-y-4">
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                                            Deliver Name <span className="text-red-500">*</span>
+                                        <label className={`block text-sm font-medium mb-2 ${darkMode ? "text-gray-300" : "text-gray-700"}`}>
+                                            {t('deliverName')} <span className="text-red-500">*</span>
                                         </label>
                                         <input
                                             type="text"
@@ -368,7 +349,7 @@ const DeliverForm = () => {
                                             className={getInputClass('deliver_name')}
                                             required
                                             maxLength={255}
-                                            placeholder="Enter deliver name"
+                                            placeholder={t('enterDeliverName')}
                                         />
                                         {fieldErrors.deliver_name && (
                                             <div className="flex items-center gap-2 text-red-500 text-sm mt-2">
@@ -376,24 +357,23 @@ const DeliverForm = () => {
                                                 {fieldErrors.deliver_name}
                                             </div>
                                         )}
-                                        <div className="text-xs text-gray-500 mt-2 flex justify-between">
-                                            <span>Required field</span>
-                                            <span>{dataForm?.deliver_name?.length}/255 characters</span>
+                                        <div className={`text-xs mt-2 flex justify-between ${darkMode ? "text-gray-500" : "text-gray-500"}`}>
+                                            <span>{t('required')}</span>
+                                            <span>{dataForm?.deliver_name?.length}/255</span>
                                         </div>
                                     </div>
 
-                                    {/* Additional fields can be added here if needed in the future */}
-                                    <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                                    <div className={`mt-6 p-4 rounded-lg border ${darkMode ? "bg-yellow-900/20 border-yellow-800" : "bg-yellow-50 border-yellow-200"}`}>
                                         <div className="flex items-start gap-3">
-                                            <div className="text-yellow-600 mt-0.5">
+                                            <div className={`${darkMode ? "text-yellow-500" : "text-yellow-600"} mt-0.5`}>
                                                 <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                                                     <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
                                                 </svg>
                                             </div>
                                             <div>
-                                                <p className="text-sm font-medium text-gray-800">Note</p>
-                                                <p className="text-xs text-gray-600 mt-1">
-                                                    This form only requires the deliver name. Additional fields can be added as per business requirements.
+                                                <p className={`text-sm font-medium ${darkMode ? "text-yellow-400" : "text-gray-800"}`}>{t('tip')}</p>
+                                                <p className={`text-xs mt-1 ${darkMode ? "text-yellow-300/80" : "text-gray-600"}`}>
+                                                    {t('uniqueBrandWarning')}
                                                 </p>
                                             </div>
                                         </div>
@@ -404,11 +384,11 @@ const DeliverForm = () => {
                     </div>
 
                     {/* Action Buttons */}
-                    <div className="flex flex-col sm:flex-row justify-between items-center gap-4 pt-8 mt-8 border-t border-gray-200">
-                        <div className="text-sm text-gray-500">
+                    <div className={`flex flex-col sm:flex-row justify-between items-center gap-4 pt-8 mt-8 border-t ${darkMode ? "border-gray-700" : "border-gray-200"}`}>
+                        <div className={`text-sm ${darkMode ? "text-gray-500" : "text-gray-500"}`}>
                             <div className="flex items-center gap-2">
                                 <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                                <span>Fields marked with <span className="text-red-500">*</span> are required</span>
+                                <span>{t('fieldsMarkedWith')} <span className="text-red-500">*</span> {t('required')}</span>
                             </div>
                         </div>
 
@@ -416,13 +396,16 @@ const DeliverForm = () => {
                             <button
                                 type="button"
                                 onClick={() => {
-                                    localStorage.setItem("isUpdate", 0);
                                     navigate(-1);
                                 }}
-                                className="px-6 py-3 border border-gray-300 flex gap-2 items-center text-gray-700 rounded-lg hover:bg-gray-50 transition-all duration-200 cursor-pointer font-medium"
+                                className={`px-6 py-3 border flex gap-2 items-center rounded-lg transition-all duration-200 cursor-pointer font-medium ${
+                                    darkMode 
+                                    ? "bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600" 
+                                    : "bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
+                                }`}
                             >
                                 <FaTimes />
-                                Cancel
+                                {t('cancel')}
                             </button>
 
                             <button
@@ -432,10 +415,10 @@ const DeliverForm = () => {
                             >
                                 <FaSave className="text-lg" />
                                 {loading
-                                    ? "Saving..."
-                                    : isUpdate
-                                        ? "Update Deliver"
-                                        : "Create Deliver"}
+                                    ? t('saving')
+                                    : isUpdate != 0
+                                        ? t('updateDeliver')
+                                        : t('createDeliver')}
                             </button>
                         </div>
                     </div>

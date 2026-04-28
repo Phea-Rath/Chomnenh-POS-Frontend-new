@@ -47,11 +47,13 @@ import { useGetAllRawMaterialQuery } from '../../../app/Features/RawMaterialSlic
 import { FaBox } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import { useGetAllProductionQuery } from '../../../app/Features/productSlice';
+import { useTranslation } from 'react-i18next';
 
 const { Option } = Select;
 const { TextArea } = Input;
 
 const ProductionForm = () => {
+    const { t } = useTranslation();
     const [form] = Form.useForm();
     const [rawMaterialForm] = Form.useForm();
     const navigate = useNavigate();
@@ -96,8 +98,6 @@ const ProductionForm = () => {
     }, [debounceItem]);
 
     useEffect(() => {
-        console.log(itemData);
-
         setItems(itemData?.data);
         setRawMaterials(rawData?.data);
     }, [itemData, rawData]);
@@ -119,12 +119,10 @@ const ProductionForm = () => {
             );
 
             if (!response.status == 200) {
-                throw new Error('Failed to fetch production data');
+                throw new Error(t('failedToFetchData'));
             }
 
             const result = response.data;
-            console.log(result);
-
             const production = result.data;
 
             setCurrentProduction(production);
@@ -153,8 +151,7 @@ const ProductionForm = () => {
             setSelectedItem(item);
         } catch (error) {
             console.error('Error fetching production:', error);
-            toast.error('Failed to load production data. Please try again.');
-            // navigate('/home/production');
+            toast.error(t('failedToLoadProductionData'));
         } finally {
             setLoading(false);
         }
@@ -198,15 +195,15 @@ const ProductionForm = () => {
             : parseFloat(values.quantity);
         const exist = selectedRawMaterials.some(i => i.raw_material_id == values.raw_material_id);
         if (exist) {
-            toast.error('Duplicate item');
+            toast.error(t('duplicateItem'));
             return;
         }
         if (rawMaterial.in_stock <= 0) {
-            toast.error('Item out stock');
+            toast.error(t('itemOutStock'));
             return;
         }
         if (rawMaterial.in_stock < quantityInPrimaryUnit) {
-            toast.error('Not enough item in stock');
+            toast.error(t('notEnoughItemInStock'));
             return;
         }
 
@@ -227,8 +224,8 @@ const ProductionForm = () => {
         setSelectedRawMaterialForModal(null);
         setRawMaterialModalVisible(false);
         notification.success({
-            message: 'Success',
-            description: 'Raw material added successfully',
+            message: t('success'),
+            description: t('rawMaterialAddedSuccess'),
         });
     };
 
@@ -252,19 +249,19 @@ const ProductionForm = () => {
     // Raw material table columns
     const rawMaterialColumns = [
         {
-            title: 'Material',
+            title: t('material'),
             dataIndex: 'material_name',
             key: 'material_name',
             width: 200,
             render: (text, record) => (
                 <div>
-                    <div className="font-medium">{text}</div>
-                    <div className="text-xs text-gray-500">{record.material_code}</div>
+                    <div className="font-medium dark:text-gray-200">{text}</div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400">{record.material_code}</div>
                 </div>
             ),
         },
         {
-            title: 'Quantity',
+            title: t('quantity'),
             dataIndex: 'quantity',
             key: 'quantity',
             width: 120,
@@ -275,13 +272,13 @@ const ProductionForm = () => {
                     step={0.01}
                     precision={2}
                     onChange={(val) => handleUpdateRawMaterial(record.key, 'quantity', val)}
-                    className="w-full"
-                    addonAfter={record.primary_unit}
+                    className="w-full dark:!bg-gray-900 dark:!text-white dark:!border-gray-700"
+                    addonAfter={<span className="dark:text-gray-300">{record.primary_unit}</span>}
                 />
             ),
         },
         {
-            title: 'Cost/Unit',
+            title: t('costPerUnit'),
             dataIndex: 'cost_per_unit',
             key: 'cost_per_unit',
             width: 120,
@@ -294,24 +291,24 @@ const ProductionForm = () => {
                     formatter={val => `$ ${val}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
                     parser={val => val.replace(/\$\s?|(,*)/g, '')}
                     onChange={(val) => handleUpdateRawMaterial(record.key, 'cost_per_unit', val)}
-                    className="w-full"
+                    className="w-full dark:!bg-gray-900 dark:!text-white dark:!border-gray-700"
                 />
             ),
         },
         {
-            title: 'Total',
+            title: t('total'),
             dataIndex: 'total',
             key: 'total',
             width: 120,
             align: 'right',
             render: (value) => (
-                <div className="font-semibold text-green-600">
+                <div className="font-semibold text-green-600 dark:text-green-400">
                     ${value.toFixed(2)}
                 </div>
             ),
         },
         {
-            title: 'Action',
+            title: t('actions'),
             key: 'action',
             width: 80,
             align: 'center',
@@ -329,31 +326,23 @@ const ProductionForm = () => {
     // Validate cost format
     const validateCost = (_, value) => {
         if (!value && value !== 0) {
-            return Promise.reject(new Error('Please enter the cost'));
+            return Promise.reject(new Error(t('enterCost')));
         }
-
-        // const regex = /^\d{1,8}(\.\d{1,2})?$/;
-        // if (!regex.test(value.toString())) {
-        //     return Promise.reject(
-        //         new Error('Invalid cost format. Maximum 8 digits before decimal and 2 after.')
-        //     );
-        // }
-
         return Promise.resolve();
     };
 
     // Validate quantity
     const validateQuantity = (_, value) => {
         if (!value && value !== 0) {
-            return Promise.reject(new Error('Please enter quantity'));
+            return Promise.reject(new Error(t('enterQuantity')));
         }
 
         if (value <= 0) {
-            return Promise.reject(new Error('Quantity must be greater than 0'));
+            return Promise.reject(new Error(t('quantityGreaterZero')));
         }
 
         if (!Number.isInteger(value)) {
-            return Promise.reject(new Error('Quantity must be a whole number'));
+            return Promise.reject(new Error(t('quantityWholeNumber')));
         }
 
         return Promise.resolve();
@@ -368,7 +357,7 @@ const ProductionForm = () => {
         if (selectedRawMaterials.length === 0) {
             setFormErrors(prev => ({
                 ...prev,
-                raw_materials: ['At least one raw material is required']
+                raw_materials: [t('atLeastOneRawMaterialRequired')]
             }));
             setSaving(false);
             return;
@@ -409,15 +398,15 @@ const ProductionForm = () => {
 
             if (response.status == 200) {
                 toast.success(isEditMode
-                    ? 'Production record updated successfully!'
-                    : 'Production record created successfully!',
+                    ? t('productionRecordUpdated')
+                    : t('productionRecordCreated'),
                 );
                 refetch();
                 navigate(-1);
             }
         } catch (error) {
             console.error('Error saving production:', error);
-            toast.error(error.message || 'Failed to save production record. Please try again.');
+            toast.error(error.message || t('failedToSaveProduction'));
         } finally {
             setSaving(false);
         }
@@ -442,7 +431,7 @@ const ProductionForm = () => {
             <div className="flex items-center justify-center min-h-screen">
                 <div className="text-center">
                     <Spin size="large" />
-                    <p className="mt-4 text-gray-600">Loading production data...</p>
+                    <p className="mt-4 text-gray-600 dark:text-gray-400">{t('loading')}...</p>
                 </div>
             </div>
         );
@@ -513,6 +502,7 @@ const ProductionForm = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
+            className="view-page"
         >
             <div className="min-h-screen bg-transparent p-4 md:p-6">
                 {/* Header */}
@@ -523,29 +513,29 @@ const ProductionForm = () => {
                                 type="text"
                                 icon={<LuArrowLeft />}
                                 onClick={() => navigate(-1)}
-                                className="mb-4 text-gray-600 hover:text-gray-800"
+                                className="mb-4 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 p-0"
                             >
-                                Back to Production
+                                {t('backToProduction')}
                             </Button>
-                            <h1 className="text-3xl font-bold text-gray-900 mb-2 flex items-center gap-3">
-                                <div className={`p-3 ${isEditMode ? 'bg-yellow-100' : 'bg-blue-100'} rounded-xl`}>
-                                    <LuPackage className={`text-2xl ${isEditMode ? 'text-yellow-600' : 'text-blue-600'}`} />
+                            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-3">
+                                <div className={`p-3 ${isEditMode ? 'bg-yellow-100 dark:bg-yellow-900/30' : 'bg-blue-100 dark:bg-blue-900/30'} rounded-xl transition-colors`}>
+                                    <LuPackage className={`text-2xl ${isEditMode ? 'text-yellow-600 dark:text-yellow-400' : 'text-blue-600 dark:text-blue-400'}`} />
                                 </div>
-                                {isEditMode ? 'Edit Production Record' : 'Create New Production'}
+                                {isEditMode ? t('editProductionRecord') : t('createNewProduction')}
                             </h1>
-                            <p className="text-gray-600">
+                            <p className="text-gray-600 dark:text-gray-400">
                                 {isEditMode
-                                    ? 'Update the production details below'
-                                    : 'Record a new production batch with raw material consumption'}
+                                    ? t('updateProductionDetails')
+                                    : t('recordNewProductionBatch')}
                             </p>
                         </div>
 
                         {isEditMode && currentProduction && (
                             <div className="flex items-center gap-3">
-                                <Tag color="blue" className="text-sm py-1 px-3">
+                                <Tag color="blue" className="text-sm py-1 px-3 dark:bg-blue-900/30 dark:border-blue-800">
                                     ID: {currentProduction.id}
                                 </Tag>
-                                <Tag color="green" className="text-sm py-1 px-3">
+                                <Tag color="green" className="text-sm py-1 px-3 dark:bg-green-900/30 dark:border-green-800">
                                     {dayjs(currentProduction.production_date).format('MMM D, YYYY')}
                                 </Tag>
                             </div>
@@ -561,11 +551,11 @@ const ProductionForm = () => {
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ delay: 0.1 }}
                         >
-                            <Card className="border-0 shadow-xl">
+                            <Card className="border-0 shadow-xl dark:!bg-gray-800 transition-colors">
                                 {Object.keys(formErrors).length > 0 && (
                                     <Alert
                                         type="error"
-                                        message="Please fix the following errors:"
+                                        message={t('fixErrorsMessage')}
                                         description={
                                             <ul className="mt-2 space-y-1">
                                                 {Object.entries(formErrors).map(([field, errors]) => (
@@ -575,7 +565,7 @@ const ProductionForm = () => {
                                                 ))}
                                             </ul>
                                         }
-                                        className="mb-6"
+                                        className="mb-6 rounded-xl"
                                         closable
                                     />
                                 )}
@@ -589,24 +579,24 @@ const ProductionForm = () => {
                                 >
                                     {/* Basic Information */}
                                     <div>
-                                        <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                                        <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center gap-2">
                                             <LuCalendar className="text-blue-500" />
-                                            Production Information
+                                            {t('productionInformation')}
                                         </h3>
 
                                         <Row gutter={16}>
                                             <Col span={24} md={12}>
                                                 <Form.Item
-                                                    label="Production Date"
+                                                    label={<span className="dark:text-gray-300">{t('productionDate')}</span>}
                                                     name="production_date"
                                                     rules={[
-                                                        { required: true, message: 'Please select production date' }
+                                                        { required: true, message: t('selectProductionDate') }
                                                     ]}
                                                     validateStatus={formErrors.production_date ? 'error' : ''}
                                                     help={formErrors.production_date?.[0]}
                                                 >
                                                     <DatePicker
-                                                        className="w-full"
+                                                        className="w-full dark:!bg-gray-900 dark:!text-white dark:!border-gray-700"
                                                         format="MMM D, YYYY"
                                                         suffixIcon={<LuCalendar className="text-gray-400" />}
                                                     />
@@ -615,20 +605,22 @@ const ProductionForm = () => {
 
                                             <Col span={24} md={12}>
                                                 <Form.Item
-                                                    label="Item to Produce"
+                                                    label={<span className="dark:text-gray-300">{t('itemToProduce')}</span>}
                                                     name="item_id"
                                                     rules={[
-                                                        { required: true, message: 'Please select an item' }
+                                                        { required: true, message: t('selectItem') }
                                                     ]}
                                                     validateStatus={formErrors.item_id ? 'error' : ''}
                                                     help={formErrors.item_id?.[0]}
                                                 >
                                                     <Select
-                                                        placeholder="Select item"
+                                                        placeholder={t('selectItem')}
                                                         suffixIcon={<LuPackage className="text-gray-400" />}
                                                         showSearch
                                                         onSearch={(value) => setSearchItem(value)}
                                                         onPopupScroll={onScrollFetch}
+                                                        className="dark:!bg-gray-900 dark:text-white"
+                                                        dropdownClassName="dark:bg-gray-800"
                                                         filterOption={(input, option) =>
                                                             option.name.toLowerCase().indexOf(input.toLowerCase()) >= 0
                                                         }
@@ -642,17 +634,17 @@ const ProductionForm = () => {
                                                                         size="small"
                                                                         src={item.image}
                                                                         icon={<FaBox />}
-                                                                        className="border border-gray-200"
+                                                                        className="border border-gray-200 dark:border-gray-700"
                                                                     />
                                                                     <div className="flex-1 min-w-0">
-                                                                        <div className="font-medium text-gray-900 truncate">
+                                                                        <div className="font-medium text-gray-900 dark:text-gray-200 truncate">
                                                                             {item.name}
                                                                         </div>
-                                                                        <div className="text-xs text-gray-500 truncate">
+                                                                        <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
                                                                             {item.code} • {item.brand_name}
                                                                         </div>
                                                                     </div>
-                                                                    <Tag color="blue" className="ml-auto">
+                                                                    <Tag color="blue" className="ml-auto dark:bg-blue-900/30 dark:border-blue-800">
                                                                         ${item.price}
                                                                     </Tag>
                                                                 </div>
@@ -666,31 +658,31 @@ const ProductionForm = () => {
                                         <Row gutter={16}>
                                             <Col span={24} md={12}>
                                                 <Form.Item
-                                                    label="Production Quantity"
+                                                    label={<span className="dark:text-gray-300">{t('productionQuantity')}</span>}
                                                     name="quantity"
                                                     rules={[
-                                                        { required: true, message: 'Please enter quantity' },
+                                                        { required: true, message: t('enterQuantity') },
                                                         { validator: validateQuantity }
                                                     ]}
                                                     validateStatus={formErrors.quantity ? 'error' : ''}
                                                     help={formErrors.quantity?.[0]}
                                                 >
                                                     <InputNumber
-                                                        placeholder="Number of units"
-                                                        className="w-full"
+                                                        placeholder={t('quantity')}
+                                                        className="w-full dark:!bg-gray-900 dark:!text-white dark:!border-gray-700"
                                                         min={1}
                                                         precision={0}
-                                                        addonAfter="units"
+                                                        addonAfter={<span className="dark:text-gray-300">{t('unitsCount')}</span>}
                                                     />
                                                 </Form.Item>
                                             </Col>
 
                                             <Col span={24} md={12}>
                                                 <Form.Item
-                                                    label="Total Production Cost"
+                                                    label={<span className="dark:text-gray-300">{t('totalProductionCost')}</span>}
                                                     name="total_cost"
                                                     rules={[
-                                                        { required: true, message: 'Please enter total cost' },
+                                                        { required: true, message: t('enterCost') },
                                                         { validator: validateCost }
                                                     ]}
                                                     validateStatus={formErrors.total_cost ? 'error' : ''}
@@ -698,7 +690,7 @@ const ProductionForm = () => {
                                                 >
                                                     <InputNumber
                                                         placeholder="0.00"
-                                                        className="w-full"
+                                                        className="w-full dark:!bg-gray-900 dark:!text-white dark:!border-gray-700"
                                                         min={0.01}
                                                         step={0.01}
                                                         precision={2}
@@ -712,14 +704,14 @@ const ProductionForm = () => {
                                         </Row>
                                     </div>
 
-                                    <Divider />
+                                    <Divider className="dark:border-gray-700" />
 
                                     {/* Raw Materials Section */}
                                     <div>
                                         <div className="flex items-center justify-between mb-4">
-                                            <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                                            <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 flex items-center gap-2">
                                                 <LuListChecks className="text-green-500" />
-                                                Raw Materials Consumption
+                                                {t('rawMaterialsConsumption')}
                                             </h3>
 
                                             <Button
@@ -728,7 +720,7 @@ const ProductionForm = () => {
                                                 onClick={() => setRawMaterialModalVisible(true)}
                                                 disabled={getAvailableRawMaterials()?.length === 0}
                                             >
-                                                Add Raw Material
+                                                {t('addRawMaterial')}
                                             </Button>
                                         </div>
 
@@ -736,7 +728,7 @@ const ProductionForm = () => {
                                             <Alert
                                                 type="error"
                                                 message={Array.isArray(formErrors.raw_materials) ? formErrors.raw_materials[0] : formErrors.raw_materials}
-                                                className="mb-4"
+                                                className="mb-4 rounded-xl"
                                                 showIcon
                                             />
                                         )}
@@ -748,82 +740,83 @@ const ProductionForm = () => {
                                                     dataSource={selectedRawMaterials}
                                                     pagination={false}
                                                     size="middle"
-                                                    className="ant-table-striped"
-                                                    rowClassName="hover:bg-gray-50"
+                                                    className="ant-table-striped dark:[&_.ant-table]:!bg-gray-800 dark:[&_.ant-table-thead_th]:!bg-gray-900/50 dark:[&_.ant-table-thead_th]:!text-gray-300 dark:[&_.ant-table-tbody_td]:!text-gray-300 dark:[&_.ant-table-tbody_tr:hover_td]:!bg-gray-700/50"
+                                                    rowClassName="hover:bg-gray-50 dark:hover:bg-gray-700/50"
                                                 />
 
-                                                <div className="flex justify-between items-center pt-4 border-t border-gray-200">
-                                                    <div className="text-lg font-semibold text-gray-800">
-                                                        Total Raw Material Cost:
+                                                <div className="flex justify-between items-center pt-4 border-t border-gray-200 dark:border-gray-700">
+                                                    <div className="text-lg font-semibold text-gray-800 dark:text-gray-300">
+                                                        {t('totalRawMaterialCost')}:
                                                     </div>
-                                                    <div className="text-2xl font-bold text-green-600">
+                                                    <div className="text-2xl font-bold text-green-600 dark:text-green-400">
                                                         ${calculateTotalCost().toFixed(2)}
                                                     </div>
                                                 </div>
                                             </div>
                                         ) : (
-                                            <div className="text-center py-8 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+                                            <div className="text-center py-8 bg-gray-50 dark:bg-gray-900/30 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-700 transition-colors">
                                                 <LuPackage className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                                                <p className="text-gray-600 mb-2">No raw materials added yet</p>
-                                                <p className="text-sm text-gray-500 mb-4">
-                                                    Click "Add Raw Material" to start adding materials used in production
+                                                <p className="text-gray-600 dark:text-gray-400 mb-2">{t('noRawMaterialsAdded')}</p>
+                                                <p className="text-sm text-gray-500 dark:text-gray-500 mb-4">
+                                                    {t('clickAddRawMaterialToStart')}
                                                 </p>
                                                 <Button
                                                     type="primary"
                                                     icon={<LuPlus />}
                                                     onClick={() => setRawMaterialModalVisible(true)}
                                                 >
-                                                    Add First Material
+                                                    {t('addFirstMaterial')}
                                                 </Button>
                                             </div>
                                         )}
                                     </div>
 
-                                    <Divider />
+                                    <Divider className="dark:border-gray-700" />
 
                                     {/* Additional Information */}
                                     <div>
-                                        <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                                        <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center gap-2">
                                             <LuFileText className="text-purple-500" />
-                                            Additional Information
+                                            {t('additionalInformation')}
                                         </h3>
 
                                         <Form.Item
-                                            label="Notes"
+                                            label={<span className="dark:text-gray-300">{t('notes')}</span>}
                                             name="notes"
                                             validateStatus={formErrors.notes ? 'error' : ''}
                                             help={formErrors.notes?.[0]}
                                         >
                                             <TextArea
-                                                placeholder="Enter any additional notes about this production batch..."
+                                                placeholder={t('enterNotesPlaceholder')}
                                                 rows={4}
                                                 showCount
                                                 maxLength={1000}
+                                                className="dark:!bg-gray-900 dark:!text-white dark:!border-gray-700"
                                             />
                                         </Form.Item>
                                     </div>
 
                                     {/* Form Actions */}
-                                    <div className="pt-6 border-t border-gray-200">
+                                    <div className="pt-6 border-t border-gray-200 dark:border-gray-700">
                                         <div className="flex flex-col sm:flex-row gap-3 justify-end">
                                             <Button
                                                 type="default"
                                                 icon={<LuArrowLeft />}
                                                 onClick={() => navigate(-1)}
-                                                className="h-12 px-6 rounded-lg"
+                                                className="h-12 px-6 rounded-lg dark:!bg-gray-700 dark:!text-white dark:!border-gray-600 transition-colors"
                                                 size="large"
                                             >
-                                                Cancel
+                                                {t('cancel')}
                                             </Button>
 
                                             <Button
                                                 type="default"
                                                 icon={<LuRefreshCw />}
                                                 onClick={handleReset}
-                                                className="h-12 px-6 rounded-lg"
+                                                className="h-12 px-6 rounded-lg dark:!bg-gray-700 dark:!text-white dark:!border-gray-600 transition-colors"
                                                 size="large"
                                             >
-                                                Reset Form
+                                                {t('reset')}
                                             </Button>
 
                                             <Button
@@ -831,10 +824,10 @@ const ProductionForm = () => {
                                                 icon={<LuSave />}
                                                 htmlType="submit"
                                                 loading={saving}
-                                                className="h-12 px-8 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 border-none"
+                                                className="h-12 px-8 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 border-none shadow-lg shadow-blue-200 dark:shadow-none"
                                                 size="large"
                                             >
-                                                {saving ? 'Saving...' : isEditMode ? 'Update Production' : 'Create Production'}
+                                                {saving ? t('saving') : isEditMode ? t('updateProduction') : t('createProduction')}
                                             </Button>
                                         </div>
                                     </div>
@@ -852,90 +845,90 @@ const ProductionForm = () => {
                             className="space-y-6"
                         >
                             {/* Production Summary */}
-                            <Card className="border-0 shadow-xl">
-                                <h3 className="text-lg font-semibold text-gray-800 mb-4">
-                                    Production Summary
+                            <Card className="border-0 shadow-xl dark:!bg-gray-800 transition-colors">
+                                <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">
+                                    {t('productionSummary')}
                                 </h3>
 
                                 <div className="space-y-4">
                                     <div className="grid grid-cols-2 gap-4">
                                         <Statistic
-                                            title="Total Items"
+                                            title={<span className="dark:text-gray-400">{t('totalItems')}</span>}
                                             value={form.getFieldValue('quantity') || 0}
-                                            suffix="units"
-                                            className="text-center"
+                                            suffix={<span className="dark:text-gray-400">{t('units')}</span>}
+                                            className="text-center dark:[&_.ant-statistic-content]:text-white"
                                         />
                                         <Statistic
-                                            title="Unit Cost"
+                                            title={<span className="dark:text-gray-400">{t('unitCost')}</span>}
                                             value={form.getFieldValue('quantity') && form.getFieldValue('total_cost')
                                                 ? (parseFloat(form.getFieldValue('total_cost')) / parseInt(form.getFieldValue('quantity'))).toFixed(2)
                                                 : 0}
-                                            prefix="$"
-                                            className="text-center"
+                                            prefix={<span className="dark:text-gray-400">$</span>}
+                                            className="text-center dark:[&_.ant-statistic-content]:text-white"
                                         />
                                     </div>
 
-                                    <Divider className="my-2" />
+                                    <Divider className="my-2 dark:border-gray-700" />
 
                                     <div>
-                                        <div className="text-sm text-gray-600 mb-2">Selected Item:</div>
+                                        <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">{t('selectedItem')}:</div>
                                         {selectedItem ? (
-                                            <div className="bg-gray-50 p-3 rounded-lg">
-                                                <div className="font-medium">{selectedItem.item_name}</div>
-                                                <div className="text-sm text-gray-500">{selectedItem.item_code}</div>
-                                                <div className="text-xs text-gray-400 mt-1">
-                                                    {selectedItem.category_name || 'No category'}
+                                            <div className="bg-gray-50 dark:bg-gray-900/50 p-3 rounded-lg transition-colors">
+                                                <div className="font-medium dark:text-gray-200">{selectedItem.item_name}</div>
+                                                <div className="text-sm text-gray-500 dark:text-gray-400">{selectedItem.item_code}</div>
+                                                <div className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                                                    {selectedItem.category_name || t('noCategory')}
                                                 </div>
                                             </div>
                                         ) : (
                                             <div className="text-gray-500 text-sm italic">
-                                                No item selected
+                                                {t('noItemSelected')}
                                             </div>
                                         )}
                                     </div>
 
                                     <div>
-                                        <div className="text-sm text-gray-600 mb-2">Production Date:</div>
-                                        <div className="font-medium">
+                                        <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">{t('productionDate')}:</div>
+                                        <div className="font-medium dark:text-gray-200">
                                             {form.getFieldValue('production_date')
                                                 ? form.getFieldValue('production_date').format('MMMM D, YYYY')
-                                                : 'Not set'}
+                                                : t('notSet')}
                                         </div>
                                     </div>
                                 </div>
                             </Card>
 
                             {/* Raw Materials Summary */}
-                            <Card className="border-0 shadow-xl">
-                                <h3 className="text-lg font-semibold text-gray-800 mb-4">
-                                    Raw Materials Summary
+                            <Card className="border-0 shadow-xl dark:!bg-gray-800 transition-colors">
+                                <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">
+                                    {t('summary')}
                                 </h3>
 
                                 <div className="space-y-3">
                                     <div className="flex justify-between">
-                                        <span className="text-gray-600">Materials Used:</span>
-                                        <span className="font-medium">{selectedRawMaterials.length}</span>
+                                        <span className="text-gray-600 dark:text-gray-400">{t('materialsUsed')}:</span>
+                                        <span className="font-medium dark:text-gray-200">{selectedRawMaterials.length}</span>
                                     </div>
 
                                     <div className="flex justify-between">
-                                        <span className="text-gray-600">Total Cost:</span>
-                                        <span className="font-bold text-green-600">
+                                        <span className="text-gray-600 dark:text-gray-400">{t('totalCost')}:</span>
+                                        <span className="font-bold text-green-600 dark:text-green-400">
                                             ${calculateTotalCost().toFixed(2)}
                                         </span>
                                     </div>
 
                                     {selectedRawMaterials.length > 0 && (
                                         <>
-                                            <Divider className="my-2" />
+                                            <Divider className="my-2 dark:border-gray-700" />
                                             <div>
-                                                <div className="text-sm text-gray-600 mb-2">Material Breakdown:</div>
-                                                <div className="space-y-2 max-h-60 overflow-y-auto">
+                                                <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">{t('materialBreakdown')}:</div>
+                                                <div className="space-y-2 max-h-60 overflow-y-auto dark:scrollbar-thin dark:scrollbar-thumb-gray-700">
                                                     {selectedRawMaterials.map((rm, index) => (
                                                         <div key={rm.key} className="flex justify-between items-center text-sm">
-                                                            <div className="truncate max-w-[140px]">
+                                                            <div className="truncate max-w-[140px] dark:text-gray-300">
                                                                 {index + 1}. {rm.material_name}
                                                             </div>
-                                                            <div className="text-gray-700">
+                                                            <div className="text-gray-700 dark:text-gray-400">
                                                                 {rm.quantity} {rm.primary_unit} × ${rm.cost_per_unit.toFixed(2)}
                                                             </div>
                                                         </div>
@@ -948,32 +941,32 @@ const ProductionForm = () => {
                             </Card>
 
                             {/* Cost Analysis */}
-                            <Card className="border-0 shadow-xl">
-                                <h3 className="text-lg font-semibold text-gray-800 mb-4">
-                                    Cost Analysis
+                            <Card className="border-0 shadow-xl dark:!bg-gray-800 transition-colors">
+                                <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">
+                                    {t('costAnalysis')}
                                 </h3>
 
                                 <div className="space-y-3">
                                     <div className="flex justify-between">
-                                        <span className="text-gray-600">Raw Material Cost:</span>
-                                        <span className="font-medium text-green-600">
+                                        <span className="text-gray-600 dark:text-gray-400">{t('rawMaterialCost')}:</span>
+                                        <span className="font-medium text-green-600 dark:text-green-400">
                                             ${calculateTotalCost().toFixed(2)}
                                         </span>
                                     </div>
 
                                     <div className="flex justify-between">
-                                        <span className="text-gray-600">Total Production Cost:</span>
-                                        <span className="font-bold text-blue-600">
+                                        <span className="text-gray-600 dark:text-gray-400">{t('totalProductionCost')}:</span>
+                                        <span className="font-bold text-blue-600 dark:text-blue-400">
                                             ${(form.getFieldValue('total_cost') || 0).toFixed(2)}
                                         </span>
                                     </div>
 
                                     {form.getFieldValue('quantity') && form.getFieldValue('total_cost') && (
                                         <>
-                                            <Divider className="my-2" />
+                                            <Divider className="my-2 dark:border-gray-700" />
                                             <div className="flex justify-between">
-                                                <span className="text-gray-600">Cost per Unit:</span>
-                                                <span className="font-semibold text-purple-600">
+                                                <span className="text-gray-600 dark:text-gray-400">{t('costPerUnit')}:</span>
+                                                <span className="font-semibold text-purple-600 dark:text-purple-400">
                                                     ${(parseFloat(form.getFieldValue('total_cost')) / parseInt(form.getFieldValue('quantity'))).toFixed(2)}
                                                 </span>
                                             </div>
@@ -983,14 +976,14 @@ const ProductionForm = () => {
                             </Card>
 
                             {/* Validation Status */}
-                            <Card className="border-0 shadow-xl">
-                                <h3 className="text-lg font-semibold text-gray-800 mb-4">
-                                    Validation Status
+                            <Card className="border-0 shadow-xl dark:!bg-gray-800 transition-colors">
+                                <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">
+                                    {t('validationStatus')}
                                 </h3>
 
                                 <div className="space-y-2">
                                     <div className="flex items-center justify-between">
-                                        <span className="text-sm">Basic Information</span>
+                                        <span className="text-sm dark:text-gray-300">{t('basicInformation')}</span>
                                         {form.getFieldValue('production_date') && form.getFieldValue('item_id') &&
                                             form.getFieldValue('quantity') && form.getFieldValue('total_cost') ? (
                                             <LuClipboardCheck className="w-4 h-4 text-green-500" />
@@ -1000,7 +993,7 @@ const ProductionForm = () => {
                                     </div>
 
                                     <div className="flex items-center justify-between">
-                                        <span className="text-sm">Raw Materials</span>
+                                        <span className="text-sm dark:text-gray-300">{t('rawMaterials')}</span>
                                         {selectedRawMaterials.length > 0 ? (
                                             <LuClipboardCheck className="w-4 h-4 text-green-500" />
                                         ) : (
@@ -1009,7 +1002,7 @@ const ProductionForm = () => {
                                     </div>
 
                                     <div className="flex items-center justify-between">
-                                        <span className="text-sm">Cost Validation</span>
+                                        <span className="text-sm dark:text-gray-300">{t('costValidation')}</span>
                                         {form.getFieldValue('total_cost') && form.getFieldValue('total_cost') > 0 ? (
                                             <LuClipboardCheck className="w-4 h-4 text-green-500" />
                                         ) : (
@@ -1017,10 +1010,10 @@ const ProductionForm = () => {
                                         )}
                                     </div>
 
-                                    <Divider className="my-2" />
+                                    <Divider className="my-2 dark:border-gray-700" />
 
-                                    <div className="text-xs text-gray-500">
-                                        All checks must pass before saving the production record
+                                    <div className="text-xs text-gray-500 dark:text-gray-500">
+                                        {t('allChecksMustPass')}
                                     </div>
                                 </div>
                             </Card>
@@ -1030,7 +1023,7 @@ const ProductionForm = () => {
 
                 {/* Add Raw Material Modal */}
                 <Modal
-                    title="Add Raw Material"
+                    title={<span className="dark:text-gray-200">{t('addRawMaterial')}</span>}
                     open={rawMaterialModalVisible}
                     onCancel={() => {
                         rawMaterialForm.resetFields();
@@ -1039,24 +1032,27 @@ const ProductionForm = () => {
                     }}
                     footer={null}
                     width={500}
+                    className="dark:[&_.ant-modal-content]:!bg-gray-800 dark:[&_.ant-modal-header]:!bg-gray-800 dark:[&_.ant-modal-title]:!text-gray-200"
                 >
                     <Form
-                        form={rawMaterialForm}        // ✅ VERY IMPORTANT
+                        form={rawMaterialForm}
                         layout="vertical"
                         onFinish={handleAddRawMaterial}
                         size="large"
                     >
                         {/* RAW MATERIAL */}
                         <Form.Item
-                            label="Raw Material"
+                            label={<span className="dark:text-gray-300">{t('rawMaterial')}</span>}
                             name="raw_material_id"
-                            rules={[{ required: true, message: 'Please select a raw material' }]}
+                            rules={[{ required: true, message: t('selectRawMaterial') }]}
                         >
                             <Select
-                                placeholder="Select raw material"
+                                placeholder={t('selectRawMaterial')}
                                 showSearch
                                 onSearch={(value) => setSearchRaw(value)}
                                 onChange={handleRawMaterialChange}
+                                className="dark:!bg-gray-900 dark:text-white"
+                                dropdownClassName="dark:bg-gray-800"
                                 filterOption={(input, option) =>
                                     option.name.toLowerCase().includes(input.toLowerCase())
                                 }
@@ -1073,17 +1069,17 @@ const ProductionForm = () => {
                                                 size="small"
                                                 src={material.material_image}
                                                 icon={<FaBox />}
-                                                className="border border-gray-200"
+                                                className="border border-gray-200 dark:border-gray-700"
                                             />
                                             <div className="flex-1 min-w-0">
-                                                <div className="font-medium text-gray-900 truncate">
+                                                <div className="font-medium text-gray-900 dark:text-gray-200 truncate">
                                                     {material.material_name}
                                                 </div>
-                                                <div className="text-xs text-gray-500 truncate">
+                                                <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
                                                     {material.material_code}
                                                 </div>
                                             </div>
-                                            <Tag color="blue" className="ml-auto">
+                                            <Tag color="blue" className="ml-auto dark:bg-blue-900/30 dark:border-blue-800">
                                                 {Number(material.in_stock)?.toFixed(0)}
                                             </Tag>
                                         </div>
@@ -1096,84 +1092,78 @@ const ProductionForm = () => {
                             {/* QUANTITY */}
                             <Col span={12}>
                                 <Form.Item
-                                    label="Quantity"
+                                    label={<span className="dark:text-gray-300">{t('quantity')}</span>}
                                     name="quantity"
                                     rules={[
-                                        { required: true, message: 'Please enter quantity' },
-                                        { type: 'number', min: 1, message: 'Quantity must be greater than 0' }
+                                        { required: true, message: t('enterQuantity') },
+                                        { type: 'number', min: 0.01, message: t('quantityGreaterZero') }
                                     ]}
                                 >
                                     <InputNumber
-                                        className="w-full"
-                                        min={1}
-                                        step={1}
-                                        precision={0}
-                                        // onChange={}   // ✅ API call here
+                                        className="w-full dark:!bg-gray-900 dark:!text-white dark:!border-gray-700"
+                                        min={0.01}
+                                        step={0.01}
+                                        precision={2}
                                         onBlur={handleQuantity}
                                     />
                                 </Form.Item>
                             </Col>
 
                             <Col span={12}>
-                                <Row>
-
-                                    <Form.Item
-                                        label="Unit"
-                                        name="unit"
-                                        rules={[
-                                            { required: true, message: 'Please select unit' },
-                                        ]}
+                                <Form.Item
+                                    label={<span className="dark:text-gray-300">{t('unit')}</span>}
+                                    name="unit"
+                                    rules={[
+                                        { required: true, message: t('selectUnit') },
+                                    ]}
+                                >
+                                    <Select
+                                        className="w-full dark:!bg-gray-900 dark:text-white"
+                                        placeholder={t('selectUnit')}
+                                        onSelect={handleQuantity}
+                                        disabled={!selectedRawMaterialForModal}
                                     >
-                                        <Select
-                                            className="w-full"
-                                            placeholder="Select unit"
-                                            onSelect={handleQuantity}
-                                            disabled={!selectedRawMaterialForModal}
-                                        >
-                                            {[selectedRawMaterialForModal?.primary_unit, selectedRawMaterialForModal?.secondary_unit]
-                                                .filter(Boolean)
-                                                .filter((value, index, array) => array.indexOf(value) === index)
-                                                .map((unit) => (
-                                                    <Option key={unit} value={unit}>
-                                                        {unit}
-                                                    </Option>
-                                                ))}
-                                        </Select>
-                                    </Form.Item>
-                                </Row>
-                            </Col>
-                            {/* COST PER UNIT */}
-                            <Col span={12}>
-                                <Row>
-
-                                    <Form.Item
-                                        label="Cost per Unit"
-                                        name="cost_per_unit"
-                                        rules={[
-                                            { required: true, message: 'Please enter cost per unit' },
-                                            { validator: validateCost },
-                                        ]}
-                                    >
-                                        <InputNumber
-                                            className="w-full"
-                                            min={0.01}
-                                            step={0.01}
-                                            precision={2}
-                                            readOnly
-                                            prefix={<LuDollarSign className="text-gray-400" />}
-                                            disabled={costLoading}
-                                            formatter={(value) =>
-                                                `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')
-                                            }
-                                            parser={(value) =>
-                                                value.replace(/\$\s?|(,*)/g, '')
-                                            }
-                                        />
-                                    </Form.Item>
-                                    <Spin spinning={costLoading} />
-                                </Row>
+                                        {[selectedRawMaterialForModal?.primary_unit, selectedRawMaterialForModal?.secondary_unit]
+                                            .filter(Boolean)
+                                            .filter((value, index, array) => array.indexOf(value) === index)
+                                            .map((unit) => (
+                                                <Option key={unit} value={unit}>
+                                                    {unit}
+                                                </Option>
+                                            ))}
+                                    </Select>
+                                </Form.Item>
                             </Col>
                         </Row>
+
+                        {/* COST PER UNIT */}
+                        <div className="mb-4">
+                            <Form.Item
+                                label={<span className="dark:text-gray-300">{t('costPerUnit')}</span>}
+                                name="cost_per_unit"
+                                rules={[
+                                    { required: true, message: t('enterCostPerUnit') },
+                                    { validator: validateCost },
+                                ]}
+                            >
+                                <InputNumber
+                                    className="w-full dark:!bg-gray-900 dark:!text-white dark:!border-gray-700"
+                                    min={0.01}
+                                    step={0.01}
+                                    precision={2}
+                                    readOnly
+                                    prefix={<LuDollarSign className="text-gray-400" />}
+                                    disabled={costLoading}
+                                    formatter={(value) =>
+                                        `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+                                    }
+                                    parser={(value) =>
+                                        value.replace(/\$\s?|(,*)/g, '')
+                                    }
+                                />
+                            </Form.Item>
+                            {costLoading && <Spin size="small" className="ml-2" />}
+                        </div>
 
                         <div className="flex justify-end gap-2 pt-4">
                             <Button
@@ -1182,11 +1172,12 @@ const ProductionForm = () => {
                                     setSelectedRawMaterialForModal(null);
                                     setRawMaterialModalVisible(false);
                                 }}
+                                className="dark:!bg-gray-700 dark:!text-white dark:!border-gray-600 transition-colors"
                             >
-                                Cancel
+                                {t('cancel')}
                             </Button>
                             <Button type="primary" htmlType="submit">
-                                Add Material
+                                {t('addMaterial')}
                             </Button>
                         </div>
                     </Form>

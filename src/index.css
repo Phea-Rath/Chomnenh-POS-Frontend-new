@@ -16,7 +16,7 @@
 
 @theme {
   --bg-main-light: rgb(13, 26, 99);
-  --bg-side-light: #0D1A63;
+  --bg-side-light: #1b2b50;
   --bg-dark: hsl(0 0% 90%);
   --bg: hsl(300 0% 95%);
   --bg-light: hsl(300 50% 100%);
@@ -53,7 +53,7 @@
   --info: hsl(217 22% 41%);
   --shadow: 0px 4px 4px #00000015, 0px 12px 12px #00000015;
   --bg-gradient: linear-gradient(0deg, var(--bg) 100%, var(--bg-light));
-  --primary-dark: #1E293B;
+  --primary-dark: #2c447c;
 }
 
 /* Dark mode CSS variables */
@@ -74,6 +74,7 @@
   --info: hsl(217 22% 60%);
   --shadow: 0px 4px 4px #00000040, 0px 12px 12px #00000040;
   --bg-gradient: linear-gradient(0deg, var(--bg) 100%, var(--bg-light));
+  --bg-primary: hsl(221, 44%, 32%);
 }
 
 @layer utilities {
@@ -116,7 +117,7 @@
       background-origin: border-box;
       background-clip: padding-box, border-box;
       background-image:
-        linear-gradient(to right, var(--primary-dark), var(--primary-dark)),
+        linear-gradient(to right, var(--bg-side-light), var(--bg-side-light)),
         /* Inner background color */
         linear-gradient(to right, #BF953F, #FCF6BA, #B38728);
       /* Gold gradient */
@@ -138,10 +139,10 @@
   .bg-primary {
     background: #FFFFFF;
     box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
-    color: var(--bg-primary);
+    /* color: var(--bg-primary); */
 
     @variant dark {
-      background: var(--bg-primary);
+      background: var(--bg-primary) !important;
       box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
       color: #E2E8F0;
     }
@@ -152,6 +153,11 @@
 @layer components {
   .combined {
     box-shadow: 0px 4px 4px #00000015;
+  }
+
+  html,
+  body {
+    overflow: hidden;
   }
 
   .bg-primary-dark {

@@ -7,7 +7,6 @@ import {
     FaList,
     FaEdit,
     FaTrash,
-    FaEye,
     FaTruck
 } from "react-icons/fa";
 import { toast } from "react-toastify";
@@ -17,9 +16,10 @@ import {
     useGetAllDeliverQuery,
     useDeleteDeliverMutation
 } from "../../../app/Features/deliversSlice";
-import api from "../../services/api";
+import { useTranslation } from "react-i18next";
 
 const DeliverList = () => {
+    const { t } = useTranslation();
     const navigate = useNavigate();
     const token = localStorage.getItem("token");
     const [viewMode, setViewMode] = useState("grid"); // "grid" or "list"
@@ -30,7 +30,7 @@ const DeliverList = () => {
     const [selectedDeliverId, setSelectedDeliverId] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
 
-    const { setLoading } = useOutletsContext();
+    const { setLoading, darkMode } = useOutletsContext();
     const { data: response, refetch, isLoading: isFetching } = useGetAllDeliverQuery(token);
     const [deleteDeliver] = useDeleteDeliverMutation();
 
@@ -82,7 +82,7 @@ const DeliverList = () => {
             }).unwrap();
 
             if (response.status === 200) {
-                toast.success(response.message || "Deliver deleted successfully");
+                toast.success(t('deliverDeletedSuccess'));
                 refetch();
             }
         } catch (error) {
@@ -109,11 +109,6 @@ const DeliverList = () => {
         navigate(`edit/${deliverId}`);
     };
 
-    // Handle view details
-    const handleViewDetails = (deliverId) => {
-        navigate(-1);
-    };
-
     // Handle create new deliver
     const handleCreate = () => {
         navigate("create");
@@ -132,19 +127,19 @@ const DeliverList = () => {
     // Format date
     const formatDate = (dateString) => {
         const options = { year: 'numeric', month: 'short', day: 'numeric' };
-        return new Date(dateString).toLocaleDateString('en-US', options);
+        return new Date(dateString).toLocaleDateString(undefined, options);
     };
 
     return (
-        <div className="min-h-screen bg-transparent p-4 md:p-6">
+        <div className={`min-h-screen bg-transparent p-4 md:p-6 ${darkMode ? "text-gray-100" : "text-gray-800"}`}>
             <AlertBox
                 isOpen={alertBox}
-                title="Delete Deliver"
-                message="Are you sure you want to delete this deliver? This action cannot be undone."
+                title={t('deleteDeliverTitle')}
+                message={t('deleteDeliverMessage')}
                 onConfirm={handleConfirm}
                 onCancel={handleCancel}
-                confirmText="Delete"
-                cancelText="Cancel"
+                confirmText={t('delete')}
+                cancelText={t('cancel')}
                 confirmColor="error"
             />
 
@@ -152,14 +147,14 @@ const DeliverList = () => {
             <div className="mb-8">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
                     <div>
-                        <h1 className="text-2xl md:text-3xl font-bold text-gray-800 flex items-center gap-3">
+                        <h1 className={`text-2xl md:text-3xl font-bold flex items-center gap-3 ${darkMode ? "text-white" : "text-gray-800"}`}>
                             <div className="p-2 bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg">
                                 <FaTruck className="text-white text-lg" />
                             </div>
-                            Delivers Management
+                            {t('deliversManagement')}
                         </h1>
-                        <p className="text-gray-600 mt-2">
-                            Manage all your delivery services in one place
+                        <p className={`${darkMode ? "text-gray-400" : "text-gray-600"} mt-2`}>
+                            {t('manageDeliveryServices')}
                         </p>
                     </div>
 
@@ -168,12 +163,12 @@ const DeliverList = () => {
                         className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-0.5 font-medium"
                     >
                         <FaPlus className="w-5 h-5" />
-                        Add New Deliver
+                        {t('addNewDeliver')}
                     </button>
                 </div>
 
                 {/* Search and Controls */}
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+                <div className={`${darkMode ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"} rounded-xl shadow-sm border p-4`}>
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                         {/* Search */}
                         <div className="relative flex-1 max-w-md">
@@ -184,8 +179,12 @@ const DeliverList = () => {
                                 type="text"
                                 value={searchTerm}
                                 onChange={handleSearch}
-                                placeholder="Search delivers by name..."
-                                className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                                placeholder={t('searchDeliversPlaceholder')}
+                                className={`w-full pl-12 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 transition-all duration-200 ${
+                                    darkMode 
+                                    ? "bg-gray-700 border-gray-600 text-white placeholder-gray-400" 
+                                    : "bg-gray-50 border-gray-300 text-gray-900"
+                                }`}
                             />
                         </div>
 
@@ -193,23 +192,23 @@ const DeliverList = () => {
                         <div className="flex items-center gap-4">
                             {/* Stats */}
                             <div className="hidden md:flex items-center gap-4">
-                                <div className="px-4 py-2 bg-blue-50 rounded-lg border border-blue-200">
+                                <div className={`px-4 py-2 rounded-lg border ${darkMode ? "bg-blue-900/30 border-blue-800" : "bg-blue-50 border-blue-200"}`}>
                                     <div className="flex items-center gap-2">
-                                        <FaTruck className="w-4 h-4 text-blue-600" />
-                                        <span className="text-sm font-medium text-gray-700">
-                                            {filteredDelivers.length} deliver{filteredDelivers.length !== 1 ? 's' : ''}
+                                        <FaTruck className={`w-4 h-4 ${darkMode ? "text-blue-400" : "text-blue-600"}`} />
+                                        <span className={`text-sm font-medium ${darkMode ? "text-blue-100" : "text-gray-700"}`}>
+                                            {filteredDelivers.length} {t('records')}
                                         </span>
                                     </div>
                                 </div>
                             </div>
 
                             {/* View Toggle */}
-                            <div className="flex items-center bg-gray-100 rounded-lg p-1">
+                            <div className={`flex items-center rounded-lg p-1 ${darkMode ? "bg-gray-700" : "bg-gray-100"}`}>
                                 <button
                                     onClick={() => setViewMode("grid")}
                                     className={`p-2 rounded-lg transition-colors ${viewMode === "grid"
-                                        ? "bg-white shadow-sm text-blue-600"
-                                        : "text-gray-600 hover:text-gray-900"
+                                        ? (darkMode ? "bg-gray-600 text-blue-400 shadow-sm" : "bg-white shadow-sm text-blue-600")
+                                        : (darkMode ? "text-gray-400 hover:text-gray-200" : "text-gray-600 hover:text-gray-900")
                                         }`}
                                 >
                                     <FaThLarge className="w-5 h-5" />
@@ -217,8 +216,8 @@ const DeliverList = () => {
                                 <button
                                     onClick={() => setViewMode("list")}
                                     className={`p-2 rounded-lg transition-colors ${viewMode === "list"
-                                        ? "bg-white shadow-sm text-blue-600"
-                                        : "text-gray-600 hover:text-gray-900"
+                                        ? (darkMode ? "bg-gray-600 text-blue-400 shadow-sm" : "bg-white shadow-sm text-blue-600")
+                                        : (darkMode ? "text-gray-400 hover:text-gray-200" : "text-gray-600 hover:text-gray-900")
                                         }`}
                                 >
                                     <FaList className="w-5 h-5" />
@@ -233,22 +232,22 @@ const DeliverList = () => {
             {isFetching ? (
                 <div className="flex flex-col items-center justify-center py-16">
                     <div className="relative">
-                        <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+                        <div className={`w-12 h-12 border-4 rounded-full animate-spin ${darkMode ? "border-blue-900 border-t-blue-500" : "border-blue-200 border-t-blue-600"}`}></div>
                     </div>
-                    <p className="mt-4 text-gray-600 font-medium">Loading delivers...</p>
+                    <p className={`mt-4 font-medium ${darkMode ? "text-gray-400" : "text-gray-600"}`}>{t('loadingDelivers')}</p>
                 </div>
             ) : filteredDelivers.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-16 bg-white rounded-xl shadow-sm border border-gray-200">
-                    <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                        <FaTruck className="w-10 h-10 text-gray-400" />
+                <div className={`flex flex-col items-center justify-center py-16 rounded-xl shadow-sm border ${darkMode ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"}`}>
+                    <div className={`w-20 h-20 rounded-full flex items-center justify-center mb-4 ${darkMode ? "bg-gray-700" : "bg-gray-100"}`}>
+                        <FaTruck className={`w-10 h-10 ${darkMode ? "text-gray-500" : "text-gray-400"}`} />
                     </div>
-                    <h3 className="text-lg font-medium text-gray-700 mb-2">
-                        {searchTerm ? "No matching delivers found" : "No delivers yet"}
+                    <h3 className={`text-lg font-medium mb-2 ${darkMode ? "text-gray-200" : "text-gray-700"}`}>
+                        {searchTerm ? t('noDeliversMatchSearch') : t('noDeliversFound')}
                     </h3>
-                    <p className="text-gray-500 max-w-md text-center mb-6">
+                    <p className={`max-w-md text-center mb-6 ${darkMode ? "text-gray-400" : "text-gray-500"}`}>
                         {searchTerm
-                            ? "Try adjusting your search terms to find what you're looking for."
-                            : "Get started by adding your first delivery service."
+                            ? t('tryAdjustingSearchDelivers')
+                            : t('getStartedDelivers')
                         }
                     </p>
                     {!searchTerm && (
@@ -257,7 +256,7 @@ const DeliverList = () => {
                             className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 shadow-md hover:shadow-lg transition-all duration-300 font-medium"
                         >
                             <FaPlus className="w-5 h-5" />
-                            Add Your First Deliver
+                            {t('addYourFirstDeliver')}
                         </button>
                     )}
                 </div>
@@ -267,10 +266,12 @@ const DeliverList = () => {
                     {filteredDelivers.map((deliver) => (
                         <div
                             key={deliver.deliver_id}
-                            className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1"
+                            className={`rounded-xl shadow-sm border overflow-hidden hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 ${
+                                darkMode ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"
+                            }`}
                         >
                             {/* Image Section */}
-                            <div className="h-48 bg-gradient-to-r from-blue-50 to-indigo-50 relative overflow-hidden">
+                            <div className={`h-48 relative overflow-hidden ${darkMode ? "bg-gray-900" : "bg-gradient-to-r from-blue-50 to-indigo-50"}`}>
                                 {deliver.image ? (
                                     <img
                                         src={deliver.image}
@@ -288,7 +289,7 @@ const DeliverList = () => {
                                 )}
                                 <div className="absolute top-4 right-4">
                                     <span className="px-3 py-1 bg-blue-500 text-white text-xs font-medium rounded-full">
-                                        Active
+                                        {t('activeStatus')}
                                     </span>
                                 </div>
                             </div>
@@ -296,32 +297,39 @@ const DeliverList = () => {
                             {/* Content Section */}
                             <div className="p-5">
                                 <div className="mb-4">
-                                    <h3 className="text-lg font-semibold text-gray-800 mb-1">
+                                    <h3 className={`text-lg font-semibold mb-1 ${darkMode ? "text-white" : "text-gray-800"}`}>
                                         {deliver.deliver_name}
                                     </h3>
-                                    <p className="text-sm text-gray-600">
-                                        Created {formatDate(deliver.created_at)}
+                                    <p className={`text-sm ${darkMode ? "text-gray-400" : "text-gray-600"}`}>
+                                        {t('createdDate')} {formatDate(deliver.created_at)}
                                     </p>
                                 </div>
 
                                 {/* Actions */}
-                                <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-
-                                    <div className="flex gap-2">
+                                <div className={`flex items-center justify-between pt-4 border-t ${darkMode ? "border-gray-700" : "border-gray-100"}`}>
+                                    <div className="flex gap-2 w-full justify-end">
                                         <button
                                             onClick={() => handleEdit(deliver.deliver_id)}
-                                            className="inline-flex items-center gap-2 px-3 py-2 text-sm text-green-600 hover:text-green-800 hover:bg-green-50 rounded-lg transition-colors"
+                                            className={`inline-flex items-center gap-2 px-3 py-2 text-sm rounded-lg transition-colors ${
+                                                darkMode 
+                                                ? "text-green-400 hover:text-green-300 hover:bg-green-900/30" 
+                                                : "text-green-600 hover:text-green-800 hover:bg-green-50"
+                                            }`}
                                         >
                                             <FaEdit className="w-4 h-4" />
-                                            Edit
+                                            {t('edit')}
                                         </button>
                                         <button
                                             onClick={() => handleDelete(deliver.deliver_id)}
                                             disabled={isLoading}
-                                            className="inline-flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
+                                            className={`inline-flex items-center gap-2 px-3 py-2 text-sm rounded-lg transition-colors disabled:opacity-50 ${
+                                                darkMode 
+                                                ? "text-red-400 hover:text-red-300 hover:bg-red-900/30" 
+                                                : "text-red-600 hover:text-red-800 hover:bg-red-50"
+                                            }`}
                                         >
                                             <FaTrash className="w-4 h-4" />
-                                            Delete
+                                            {t('delete')}
                                         </button>
                                     </div>
                                 </div>
@@ -331,34 +339,34 @@ const DeliverList = () => {
                 </div>
             ) : (
                 // List View
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                <div className={`rounded-xl shadow-sm border overflow-hidden ${darkMode ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"}`}>
                     <div className="overflow-x-auto">
                         <table className="w-full">
-                            <thead className="bg-gray-50">
+                            <thead className={`${darkMode ? "bg-gray-700/50" : "bg-gray-50"}`}>
                                 <tr>
-                                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                                        Deliver
+                                    <th className={`px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider ${darkMode ? "text-gray-300" : "text-gray-700"}`}>
+                                        {t('deliverName')}
                                     </th>
-                                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                                        Created At
+                                    <th className={`px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider ${darkMode ? "text-gray-300" : "text-gray-700"}`}>
+                                        {t('createdDate')}
                                     </th>
-                                    <th className="px6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                                        Status
+                                    <th className={`px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider ${darkMode ? "text-gray-300" : "text-gray-700"}`}>
+                                        {t('status')}
                                     </th>
-                                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                                        Actions
+                                    <th className={`px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider ${darkMode ? "text-gray-300" : "text-gray-700"}`}>
+                                        {t('actions')}
                                     </th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-gray-200">
+                            <tbody className={`divide-y ${darkMode ? "divide-gray-700" : "divide-gray-200"}`}>
                                 {filteredDelivers.map((deliver) => (
-                                    <tr key={deliver.deliver_id} className="hover:bg-gray-50 transition-colors">
+                                    <tr key={deliver.deliver_id} className={`transition-colors ${darkMode ? "hover:bg-gray-700/30" : "hover:bg-gray-50"}`}>
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <div className="flex items-center gap-3">
                                                 <div className="flex-shrink-0">
                                                     {deliver.image ? (
                                                         <img
-                                                            className="h-12 w-12 rounded-lg object-cover border border-gray-200"
+                                                            className={`h-12 w-12 rounded-lg object-cover border ${darkMode ? "border-gray-600" : "border-gray-200"}`}
                                                             src={deliver.image}
                                                             alt={deliver.deliver_name}
                                                         />
@@ -371,40 +379,49 @@ const DeliverList = () => {
                                                     )}
                                                 </div>
                                                 <div>
-                                                    <div className="text-sm font-medium text-gray-900">
+                                                    <div className={`text-sm font-medium ${darkMode ? "text-white" : "text-gray-900"}`}>
                                                         {deliver.deliver_name}
                                                     </div>
-                                                    <div className="text-xs text-gray-500">
+                                                    <div className={`text-xs ${darkMode ? "text-gray-400" : "text-gray-500"}`}>
                                                         ID: {deliver.deliver_id}
                                                     </div>
                                                 </div>
                                             </div>
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                                        <td className={`px-6 py-4 whitespace-nowrap text-sm ${darkMode ? "text-gray-300" : "text-gray-700"}`}>
                                             {formatDate(deliver.created_at)}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
-                                            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
-                                                Active
+                                            <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
+                                                darkMode ? "bg-green-900/30 text-green-400" : "bg-green-100 text-green-700"
+                                            }`}>
+                                                {t('activeStatus')}
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                             <div className="flex items-center gap-2">
-
                                                 <button
                                                     onClick={() => handleEdit(deliver.deliver_id)}
-                                                    className="inline-flex items-center gap-2 px-3 py-2 text-sm text-green-600 hover:text-green-800 hover:bg-green-50 rounded-lg transition-colors"
+                                                    className={`inline-flex items-center gap-2 px-3 py-2 text-sm rounded-lg transition-colors ${
+                                                        darkMode 
+                                                        ? "text-green-400 hover:text-green-300 hover:bg-green-900/30" 
+                                                        : "text-green-600 hover:text-green-800 hover:bg-green-50"
+                                                    }`}
                                                 >
                                                     <FaEdit className="w-4 h-4" />
-                                                    Edit
+                                                    {t('edit')}
                                                 </button>
                                                 <button
                                                     onClick={() => handleDelete(deliver.deliver_id)}
                                                     disabled={isLoading}
-                                                    className="inline-flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
+                                                    className={`inline-flex items-center gap-2 px-3 py-2 text-sm rounded-lg transition-colors disabled:opacity-50 ${
+                                                        darkMode 
+                                                        ? "text-red-400 hover:text-red-300 hover:bg-red-900/30" 
+                                                        : "text-red-600 hover:text-red-800 hover:bg-red-50"
+                                                    }`}
                                                 >
                                                     <FaTrash className="w-4 h-4" />
-                                                    Delete
+                                                    {t('delete')}
                                                 </button>
                                             </div>
                                         </td>
@@ -419,13 +436,13 @@ const DeliverList = () => {
             {/* Footer Stats */}
             {filteredDelivers.length > 0 && (
                 <div className="mt-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div className="text-sm text-gray-600">
-                        Showing <span className="font-medium">1</span> to{" "}
-                        <span className="font-medium">{filteredDelivers.length}</span> of{" "}
-                        <span className="font-medium">{delivers.length}</span> delivers
+                    <div className={`text-sm ${darkMode ? "text-gray-400" : "text-gray-600"}`}>
+                        {t('showing')} <span className="font-medium">1</span> {t('to')}{" "}
+                        <span className="font-medium">{filteredDelivers.length}</span> {t('of')}{" "}
+                        <span className="font-medium">{delivers.length}</span> {t('records')}
                         {searchTerm && (
-                            <span className="ml-2 text-blue-600">
-                                (filtered from {delivers.length} total)
+                            <span className="ml-2 text-blue-500">
+                                ({t('filtered')})
                             </span>
                         )}
                     </div>
@@ -434,9 +451,13 @@ const DeliverList = () => {
                     <div className="flex items-center gap-3">
                         <button
                             onClick={() => refetch()}
-                            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                            className={`px-4 py-2 text-sm font-medium border rounded-lg transition-colors ${
+                                darkMode 
+                                ? "bg-gray-800 border-gray-700 text-gray-300 hover:bg-gray-700" 
+                                : "bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
+                            }`}
                         >
-                            Refresh List
+                            {t('refresh')}
                         </button>
                     </div>
                 </div>

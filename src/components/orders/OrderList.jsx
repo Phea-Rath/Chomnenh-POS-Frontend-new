@@ -269,7 +269,7 @@ const OrderList = () => {
 
           <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
             {/* View Mode Toggle */}
-            <div className="flex rounded-lg border border-gray-200 bg-white p-1 dark:border-gray-700 dark:bg-gray-800">
+            <div className="flex rounded-lg border border-gray-200 bg-white p-1 dark:border-gray-700 bg-primary">
               <Tooltip title={t("gridView")}>
                 <button
                   onClick={() => handleViewModeChange("grid")}
@@ -303,14 +303,14 @@ const OrderList = () => {
         </div>
 
         {/* Search Bar */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-6">
+        <div className="bg-white bg-primary rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-6">
           <div className="relative max-w-md">
             <IoIosSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 text-xl" />
             <input
               type="text"
               placeholder={t("searchOrdersPlaceholder")}
               onChange={onSearch}
-              className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-700 rounded-lg bg-white text-gray-900 dark:bg-gray-900 dark:text-white dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+              className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-500 rounded-lg  text-gray-900 dark:text-white dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
             />
           </div>
         </div>
@@ -323,7 +323,7 @@ const OrderList = () => {
         </div>
 
         {orderItems.length > 0 && (
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-6">
+          <div className="bg-white bg-primary rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-6">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-center">
               <div>
                 <div className="text-2xl font-bold text-green-600">
@@ -366,7 +366,7 @@ const OrderList = () => {
                   transition={{ duration: 0.3, delay: index * 0.1 }}
                 >
                   <Card
-                    className={`h-full border rounded-xl shadow-sm hover:shadow-sm transition-all duration-300 overflow-hidden ${order.is_cancelled ? "border-red-200 bg-red-50 dark:!border-red-900 dark:!bg-red-950/30" : "border-gray-200 dark:!border-gray-700 dark:!bg-gray-800"
+                    className={`h-full border rounded-xl shadow-sm hover:shadow-sm transition-all duration-300 overflow-hidden ${order.is_cancelled ? "border-red-200 bg-red-50 dark:!border-red-900 dark:!bg-red-950/30" : "border-gray-200 dark:!border-gray-700 bg-primary"
                       }`}
                   >
                     {/* Header */}
@@ -526,7 +526,7 @@ const OrderList = () => {
 
         {/* List View */}
         {viewMode === "list" && (
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+          <div className="bg-white bg-primary rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
@@ -674,7 +674,7 @@ const OrderList = () => {
 
         {/* Empty State */}
         {orderItems.length === 0 && !isLoading && (
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border flex justify-center border-gray-200 dark:border-gray-700 p-12 text-center">
+          <div className="bg-white bg-primary rounded-xl shadow-sm border flex justify-center border-gray-200 dark:border-gray-700 p-12 text-center">
             <Empty
               image="https://gw.alipayobjects.com/zos/antfincdn/ZHrcdLPrvN/empty.svg"
               description={

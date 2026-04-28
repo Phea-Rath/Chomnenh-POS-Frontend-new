@@ -1,56 +1,69 @@
 // components/Header.jsx
-import React from 'react';
-import { FaShoppingCart, FaUser, FaHeart, FaSearch, FaArrowLeft } from 'react-icons/fa';
+import React, { useEffect, useState } from 'react';
+import { FaShoppingCart, FaUser, FaSearch, FaArrowLeft } from 'react-icons/fa';
+import { useNavigate } from 'react-router';
 
-const Header = ({ onBack }) => {
+const Header = () => {
+    const navigate = useNavigate();
+    function onBack() {
+        navigate('/market');
+    }
+    function cart() {
+        navigate('shopping-cart');
+    }
+    const [countCart, setCountCart] = useState(0);
+
+    const updateCartCount = () => {
+        const cart = JSON.parse(localStorage.getItem('productOrder') || '[]');
+        const total = cart.reduce((acc, item) => acc + (item.quantity || 1), 0);
+        setCountCart(total);
+    };
+
+    useEffect(() => {
+        updateCartCount();
+        window.addEventListener('cartUpdated', updateCartCount);
+        return () => window.removeEventListener('cartUpdated', updateCartCount);
+    }, []);
     return (
-        <header className="">
-            <div className="container mx-auto px-4 py-4">
-                <div className="flex items-center justify-between">
+        <header className="bg-[#131921] text-white shadow-md">
+            <div className="container mx-auto px-4 py-2">
+                <div className="flex items-center justify-between gap-2 md:gap-4">
                     {/* Left Section */}
-                    <div className="flex items-center space-x-4">
-                        {onBack && (
-                            <button
-                                onClick={onBack}
-                                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                            >
-                                <FaArrowLeft className="text-gray-600" />
-                            </button>
-                        )}
-                        <h1 className="text-2xl font-bold text-blue-600">MarketPlace</h1>
+                    <div onClick={onBack} className="flex items-center space-x-2 md:space-x-4 cursor-pointer">
+                        <h1 className="text-lg md:text-xl font-bold whitespace-nowrap">
+                            e-market<span className="text-[#febd69]">.</span>
+                        </h1>
                     </div>
 
                     {/* Search Bar */}
-                    <div className="flex-1 max-w-2xl mx-8">
-                        <div className="relative">
+                    <div className="flex-1 max-w-2xl">
+                        <div className="flex items-center h-8 md:h-9">
                             <input
                                 type="text"
-                                placeholder="Search for products..."
-                                className="w-full px-4 py-2 pl-10 pr-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                placeholder="Search..."
+                                className="w-full h-full px-3 md:px-4 rounded-l border-none text-white focus:outline-none text-xs md:text-sm"
                             />
-                            <FaSearch className="absolute left-3 top-3 text-gray-400" />
+                            <button className="bg-[#febd69] hover:bg-[#f3a847] h-full px-3 md:px-4 rounded-r flex items-center justify-center">
+                                <FaSearch className="text-black text-sm" />
+                            </button>
                         </div>
                     </div>
 
                     {/* Right Section */}
-                    <div className="flex items-center space-x-6">
-                        <button className="relative p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                            <FaHeart className="text-gray-600 text-xl" />
-                            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                                3
-                            </span>
+                    <div className="flex items-center space-x-1 md:space-x-4">
+                        <button className="flex items-center space-x-1 p-1 md:p-2 border border-transparent hover:border-white transition-colors">
+                            <FaUser className="text-sm md:text-base" />
+                            <span className="hidden lg:block text-xs md:text-sm font-bold">Account</span>
                         </button>
 
-                        <button className="relative p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                            <FaShoppingCart className="text-gray-600 text-xl" />
-                            <span className="absolute -top-1 -right-1 bg-blue-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                                2
-                            </span>
-                        </button>
-
-                        <button className="flex items-center space-x-2 p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                            <FaUser className="text-gray-600" />
-                            <span className="hidden md:block">Account</span>
+                        <button onClick={cart} className="flex items-center space-x-1 p-1 md:p-2 border border-transparent hover:border-white transition-colors relative">
+                            <div className="relative">
+                                <FaShoppingCart className="text-lg md:text-xl" />
+                                <span className="absolute -top-1 -right-2 bg-[#131921] text-[#febd69] text-[10px] md:text-xs font-bold rounded-full w-4 h-4 flex items-center justify-center border border-[#131921]">
+                                    {countCart}
+                                </span>
+                            </div>
+                            <span className="hidden lg:block text-xs md:text-sm font-bold ml-1">Cart</span>
                         </button>
                     </div>
                 </div>

@@ -26,9 +26,10 @@ import {
 } from "react-icons/fa";
 import { MdAddCircle, MdRemoveCircle } from "react-icons/md";
 import api from "../../services/api";
+import { useTranslation } from "react-i18next";
 
 const CreateExpanses = () => {
-
+  const { t } = useTranslation();
   const [expense_type, setexpense_type] = useState([]);
   const { expenseType, onAdd, edit: existingExpanse } = useExpContext();
   const isEditMode = !!existingExpanse?.expense_id;
@@ -39,11 +40,7 @@ const CreateExpanses = () => {
   const {
     setLoading,
     loading,
-    setAlert,
-    setMessage,
-    setAlertStatus,
-    reload,
-    setReload,
+    darkMode
   } = useOutletsContext();
   const [alertBox, setAlertBox] = useState(false);
   const token = localStorage.getItem("token");
@@ -56,17 +53,7 @@ const CreateExpanses = () => {
     items: [],
   });
 
-  // Get existing expense data for edit mode
-  // const { data: existingExpanse, isLoading: isLoadingExpanse } = useGetExpanseByIdQuery(
-  //   { id, token },
-  //   { skip: !isEditMode }
-  // );
-  console.log(existingExpanse);
-
-
   const { refetch } = useGetAllExpansesQuery(token);
-  const [createExpanse, expenseCreated] = useCreateExpanseMutation();
-  const [updateExpanse, expenseUpdated] = useUpdateExpanseMutation();
 
   useEffect(() => {
     setexpType(expenseType);
@@ -91,7 +78,7 @@ const CreateExpanses = () => {
         setexpense_type(expenseData.items);
       }
     }
-  }, [existingExpanse, isEditMode]);
+  }, [existingExpanse, isEditMode, expDate]);
 
   function onSelectExptype(e) {
     if (e.target.value === "Pick a expense type") return;
@@ -102,8 +89,6 @@ const CreateExpanses = () => {
     );
 
     if (!finding) return;
-
-
 
     const newItem = {
       ...finding,
@@ -121,23 +106,22 @@ const CreateExpanses = () => {
   }
 
   function handleRemove(index) {
-    const removedItem = expense_type[index];
     setexpense_type((prev) => prev.filter((_, idx) => idx !== index));
   }
 
   function handleSubmit() {
     if (expense_type.length === 0) {
-      toast.error("Please add at least one expense item");
+      toast.error(t('atLeastOneItemRequired'));
       return;
     }
 
     if (!expense.expense_supplier.trim()) {
-      toast.error("Please enter supplier name");
+      toast.error(t('enterSupplierNameError'));
       return;
     }
 
     if (!expense.expense_by.trim()) {
-      toast.error("Please enter who paid for this expense");
+      toast.error(t('enterWhoPaidError'));
       return;
     }
 
@@ -147,7 +131,6 @@ const CreateExpanses = () => {
     );
 
     setexpense(prev => ({ ...prev, amount: amount, items: expense_type }));
-    // setAlertBox(true);
     handleConfirm();
   }
 
@@ -170,19 +153,12 @@ const CreateExpanses = () => {
       };
       let response;
       if (isEditMode) {
-        // response = await updateExpanse({
-        //   id: existingExpanse?.expense_id,
-        //   itemData: expense,
-        //   token
-        // });
-
         response = await api.put(`/expense_masters/${existingExpanse?.expense_id}`, payload, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         });
       } else {
-        // response = await createExpanse({ itemData: expense, token });
         response = await api.post("/expense_masters", payload, {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -192,7 +168,7 @@ const CreateExpanses = () => {
 
       if (response.data.status === 200) {
         refetch();
-        toast.success(isEditMode ? "Expense updated successfully" : "Expense created successfully");
+        toast.success(isEditMode ? t('expenseUpdatedSuccess') : t('expenseCreatedSuccess'));
         setLoading(false);
         onAdd();
         navigator(-1);
@@ -201,7 +177,7 @@ const CreateExpanses = () => {
       toast.error(
         error?.message ||
         error ||
-        `An error occurred while ${isEditMode ? 'updating' : 'creating'} the expense`
+        "An error occurred"
       );
       setLoading(false);
       setAlertBox(false);
@@ -229,7 +205,6 @@ const CreateExpanses = () => {
   };
 
   const handleIncreaseQuantity = (index) => {
-
     setexpense_type(prev =>
       prev.map((item, i) => {
         if (i !== index) return item;
@@ -244,10 +219,7 @@ const CreateExpanses = () => {
         };
       })
     );
-
   };
-  console.log(expense_type);
-
 
   const handleDecreaseQuantity = (index) => {
     setexpense_type(prev =>
@@ -280,27 +252,16 @@ const CreateExpanses = () => {
     setexpType(expenseType || []);
   };
 
-  // if (isEditMode) {
-  //   return (
-  //     <div className="flex items-center justify-center min-h-screen">
-  //       <div className="text-center">
-  //         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-  //         <p className="mt-4 text-gray-600">Loading expense data...</p>
-  //       </div>
-  //     </div>
-  //   );
-  // }
-
   return (
-    <section className="view-page p-4 md:p-6 bg-gray-50 min-h-screen">
+    <section className={`view-page p-4 md:p-6 min-h-screen ${darkMode ? "bg-gray-900" : "bg-gray-50"}`}>
       <AlertBox
         isOpen={alertBox}
-        title={`Confirm Expense ${isEditMode ? 'Update' : 'Creation'}`}
-        message={`Are you sure you want to ${isEditMode ? 'update' : 'create'} this expense record?`}
+        title={isEditMode ? t('confirmUpdate') : t('confirmation')}
+        message={isEditMode ? t('confirmUpdateExpenseCategory') : t('confirmCreateExpenseCategory')}
         onConfirm={handleConfirm}
         onCancel={handleCancel}
-        confirmText={isEditMode ? "Update Expense" : "Create Expense"}
-        cancelText="Cancel"
+        confirmText={isEditMode ? t('updateExpense') : t('createExpense')}
+        cancelText={t('cancel')}
       />
 
       <div className="max-w-7xl mx-auto">
@@ -308,24 +269,24 @@ const CreateExpanses = () => {
         <div className="mb-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <h1 className="text-3xl font-bold text-gray-800 flex items-center gap-3">
+              <h1 className={`text-3xl font-bold flex items-center gap-3 ${darkMode ? "text-white" : "text-gray-800"}`}>
                 <div className={`p-2 ${isEditMode ? 'bg-yellow-100' : 'bg-blue-100'} rounded-lg`}>
                   <FaDollarSign className={`w-6 h-6 ${isEditMode ? 'text-yellow-600' : 'text-blue-600'}`} />
                 </div>
-                {isEditMode ? "Edit Expense" : "Create New Expense"}
+                {isEditMode ? t('editExpense') : t('createNewExpense')}
               </h1>
-              <p className="text-gray-600 mt-2 ml-1">
+              <p className={`${darkMode ? "text-gray-400" : "text-gray-600"} mt-2 ml-1`}>
                 {isEditMode
-                  ? "Update expense details and items"
-                  : "Add expense details and items to record a new transaction"
+                  ? t('updateExpenseDetails')
+                  : t('addExpenseDetails')
                 }
               </p>
             </div>
 
             {isEditMode && (
-              <div className="flex items-center gap-2 px-4 py-2 bg-yellow-50 rounded-lg border border-yellow-200">
-                <FaEdit className="w-4 h-4 text-yellow-600" />
-                <span className="text-sm font-medium text-yellow-700">Edit Mode</span>
+              <div className={`flex items-center gap-2 px-4 py-2 rounded-lg border ${darkMode ? "bg-yellow-900/20 border-yellow-800 text-yellow-500" : "bg-yellow-50 border-yellow-200 text-yellow-700"}`}>
+                <FaEdit className="w-4 h-4" />
+                <span className="text-sm font-medium">{t('editMode')}</span>
               </div>
             )}
           </div>
@@ -334,19 +295,19 @@ const CreateExpanses = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left Panel - Expense Details */}
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-xl shadow-md p-6 border border-gray-200 sticky top-6">
+            <div className={`rounded-xl shadow-md p-6 border sticky top-6 ${darkMode ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"}`}>
               <div className="flex items-center gap-3 mb-6">
-                <div className={`p-2 ${isEditMode ? 'bg-yellow-50' : 'bg-blue-50'} rounded-lg`}>
+                <div className={`p-2 ${isEditMode ? (darkMode ? 'bg-yellow-900/30' : 'bg-yellow-50') : (darkMode ? 'bg-blue-900/30' : 'bg-blue-50')} rounded-lg`}>
                   <FaFileAlt className={`w-5 h-5 ${isEditMode ? 'text-yellow-600' : 'text-blue-600'}`} />
                 </div>
-                <h2 className="text-xl font-semibold text-gray-800">Expense Details</h2>
+                <h2 className={`text-xl font-semibold ${darkMode ? "text-white" : "text-gray-800"}`}>{t('expenseDetails')}</h2>
               </div>
 
               <div className="space-y-5">
                 <div>
-                  <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                  <label className={`flex items-center gap-2 text-sm font-medium mb-2 ${darkMode ? "text-gray-300" : "text-gray-700"}`}>
                     <FaTruck className="w-4 h-4 text-gray-500" />
-                    Supplier *
+                    {t('supplier')} *
                   </label>
                   <input
                     type="text"
@@ -357,16 +318,20 @@ const CreateExpanses = () => {
                         expense_supplier: e.target.value
                       }));
                     }}
-                    placeholder="Enter supplier name"
-                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all duration-200"
+                    placeholder={t('enterSupplierName')}
+                    className={`w-full px-4 py-3 rounded-lg border focus:ring-2 transition-all duration-200 ${
+                      darkMode 
+                      ? "bg-gray-700 border-gray-600 text-white focus:border-blue-500 focus:ring-blue-900/30" 
+                      : "bg-white border-gray-300 focus:border-blue-500 focus:ring-blue-100"
+                    }`}
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                  <label className={`flex items-center gap-2 text-sm font-medium mb-2 ${darkMode ? "text-gray-300" : "text-gray-700"}`}>
                     <FaUser className="w-4 h-4 text-gray-500" />
-                    Paid By *
+                    {t('paidBy')} *
                   </label>
                   <input
                     type="text"
@@ -377,16 +342,20 @@ const CreateExpanses = () => {
                         expense_by: e.target.value
                       }));
                     }}
-                    placeholder="Enter payer name"
-                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all duration-200"
+                    placeholder={t('enterWhoPaid')}
+                    className={`w-full px-4 py-3 rounded-lg border focus:ring-2 transition-all duration-200 ${
+                      darkMode 
+                      ? "bg-gray-700 border-gray-600 text-white focus:border-blue-500 focus:ring-blue-900/30" 
+                      : "bg-white border-gray-300 focus:border-blue-500 focus:ring-blue-100"
+                    }`}
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                  <label className={`flex items-center gap-2 text-sm font-medium mb-2 ${darkMode ? "text-gray-300" : "text-gray-700"}`}>
                     <FaCalendarAlt className="w-4 h-4 text-gray-500" />
-                    Expense Date
+                    {t('date')}
                   </label>
                   <input
                     type="date"
@@ -397,14 +366,18 @@ const CreateExpanses = () => {
                         expense_date: e.target.value || expDate
                       }));
                     }}
-                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all duration-200"
+                    className={`w-full px-4 py-3 rounded-lg border focus:ring-2 transition-all duration-200 ${
+                      darkMode 
+                      ? "bg-gray-700 border-gray-600 text-white focus:border-blue-500 focus:ring-blue-900/30" 
+                      : "bg-white border-gray-300 focus:border-blue-500 focus:ring-blue-100"
+                    }`}
                   />
                 </div>
 
                 <div>
-                  <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                  <label className={`flex items-center gap-2 text-sm font-medium mb-2 ${darkMode ? "text-gray-300" : "text-gray-700"}`}>
                     <FaList className="w-4 h-4 text-gray-500" />
-                    Notes & Description
+                    {t('notesAndDescription')}
                   </label>
                   <textarea
                     value={expense.expense_other}
@@ -414,33 +387,41 @@ const CreateExpanses = () => {
                         expense_other: e.target.value
                       }));
                     }}
-                    placeholder="Enter additional notes or description..."
+                    placeholder={t('enterNotesPlaceholder')}
                     rows="4"
-                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all duration-200 resize-none"
+                    className={`w-full px-4 py-3 rounded-lg border focus:ring-2 transition-all duration-200 resize-none ${
+                      darkMode 
+                      ? "bg-gray-700 border-gray-600 text-white focus:border-blue-500 focus:ring-blue-900/30" 
+                      : "bg-white border-gray-300 focus:border-blue-500 focus:ring-blue-100"
+                    }`}
                   ></textarea>
                 </div>
               </div>
 
               {/* Summary Card */}
-              <div className="mt-8 pt-6 border-t border-gray-200">
-                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4">
+              <div className={`mt-8 pt-6 border-t ${darkMode ? "border-gray-700" : "border-gray-200"}`}>
+                <div className={`rounded-lg p-4 ${darkMode ? "bg-gray-900" : "bg-gradient-to-r from-blue-50 to-indigo-50"}`}>
                   <div className="flex justify-between items-center mb-2">
-                    <span className="text-gray-700 font-medium">Total Amount:</span>
-                    <span className="text-2xl font-bold text-blue-600">
-                      ${calculateTotal().toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                    <span className={`font-medium ${darkMode ? "text-gray-300" : "text-gray-700"}`}>{t('totalAmount')}:</span>
+                    <span className={`text-2xl font-bold ${darkMode ? "text-blue-400" : "text-blue-600"}`}>
+                      ${calculateTotal().toLocaleString(undefined, { minimumFractionDigits: 2 })}
                     </span>
                   </div>
-                  <div className="text-sm text-gray-500">
-                    {expense_type.length} item{expense_type.length !== 1 ? 's' : ''} added
+                  <div className={darkMode ? "text-gray-500" : "text-gray-500"}>
+                    {expense_type.length} {t('itemCount')}
                   </div>
                 </div>
 
                 {/* Reset Button */}
                 <button
                   onClick={handleReset}
-                  className="w-full mt-4 px-4 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-all duration-200 border border-gray-300"
+                  className={`w-full mt-4 px-4 py-2.5 text-sm font-medium border rounded-lg transition-all duration-200 ${
+                    darkMode 
+                    ? "bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600" 
+                    : "bg-gray-100 border-gray-300 text-gray-700 hover:bg-gray-200"
+                  }`}
                 >
-                  Reset Form
+                  {t('resetForm')}
                 </button>
               </div>
             </div>
@@ -448,24 +429,28 @@ const CreateExpanses = () => {
 
           {/* Right Panel - Expense Items */}
           <div className="lg:col-span-2">
-            <div className="bg-white rounded-xl shadow-md p-6 border border-gray-200 mb-6">
+            <div className={`rounded-xl shadow-md p-6 border mb-6 ${darkMode ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"}`}>
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-green-50 rounded-lg">
-                    <FaList className="w-5 h-5 text-green-600" />
+                  <div className={`p-2 rounded-lg ${darkMode ? "bg-green-900/30" : "bg-green-50"}`}>
+                    <FaList className={`w-5 h-5 ${darkMode ? "text-green-500" : "text-green-600"}`} />
                   </div>
-                  <h2 className="text-xl font-semibold text-gray-800">Expense Items</h2>
+                  <h2 className={`text-xl font-semibold ${darkMode ? "text-white" : "text-gray-800"}`}>{t('expenseItems')}</h2>
                 </div>
 
                 <div className="relative w-full sm:w-auto min-w-[250px]">
                   <select
                     defaultValue={"Pick a expense type"}
                     onChange={onSelectExptype}
-                    className="w-full px-4 py-3 pl-10 rounded-lg border border-gray-300 focus:border-green-500 focus:ring-2 focus:ring-green-100 bg-white appearance-none"
+                    className={`w-full px-4 py-3 pl-10 rounded-lg border focus:ring-2 appearance-none ${
+                      darkMode 
+                      ? "bg-gray-700 border-gray-600 text-white focus:border-green-500 focus:ring-green-900/30" 
+                      : "bg-white border-gray-300 focus:border-green-500 focus:ring-green-100"
+                    }`}
                     disabled={expType.length === 0}
                   >
                     <option disabled value="Pick a expense type">
-                      {expType.length === 0 ? "All types added" : "+ Add Expense Type"}
+                      {expType.length === 0 ? t('allTypesAdded') : `+ ${t('pickExpenseType')}`}
                     </option>
                     {expType?.map(({ expense_type_id, expense_type_name }) => (
                       <option key={expense_type_id} value={expense_type_id}>
@@ -474,67 +459,62 @@ const CreateExpanses = () => {
                     ))}
                   </select>
                   <div className="absolute left-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
-                    <MdAddCircle className={`w-5 h-5 ${expType.length === 0 ? 'text-gray-400' : 'text-green-500'}`} />
+                    <MdAddCircle className={`w-5 h-5 ${expType.length === 0 ? 'text-gray-400' : (darkMode ? 'text-green-400' : 'text-green-500')}`} />
                   </div>
-                  {expType.length === 0 && (
-                    <p className="text-xs text-gray-500 mt-1">
-                      All available expense types have been added.
-                    </p>
-                  )}
                 </div>
               </div>
 
               {expense_type.length === 0 ? (
-                <div className="text-center py-12 border-2 border-dashed border-gray-300 rounded-xl bg-gray-50">
+                <div className={`text-center py-12 border-2 border-dashed rounded-xl ${darkMode ? "border-gray-700 bg-gray-900/50" : "border-gray-300 bg-gray-50"}`}>
                   <div className="text-gray-400 mb-4">
                     <FaList className="w-16 h-16 mx-auto opacity-40" />
                   </div>
-                  <h3 className="text-lg font-medium text-gray-600 mb-2">No Items Added Yet</h3>
-                  <p className="text-gray-500 max-w-md mx-auto">
-                    Start by selecting an expense type from the dropdown above to add items to your expense record.
+                  <h3 className={`text-lg font-medium mb-2 ${darkMode ? "text-gray-400" : "text-gray-600"}`}>{t('noItemsAddedYet')}</h3>
+                  <p className={`max-w-md mx-auto ${darkMode ? "text-gray-500" : "text-gray-500"}`}>
+                    {t('startBySelectingType')}
                   </p>
                 </div>
               ) : (
                 <>
-                  <div className="overflow-x-auto rounded-lg border border-gray-200 mb-4">
+                  <div className={`overflow-x-auto rounded-lg border mb-4 ${darkMode ? "border-gray-700" : "border-gray-200"}`}>
                     <table className="min-w-full divide-y divide-gray-200">
-                      <thead className="bg-gray-50">
+                      <thead className={darkMode ? "bg-gray-700" : "bg-gray-50"}>
                         <tr>
-                          <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                          <th className={`px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider ${darkMode ? "text-gray-300" : "text-gray-700"}`}>
                             #
                           </th>
-                          <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                            Type
+                          <th className={`px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider ${darkMode ? "text-gray-300" : "text-gray-700"}`}>
+                            {t('type')}
                           </th>
-                          <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                            Description
+                          <th className={`px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider ${darkMode ? "text-gray-300" : "text-gray-700"}`}>
+                            {t('description')}
                           </th>
-                          <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                            Quantity
+                          <th className={`px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider ${darkMode ? "text-gray-300" : "text-gray-700"}`}>
+                            {t('quantity')}
                           </th>
-                          <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                            Unit Price
+                          <th className={`px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider ${darkMode ? "text-gray-300" : "text-gray-700"}`}>
+                            {t('unitPrice')}
                           </th>
-                          <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                            Subtotal
+                          <th className={`px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider ${darkMode ? "text-gray-300" : "text-gray-700"}`}>
+                            {t('subtotal')}
                           </th>
-                          <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                            Action
+                          <th className={`px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider ${darkMode ? "text-gray-300" : "text-gray-700"}`}>
+                            {t('actions')}
                           </th>
                         </tr>
                       </thead>
-                      <tbody className="bg-white divide-y divide-gray-200">
+                      <tbody className={`divide-y ${darkMode ? "bg-gray-800 divide-gray-700" : "bg-white divide-gray-200"}`}>
                         {expense_type.map((exp, index) => (
-                          <tr key={`${exp.expense_type_id}-${index}`} className="hover:bg-gray-50 transition-colors">
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 font-medium">
+                          <tr key={`${exp.expense_type_id}-${index}`} className={`transition-colors ${darkMode ? "hover:bg-gray-700/50" : "hover:bg-gray-50"}`}>
+                            <td className={`px-6 py-4 whitespace-nowrap text-sm font-medium ${darkMode ? "text-gray-400" : "text-gray-700"}`}>
                               {index + 1}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
                               <div className="flex items-center gap-2">
-                                <div className="p-2 bg-blue-50 rounded">
-                                  <FaList className="w-4 h-4 text-blue-600" />
+                                <div className={`p-2 rounded ${darkMode ? "bg-blue-900/30" : "bg-blue-50"}`}>
+                                  <FaList className={`w-4 h-4 ${darkMode ? "text-blue-400" : "text-blue-600"}`} />
                                 </div>
-                                <span className="font-medium text-gray-900">
+                                <span className={`font-medium ${darkMode ? "text-gray-200" : "text-gray-900"}`}>
                                   {exp.expense_type_name}
                                 </span>
                               </div>
@@ -546,45 +526,61 @@ const CreateExpanses = () => {
                                   handleChange(index, "description", e.target.value)
                                 }
                                 value={exp.description || ""}
-                                placeholder="Item description..."
-                                className="w-full px-3 py-2 text-sm rounded border border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-100"
+                                placeholder={t('itemDescriptionPlaceholder')}
+                                className={`w-full px-3 py-2 text-sm rounded border focus:ring-1 transition-all ${
+                                  darkMode 
+                                  ? "bg-gray-700 border-gray-600 text-white focus:border-blue-500 focus:ring-blue-900/30" 
+                                  : "bg-white border-gray-300 focus:border-blue-500 focus:ring-blue-100"
+                                }`}
                               />
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
                               <div className="flex items-center gap-2">
                                 <button
                                   onClick={() => handleDecreaseQuantity(index)}
-                                  className="p-1 rounded-lg border border-gray-300 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                                  className={`p-1 rounded-lg border transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                                    darkMode 
+                                    ? "bg-gray-700 border-gray-600 text-gray-400 hover:bg-gray-600" 
+                                    : "bg-white border-gray-300 text-gray-600 hover:bg-gray-100"
+                                  }`}
                                   disabled={(parseInt(exp.quantity) || 1) <= 1}
                                 >
-                                  <MdRemoveCircle className="w-4 h-4 text-gray-600" />
+                                  <MdRemoveCircle className="w-4 h-4" />
                                 </button>
                                 <input
                                   type="number"
                                   min="1"
                                   value={exp.quantity || 1}
-                                  onWheel={(e) => e.target.blur()}   // 👈 បិទ scroll change
+                                  onWheel={(e) => e.target.blur()}
                                   onChange={(e) =>
                                     handleChange(index, "quantity", e.target.value)
                                   }
-                                  className="w-20 px-3 py-2 text-center text-sm rounded border border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-100"
+                                  className={`w-20 px-3 py-2 text-center text-sm rounded border focus:ring-1 transition-all ${
+                                    darkMode 
+                                    ? "bg-gray-700 border-gray-600 text-white focus:border-blue-500 focus:ring-blue-900/30" 
+                                    : "bg-white border-gray-300 focus:border-blue-500 focus:ring-blue-100"
+                                  }`}
                                 />
                                 <button
                                   onClick={() => handleIncreaseQuantity(index)}
-                                  className="p-1 rounded-lg border border-gray-300 hover:bg-gray-100"
+                                  className={`p-1 rounded-lg border transition-colors ${
+                                    darkMode 
+                                    ? "bg-gray-700 border-gray-600 text-gray-400 hover:bg-gray-600" 
+                                    : "bg-white border-gray-300 text-gray-600 hover:bg-gray-100"
+                                  }`}
                                 >
-                                  <MdAddCircle className="w-4 h-4 text-gray-600" />
+                                  <MdAddCircle className="w-4 h-4" />
                                 </button>
                               </div>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
                               <div className="relative">
-                                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
+                                <span className={`absolute left-3 top-1/2 transform -translate-y-1/2 ${darkMode ? "text-gray-400" : "text-gray-500"}`}>
                                   $
                                 </span>
                                 <input
                                   type="number"
-                                  onWheel={(e) => e.target.blur()}   // 👈 បិទ scroll change
+                                  onWheel={(e) => e.target.blur()}
                                   min="0"
                                   step="0.01"
                                   value={exp.unit_price || ""}
@@ -592,14 +588,18 @@ const CreateExpanses = () => {
                                     handleChange(index, "unit_price", e.target.value)
                                   }
                                   placeholder="0.00"
-                                  className="w-28 pl-7 pr-3 py-2 text-sm rounded border border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-100"
+                                  className={`w-28 pl-7 pr-3 py-2 text-sm rounded border focus:ring-1 transition-all ${
+                                    darkMode 
+                                    ? "bg-gray-700 border-gray-600 text-white focus:border-blue-500 focus:ring-blue-900/30" 
+                                    : "bg-white border-gray-300 focus:border-blue-500 focus:ring-blue-100"
+                                  }`}
                                 />
                               </div>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
-                              <div className="font-semibold text-gray-900 flex items-center gap-1">
-                                <FaDollarSign className="w-3 h-3 text-green-600" />
-                                {parseFloat(exp.sub_total || 0).toLocaleString('en-US', {
+                              <div className={`font-semibold flex items-center gap-1 ${darkMode ? "text-white" : "text-gray-900"}`}>
+                                <FaDollarSign className={`w-3 h-3 ${darkMode ? "text-green-400" : "text-green-600"}`} />
+                                {parseFloat(exp.sub_total || 0).toLocaleString(undefined, {
                                   minimumFractionDigits: 2,
                                   maximumFractionDigits: 2
                                 })}
@@ -608,10 +608,14 @@ const CreateExpanses = () => {
                             <td className="px-6 py-4 whitespace-nowrap">
                               <button
                                 onClick={() => handleRemove(index)}
-                                className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg text-red-600 hover:text-white hover:bg-red-500 transition-all duration-200 border border-red-200 hover:border-red-500"
+                                className={`inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 border ${
+                                  darkMode 
+                                  ? "text-red-400 border-red-900/30 hover:bg-red-500 hover:text-white" 
+                                  : "text-red-600 border-red-200 hover:bg-red-500 hover:text-white"
+                                }`}
                               >
                                 <FaTrash className="w-3 h-3" />
-                                Remove
+                                {t('remove')}
                               </button>
                             </td>
                           </tr>
@@ -622,18 +626,18 @@ const CreateExpanses = () => {
 
                   {/* Total Summary */}
                   <div className="flex justify-end">
-                    <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg p-5 w-full max-w-md">
+                    <div className={`rounded-lg p-5 w-full max-w-md ${darkMode ? "bg-gray-900" : "bg-gradient-to-r from-green-50 to-emerald-50"}`}>
                       <div className="space-y-2">
-                        <div className="flex justify-between text-gray-700">
-                          <span>Subtotal:</span>
-                          <span className="font-medium">
-                            ${calculateTotal().toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                        <div className="flex justify-between">
+                          <span className={darkMode ? "text-gray-400" : "text-gray-700"}>{t('subtotal')}:</span>
+                          <span className={`font-medium ${darkMode ? "text-gray-200" : "text-gray-800"}`}>
+                            ${calculateTotal().toLocaleString(undefined, { minimumFractionDigits: 2 })}
                           </span>
                         </div>
-                        <div className="flex justify-between text-lg font-bold text-gray-800 pt-2 border-t border-gray-200">
-                          <span>Total Amount:</span>
-                          <span className="text-green-600">
-                            ${calculateTotal().toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                        <div className={`flex justify-between text-lg font-bold pt-2 border-t ${darkMode ? "text-white border-gray-800" : "text-gray-800 border-gray-200"}`}>
+                          <span>{t('totalAmount')}:</span>
+                          <span className={darkMode ? "text-green-400" : "text-green-600"}>
+                            ${calculateTotal().toLocaleString(undefined, { minimumFractionDigits: 2 })}
                           </span>
                         </div>
                       </div>
@@ -644,36 +648,38 @@ const CreateExpanses = () => {
             </div>
 
             {/* Action Buttons */}
-            <div className="flex flex-col sm:flex-row justify-between items-center gap-4 bg-white rounded-xl shadow-md p-6 border border-gray-200">
-              <div className="text-sm text-gray-500">
+            <div className={`flex flex-col sm:flex-row justify-between items-center gap-4 rounded-xl shadow-md p-6 border ${darkMode ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"}`}>
+              <div className={darkMode ? "text-gray-500" : "text-gray-500"}>
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <span>Fields marked with * are required</span>
+                  <span>{t('fieldsMarkedWith')} * {t('required')}</span>
                 </div>
               </div>
 
               <div className="flex gap-3">
-                <form method="dialog">
-                  <button
-                    onClick={() => navigator(-1)}
-                    className="inline-flex items-center gap-2 px-6 py-3 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 transition-all duration-200 font-medium"
-                  >
-                    <FaTimes className="w-4 h-4" />
-                    Cancel
-                  </button>
-                </form>
+                <button
+                  onClick={() => navigator(-1)}
+                  className={`inline-flex items-center gap-2 px-6 py-3 rounded-lg border transition-all duration-200 font-medium ${
+                    darkMode 
+                    ? "bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600" 
+                    : "bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
+                  }`}
+                >
+                  <FaTimes className="w-4 h-4" />
+                  {t('cancel')}
+                </button>
                 <button
                   onClick={handleSubmit}
                   disabled={expense_type.length === 0 || !expense.expense_supplier || !expense.expense_by}
                   className={`inline-flex items-center gap-2 px-8 py-3 rounded-lg font-medium transition-all duration-200 ${expense_type.length === 0 || !expense.expense_supplier || !expense.expense_by
-                    ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                    ? (darkMode ? 'bg-gray-700 text-gray-500 cursor-not-allowed' : 'bg-gray-200 text-gray-500 cursor-not-allowed')
                     : isEditMode
-                      ? 'bg-gradient-to-r from-yellow-500 to-yellow-600 text-white hover:from-yellow-600 hover:to-yellow-700 shadow-sm hover:shadow-sm transform hover:-translate-y-0.5'
-                      : 'bg-gradient-to-r from-blue-600 to-blue-700 text-white hover:from-blue-700 hover:to-blue-800 shadow-sm hover:shadow-sm transform hover:-translate-y-0.5'
+                      ? 'bg-gradient-to-r from-yellow-500 to-yellow-600 text-white hover:from-yellow-600 hover:to-yellow-700 shadow-sm transform hover:-translate-y-0.5'
+                      : 'bg-gradient-to-r from-blue-600 to-blue-700 text-white hover:from-blue-700 hover:to-blue-800 shadow-sm transform hover:-translate-y-0.5'
                     }`}
                 >
                   {isEditMode ? <FaEdit className="w-5 h-5" /> : <FaSave className="w-5 h-5" />}
-                  {isEditMode ? "Update Expense" : "Create Expense"}
+                  {isEditMode ? t('updateExpense') : t('createExpense')}
                 </button>
               </div>
             </div>

@@ -10,8 +10,10 @@ import { Select, Tag } from 'antd';
 import { toast } from 'react-toastify';
 import api from '../../services/api';
 import { useDebounce } from 'use-debounce';
+import { useTranslation } from 'react-i18next';
 
 const StockTransfer = () => {
+  const { t } = useTranslation();
   const asArray = (value) => (Array.isArray(value) ? value : []);
   const navigator = useNavigate();
   const [stocktype, setstocktype] = useState([]);
@@ -83,7 +85,6 @@ const StockTransfer = () => {
         order_id: stock.order_id
       }));
 
-      // Map items into selectItems format
       const mappedItems = asArray(stock?.items).map(it => ({
         ...it,
         item_id: it.item_id,
@@ -93,12 +94,11 @@ const StockTransfer = () => {
         item_code: it.item_code,
         barcode: it.barcode,
         size_name: it.size_name || '',
-        stock: { in_stock: Number(it.stock?.in_stock) + (Number(it.quantity) || 0) } // Adjust stock to include current quantity for editing
+        stock: { in_stock: Number(it.stock?.in_stock) + (Number(it.quantity) || 0) }
       }));
 
       setselectItems(mappedItems);
 
-      // Fetch available items for the selected from_warehouse and exclude already selected ones
       api.get(`stock_by_warehouse/${stock.from_warehouse}`, {
         headers: { Authorization: `Bearer ${token}` }
       }).then((res) => {
@@ -106,10 +106,9 @@ const StockTransfer = () => {
         const filtered = list.filter(li => !mappedItems.find(mi => mi.item_id == li.item_id));
         setfielditems(filtered || []);
       }).catch((err) => {
-        toast.error('Failed to fetch items for selected warehouse');
+        toast.error(t('failedToFetchWarehouseItems'));
       });
 
-      // Adjust warehouse selects to reflect current from/to
       const toWare = asArray(warehouseRes.data?.data).filter(
         item => item.warehouse_id !== 2 && item.warehouse_id !== 3 && item.warehouse_id !== 4 && item.warehouse_id !== stock.from_warehouse
       );
@@ -145,7 +144,6 @@ const StockTransfer = () => {
         [field]: value,
       };
 
-      // Recalculate sub_total if quantity or unit_price is updated
       const quantity = parseFloat(updated[index].quantity) || 1;
       const unit_price = parseFloat(updated[index].unit_price) || 1;
       updated[index].sub_total = (quantity * unit_price).toFixed(2);
@@ -169,25 +167,17 @@ const StockTransfer = () => {
       let response;
       const payload = { ...form, items: selectItems };
       if (isUpdate) {
-        // Update existing stock master
         response = await updateStock({ id: form.stock_id || id, itemData: payload, token });
-        // response = await api.put(`stock_masters/${form.stock_id || id}`, payload, {
-        //   headers: {
-        //     Authorization: `Bearer ${token}`,
-        //   },
-        // });
       } else {
-        // Create new stock master
         response = await createStock({ itemData: payload, token });
       }
 
       if (response.data.status === 200) {
         refetch();
         setLoading(false);
-        toast.success(response.data.message || (isUpdate ? 'Stock transfer updated successfully' : 'Stock transfer created successfully'));
+        toast.success(response.data.message || (isUpdate ? t('transferUpdatedSuccessfully') : t('transferCreatedSuccessfully')));
 
         if (isUpdate) {
-          // Navigate to detail view after update
           navigator(-1);
         } else {
           setForm({
@@ -206,7 +196,7 @@ const StockTransfer = () => {
       }
     } catch (error) {
       setLoading(false);
-      toast.error(error?.message || error || `An error occurred while ${isUpdate ? 'updating' : 'creating'} the stock transfer`);
+      toast.error(error?.message || error || (isUpdate ? t('errorUpdatingTransfer') : t('errorCreatingTransfer')));
     }
   }
 
@@ -230,14 +220,14 @@ const StockTransfer = () => {
       label: (
         <div className='flex items-center gap-3 justify-between w-full'>
           <div className='flex items-center gap-3 flex-1'>
-            <span className="font-medium text-gray-800">{fielditems[i].item_name}</span>
+            <span className="font-medium dark:text-gray-200">{fielditems[i].item_name}</span>
           </div>
           <div className='flex items-center gap-2'>
-            <Tag bordered={false} color="blue" className="text-xs">
+            <Tag bordered={false} color="blue" className="text-xs dark:bg-blue-900/30">
               {fielditems[i].size_name}
             </Tag>
-            <span className="text-xs text-gray-500 font-mono">
-              Stock: {Number(fielditems[i].stock.in_stock)}
+            <span className="text-xs text-gray-500 dark:text-gray-400 font-mono">
+              {t('stock')}: {Number(fielditems[i].stock.in_stock)}
             </span>
           </div>
         </div>
@@ -259,88 +249,81 @@ const StockTransfer = () => {
       },
     }).then((res) => {
       setfielditems(res.data.data || []);
-      console.log(res?.data);
     }).catch((err) => {
-      toast.error(err?.message || 'Failed to fetch items for the selected warehouse');
+      toast.error(t('failedToFetchWarehouseItems'));
     });
-
-
   }
-
-  console.log('selectItems', selectItems);
-
 
   return (
     <section className='view-page p-6 bg-transparent min-h-screen'>
       <AlertBox
         isOpen={alertBox}
-        title="Confirm Stock Transfer"
-        message="Are you sure you want to proceed with this stock transfer?"
+        title={t('confirmStockTransfer')}
+        message={t('proceedStockTransfer')}
         onConfirm={handleConfirm}
         onCancel={handleCancel}
-        confirmText="Create Transfer"
-        cancelText="Cancel"
+        confirmText={isUpdate ? t('updateTransfer') : t('createTransfer')}
+        cancelText={t('cancel')}
       />
 
       <div className=" mx-auto">
         <div className="mb-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-gray-800 mb-2">{isUpdate ? 'Edit Stock Transfer' : 'Stock Transfer'}</h1>
-              <p className="text-gray-600">{isUpdate ? `Update stock transfer #${stockByIdRes.data?.data?.stock_no || form.stock_id}` : 'Transfer items between warehouses'}</p>
+              <h1 className="text-2xl font-bold text-gray-800 dark:text-white mb-2">{isUpdate ? t('editStockTransfer') : t('stockTransfer')}</h1>
+              <p className="text-gray-600 dark:text-gray-400">{isUpdate ? `${t('updateExistingTransfer')} #${stockByIdRes.data?.data?.stock_no || form.stock_id}` : t('transferItemsBetweenWarehouses')}</p>
             </div>
           </div>
         </div>
 
         <form onSubmit={handleSubmit}>
           <div className="bg-transparent rounded-xl overflow-hidden">
-
             <div>
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Left Column - Form Controls */}
                 <div className="lg:col-span-1 space-y-4">
                   <div className="form-group">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       <span className="flex items-center gap-2">
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                         </svg>
-                        Select Items
+                        {t('selectItems')}
                       </span>
                     </label>
                     <Select
                       size='large'
                       style={{ width: '100%' }}
-                      placeholder="Search and select items..."
+                      placeholder={t('searchItems')}
                       onChange={onSelectItem}
                       onSearch={(value) => setSearchTerm(value)}
                       options={options}
                       showSearch
+                      className="dark:!bg-gray-800 dark:text-white"
+                      dropdownClassName="dark:bg-gray-800"
                       filterOption={(input, option) =>
                         option.name.toLowerCase().indexOf(input.toLowerCase()) >= 0
-
                       }
-                    // optionLabelProp="name"
                     />
                   </div>
 
-                  <div className="space-y-4 p-4 bg-gray-50 shadow-sm rounded-lg border border-gray-200">
+                  <div className="space-y-4 p-4 bg-gray-50 dark:bg-gray-800 shadow-sm rounded-lg border border-gray-200 dark:border-gray-700 transition-colors">
                     <div className="form-group">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 uppercase">
                         <span className="flex items-center gap-2">
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
                           </svg>
-                          FROM WAREHOUSE
+                          {t('fromWarehouse')}
                         </span>
                       </label>
                       <select
                         onChange={onSelectWarehouse}
                         value={form.from_warehouse}
-                        className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white'
+                        className='w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-900 dark:text-white transition-colors'
                         required
                       >
-                        <option value="">Select source warehouse</option>
+                        <option value="">{t('selectSourceWarehouse')}</option>
                         {warehousesSelect.map((item) => (
                           <option key={item.warehouse_id} value={item.warehouse_id}>
                             {item.warehouse_name}
@@ -350,26 +333,24 @@ const StockTransfer = () => {
                     </div>
 
                     <div className="form-group">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 uppercase">
                         <span className="flex items-center gap-2">
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" />
                           </svg>
-                          STOCK TYPE
+                          {t('stockType')}
                         </span>
                       </label>
                       <select
                         name="stock_type_id"
                         value={form.stock_type_id}
-                        className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white'
+                        className='w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-900 dark:text-white transition-colors'
                         onChange={(e) => {
                           setForm(prev => { return { ...prev, stock_type_id: e.target.value } });
-                          const dataSelected = warehouses.filter(item => item.warehouse_id != e.target.value);
-                          setwarehousesSelect(dataSelected);
                         }}
                         required
                       >
-                        <option value="">Select stock type</option>
+                        <option value="">{t('selectStockType')}</option>
                         {stocktype.map((item) => (
                           <option key={item.stock_type_id} value={item.stock_type_id}>
                             {item.stock_type_name}
@@ -379,23 +360,23 @@ const StockTransfer = () => {
                     </div>
 
                     <div className="form-group">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 uppercase">
                         <span className="flex items-center gap-2">
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                           </svg>
-                          TO WAREHOUSE
+                          {t('toWarehouse')}
                         </span>
                       </label>
                       <select
                         name="to_warehouse_id"
                         value={form.warehouse_id}
-                        className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white'
+                        className='w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-900 dark:text-white transition-colors'
                         onChange={(e) => setForm(prev => { return { ...prev, warehouse_id: e.target.value } })}
                         required
                       >
-                        <option value="">Select destination warehouse</option>
+                        <option value="">{t('selectDestinationWarehouse')}</option>
                         {toWarehouseSelect.map((item) => (
                           <option key={item.warehouse_id} value={item.warehouse_id}>
                             {item.warehouse_name}
@@ -405,17 +386,17 @@ const StockTransfer = () => {
                     </div>
 
                     <div className="form-group">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 uppercase">
                         <span className="flex items-center gap-2">
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
                           </svg>
-                          DESCRIPTION
+                          {t('description')}
                         </span>
                       </label>
                       <textarea
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-                        placeholder="Enter description or remarks..."
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none bg-white dark:bg-gray-900 dark:text-white transition-colors"
+                        placeholder={t('enterDescriptionRemarks')}
                         rows="3"
                         name="stock_remark"
                         value={form.stock_remark}
@@ -428,19 +409,19 @@ const StockTransfer = () => {
                     <button
                       type="submit"
                       disabled={loading || selectItems.length === 0}
-                      className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white py-2.5 px-4 rounded-md font-medium transition-colors duration-200 flex items-center justify-center gap-2 shadow-sm"
+                      className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 dark:disabled:bg-gray-700 text-white py-2.5 px-4 rounded-md font-medium transition-all duration-200 flex items-center justify-center gap-2 shadow-sm"
                     >
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
                       </svg>
-                      <span>{loading ? (isUpdate ? 'Updating...' : 'Creating...') : (isUpdate ? 'Update Transfer' : 'Create Transfer')}</span>
+                      <span>{loading ? (isUpdate ? t('updating') : t('creating')) : (isUpdate ? t('updateTransfer') : t('createTransfer'))}</span>
                     </button>
                     <Link to={-1} className="flex-1">
                       <button
                         type="button"
                         className="w-full bg-gray-500 hover:bg-gray-600 text-white py-2.5 px-4 rounded-md font-medium transition-colors duration-200 shadow-sm"
                       >
-                        Cancel
+                        {t('cancel')}
                       </button>
                     </Link>
                   </div>
@@ -448,17 +429,17 @@ const StockTransfer = () => {
 
                 {/* Right Column - Selected Items Table */}
                 <div className="lg:col-span-2">
-                  <div className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm">
-                    <div className="px-4 py-3 bg-gradient-to-r from-gray-50 to-blue-50 border-b border-gray-200">
+                  <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden shadow-sm transition-colors">
+                    <div className="px-4 py-3 bg-gradient-to-r from-gray-50 to-blue-50 dark:from-gray-900/50 dark:to-gray-900/30 border-b border-gray-200 dark:border-gray-700">
                       <div className="flex items-center justify-between">
                         <div>
-                          <h3 className="text-lg font-medium text-gray-700">Selected Items</h3>
-                          <p className="text-sm text-gray-500 mt-1">
-                            {selectItems.length} item(s) selected for transfer
+                          <h3 className="text-lg font-medium text-gray-700 dark:text-gray-200">{t('selectedItems')}</h3>
+                          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                            {selectItems.length} {t('itemsSelectedForTransfer')}
                           </p>
                         </div>
-                        <div className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
-                          Total Items: {selectItems.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0)}
+                        <div className="bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 px-3 py-1 rounded-full text-sm font-medium">
+                          {t('totalItems')}: {selectItems.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0)}
                         </div>
                       </div>
                     </div>
@@ -466,39 +447,38 @@ const StockTransfer = () => {
                     {selectItems.length > 0 ? (
                       <div className="overflow-x-auto">
                         <table className="w-full">
-                          <thead className="bg-gray-50">
-                            <tr className="border-b border-gray-200">
-                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          <thead className="bg-gray-50 dark:bg-gray-900/50">
+                            <tr className="border-b border-gray-200 dark:border-gray-700">
+                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                                 NO.
                               </th>
-                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                NAME
+                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                {t('name')}
                               </th>
-                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                QUANTITY
+                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                {t('quantity')}
                               </th>
-                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                EXPIRE
+                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                {t('expire')}
                               </th>
-                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                ACTION
+                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                {t('actions')}
                               </th>
                             </tr>
                           </thead>
-                          <tbody className="divide-y divide-gray-200">
+                          <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                             {selectItems.map((item, index) => (
-                              <tr key={index} className="hover:bg-gray-50 transition-colors">
-                                <td className="px-4 py-3 text-sm font-medium text-gray-900">
+                              <tr key={index} className="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
+                                <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-white">
                                   {index + 1}
                                 </td>
                                 <td className="px-4 py-3">
                                   <div className="flex items-center gap-3">
-
                                     <div>
-                                      <div className=" text-gray-900">
+                                      <div className=" text-gray-900 dark:text-white">
                                         {item.item_name}
                                       </div>
-                                      <div className="flex items-center text-sm font-medium text-gray-500 gap-2 mt-1">
+                                      <div className="flex items-center text-sm font-medium text-gray-500 dark:text-gray-400 gap-2 mt-1 font-mono">
                                         {item.barcode}
                                       </div>
                                     </div>
@@ -512,11 +492,11 @@ const StockTransfer = () => {
                                       max={Number(item.stock.in_stock)}
                                       placeholder="0"
                                       onWheel={(e) => e.target.blur()}
-                                      className="w-20 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-center"
+                                      className="w-20 px-2 py-1 border border-gray-300 dark:border-gray-600 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-center dark:bg-gray-900 dark:text-white"
                                       name="quantity"
                                       onChange={(e) => {
-                                        if (Number(item.in_stock) < e.target.value) {
-                                          toast.warning(`Only ${item.stock.in_stock} items available in stock!`);
+                                        if (Number(item.stock.in_stock) < Number(e.target.value)) {
+                                          toast.warning(`${t('only')} ${item.stock.in_stock} ${t('itemsAvailableInStock')}`);
                                           return;
                                         }
                                         handleChange(index, 'quantity', e.target.value)
@@ -524,15 +504,15 @@ const StockTransfer = () => {
                                       value={item.quantity ?? 1}
                                       required
                                     />
-                                    <span className="text-xs text-gray-500">
-                                      / {Number(item.stock.in_stock)} in stock
+                                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                                      / {Number(item.stock.in_stock)} {t('inStock')}
                                     </span>
                                   </div>
                                 </td>
                                 <td className="px-4 py-3">
                                   <input
                                     type="date"
-                                    className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                                    className="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-900 dark:text-white transition-colors"
                                     name="expire_date"
                                     defaultValue={item.expire_date || ''}
                                     onChange={(e) => handleChange(index, 'expire_date', e.target.value)}
@@ -544,8 +524,8 @@ const StockTransfer = () => {
                                   <button
                                     onClick={() => handleRemove(item.item_id)}
                                     type="button"
-                                    className="text-red-600 hover:text-red-800 transition-colors p-2 rounded hover:bg-red-50"
-                                    title="Remove item"
+                                    className="text-red-600 hover:text-red-800 transition-colors p-2 rounded hover:bg-red-50 dark:hover:bg-red-900/30"
+                                    title={t('removeItem')}
                                   >
                                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -559,11 +539,11 @@ const StockTransfer = () => {
                       </div>
                     ) : (
                       <div className="text-center py-12">
-                        <svg className="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-16 h-16 text-gray-300 dark:text-gray-700 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
                         </svg>
-                        <p className="text-gray-500 text-lg mb-2">No items selected</p>
-                        <p className="text-gray-400 text-sm">Select items from the dropdown to create a transfer</p>
+                        <p className="text-gray-500 dark:text-gray-400 text-lg mb-2">{t('noItemsSelected')}</p>
+                        <p className="text-gray-400 dark:text-gray-500 text-sm">{t('selectItemsFromDropdownToTransfer')}</p>
                       </div>
                     )}
                   </div>

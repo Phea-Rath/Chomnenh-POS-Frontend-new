@@ -5,6 +5,8 @@ import { toast } from 'react-hot-toast';
 import PhoneInput from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
 
+import logo from "../../assets/logo.jpg";
+
 const OtpVerification = () => {
     const [phoneNumber, setPhoneNumber] = useState('');
     const [otp, setOtp] = useState('');
@@ -66,76 +68,225 @@ const OtpVerification = () => {
     };
 
     return (
-        <div className="max-w-md mx-auto p-6 bg-white rounded-lg shadow-md">
-            <h1 className="text-2xl font-bold mb-6 text-center">OTP Verification</h1>
-
-            {isVerified ? (
-                <div className="text-center py-8">
-                    <svg className="mx-auto h-12 w-12 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                    <p className="mt-4 text-lg font-medium">Phone number verified successfully!</p>
+        <div
+            style={{
+                width: "100%",
+                maxWidth: "360px",
+                backgroundColor: "#ffffff",
+                borderRadius: "12px",
+                boxShadow: "0 8px 32px rgba(0,0,0,0.35)",
+                overflow: "hidden",
+                fontFamily: "'Inter', 'Segoe UI', sans-serif",
+            }}
+        >
+            {/* Header stripe */}
+            <div
+                style={{
+                    backgroundColor: "#1e3a5f",
+                    padding: "20px 28px 16px",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "12px",
+                }}
+            >
+                <div
+                    style={{
+                        width: "42px",
+                        height: "42px",
+                        borderRadius: "50%",
+                        overflow: "hidden",
+                        border: "2px solid rgba(255,255,255,0.3)",
+                        flexShrink: 0,
+                    }}
+                >
+                    <img
+                        src={logo}
+                        alt="CHOMNECH POS Logo"
+                        style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                    />
                 </div>
-            ) : (
-                <>
-                    <div className="mb-4">
-                        <label className="block text-gray-700 mb-2">Phone Number</label>
-                        <PhoneInput
-                            international
-                            defaultCountry="US"
-                            value={phoneNumber}
-                            onChange={setPhoneNumber}
-                            disabled={showOtpField}
-                            className="border rounded p-2 w-full"
-                        />
-                    </div>
+                <div>
+                    <h1
+                        style={{
+                            margin: 0,
+                            fontSize: "15px",
+                            fontWeight: 700,
+                            color: "#ffffff",
+                            letterSpacing: "0.5px",
+                        }}
+                    >
+                        CHOMNECH APP
+                    </h1>
+                    <p style={{ margin: 0, fontSize: "11px", color: "#93c5fd" }}>
+                        Point of Sale System
+                    </p>
+                </div>
+            </div>
 
-                    {showOtpField && (
-                        <div className="mb-4">
-                            <label className="block text-gray-700 mb-2">Enter OTP</label>
-                            <input
-                                type="text"
-                                value={otp}
-                                onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
-                                maxLength={6}
-                                className="border rounded p-2 w-full"
-                                placeholder="123456"
+            {/* Body */}
+            <div style={{ padding: "24px 28px 20px" }}>
+                <h2
+                    style={{
+                        margin: "0 0 18px",
+                        fontSize: "16px",
+                        fontWeight: 600,
+                        color: "#1e3a5f",
+                        textAlign: "center"
+                    }}
+                >
+                    OTP Verification
+                </h2>
+
+                {isVerified ? (
+                    <div style={{ textAlign: "center", padding: "20px 0" }}>
+                        <svg
+                            style={{ margin: "0 auto", height: "48px", width: "48px", color: "#10B981" }}
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                        >
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        <p style={{ marginTop: "16px", fontSize: "14px", fontWeight: 500, color: "#374151" }}>
+                            Phone number verified successfully!
+                        </p>
+                    </div>
+                ) : (
+                    <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                        <div>
+                            <label
+                                style={{
+                                    display: "block",
+                                    fontSize: "11px",
+                                    fontWeight: 600,
+                                    color: "#374151",
+                                    marginBottom: "5px",
+                                    textTransform: "uppercase",
+                                    letterSpacing: "0.4px",
+                                }}
+                            >
+                                Phone Number
+                            </label>
+                            <PhoneInput
+                                international
+                                defaultCountry="US"
+                                value={phoneNumber}
+                                onChange={setPhoneNumber}
+                                disabled={showOtpField}
+                                style={{
+                                    width: "100%",
+                                    fontSize: "13px",
+                                    color: "#111827",
+                                }}
+                                className="custom-phone-input"
                             />
-                            {countdown > 0 && (
-                                <p className="text-sm text-gray-500 mt-1">
-                                    OTP expires in: {formatCountdown(countdown)}
-                                </p>
-                            )}
-                            {countdown === 0 && showOtpField && (
-                                <button
-                                    onClick={handleSendOtp}
-                                    className="text-blue-500 text-sm mt-1"
-                                >
-                                    Resend OTP
-                                </button>
-                            )}
                         </div>
-                    )}
 
-                    <div className="flex justify-center">
-                        {!showOtpField ? (
-                            <button
-                                onClick={handleSendOtp}
-                                className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-6 rounded"
-                            >
-                                Send OTP
-                            </button>
-                        ) : (
-                            <button
-                                onClick={handleVerifyOtp}
-                                className="bg-green-500 hover:bg-green-600 text-white py-2 px-6 rounded"
-                            >
-                                Verify OTP
-                            </button>
+                        {showOtpField && (
+                            <div>
+                                <label
+                                    style={{
+                                        display: "block",
+                                        fontSize: "11px",
+                                        fontWeight: 600,
+                                        color: "#374151",
+                                        marginBottom: "5px",
+                                        textTransform: "uppercase",
+                                        letterSpacing: "0.4px",
+                                    }}
+                                >
+                                    Enter OTP
+                                </label>
+                                <input
+                                    type="text"
+                                    value={otp}
+                                    onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
+                                    maxLength={6}
+                                    placeholder="123456"
+                                    style={{
+                                        width: "100%",
+                                        padding: "9px 12px",
+                                        fontSize: "13px",
+                                        color: "#111827",
+                                        backgroundColor: "#f8fafc",
+                                        border: "1px solid #cbd5e1",
+                                        borderRadius: "7px",
+                                        outline: "none",
+                                        boxSizing: "border-box",
+                                        transition: "border-color 0.15s",
+                                    }}
+                                    onFocus={(e) => (e.target.style.borderColor = "#1e3a5f")}
+                                    onBlur={(e) => (e.target.style.borderColor = "#cbd5e1")}
+                                />
+                                <div style={{ display: "flex", justifyContent: "space-between", marginTop: "5px" }}>
+                                    {countdown > 0 ? (
+                                        <p style={{ margin: 0, fontSize: "11px", color: "#6b7280" }}>
+                                            Expires in: {formatCountdown(countdown)}
+                                        </p>
+                                    ) : (
+                                        <button
+                                            onClick={handleSendOtp}
+                                            style={{
+                                                background: "none",
+                                                border: "none",
+                                                padding: 0,
+                                                fontSize: "11px",
+                                                color: "#1e3a5f",
+                                                fontWeight: 600,
+                                                cursor: "pointer",
+                                                textDecoration: "underline"
+                                            }}
+                                        >
+                                            Resend OTP
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
                         )}
+
+                        <button
+                            onClick={!showOtpField ? handleSendOtp : handleVerifyOtp}
+                            style={{
+                                width: "100%",
+                                padding: "10px",
+                                backgroundColor: "#1e3a5f",
+                                color: "#ffffff",
+                                fontSize: "13px",
+                                fontWeight: 600,
+                                border: "none",
+                                borderRadius: "7px",
+                                cursor: "pointer",
+                                transition: "background-color 0.2s",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                gap: "8px",
+                                letterSpacing: "0.3px",
+                                marginTop: "8px"
+                            }}
+                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "#163057"}
+                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "#1e3a5f"}
+                        >
+                            {!showOtpField ? "Send OTP" : "Verify OTP"}
+                        </button>
                     </div>
-                </>
-            )}
+                )}
+            </div>
+            
+            <style>{`
+                .custom-phone-input input {
+                    width: 100%;
+                    padding: 9px 12px;
+                    font-size: 13px;
+                    background-color: #f8fafc;
+                    border: 1px solid #cbd5e1;
+                    border-radius: 7px;
+                    outline: none;
+                }
+                .custom-phone-input input:focus {
+                    border-color: #1e3a5f;
+                }
+            `}</style>
         </div>
     );
 };

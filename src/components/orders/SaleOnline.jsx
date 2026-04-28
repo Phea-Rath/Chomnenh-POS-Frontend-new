@@ -267,6 +267,7 @@ const Drawer = ({ open, onClose, title, children, width = 400, darkMode = false 
 const Sales = () => {
   const { t, i18n } = useTranslation();
   const { id, token } = useParams();
+  const [producId, setProductId] = useState('');
   const profileId = localStorage.getItem('profileId');
   const localOrderItems = JSON.parse(localStorage.getItem("orderItems"));
   const { data: exchangeRate } = useGetExchangeRateByIdQuery({
@@ -315,8 +316,8 @@ const Sales = () => {
     return saved ? JSON.parse(saved) : false;
   });
   const [product, setProduct] = useState(null);
-  const { data: item } = useGetItemByIdQuery({ id: id, token },
-    { skip: !id })
+  const { data: item } = useGetItemByIdQuery({ id: producId, token },
+    { skip: !producId })
   const saleItemContext = useGetAllSaleQuery({
     token,
     limit: pageSize,
@@ -368,9 +369,8 @@ const Sales = () => {
 
   useEffect(() => {
     setProduct(item?.data);
-    console.log(id);
 
-  }, [id, item])
+  }, [producId, item])
 
   useEffect(() => {
     // Load data from localStorage
@@ -1393,9 +1393,9 @@ const Sales = () => {
               <p className={`mx-auto mb-5 max-w-md text-sm ${darkMode ? '!text-slate-400' : 'text-gray-500'}`}>
                 Try adjusting your search or filter criteria
               </p>
-              <Button onClick={() => navigate('/add-to-stock')} variant="primary" darkMode={darkMode}>
+              {/* <Button onClick={() => navigate('/add-to-stock')} variant="primary" darkMode={darkMode}>
                 Add Products to Stock
-              </Button>
+              </Button> */}
             </div>
           ) : (
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 sm:gap-3">
@@ -1415,7 +1415,7 @@ const Sales = () => {
                         src={item.image}
                         alt={item.name}
                         className="h-24 w-full cursor-pointer object-contain transition-transform hover:scale-105"
-                        onClick={() => { setVisible(true); setItemId(item.id); }}
+                        onClick={() => { setVisible(true); setProductId(item.id); }}
                         onError={(e) => {
                           e.target.onerror = null;
                           e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(item.name)}&background=3b82f6&color=fff&size=128`;
@@ -1716,11 +1716,11 @@ const Sales = () => {
               <img
                 src={product?.image}
                 alt={product?.name}
-                className="w-full max-h-80 object-contain mix-blend-multiply"
+                className={`w-full max-h-80 object-contain ${darkMode ? '' : 'mix-blend-multiply'}`}
               />
               <div className="flex gap-2 mt-4 overflow-x-auto">
                 {product?.images?.map((img, idx) => (
-                  <img key={idx} src={img.image} className="w-16 h-16 border-2 border-white rounded object-cover cursor-pointer hover:border-blue-400" />
+                  <img key={idx} src={img.image} className={`w-16 h-16 border-2 rounded object-cover cursor-pointer hover:border-blue-400 ${darkMode ? 'border-slate-700' : 'border-white'}`} />
                 ))}
               </div>
             </div>
@@ -1735,7 +1735,7 @@ const Sales = () => {
                 <div className="flex items-center gap-4 mt-2">
                   <span className="text-2xl font-bold text-blue-600">${product?.price}</span>
                   {product?.price < product?.wholesale_price && (
-                    <span className="text-gray-400 line-through">${product?.wholesale_price}</span>
+                    <span className={`line-through ${darkMode ? '!text-slate-500' : 'text-gray-400'}`}>${product?.wholesale_price}</span>
                   )}
                   <Tag color="green">In Stock: {product?.stock?.in_stock}</Tag>
                 </div>
@@ -1746,31 +1746,31 @@ const Sales = () => {
               <div className="space-y-4">
                 <h4 className={`text-sm font-bold uppercase ${darkMode ? '!text-slate-200' : 'text-gray-700'}`}>Product Specifications</h4>
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="flex items-center gap-2 p-2 bg-gray-50 rounded border border-gray-200">
+                  <div className={`flex items-center gap-2 p-2 rounded border ${darkMode ? '!bg-slate-700 !border-slate-600' : 'bg-gray-50 border-gray-200'}`}>
                     <BsQrCodeScan className="text-blue-500" />
                     <div>
-                      <p className="text-xs text-gray-400">Barcode</p>
-                      <p className="text-sm font-medium">{product?.barcode}</p>
+                      <p className={`text-xs ${darkMode ? '!text-slate-400' : 'text-gray-400'}`}>Barcode</p>
+                      <p className={`text-sm font-medium ${darkMode ? '!text-slate-200' : ''}`}>{product?.barcode}</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 p-2 bg-gray-50 rounded border border-gray-200">
+                  <div className={`flex items-center gap-2 p-2 rounded border ${darkMode ? '!bg-slate-700 !border-slate-600' : 'bg-gray-50 border-gray-200'}`}>
                     <GiScales className="text-blue-500" />
                     <div>
-                      <p className="text-xs text-gray-400">Scale</p>
-                      <p className="text-sm font-medium">{product?.scale_name}</p>
+                      <p className={`text-xs ${darkMode ? '!text-slate-400' : 'text-gray-400'}`}>Scale</p>
+                      <p className={`text-sm font-medium ${darkMode ? '!text-slate-200' : ''}`}>{product?.scale_name}</p>
                     </div>
                   </div>
                 </div>
 
                 {product?.attributes?.map((attr) => (
                   <div key={attr.id}>
-                    <p className="text-xs font-bold text-gray-400 uppercase mb-1">{attr.name}</p>
+                    <p className={`text-xs font-bold uppercase mb-1 ${darkMode ? '!text-slate-400' : 'text-gray-400'}`}>{attr.name}</p>
                     <div className="flex gap-2">
                       {Array.isArray(attr.value) ? (
                         attr.value.map((v) => (
                           <div
                             key={v.id}
-                            className="w-8 h-8 rounded-full border-2 border-white shadow-md cursor-pointer hover:scale-110"
+                            className={`w-8 h-8 rounded-full border-2 shadow-md cursor-pointer hover:scale-110 ${darkMode ? 'border-slate-600' : 'border-white'}`}
                             style={{ backgroundColor: v.value }}
                             title={v.value}
                           />

@@ -60,7 +60,7 @@ const OtpInput = ({ length = 4, onOtpSubmit = () => { } }) => {
   };
 
   return (
-    <div>
+    <div style={{ display: "flex", gap: "8px", justifyContent: "center" }}>
       {otp.map((value, index) => {
         return (
           <input
@@ -71,7 +71,27 @@ const OtpInput = ({ length = 4, onOtpSubmit = () => { } }) => {
             onChange={(e) => handleChange(index, e)}
             onClick={() => handleClick(index)}
             onKeyDown={(e) => handleKeyDown(index, e)}
-            className="otpInput border-1 border-gray-400 text-black bg-transparent focus:outline"
+            style={{
+              width: "40px",
+              height: "45px",
+              textAlign: "center",
+              fontSize: "18px",
+              fontWeight: "600",
+              color: "#111827",
+              backgroundColor: "#f8fafc",
+              border: "1px solid #cbd5e1",
+              borderRadius: "7px",
+              outline: "none",
+              transition: "border-color 0.15s, box-shadow 0.15s",
+            }}
+            onFocus={(e) => {
+              e.target.style.borderColor = "#1e3a5f";
+              e.target.style.boxShadow = "0 0 0 2px rgba(30, 58, 95, 0.1)";
+            }}
+            onBlur={(e) => {
+              e.target.style.borderColor = "#cbd5e1";
+              e.target.style.boxShadow = "none";
+            }}
           />
         );
       })}

@@ -8,6 +8,12 @@ const queryData = (path, token) => ({
     }
 });
 
+const queryDataNoToken = (path) => ({
+    url: `${path}`,
+    method: 'GET',
+});
+
+
 const queryDataById = (id, path, token) => ({
     url: `${path}/${id}`,
     method: 'GET',
@@ -74,5 +80,6 @@ export {
     deleteData,
     cancelData,
     uncancelData,
+    queryDataNoToken,
     url
 }

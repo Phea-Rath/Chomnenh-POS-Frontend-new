@@ -1098,7 +1098,7 @@ const Sales = () => {
                   {t("telegram")}
                 </Button>
               </div>
-              <Button key="cancel" className={`w-full h-10 bg-gray-100 text-gray-600 font-bold hover:bg-gray-200 border-none dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600`} onClick={closeQrModal}>
+              <Button key="cancel" className={`w-full h-10 bg-transparent text-gray-600 font-bold hover:bg-gray-200 border-none bg-transparent dark:text-gray-300 dark:hover:bg-gray-600`} onClick={closeQrModal}>
                 {t("close")}
               </Button>
               <Button
@@ -1226,7 +1226,7 @@ const Sales = () => {
                 <div className="relative">
                   <input
                     onChange={(e) => setSearch(e.target.value)}
-                    className="w-full px-4 py-2 pl-10 border rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm bg-white border-gray-300 text-gray-900 dark:bg-gray-700 dark:border-gray-700 dark:text-white dark:placeholder-gray-500"
+                    className="w-full px-4 py-2 pl-10 border rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm  border-gray-300 text-gray-900 bg-transparent dark:border-0 focus:outline-0 dark:text-white dark:placeholder-gray-500"
                     placeholder={t("searchProducts")}
                   />
                   <div className="absolute left-3 top-2.5 text-gray-400">
@@ -1244,7 +1244,7 @@ const Sales = () => {
                 key={cat.category_id}
                 value={cat.category_id}
                 onClick={onFilterCategory}
-                className="px-3 py-1 bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-white rounded-full text-sm font-medium hover:bg-gray-300 dark:hover:bg-gray-600"
+                className="px-3 py-1 bg-gray-200 text-gray-800 bg-transparent dark:text-white rounded-full text-sm font-medium hover:bg-gray-300 dark:hover:bg-gray-600"
               >
                 {cat.category_name}
               </button>
@@ -1259,12 +1259,12 @@ const Sales = () => {
               <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
                 {[...Array(8)].map((_, index) => (
                   <div key={index} className="border rounded p-4 animate-pulse border-gray-200 bg-primary dark:border-gray-700">
-                    <div className="h-48 rounded mb-4 bg-gray-200 dark:bg-gray-700"></div>
-                    <div className="h-4 rounded w-3/4 mb-2 bg-gray-200 dark:bg-gray-700"></div>
-                    <div className="h-3 rounded w-1/2 mb-4 bg-gray-200 dark:bg-gray-700"></div>
+                    <div className="h-48 rounded mb-4 bg-gray-200 bg-transparent"></div>
+                    <div className="h-4 rounded w-3/4 mb-2 bg-gray-200 bg-transparent"></div>
+                    <div className="h-3 rounded w-1/2 mb-4 bg-gray-200 bg-transparent"></div>
                     <div className="flex justify-between">
-                      <div className="h-6 rounded w-1/4 bg-gray-200 dark:bg-gray-700"></div>
-                      <div className="h-8 rounded w-1/3 bg-gray-200 dark:bg-gray-700"></div>
+                      <div className="h-6 rounded w-1/4 bg-gray-200 bg-transparent"></div>
+                      <div className="h-8 rounded w-1/3 bg-gray-200 bg-transparent"></div>
                     </div>
                   </div>
                 ))}
@@ -1297,7 +1297,7 @@ const Sales = () => {
                 >
                   <div className="p-4">
                     {/* Product Image */}
-                    <div className="relative mb-4 overflow-hidden rounded bg-gray-100 dark:bg-gray-700">
+                    <div className="relative mb-4 overflow-hidden rounded bg-gray-100 bg-transparent">
                       <img
                         src={item.image}
                         alt={item.name}
@@ -1317,9 +1317,14 @@ const Sales = () => {
                         </span>
                       )}
                       {/* Discount Badge */}
-                      {item.discount > 0 && (
+                      {item.discount != 100 && item.discount > 0 && (
                         <span className="absolute top-2 left-2 px-2 py-1 rounded-full text-xs font-medium text-white bg-gradient-to-r from-red-500 to-pink-600">
                           -{item.discount}%
+                        </span>
+                      )}
+                      {item.discount == 100 && (
+                        <span className="absolute top-2 left-2 px-2 py-1 rounded-full text-xs font-medium text-white bg-gradient-to-r from-red-500 to-pink-600">
+                          free
                         </span>
                       )}
                     </div>
@@ -1378,7 +1383,7 @@ const Sales = () => {
         {open && (
           <>
             <div className="fixed inset-0 bg-black/50 z-40" onClick={onClose} />
-            <div className="fixed top-0 right-0 z-50 h-full w-full max-w-md border-l shadow-xl transform transition-transform bg-white border-gray-200 bg-primary dark:border-gray-700">
+            <div className="fixed top-0 right-0 z-50 h-full w-full max-w-md border-l shadow-xl transform transition-transform border-gray-200 bg-primary dark:!bg-gray-800 dark:border-gray-700">
               <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
                 <h2 className="text-lg font-semibold flex items-center gap-2 text-gray-800 dark:text-white">
                   <PiShoppingCartBold className="text-blue-500" />
@@ -1409,7 +1414,7 @@ const Sales = () => {
                     orders?.items?.map((item, index) => (
                       <div
                         key={`${item.id}-${index}`}
-                        className="relative border rounded p-3 bg-gray-50 border-gray-200 dark:bg-gray-700 dark:border-gray-700"
+                        className="relative border rounded p-3 bg-gray-50 border-gray-200 bg-transparent dark:border-gray-700"
                       >
                         <button
                           onClick={() => handleDelete(item.id, index)}
@@ -1519,7 +1524,7 @@ const Sales = () => {
                               localStorage.setItem("orderItems", JSON.stringify(results));
                               setOrders(results);
                             }}
-                            className="w-20 px-2 py-1 border rounded text-right text-sm bg-white border-gray-300 text-gray-900 dark:bg-gray-700 dark:border-gray-700 dark:text-white"
+                            className="w-20 px-2 py-1 border rounded text-right text-sm bg-white border-gray-300 text-gray-900 bg-transparent dark:border-gray-700 dark:text-white"
                             placeholder="0.00"
                             min="0"
                             step="0.01"
@@ -1534,7 +1539,7 @@ const Sales = () => {
                             onClick={() => handleSaleType({ target: { value: 'sale' } })}
                             className={`flex-1 py-1.5 text-sm border rounded transition-colors ${orders?.sale_type === 'sale'
                               ? 'bg-blue-600 text-white border-blue-600'
-                              : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 dark:bg-gray-700 dark:text-gray-400 dark:border-gray-700 dark:hover:bg-gray-800'
+                              : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 bg-transparent dark:text-gray-400 dark:border-gray-700 dark:hover:bg-gray-800'
                               }`}
                           >
                             {t("retail")}
@@ -1543,7 +1548,7 @@ const Sales = () => {
                             onClick={() => handleSaleType({ target: { value: 'wholesale' } })}
                             className={`flex-1 py-1.5 text-sm border rounded transition-colors ${orders?.sale_type === 'wholesale'
                               ? 'bg-blue-600 text-white border-blue-600'
-                              : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 dark:bg-gray-700 dark:text-gray-400 dark:border-gray-700 dark:hover:bg-gray-800'
+                              : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 bg-transparent dark:text-gray-400 dark:border-gray-700 dark:hover:bg-gray-800'
                               }`}
                           >
                             {t("wholesale")}
@@ -1574,7 +1579,7 @@ const Sales = () => {
                             localStorage.setItem("orderItems", JSON.stringify(results));
                             setOrders(results);
                           }}
-                          className="w-20 px-2 py-1 border rounded text-right text-sm bg-white border-gray-300 text-gray-900 dark:bg-gray-700 dark:border-gray-700 dark:text-white"
+                          className="w-20 px-2 py-1 border rounded text-right text-sm bg-white border-gray-300 text-gray-900 bg-transparent dark:border-gray-700 dark:text-white"
                           min="0"
                           step="0.01"
                         />
@@ -1589,7 +1594,7 @@ const Sales = () => {
                             localStorage.setItem("orderItems", JSON.stringify(results));
                             setOrders(results);
                           }}
-                          className="px-2 py-1 border rounded text-sm bg-white border-gray-300 text-gray-900 dark:bg-gray-700 dark:border-gray-700 dark:text-white"
+                          className="px-2 py-1 border rounded text-sm bg-white border-gray-300 text-gray-900 bg-transparent dark:border-gray-700 dark:text-white"
                         >
                           <option value="cash">{t("cash")}</option>
                           <option value="bank">{t("bank")}</option>
@@ -1612,7 +1617,7 @@ const Sales = () => {
                             setOrders(results);
                             setPayment(value);
                           }}
-                          className="px-2 py-1 border rounded text-sm bg-white border-gray-300 text-gray-900 dark:bg-gray-700 dark:border-gray-700 dark:text-white"
+                          className="px-2 py-1 border rounded text-sm bg-white border-gray-300 text-gray-900 bg-transparent dark:border-gray-700 dark:text-white"
                         >
                           <option value="paid">{t("paid")}</option>
                           <option value="cod">{t("cod")}</option>
@@ -1636,7 +1641,7 @@ const Sales = () => {
                             localStorage.setItem("orderItems", JSON.stringify(results));
                             setOrders(results);
                           }}
-                          className="px-2 py-1 border rounded text-sm bg-white border-gray-300 text-gray-900 dark:bg-gray-700 dark:border-gray-700 dark:text-white"
+                          className="px-2 py-1 border rounded text-sm bg-white border-gray-300 text-gray-900 bg-transparent dark:border-gray-700 dark:text-white"
                         >
                           <option value={0}>{t("customer")}...</option>
                           {customers?.data?.map((customer) => (
@@ -1662,7 +1667,7 @@ const Sales = () => {
                             localStorage.setItem("orderItems", JSON.stringify(results));
                             setOrders(results);
                           }}
-                          className="w-24 px-2 py-1 border rounded text-right text-sm bg-white border-gray-300 text-gray-900 dark:bg-gray-700 dark:border-gray-700 dark:text-white"
+                          className="w-24 px-2 py-1 border rounded text-right text-sm bg-white border-gray-300 text-gray-900 bg-transparent dark:border-gray-700 dark:text-white"
                           placeholder="0.00"
                           min="0"
                           step="0.01"
@@ -1684,7 +1689,7 @@ const Sales = () => {
                             localStorage.setItem("orderItems", JSON.stringify(results));
                             setOrders(results);
                           }}
-                          className="w-full px-2 py-1 border rounded text-sm bg-white border-gray-300 text-gray-900 dark:bg-gray-700 dark:border-gray-700 dark:text-white dark:placeholder-gray-600"
+                          className="w-full px-2 py-1 border rounded text-sm bg-white border-gray-300 text-gray-900 bg-transparent dark:border-gray-700 dark:text-white dark:placeholder-gray-600"
                           placeholder="000-0000-000"
                         />
                       </div>
@@ -1698,7 +1703,7 @@ const Sales = () => {
                             localStorage.setItem("orderItems", JSON.stringify(results));
                             setOrders(results);
                           }}
-                          className="w-full px-2 py-1 border rounded text-sm bg-white border-gray-300 text-gray-900 dark:bg-gray-700 dark:border-gray-700 dark:text-white dark:placeholder-gray-600"
+                          className="w-full px-2 py-1 border rounded text-sm bg-white border-gray-300 text-gray-900 bg-transparent dark:border-gray-700 dark:text-white dark:placeholder-gray-600"
                           placeholder={t("address")}
                           rows="3"
                         />
@@ -1737,7 +1742,7 @@ const Sales = () => {
                           setOrderCount(0);
                           toast.success(`${t("clearCart")} ${t("successfully")}`);
                         }}
-                        className="w-full py-2 border rounded text-sm transition-colors border-gray-300 bg-white text-gray-700 hover:border-red-300 hover:text-red-600 dark:border-gray-700 dark:bg-gray-700 dark:text-gray-400 dark:hover:border-red-500 dark:hover:text-red-500"
+                        className="w-full py-2 border rounded text-sm transition-colors border-gray-300 bg-white text-gray-700 hover:border-red-300 hover:text-red-600 dark:border-gray-700 bg-transparent dark:text-gray-400 dark:hover:border-red-500 dark:hover:text-red-500"
                       >
                         {t("clearCart")}
                       </button>

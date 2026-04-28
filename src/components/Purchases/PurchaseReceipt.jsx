@@ -130,8 +130,8 @@ const PurchaseReceipt = () => {
     XLSX.writeFile(workbook, `Purchase_Receipt_${purchase.purchase_no}.xlsx`);
   };
 
-  const formatCurrency = (amount) => `${Number(amount || 0).toLocaleString("en-US")} ៛`;
-  const formatUSD = (amount) => `${Number(amount || 0).toFixed(2)} $`;
+  const formatKHR = (amount) => `${Number(amount || 0).toFixed(2)} ៛`;
+  const formatUSD = (amount) => `${Number(amount || 0).toLocaleString("en-US")} $`;
   const formatQty = (amount) =>
     Number(amount || 0).toLocaleString("en-US", {
       minimumFractionDigits: 0,
@@ -180,13 +180,14 @@ const PurchaseReceipt = () => {
   if (!purchase || !supplier) return null;
 
   const summaryRows = [
-    { label: "Subtotal", value: formatCurrency(purchase.sub_total * purchase.exchange_rate) },
-    { label: "Shipping", value: formatCurrency(purchase.shipping_fee * purchase.exchange_rate) },
-    { label: "Discount", value: formatCurrency(purchase.discount * purchase.exchange_rate) },
-    { label: "Grand Total", value: formatCurrency(purchase.total_amount * purchase.exchange_rate), strong: true },
-    { label: "Paid", value: formatCurrency(purchase.total_paid * purchase.exchange_rate), strong: true },
-    { label: "Balance", value: formatCurrency(purchase.balance * purchase.exchange_rate), strong: true },
-    { label: "USD Total", value: formatUSD(calculateUSD(purchase.total_amount * purchase.exchange_rate)), strong: true },
+    { label: "Subtotal", value: formatUSD(purchase.sub_total) },
+    { label: "Shipping", value: formatUSD(purchase.shipping_fee) },
+    { label: "Discount", value: formatUSD(purchase.discount) },
+    { label: "Grand Total", value: formatUSD(purchase.total_amount), strong: true },
+    { label: "Paid", value: formatUSD(purchase.total_paid), strong: true },
+    { label: "Balance", value: formatUSD(purchase.balance), strong: true },
+    { label: "USD Total", value: formatUSD(purchase.total_amount), strong: true },
+    { label: "KHR Total", value: formatKHR(purchase.total_amount * purchase.exchange_rate), strong: true },
   ];
 
   return (
@@ -202,7 +203,7 @@ const PurchaseReceipt = () => {
                 <FaArrowLeft className="mr-2" />
                 Back
               </button>
-              <h1 className="text-xl font-bold text-gray-900">Purchase Receipt #{purchase.purchase_no}</h1>
+              <h1 className="text-lg font-bold text-gray-900">Purchase Receipt #{purchase.purchase_no}</h1>
             </div>
             <div className="flex gap-2">
               <Button
@@ -237,12 +238,12 @@ const PurchaseReceipt = () => {
                     alt={businessInfo.name || "Business logo"}
                   />
                 ) : null}
-                <h2 className="text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">
+                <h2 className="text-lg font-bold tracking-tight text-gray-900 sm:text-xl">
                   {businessInfo?.name}
                 </h2>
                 <p className="mt-2 text-sm text-gray-600 sm:text-base">{businessInfo?.address}</p>
                 <p className="text-sm text-gray-600 sm:text-base">Tel: {businessInfo?.tel || "N/A"}</p>
-                <h1 className="mt-7 text-3xl font-bold tracking-[0.08em] text-gray-700 sm:text-4xl">
+                <h1 className="mt-7 text-xl font-bold tracking-[0.08em] text-gray-700 sm:text-2xl">
                   PURCHASE RECEIPT
                 </h1>
               </div>
@@ -312,10 +313,10 @@ const PurchaseReceipt = () => {
                           {formatQty(item.quantity)} {item.unit || ""}
                         </td>
                         <td className="px-3 py-4 text-right">
-                          {formatCurrency(item.item_cost * purchase.exchange_rate)}
+                          {formatUSD(item.item_cost)}
                         </td>
                         <td className="px-3 py-4 text-right font-medium">
-                          {formatCurrency(item.subtotal * purchase.exchange_rate)}
+                          {formatUSD(item.subtotal)}
                         </td>
                       </tr>
                     ))}
@@ -348,7 +349,7 @@ const PurchaseReceipt = () => {
                           className="grid grid-cols-[40px,1fr,1fr] gap-3 border-b border-gray-200 pb-2 last:border-0 last:pb-0"
                         >
                           <span>{index + 1}.</span>
-                          <span>{formatCurrency(payment.amount * purchase.exchange_rate)}</span>
+                          <span>{formatUSD(payment.amount)}</span>
                           <span className="text-right">{formatDateTime(payment.paid_at || payment.created_at)}</span>
                         </div>
                       ))}

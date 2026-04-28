@@ -14,8 +14,12 @@ import { toast } from 'react-toastify';
 import { useGetUserProfileQuery } from '../../app/Features/usersSlice';
 import { convertImageToBase64 } from '../services/serviceFunction';
 import shopping from '../assets/shopping-cart.png';
+import { useTranslation } from 'react-i18next';
+import { useOutletsContext } from '../layouts/Management';
 
 const QRCodeGenerator = () => {
+  const { t } = useTranslation();
+  const { darkMode } = useOutletsContext();
   const token = localStorage.getItem('token');
   const id = localStorage.getItem('profileId');
   const [logoBase64, setLogoBase64] = useState(null);
@@ -25,8 +29,8 @@ const QRCodeGenerator = () => {
   const { data: profileData } = useGetUserProfileQuery({ id, token });
   const designRef = useRef(null);
 
-  const restaurantName = profileData?.data?.profile_name || "Your Restaurant";
-  const description = profileData?.data?.description || "Scan to order from our digital menu";
+  const restaurantName = profileData?.data?.profile_name || t("yourRestaurant", "Your Restaurant");
+  const description = profileData?.data?.description || t("scanToOrder", "Scan to order from our digital menu");
   const qrValue = `${window.location.origin}/${token}/order-now/${id}`;
 
   useEffect(() => {
@@ -45,9 +49,9 @@ const QRCodeGenerator = () => {
         cacheBust: true,
       });
       download(dataUrl, `${restaurantName.replace(/\s+/g, '_')}_QR.png`);
-      toast.success('Design downloaded successfully!');
+      toast.success(t('designDownloaded', 'Design downloaded successfully!'));
     } catch (e) {
-      toast.error('Download failed');
+      toast.error(t('downloadFailed', 'Download failed'));
     } finally {
       setLoading(false);
     }
@@ -60,7 +64,7 @@ const QRCodeGenerator = () => {
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
       console.error(err);
-      toast.error('Failed to copy. Use HTTPS.');
+      toast.error(t('copyFailed', 'Failed to copy. Use HTTPS.'));
     }
   };
 
@@ -68,18 +72,20 @@ const QRCodeGenerator = () => {
     <div className="bg-transparent flex items-center justify-center p-6">
       <div className="max-w-md w-full">
         {/* Main Single Card Container */}
-        <div className="rounded-[2.5rem] shadow-md border border-slate-100 overflow-hidden">
+        <div className={`rounded-[2.5rem] shadow-md border overflow-hidden ${darkMode ? 'border-gray-800 shadow-gray-900/50' : 'border-slate-100'}`}>
 
           {/* Header Section */}
-          <div className="p-4 text-center bg-slate-50 border-b border-slate-100">
-            <h1 className="text-2xl font-black text-slate-800 tracking-tight">
-              E-Menu <span className="text-indigo-600">QR</span>
+          <div className={`p-4 text-center border-b ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-slate-50 border-slate-100'}`}>
+            <h1 className={`text-2xl font-black tracking-tight ${darkMode ? 'text-white' : 'text-slate-800'}`}>
+              {t('eMenu', 'E-Menu')} <span className={darkMode ? 'text-blue-400' : 'text-indigo-600'}>{t('qr', 'QR')}</span>
             </h1>
-            <p className="text-slate-500 text-sm font-medium mt-1">Smarter ordering for your guests</p>
+            <p className={`text-sm font-medium mt-1 ${darkMode ? 'text-gray-400' : 'text-slate-500'}`}>
+              {t('smarterOrdering', 'Smarter ordering for your guests')}
+            </p>
           </div>
 
           {/* Design Preview Area (The part that gets downloaded) */}
-          <div ref={designRef} className="p-10 bg-white flex flex-col items-center">
+          <div ref={designRef} className="p-10 bg-white dark:bg-slate-800 flex flex-col items-center">
             {/* Logo and Name */}
             <div className="text-center">
               <div className="w-20 h-20 rounded-2xl overflow-hidden shadow-md mx-auto border-4 border-white">
@@ -89,7 +95,7 @@ const QRCodeGenerator = () => {
                   className="w-full h-full object-cover"
                 />
               </div>
-              <h2 className="text-2xl font-bold text-slate-900">{restaurantName}</h2>
+              <h2 className="text-2xl font-bold text-slate-900 dark:text-white">{restaurantName}</h2>
             </div>
 
             {/* QR Code with Logo Center */}
@@ -112,7 +118,7 @@ const QRCodeGenerator = () => {
 
             <div className="text-center space-y-2">
               <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest">
-                <BsQrCodeScan /> Scan To Place Order
+                <BsQrCodeScan /> {t('scanToPlaceOrder', 'Scan To Place Order')}
               </span>
               <p className="text-slate-400 text-xs italic max-w-[200px] mx-auto pt-2">
                 "{description}"
@@ -121,7 +127,7 @@ const QRCodeGenerator = () => {
           </div>
 
           {/* Action Footer */}
-          <div className="p-8 bg-slate-50 border-t border-slate-100 space-y-4">
+          <div className={`p-8 border-t space-y-4 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-slate-50 border-slate-100'}`}>
             {/* <button
               onClick={downloadDesign}
               disabled={loading}
@@ -134,35 +140,35 @@ const QRCodeGenerator = () => {
             <div className="grid grid-cols-2 gap-3">
               <button
                 onClick={copyURL}
-                className="flex items-center justify-center gap-2 py-3 rounded-xl border-2 border-slate-200 hover:border-indigo-600 hover:text-indigo-600 transition-all text-xs font-bold text-slate-600"
+                className={`flex items-center justify-center gap-2 py-3 rounded-xl border-2 transition-all text-xs font-bold ${darkMode ? 'border-gray-700 hover:border-blue-400 hover:text-blue-400 text-gray-300' : 'border-slate-200 hover:border-indigo-600 hover:text-indigo-600 text-slate-600'}`}
               >
                 {copied ? <BiCheck className="text-lg text-green-500" /> : <BsLink45Deg className="text-lg" />}
-                {copied ? 'Copied' : 'Copy Link'}
+                {copied ? t('copied', 'Copied') : t('copyLink', 'Copy Link')}
               </button>
 
               <button
                 onClick={downloadDesign}
-                className="flex items-center justify-center gap-2 py-3 rounded-xl border-2 border-slate-200 hover:border-indigo-600 hover:text-indigo-600 transition-all text-xs font-bold text-slate-600"
+                className={`flex items-center justify-center gap-2 py-3 rounded-xl border-2 transition-all text-xs font-bold ${darkMode ? 'border-gray-700 hover:border-blue-400 hover:text-blue-400 text-gray-300' : 'border-slate-200 hover:border-indigo-600 hover:text-indigo-600 text-slate-600'}`}
               >
-                {copied ? <BiCheck className="text-lg text-green-500" /> : <BsDownload className="text-lg" />}
-                {copied ? 'Downloaded' : 'Download'}
+                {loading ? <BiCheck className="text-lg text-green-500" /> : <BsDownload className="text-lg" />}
+                {loading ? t('downloading', 'Downloading...') : t('download', 'Download')}
               </button>
 
               {/* <Link
                 to="/market"
-                className="flex items-center justify-center gap-2 py-3 rounded-xl border-2 border-slate-200 hover:border-emerald-500 hover:text-emerald-500 transition-all text-xs font-bold text-slate-600"
+                className={`flex items-center justify-center gap-2 py-3 rounded-xl border-2 transition-all text-xs font-bold ${darkMode ? 'border-gray-700 hover:border-emerald-400 hover:text-emerald-400 text-gray-300' : 'border-slate-200 hover:border-emerald-500 hover:text-emerald-500 text-slate-600'}`}
               >
                 <FaStore className="text-base" />
-                Market
+                {t('market', 'Market')}
               </Link> */}
             </div>
           </div>
         </div>
 
         {/* Floating Print Tip */}
-        <div className="mt-6 flex items-center justify-center gap-2 text-slate-400">
+        <div className={`mt-6 flex items-center justify-center gap-2 ${darkMode ? 'text-gray-500' : 'text-slate-400'}`}>
           <BsPrinterFill />
-          <span className="text-xs font-medium">Tip: Use A5 Heavy Cardstock for best results</span>
+          <span className="text-xs font-medium">{t('printTip', 'Tip: Use A5 Heavy Cardstock for best results')}</span>
         </div>
       </div>
     </div>
