@@ -25,13 +25,13 @@ const Header = () => {
         return () => window.removeEventListener('cartUpdated', updateCartCount);
     }, []);
     return (
-        <header className="bg-[#131921] text-white shadow-md">
+        <header className="bg-chomnenh-dark text-white shadow-md">
             <div className="container mx-auto px-4 py-2">
                 <div className="flex items-center justify-between gap-2 md:gap-4">
                     {/* Left Section */}
                     <div onClick={onBack} className="flex items-center space-x-2 md:space-x-4 cursor-pointer">
                         <h1 className="text-lg md:text-xl font-bold whitespace-nowrap">
-                            e-market<span className="text-[#febd69]">.</span>
+                            CHOMNENH<span className="text-[#febd69]">.<span className='text-xs'>STORE</span></span>
                         </h1>
                     </div>
 
@@ -41,7 +41,7 @@ const Header = () => {
                             <input
                                 type="text"
                                 placeholder="Search..."
-                                className="w-full h-full px-3 md:px-4 rounded-l border-none text-white focus:outline-none text-xs md:text-sm"
+                                className="w-full h-full px-3 md:px-4 rounded-l-md border-none text-black bg-slate-100 focus:outline-none text-xs md:text-sm"
                             />
                             <button className="bg-[#febd69] hover:bg-[#f3a847] h-full px-3 md:px-4 rounded-r flex items-center justify-center">
                                 <FaSearch className="text-black text-sm" />

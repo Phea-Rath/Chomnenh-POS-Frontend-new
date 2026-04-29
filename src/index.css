@@ -54,6 +54,7 @@
   --shadow: 0px 4px 4px #00000015, 0px 12px 12px #00000015;
   --bg-gradient: linear-gradient(0deg, var(--bg) 100%, var(--bg-light));
   --primary-dark: #2c447c;
+  --primary-light: #365397;
 }
 
 /* Dark mode CSS variables */
@@ -158,6 +159,18 @@
   html,
   body {
     overflow: hidden;
+  }
+
+  .bg-chomnenh-light {
+    background-color: var(--primary-light);
+  }
+
+  .bg-chomnenh-dark {
+    background-color: var(--primary-dark);
+  }
+
+  .text-chomnenh-dark {
+    color: var(--primary-dark);
   }
 
   .bg-primary-dark {

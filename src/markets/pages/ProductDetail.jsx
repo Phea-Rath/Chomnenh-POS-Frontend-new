@@ -97,9 +97,10 @@ const ProductDetail = () => {
     const recommendationProducts = useMemo(() => {
         const items = recommendedResponse?.data ?? [];
 
-        return items.filter(item =>
+        return items.filter((item, index) =>
             Number(item.id) !== productId &&
-            item.profile_id === sellerProfileId
+            item.profile_id === sellerProfileId &&
+            index < 9
         );
     }, [productId, recommendedResponse, sellerProfileId]);
 
@@ -167,7 +168,7 @@ const ProductDetail = () => {
     }
 
     return (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5">
             <nav className="hidden sm:flex items-center space-x-2 text-sm text-gray-500 mb-6 lg:mb-8">
                 <span className="cursor-pointer hover:underline" onClick={() => navigate('/market')}>Home</span>
                 <span>/</span>
@@ -554,7 +555,6 @@ const ProductDetail = () => {
                 <div className="mt-16">
                     <div className="flex items-center justify-between mb-8">
                         <h2 className="text-2xl font-bold text-gray-900">Recommended From This Seller</h2>
-                        <span className="text-sm text-gray-500">Profile ID: {product.profile_id}</span>
                     </div>
 
                     {isRecommendedLoading ? (
@@ -562,7 +562,7 @@ const ProductDetail = () => {
                     ) : recommendationProducts.length === 0 ? (
                         <div className="py-8 text-center text-gray-500">No other products available from this seller.</div>
                     ) : (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                             {recommendationProducts.map((item) => {
                                 const recommendationPrice = item.price_discount ?? item.price ?? 0;
                                 const recommendationStock = item.stock?.in_stock ?? item.in_stock ?? 0;
@@ -577,7 +577,7 @@ const ProductDetail = () => {
                                         <img
                                             src={item.image}
                                             alt={item.name}
-                                            className="w-full h-40 object-cover rounded mb-4"
+                                            className="w-full sm:h-40 h-20 object-cover rounded mb-4"
                                         />
                                         <p className="text-xs text-gray-500 mb-1">{item.category_name || 'Uncategorized'}</p>
                                         <h3 className="font-semibold mb-2 line-clamp-2">{item.name}</h3>

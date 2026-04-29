@@ -468,7 +468,6 @@ const Sales = () => {
     const findItem = orders.items.find(item =>
       item.id === id && item.selectionKey === selectionKey
     );
-    console.log(findItem);
 
 
     if (!findItem) return;
@@ -485,6 +484,66 @@ const Sales = () => {
       const updatedItems = prev.items.map((item) => {
         if (item.id === id && item.selectionKey === selectionKey) {
           const newQuantity = item.quantity + 1;
+          const price = getItemPrice(item, prev.sale_type);
+          return {
+            ...item,
+            quantity: newQuantity,
+            price: Number(price * newQuantity),
+          };
+        }
+        return item;
+      });
+
+      const totals = calculateOrderTotals(
+        updatedItems,
+        prev.delivery_fee || 0,
+        prev.order_tax || 0,
+        prev.sale_type
+      );
+
+      const results = {
+        ...prev,
+        items: updatedItems,
+        order_subtotal: totals.subtotal,
+        order_subtotal_discount: totals.subtotal,
+        order_total: totals.total,
+        payment: Number(
+          (prev.order_payment_status === "paid" ? totals.total : 0).toFixed(2)
+        ),
+        balance: Number(
+          (totals.total - (prev.order_payment_status === "paid" ? totals.total : 0)).toFixed(2)
+        ),
+      };
+
+      localStorage.setItem("orderItems", JSON.stringify(results));
+      return results;
+    });
+
+    const storedOrder = JSON.parse(localStorage.getItem("orderItems") || "{}");
+    const newCount = storedOrder.items?.reduce((sum, curr) => sum + (curr.quantity || 0), 0) || 0;
+    setOrderCount(newCount);
+  }
+
+  function handleInputQuantity(id, selectionKey, qty) {
+    const findItem = orders.items.find(item =>
+      item.id === id && item.selectionKey === selectionKey
+    );
+
+
+    if (!findItem) return;
+
+    if (findItem.quantity >= findItem.in_stock) {
+      messageApi.open({
+        type: "error",
+        content: t("notEnoughStock"),
+      });
+      return;
+    }
+
+    setOrders((prev) => {
+      const updatedItems = prev.items.map((item) => {
+        if (item.id === id && item.selectionKey === selectionKey) {
+          const newQuantity = Number(qty);
           const price = getItemPrice(item, prev.sale_type);
           return {
             ...item,
@@ -1414,7 +1473,7 @@ const Sales = () => {
                     orders?.items?.map((item, index) => (
                       <div
                         key={`${item.id}-${index}`}
-                        className="relative border rounded p-3 bg-gray-50 border-gray-200 bg-transparent dark:border-gray-700"
+                        className="relative border rounded p-3 border-gray-200 bg-transparent dark:border-gray-700"
                       >
                         <button
                           onClick={() => handleDelete(item.id, index)}
@@ -1424,7 +1483,7 @@ const Sales = () => {
                         </button>
                         <div className="flex gap-3">
                           {/* Item Image */}
-                          <div className="flex-shrink-0 w-16 h-16 border rounded p-1 bg-white border-gray-300 bg-primary dark:border-gray-600">
+                          <div className="flex-shrink-0 w-16 h-16 border rounded p-1 border-gray-300 bg-primary dark:border-gray-600">
                             <img
                               src={item.image}
                               alt={item.name}
@@ -1459,9 +1518,10 @@ const Sales = () => {
                                 >
                                   -
                                 </button>
-                                <span className="w-8 text-center font-medium text-gray-800 dark:text-gray-200">
+                                <input onChange={(e) => handleInputQuantity(item.id, item.selectionKey, e.target.value)} className="no-spinner text-center w-10 focus:outline-none" type="number" name="quantity" id="" value={item.quantity || ""} />
+                                {/* <span className="w-8 text-center font-medium text-gray-800 dark:text-gray-200">
                                   {item.quantity}
-                                </span>
+                                </span> */}
                                 <button
                                   onClick={() => handleQtyPlus(item.id, item.selectionKey)}
                                   className="w-5 h-5 bg-green-500 text-white rounded hover:bg-green-600 flex items-center justify-center"
@@ -1487,7 +1547,7 @@ const Sales = () => {
                     {/* Order Summary */}
                     <div className="space-y-2">
                       <div className="flex justify-between text-sm">
-                        <span className="text-gray-600 dark:text-gray-400">{t("subtotal")}</span>
+                        <span className="text-gray-600 dark:text-gray-300">{t("subtotal")}</span>
                         <span className="font-medium text-gray-800 dark:text-gray-200">${currencyFormat(orders?.order_subtotal)}</span>
                       </div>
 
@@ -1501,7 +1561,7 @@ const Sales = () => {
                       )}
 
                       <div className="flex justify-between items-center text-sm">
-                        <span className="text-gray-600 dark:text-gray-400">{t("deliveryFee")}</span>
+                        <span className="text-gray-600 dark:text-gray-300">{t("deliveryFee")}</span>
                         <div className="flex items-center gap-2">
                           <input
                             type="number"
@@ -1524,7 +1584,7 @@ const Sales = () => {
                               localStorage.setItem("orderItems", JSON.stringify(results));
                               setOrders(results);
                             }}
-                            className="w-20 px-2 py-1 border rounded text-right text-sm bg-white border-gray-300 text-gray-900 bg-transparent dark:border-gray-700 dark:text-white"
+                            className="w-20 px-2 py-1 border rounded text-right text-sm border-gray-300 text-gray-900 bg-transparent dark:border-gray-400 dark:text-white"
                             placeholder="0.00"
                             min="0"
                             step="0.01"
@@ -1539,7 +1599,7 @@ const Sales = () => {
                             onClick={() => handleSaleType({ target: { value: 'sale' } })}
                             className={`flex-1 py-1.5 text-sm border rounded transition-colors ${orders?.sale_type === 'sale'
                               ? 'bg-blue-600 text-white border-blue-600'
-                              : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 bg-transparent dark:text-gray-400 dark:border-gray-700 dark:hover:bg-gray-800'
+                              : ' text-gray-700 border-gray-300 hover:bg-gray-50 bg-transparent dark:text-gray-300 dark:border-gray-400 dark:hover:bg-slate-600'
                               }`}
                           >
                             {t("retail")}
@@ -1548,7 +1608,7 @@ const Sales = () => {
                             onClick={() => handleSaleType({ target: { value: 'wholesale' } })}
                             className={`flex-1 py-1.5 text-sm border rounded transition-colors ${orders?.sale_type === 'wholesale'
                               ? 'bg-blue-600 text-white border-blue-600'
-                              : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 bg-transparent dark:text-gray-400 dark:border-gray-700 dark:hover:bg-gray-800'
+                              : ' text-gray-700 border-gray-300 hover:bg-gray-50 bg-transparent dark:text-gray-300 dark:border-gray-400 dark:hover:bg-slate-600'
                               }`}
                           >
                             {t("wholesale")}
@@ -1557,7 +1617,7 @@ const Sales = () => {
                       </div>
 
                       <div className={`flex justify-between items-center ${orders?.sale_type === "sale" ? "hidden" : ""}`}>
-                        <label className="text-sm text-gray-600 dark:text-gray-400">{t("tax")}</label>
+                        <label className="text-sm text-gray-600 dark:text-gray-300">{t("tax")}</label>
                         <input
                           type="number"
                           value={orders?.order_tax || ""}
@@ -1579,14 +1639,14 @@ const Sales = () => {
                             localStorage.setItem("orderItems", JSON.stringify(results));
                             setOrders(results);
                           }}
-                          className="w-20 px-2 py-1 border rounded text-right text-sm bg-white border-gray-300 text-gray-900 bg-transparent dark:border-gray-700 dark:text-white"
+                          className="w-20 px-2 py-1 border rounded text-right text-sm border-gray-300 text-gray-900 bg-transparent dark:border-gray-400 dark:text-white"
                           min="0"
                           step="0.01"
                         />
                       </div>
 
                       <div className="flex justify-between items-center">
-                        <label className="text-sm text-gray-600 dark:text-gray-400">{t("paymentMethod")}</label>
+                        <label className="text-sm text-gray-600 dark:text-gray-300">{t("paymentMethod")}</label>
                         <select
                           value={orders?.order_payment_method || "cash"}
                           onChange={(e) => {
@@ -1594,15 +1654,15 @@ const Sales = () => {
                             localStorage.setItem("orderItems", JSON.stringify(results));
                             setOrders(results);
                           }}
-                          className="px-2 py-1 border rounded text-sm bg-white border-gray-300 text-gray-900 bg-transparent dark:border-gray-700 dark:text-white"
+                          className="px-2 py-1 border rounded text-sm border-gray-300 text-gray-900 bg-transparent dark:border-gray-400 dark:text-white"
                         >
-                          <option value="cash">{t("cash")}</option>
-                          <option value="bank">{t("bank")}</option>
+                          <option className="dark:bg-gray-700" value="cash">{t("cash")}</option>
+                          <option className="dark:bg-gray-700" value="bank">{t("bank")}</option>
                         </select>
                       </div>
 
                       <div className="flex justify-between items-center">
-                        <label className="text-sm text-gray-600 dark:text-gray-400">{t("payment")}</label>
+                        <label className="text-sm text-gray-600 dark:text-gray-300">{t("payment")}</label>
                         <select
                           value={orders?.order_payment_status || "paid"}
                           onChange={(e) => {
@@ -1617,16 +1677,16 @@ const Sales = () => {
                             setOrders(results);
                             setPayment(value);
                           }}
-                          className="px-2 py-1 border rounded text-sm bg-white border-gray-300 text-gray-900 bg-transparent dark:border-gray-700 dark:text-white"
+                          className="px-2 py-1 border rounded text-sm border-gray-300 text-gray-900 bg-transparent dark:border-gray-400 dark:text-white"
                         >
-                          <option value="paid">{t("paid")}</option>
-                          <option value="cod">{t("cod")}</option>
-                          <option value="credit">{t("credit")}</option>
+                          <option className="dark:bg-gray-700" value="paid">{t("paid")}</option>
+                          <option className="dark:bg-gray-700" value="cod">{t("cod")}</option>
+                          <option className="dark:bg-gray-700" value="credit">{t("credit")}</option>
                         </select>
                       </div>
 
                       <div className={`flex justify-between items-center ${orders?.sale_type === "sale" ? "hidden" : ""}`}>
-                        <label className="text-sm text-gray-600 dark:text-gray-400">{t("customer")}</label>
+                        <label className="text-sm text-gray-600 dark:text-gray-300">{t("customer")}</label>
                         <select
                           value={orders?.order_customer_id || 0}
                           onChange={(e) => {
@@ -1641,11 +1701,11 @@ const Sales = () => {
                             localStorage.setItem("orderItems", JSON.stringify(results));
                             setOrders(results);
                           }}
-                          className="px-2 py-1 border rounded text-sm bg-white border-gray-300 text-gray-900 bg-transparent dark:border-gray-700 dark:text-white"
+                          className="px-2 py-1 border rounded text-sm border-gray-300 text-gray-900 bg-transparent dark:border-gray-400 dark:text-white"
                         >
-                          <option value={0}>{t("customer")}...</option>
+                          <option className="dark:bg-gray-700" value={0}>{t("customer")}...</option>
                           {customers?.data?.map((customer) => (
-                            <option key={customer.customer_id} value={customer.customer_id}>
+                            <option className="dark:bg-gray-700" key={customer.customer_id} value={customer.customer_id}>
                               {customer.customer_name}
                             </option>
                           ))}
@@ -1653,7 +1713,7 @@ const Sales = () => {
                       </div>
 
                       <div className={`flex justify-between items-center ${payment === "paid" ? "hidden" : ""}`}>
-                        <label className="text-sm text-gray-600 dark:text-gray-400">{t("pay")}</label>
+                        <label className="text-sm text-gray-600 dark:text-gray-300">{t("pay")}</label>
                         <input
                           type="number"
                           value={orders?.payment || ""}
@@ -1667,7 +1727,7 @@ const Sales = () => {
                             localStorage.setItem("orderItems", JSON.stringify(results));
                             setOrders(results);
                           }}
-                          className="w-24 px-2 py-1 border rounded text-right text-sm bg-white border-gray-300 text-gray-900 bg-transparent dark:border-gray-700 dark:text-white"
+                          className="w-24 px-2 py-1 border rounded text-right text-sm border-gray-300 text-gray-900 !bg-transparent dark:border-gray-400 dark:text-white"
                           placeholder="0.00"
                           min="0"
                           step="0.01"
@@ -1680,7 +1740,7 @@ const Sales = () => {
                       </div>
 
                       <div className={`${orders?.sale_type !== "sale" ? "hidden" : ""}`}>
-                        <label className="block text-sm mb-1 text-gray-600 dark:text-gray-400">{t("customerTel")}</label>
+                        <label className="block text-sm mb-1 text-gray-600 dark:text-gray-300">{t("customerTel")}</label>
                         <input
                           type="tel"
                           value={orders?.order_tel || ""}
@@ -1689,13 +1749,13 @@ const Sales = () => {
                             localStorage.setItem("orderItems", JSON.stringify(results));
                             setOrders(results);
                           }}
-                          className="w-full px-2 py-1 border rounded text-sm bg-white border-gray-300 text-gray-900 bg-transparent dark:border-gray-700 dark:text-white dark:placeholder-gray-600"
-                          placeholder="000-0000-000"
+                          className="w-full px-2 py-1 border rounded text-sm border-gray-300 text-gray-900 bg-transparent dark:border-gray-400 dark:text-white dark:placeholder-gray-400"
+                          placeholder="eg. 0123456789"
                         />
                       </div>
 
                       <div className={`${orders?.sale_type !== "sale" ? "hidden" : ""}`}>
-                        <label className="block text-sm mb-1 text-gray-600 dark:text-gray-400">{t("customerAddress")}</label>
+                        <label className="block text-sm mb-1 text-gray-600 dark:text-gray-300">{t("customerAddress")}</label>
                         <textarea
                           value={orders?.order_address || ""}
                           onChange={(e) => {
@@ -1703,14 +1763,14 @@ const Sales = () => {
                             localStorage.setItem("orderItems", JSON.stringify(results));
                             setOrders(results);
                           }}
-                          className="w-full px-2 py-1 border rounded text-sm bg-white border-gray-300 text-gray-900 bg-transparent dark:border-gray-700 dark:text-white dark:placeholder-gray-600"
-                          placeholder={t("address")}
+                          className="w-full px-2 py-1 border rounded text-sm  border-gray-300 text-gray-900 bg-transparent dark:border-gray-400 dark:text-white dark:placeholder-gray-400"
+                          placeholder={t("address") + "..."}
                           rows="3"
                         />
-                        <p className="text-xs mt-1 text-gray-400 dark:text-gray-500">{t("optional")}</p>
+                        <p className="text-xs mt-1 text-gray-400 dark:text-gray-400">{t("optional")}</p>
                       </div>
 
-                      <hr className="border-gray-200 dark:border-gray-700" />
+                      <hr className="border-gray-200 dark:border-gray-300" />
 
                       <div className="space-y-1 text-gray-800 dark:text-white">
                         <div className="flex justify-between items-center text-lg font-bold">
@@ -1718,7 +1778,7 @@ const Sales = () => {
                           <div className="text-right">
                             <div className="text-green-600">${currencyFormat(orders?.order_total)}</div>
                             {exchangeRate?.data?.usd_to_khr && (
-                              <div className="text-xs text-gray-500 dark:text-gray-500">
+                              <div className="text-xs text-gray-500 dark:text-gray-300">
                                 ≈ ៛{currencyFormat(orders?.order_total * exchangeRate.data.usd_to_khr)}
                               </div>
                             )}
@@ -1742,7 +1802,7 @@ const Sales = () => {
                           setOrderCount(0);
                           toast.success(`${t("clearCart")} ${t("successfully")}`);
                         }}
-                        className="w-full py-2 border rounded text-sm transition-colors border-gray-300 bg-white text-gray-700 hover:border-red-300 hover:text-red-600 dark:border-gray-700 bg-transparent dark:text-gray-400 dark:hover:border-red-500 dark:hover:text-red-500"
+                        className="w-full py-2 border rounded text-sm transition-colors border-gray-300 text-gray-700 hover:border-red-300 hover:text-red-600 dark:border-gray-400 bg-transparent dark:text-gray-400 dark:hover:border-red-500 dark:hover:text-red-500"
                       >
                         {t("clearCart")}
                       </button>

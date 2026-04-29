@@ -4,6 +4,7 @@ import { useEffect, useReducer, useState } from "react";
 import { useGetAllItemsForMarketPlaceQuery } from "../../app/Features/itemsSlice";
 import BlockProducts from "./components/BlockProducts";
 import { Link } from "react-router";
+import CommingSoon from "./components/CommingSoon";
 
 export default function HomePage() {
   const { data: products } = useGetAllItemsForMarketPlaceQuery({ limit: 4, page: 1, category_id: 3 });
@@ -27,7 +28,12 @@ export default function HomePage() {
         <img
           src="https://m.media-amazon.com/images/I/61Z5DaOEVeL._SX3000_.jpg"
           alt="Banner"
-          className="w-full h-full object-cover"
+          className="w-full h-full object-cover hidden sm:block"
+        />
+        <img
+          src="https://m.media-amazon.com/images/I/61Yx5-N155L._SX3000_.jpg"
+          alt="Banner"
+          className="w-full h-full object-cover sm:hidden block"
         />
         <div className="absolute top-20 left-10 z-20 hidden md:block max-w-md bg-white p-6 shadow-lg">
           <h1 className="text-2xl font-bold mb-2">Welcome to e-market</h1>
@@ -66,7 +72,7 @@ export default function HomePage() {
           <div className="bg-white p-5 shadow-sm">
             <h2 className="text-xl font-bold mb-4">New Arrivals</h2>
             <div className="w-full aspect-square bg-gray-100 mb-4">
-              <img src="https://images-na.ssl-images-amazon.com/images/G/01/melody/uploads/cc1ae3bc-426b-4061-9787-7a5d0c620f4a_MuseDesktop372X232_1X/AIS_MDay_01_2026_Exports_MDay26_01_Muse_Prod_melody_homepage_372x232_1X._SY116_CB783246474_.jpg" alt="New" className="w-full h-full object-cover" />
+              <CommingSoon />
             </div>
             <p className="text-sm text-blue-700 hover:text-orange-700 hover:underline cursor-pointer">Explore more</p>
           </div>
@@ -87,16 +93,16 @@ export default function HomePage() {
         <div className="mt-8 bg-white p-6 shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-bold">Recommended for you</h2>
-            <span className="text-sm text-blue-700 hover:text-orange-700 cursor-pointer">View all</span>
+            <Link to="companies"><span className="text-xs text-blue-700 hover:text-orange-700 cursor-pointer">View all</span></Link>
           </div>
           <div className="flex justify-between gap-4 overflow-x-auto pb-4 scrollbar-hide">
             {companies?.map((company, index) => (
-              <div key={index} className="flex-shrink-0 w-20 group cursor-pointer">
-                <div className="w-full aspect-square bg-gray-50 mb-2 p-4">
+              <div key={index} className="flex-shrink-0 w-15 group cursor-pointer">
+                <div className="w-full aspect-square bg-gray-50 mb-2 p-4 rounded-full overflow-hidden">
                   <img className="w-full h-full object-contain mix-blend-multiply" src={company?.image} alt="" />
                 </div>
-                <h3 className="text-xs font-medium line-clamp-2 group-hover:text-blue-700">{company.profile_name}</h3>
-                <p className="text-xs text-gray-500 mt-1">{company.address}</p>
+                <h3 className="text-xs font-medium line-clamp-2 text-center group-hover:text-blue-700">{company.profile_name}</h3>
+                {/* <p className="text-xs text-gray-500 mt-1">{company.address}</p> */}
               </div>
             ))}
           </div>

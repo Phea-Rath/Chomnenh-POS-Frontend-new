@@ -41,7 +41,7 @@ const ProductCard = ({ product, onProductClick }) => {
                 <img
                     src={product.image}
                     alt={product.name}
-                    className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+                    className="w-full sm:h-48 h-20 object-cover group-hover:scale-105 transition-transform duration-300"
                 />
                 <div className="absolute top-2 right-2">
                     <button
@@ -60,17 +60,18 @@ const ProductCard = ({ product, onProductClick }) => {
 
             <div className="p-4">
                 <h3
-                    className="font-semibold text-lg mb-2 cursor-pointer hover:text-blue-600 line-clamp-2"
+                    className="font-semibold sm:text-lg text-sm mb-2 cursor-pointer hover:text-blue-600 line-clamp-2"
                     onClick={handleProductClick}
                 >
                     {product.name}
+                    <div className="text-xs text-gray-500">{product.code}</div>
                 </h3>
 
-                <p className="text-gray-600 text-sm mb-3 line-clamp-2">
+                <p className="text-gray-600 text-xs sm:text-sm mb-3 line-clamp-2">
                     {product.description || `${product.brand_name || 'Unknown brand'} - ${product.category_name || 'Uncategorized'}`}
                 </p>
 
-                <div className="flex items-center justify-between text-sm text-gray-600 mb-3">
+                <div className="flex items-center justify-between text-xs sm:text-sm text-gray-600 mb-3">
                     <span>{product.scale_name || 'Unit not set'}</span>
                     <span>{sizeAttribute?.value || '--:--'}</span>
                 </div>
@@ -88,11 +89,8 @@ const ProductCard = ({ product, onProductClick }) => {
                     </div>
                 ) : null}
 
-                <div className="flex items-center justify-between text-xs text-gray-500 mb-3">
-                    <span>{product.code}</span>
-                    <span>{product.barcode}</span>
-                </div>
 
+                <hr className='text-gray-300 my-1' />
                 <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
                         <span className="text-xl font-bold text-gray-900">
@@ -108,7 +106,7 @@ const ProductCard = ({ product, onProductClick }) => {
                     <button
                         type="button"
                         onClick={handleAddToCart}
-                        className="bg-blue-600 text-white p-2 rounded-lg hover:bg-blue-700 transition-colors"
+                        className="bg-slate-600 text-white p-2 rounded-lg hover:bg-slate-700 transition-colors"
                     >
                         <FaShoppingCart />
                     </button>

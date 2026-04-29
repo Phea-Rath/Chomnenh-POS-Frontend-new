@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { BiCheck } from 'react-icons/bi';
 import { FaTrash, FaMinus, FaPlus, FaShoppingCart } from 'react-icons/fa';
 import { useNavigate } from 'react-router';
 
@@ -54,7 +55,7 @@ const ShoppingCart = () => {
 
     if (cartItems.length === 0) {
         return (
-            <div className="bg-[#eaeded] min-h-screen py-12 px-4">
+            <div className="min-h-screen py-12 px-4">
                 <div className="max-w-4xl mx-auto bg-white p-8 shadow-sm rounded-sm text-center">
                     <div className="flex justify-center mb-6">
                         <div className="bg-gray-100 p-6 rounded-full">
@@ -63,7 +64,7 @@ const ShoppingCart = () => {
                     </div>
                     <h1 className="text-2xl font-bold mb-4">Your e-market Cart is empty</h1>
                     <p className="text-gray-600 mb-8">Check your Saved for later items or continue shopping.</p>
-                    <button 
+                    <button
                         onClick={() => navigate('/market')}
                         className="bg-[#febd69] hover:bg-[#f3a847] px-8 py-2 rounded-md font-bold shadow-sm transition-colors"
                     >
@@ -75,14 +76,14 @@ const ShoppingCart = () => {
     }
 
     return (
-        <div className="bg-[#eaeded] min-h-screen py-8 px-4 -mt-8 -mx-4">
+        <div className="min-h-screen py-8 px-4 -mt-8 -mx-4">
             <div className="max-w-7xl mx-auto flex flex-col lg:flex-row gap-6">
-                
+
                 {/* Cart Items List */}
                 <div className="flex-1 bg-white p-6 shadow-sm rounded-sm">
                     <div className="flex justify-between items-end border-b border-gray-200 pb-4 mb-4">
                         <h1 className="text-2xl font-bold">Shopping Cart</h1>
-                        <button 
+                        <button
                             onClick={clearCart}
                             className="text-sm text-blue-700 hover:text-orange-700 hover:underline"
                         >
@@ -103,7 +104,7 @@ const ShoppingCart = () => {
                                     {/* Product Details */}
                                     <div className="flex-1">
                                         <div className="flex justify-between gap-4">
-                                            <h3 
+                                            <h3
                                                 className="text-lg font-bold text-gray-900 hover:text-blue-700 cursor-pointer line-clamp-2"
                                                 onClick={() => navigate(`/market/product_detail/${item.id}`)}
                                             >
@@ -111,10 +112,10 @@ const ShoppingCart = () => {
                                             </h3>
                                             <p className="text-lg font-bold">${(price * item.quantity).toFixed(2)}</p>
                                         </div>
-                                        
+
                                         <p className="text-xs text-green-600 font-bold mt-1">In Stock</p>
                                         <p className="text-xs text-gray-500 mt-1">Eligible for FREE Shipping</p>
-                                        
+
                                         {item.selectedColor && (
                                             <div className="mt-2 flex items-center gap-2">
                                                 <span className="text-xs font-bold text-gray-700">Color:</span>
@@ -125,7 +126,7 @@ const ShoppingCart = () => {
                                         {/* Actions */}
                                         <div className="mt-4 flex flex-wrap items-center gap-4">
                                             <div className="flex items-center bg-[#f0f2f2] border border-[#d5d9d9] rounded-lg shadow-sm">
-                                                <button 
+                                                <button
                                                     onClick={() => handleQuantityChange(item.id, item.selectedColor, -1)}
                                                     className="p-1.5 hover:bg-[#e3e6e6] transition-colors"
                                                 >
@@ -134,25 +135,25 @@ const ShoppingCart = () => {
                                                 <span className="px-3 py-1 text-sm font-medium border-x border-[#d5d9d9]">
                                                     Qty: {item.quantity}
                                                 </span>
-                                                <button 
+                                                <button
                                                     onClick={() => handleQuantityChange(item.id, item.selectedColor, 1)}
                                                     className="p-1.5 hover:bg-[#e3e6e6] transition-colors"
                                                 >
                                                     <FaPlus className="text-[10px]" />
                                                 </button>
                                             </div>
-                                            
+
                                             <div className="h-4 w-[1px] bg-gray-300 hidden sm:block" />
-                                            
-                                            <button 
+
+                                            <button
                                                 onClick={() => removeItem(item.id, item.selectedColor)}
                                                 className="text-xs text-blue-700 hover:text-orange-700 hover:underline"
                                             >
                                                 Delete
                                             </button>
-                                            
+
                                             <div className="h-4 w-[1px] bg-gray-300 hidden sm:block" />
-                                            
+
                                             <button className="text-xs text-blue-700 hover:text-orange-700 hover:underline">
                                                 Save for later
                                             </button>
@@ -181,26 +182,31 @@ const ShoppingCart = () => {
                                 Your order qualifies for <span className="font-bold">FREE Shipping</span>. Choose this option at checkout.
                             </p>
                         </div>
-                        
+
                         <p className="text-lg mb-4">
                             Subtotal ({totalItems} items): <span className="font-bold font-lg">${subtotal.toFixed(2)}</span>
                         </p>
-                        
-                        <div className="flex items-center gap-2 mb-6">
-                            <input type="checkbox" id="gift" className="rounded-sm" />
-                            <label htmlFor="gift" className="text-sm text-gray-700">This order contains a gift</label>
-                        </div>
+                        <form action="" className="flex flex-col gap-4">
+                            <label htmlFor="" className="text-xs text-gray-500">Telephone</label>
+                            <input type="text" name='telephone' placeholder='eg. 0123456789' className="bg-gray-100 rounded-md text-sm p-2" />
+                            <label htmlFor="" className="text-xs text-gray-500">Address</label>
+                            <textarea name="address" id="" placeholder='eg. village, district, commnue, province' className="bg-gray-100 rounded-md p-2 text-sm"></textarea>
+                            <div className="flex items-center gap-2 mb-6">
+                                <input type="checkbox" id="gift" className="rounded-sm" />
+                                <label htmlFor="gift" className="text-sm text-gray-700">If you are really ready, please check the box.</label>
+                            </div>
 
-                        <button className="w-full bg-[#ffd814] hover:bg-[#f7ca00] py-2 rounded-lg text-sm font-medium shadow-sm transition-colors border border-[#fcd200]">
-                            Proceed to Checkout
-                        </button>
+                            <button className="w-full bg-[#ffd814] hover:bg-[#f7ca00] py-2 rounded-lg text-sm font-medium shadow-sm transition-colors border border-[#fcd200]">
+                                Proceed to Checkout
+                            </button>
+                        </form>
                     </div>
 
                     <div className="bg-white p-5 shadow-sm rounded-sm">
                         <h2 className="font-bold text-sm mb-4">Recently Viewed</h2>
                         {/* Placeholder for recently viewed */}
                         <div className="flex justify-center py-4">
-                             <p className="text-xs text-gray-500 italic">No items recently viewed</p>
+                            <p className="text-xs text-gray-500 italic">No items recently viewed</p>
                         </div>
                     </div>
                 </div>

@@ -11,7 +11,7 @@ export default function NavBar() {
   ];
 
   return (
-    <nav className="bg-[#232f3e] text-white py-1">
+    <nav className="bg-chomnenh-light text-white py-1">
       <div className="container mx-auto px-4 flex items-center justify-between">
         <div className="flex items-center space-x-4">
           <button className="flex items-center gap-1 border border-transparent hover:border-white p-2 font-bold transition-all">

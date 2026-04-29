@@ -831,6 +831,62 @@ const Sales = () => {
 
   }
 
+  function handleInputQuantity(id, selectionKey, qty) {
+    const findItem = orders.items.find(item =>
+      item.id === id && item.selectionKey === selectionKey
+    );
+    console.log(findItem);
+
+
+    if (!findItem) return;
+
+    const availableStock = getItemStock(findItem);
+    if (findItem.quantity >= availableStock) {
+      toast.error("Not enough stock available");
+      return;
+    }
+
+    setOrders((prev) => {
+      const updatedItems = prev.items.map((item) => {
+        if (item.id === id && item.selectionKey === selectionKey) {
+          const newQuantity = Number(qty);
+          const price = getItemPrice(item, prev.sale_type);
+          return {
+            ...item,
+            quantity: newQuantity,
+            price: Number(price * newQuantity),
+          };
+        }
+        return item;
+      });
+
+      const totals = calculateOrderTotals(
+        updatedItems,
+        prev.delivery_fee || 0,
+        prev.order_tax || 0,
+        prev.sale_type
+      );
+
+      const results = {
+        ...prev,
+        items: updatedItems,
+        order_subtotal: totals.subtotal,
+        order_subtotal_discount: totals.subtotal,
+        order_total: totals.total,
+        payment: Number(
+          (prev.order_payment_status === "paid" ? totals.total : 0).toFixed(2)
+        ),
+        balance: Number(
+          (totals.total - (prev.order_payment_status === "paid" ? totals.total : 0)).toFixed(2)
+        ),
+      };
+
+      localStorage.setItem("orderItems", JSON.stringify(results));
+      return results;
+    });
+
+  }
+
   function handleQty(id, selectionKey) {
     const findItem = orders.items.find(item =>
       item.id === id && item.selectionKey === selectionKey
@@ -1543,7 +1599,7 @@ const Sales = () => {
                               -
                             </button>
                             {/* <span className={`w-6 text-center font-bold ${darkMode ? '!text-slate-100' : 'text-gray-800'}`}>{item.quantity}</span> */}
-                            <input type="number" value={item.quantity} name="" id="" className="w-10 focus:outline-0 text-center no-spinner" />
+                            <input type="number" onChange={(e) => handleInputQuantity(item.id, item.selectionKey, e.target.value)} value={item.quantity || ""} name="" id="" className="w-10 focus:outline-0 text-center no-spinner" />
                             <button
                               onClick={() => handleQtyPlus(item.id, item.selectionKey)}
                               className="text-green-500 cursor-pointer"

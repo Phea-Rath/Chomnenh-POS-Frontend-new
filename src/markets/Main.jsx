@@ -17,7 +17,7 @@ function Main() {
     };
 
     return (
-        <div onScroll={onScroll} className="min-h-screen bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-100 h-[100vh] overflow-auto scroll-smooth">
+        <div onScroll={onScroll} className="min-h-screen  text-gray-800 dark:bg-gray-900 dark:text-gray-100 h-[100vh] overflow-auto scroll-smooth">
             <div className={`w-full fixed ${scroll > 180 ? ' top-0' : ' -top-20'} transition-all duration-300 z-50`}>
                 <Header onBack={isDetailPage ? () => navigate('/market') : null} />
             </div>
@@ -25,7 +25,7 @@ function Main() {
                 <HeaderPanel />
                 <NavBar />
             </section>
-            <main className="">
+            <main className='!bg-slate-50 pb-5'>
                 <Outlet />
             </main>
             <Footer />

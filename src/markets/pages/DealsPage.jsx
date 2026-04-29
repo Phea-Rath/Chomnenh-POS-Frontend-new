@@ -100,7 +100,7 @@ const DealsPage = () => {
     };
 
     return (
-        <div className="bg-white min-h-screen">
+        <div className="min-h-screen">
             {/* Deals Header */}
             <div className="border-b border-gray-200 py-4 px-6">
                 <h1 className="text-2xl font-bold text-gray-900">Today's Deals</h1>
@@ -156,12 +156,14 @@ const DealsPage = () => {
                             <p className="text-sm">Please try refreshing the page</p>
                         </div>
                     ) : (
-                        <div className="max-h-[calc(100vh-100px)] overflow-y-auto">
-                            <ProductGrid
-                                products={filteredProducts}
-                                onProductClick={onProductClick}
-                                viewMode={viewMode}
-                            />
+                        <div className="max-h-[calc(100vh-0px)]">
+                            <div className="overflow-y-auto max-h-[calc(100vh-100px)]">
+                                <ProductGrid
+                                    products={filteredProducts}
+                                    onProductClick={onProductClick}
+                                    viewMode={viewMode}
+                                />
+                            </div>
 
                             {pagination && pagination.last_page > 1 ? (
                                 <div className="mt-12 flex items-center justify-center gap-4 py-8 border-t border-gray-100">

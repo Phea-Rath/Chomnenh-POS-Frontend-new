@@ -13,7 +13,7 @@ const BlockProducts = ({ data, title = '' }) => {
     return (
         products?.length > 0 && <section className="bg-white p-4">
             <h1 className="text-xl font-bold mb-4">{title || products?.length > 0 && products[0]?.category_name}</h1>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 lg:grid-cols-2 gap-3">
                 {products?.map((product) => (
                     <ProductCard key={product?.id} img={product?.image} name={product?.name} />
                 ))}
