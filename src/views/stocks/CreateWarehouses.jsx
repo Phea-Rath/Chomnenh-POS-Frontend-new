@@ -37,7 +37,7 @@ const CreateWarehouses = ({ onAdd }) => {
   };
 
   return (
-    <section className="view-page bg-[#f5f5f7] rounded-lg overflow-hidden border border-[#d2d2d7] shadow-lg font-sans">
+    <section className="view-page bg-primary rounded-lg overflow-hidden border border-[#d2d2d7] shadow-lg font-sans">
       <AlertBox
         isOpen={alertBox}
         title={vt('System Confirmation')}
@@ -47,7 +47,7 @@ const CreateWarehouses = ({ onAdd }) => {
       />
 
       {/* System Title Bar */}
-      <div className="bg-white px-5 py-3 border-b border-[#d2d2d7] flex items-center justify-between">
+      <div className=" px-5 py-3 border-b border-[#0f0f75] flex items-center justify-between">
         <div className="flex items-center gap-2">
           <FaHdd className="text-slate-500" />
           <span className="text-[13px] font-semibold text-slate-700">{vt('Add New Storage Entity')}</span>
@@ -59,8 +59,8 @@ const CreateWarehouses = ({ onAdd }) => {
         </div>
       </div>
 
-      <div className="p-6 bg-[#f5f5f7]">
-        <div className="bg-white border border-[#d2d2d7] rounded-md p-6 space-y-6 shadow-sm">
+      <div className="p-6 bg-transparent">
+        <div className="rounded-md p-6 space-y-6 shadow-sm">
 
           {/* Form Field 1 */}
           <div className="grid grid-cols-3 items-center gap-4">
@@ -68,12 +68,11 @@ const CreateWarehouses = ({ onAdd }) => {
               {vt('Entity Name:')}
             </label>
             <div className="col-span-2">
-              <Input
-                size="small"
+              <input
                 placeholder={vt('Enter identifier...')}
                 value={warehouses.warehouse_name}
                 onChange={(e) => setWarehouses({ ...warehouses, warehouse_name: e.target.value })}
-                className="rounded border-[#d2d2d7] focus:border-[#007aff] focus:ring-1 focus:ring-[#007aff] hover:border-[#b1b1b6] text-[13px]"
+                className="px-4 py-1 rounded dark:border-[#d2d2d7] !border-gray-500 focus:border-[#007aff] focus:ring-1 focus:ring-[#007aff] hover:border-[#b1b1b6] text-[13px] focus:outline-none"
               />
             </div>
           </div>
@@ -92,11 +91,11 @@ const CreateWarehouses = ({ onAdd }) => {
                 className="flex flex-col gap-2"
               >
                 <Radio value="stock" className="text-[13px]">
-                  <span className="font-semibold">{vt('Stocked')}</span>
+                  <span className="font-semibold dark:text-white">{vt('Stocked')}</span>
                   <p className="text-[11px] text-slate-400 -mt-1 leading-tight">{vt('Entity will be available for inventory indexing.')}</p>
                 </Radio>
                 <Radio value="none" className="text-[13px]">
-                  <span className="font-semibold">{vt('Disabled')}</span>
+                  <span className="font-semibold dark:text-white">{vt('Disabled')}</span>
                   <p className="text-[11px] text-slate-400 -mt-1 leading-tight">{vt('Entity will be created but remain inactive.')}</p>
                 </Radio>
               </Radio.Group>

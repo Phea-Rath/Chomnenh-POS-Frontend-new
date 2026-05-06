@@ -8,12 +8,13 @@ import { useOutletsContext } from "../../layouts/Management";
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "react-toastify";
+import { useGetAllUserQuery } from "../../../app/Features/usersSlice";
+import MultiProfiles from "../../services/MultiProfiles";
 
 const RoleList = () => {
   const { t } = useTranslation();
   const { darkMode } = useOutletsContext();
   const token = localStorage.getItem("token");
-
   const [roles, setRoles] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredRoles, setFilteredRoles] = useState([]);
@@ -21,6 +22,15 @@ const RoleList = () => {
   const [deleteId, setDeleteId] = useState(null);
   const [showConfirm, setShowConfirm] = useState(false);
   const itemsPerPage = 10;
+  const { data: users } = useGetAllUserQuery(token);
+  const [userState, setUserState] = useState([]);
+
+  useEffect(() => {
+    if (users?.data.length > 0) {
+    }
+  }, [users]);
+
+  const rolesWithUsers = ({ data, role_id }) => data.filter((u) => u.role_id == role_id).map((u) => ({ img: u.image, id: u.id }));
 
   const { data, isLoading } = useGetAllRoleQuery(token);
 
@@ -57,6 +67,10 @@ const RoleList = () => {
 
   const roleColors = ["bg-blue-500", "bg-purple-500", "bg-emerald-500", "bg-orange-500", "bg-rose-500", "bg-indigo-500"];
   const getRoleColor = (i) => roleColors[i % roleColors.length];
+
+
+
+
 
   return (
     <div className="py-8 px-4 sm:px-6 lg:px-8 min-h-screen">
@@ -184,6 +198,7 @@ const RoleList = () => {
                   <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-2 min-h-[40px]">
                     {role.role_description || <span className="italic text-gray-300 dark:text-gray-600">No description</span>}
                   </p>
+                  <MultiProfiles data={rolesWithUsers({ data: users?.data, role_id: role.role_id })} />
                 </div>
               </motion.div>
             ))}

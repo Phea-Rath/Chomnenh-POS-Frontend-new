@@ -180,11 +180,10 @@ const DeliverList = () => {
                                 value={searchTerm}
                                 onChange={handleSearch}
                                 placeholder={t('searchDeliversPlaceholder')}
-                                className={`w-full pl-12 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 transition-all duration-200 ${
-                                    darkMode 
-                                    ? "bg-gray-700 border-gray-600 text-white placeholder-gray-400" 
-                                    : "bg-gray-50 border-gray-300 text-gray-900"
-                                }`}
+                                className={`w-full pl-12 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 transition-all duration-200 ${darkMode
+                                        ? "bg-gray-700 border-gray-600 text-white placeholder-gray-400"
+                                        : "bg-gray-50 border-gray-300 text-gray-900"
+                                    }`}
                             />
                         </div>
 
@@ -262,13 +261,12 @@ const DeliverList = () => {
                 </div>
             ) : viewMode === "grid" ? (
                 // Grid View
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
                     {filteredDelivers.map((deliver) => (
                         <div
                             key={deliver.deliver_id}
-                            className={`rounded-xl shadow-sm border overflow-hidden hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 ${
-                                darkMode ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"
-                            }`}
+                            className={`rounded-xl shadow-sm border overflow-hidden hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 ${darkMode ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"
+                                }`}
                         >
                             {/* Image Section */}
                             <div className={`h-48 relative overflow-hidden ${darkMode ? "bg-gray-900" : "bg-gradient-to-r from-blue-50 to-indigo-50"}`}>
@@ -310,11 +308,10 @@ const DeliverList = () => {
                                     <div className="flex gap-2 w-full justify-end">
                                         <button
                                             onClick={() => handleEdit(deliver.deliver_id)}
-                                            className={`inline-flex items-center gap-2 px-3 py-2 text-sm rounded-lg transition-colors ${
-                                                darkMode 
-                                                ? "text-green-400 hover:text-green-300 hover:bg-green-900/30" 
-                                                : "text-green-600 hover:text-green-800 hover:bg-green-50"
-                                            }`}
+                                            className={`inline-flex items-center gap-2 px-3 py-2 text-sm rounded-lg transition-colors ${darkMode
+                                                    ? "text-green-400 hover:text-green-300 hover:bg-green-900/30"
+                                                    : "text-green-600 hover:text-green-800 hover:bg-green-50"
+                                                }`}
                                         >
                                             <FaEdit className="w-4 h-4" />
                                             {t('edit')}
@@ -322,11 +319,10 @@ const DeliverList = () => {
                                         <button
                                             onClick={() => handleDelete(deliver.deliver_id)}
                                             disabled={isLoading}
-                                            className={`inline-flex items-center gap-2 px-3 py-2 text-sm rounded-lg transition-colors disabled:opacity-50 ${
-                                                darkMode 
-                                                ? "text-red-400 hover:text-red-300 hover:bg-red-900/30" 
-                                                : "text-red-600 hover:text-red-800 hover:bg-red-50"
-                                            }`}
+                                            className={`inline-flex items-center gap-2 px-3 py-2 text-sm rounded-lg transition-colors disabled:opacity-50 ${darkMode
+                                                    ? "text-red-400 hover:text-red-300 hover:bg-red-900/30"
+                                                    : "text-red-600 hover:text-red-800 hover:bg-red-50"
+                                                }`}
                                         >
                                             <FaTrash className="w-4 h-4" />
                                             {t('delete')}
@@ -392,9 +388,8 @@ const DeliverList = () => {
                                             {formatDate(deliver.created_at)}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
-                                            <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
-                                                darkMode ? "bg-green-900/30 text-green-400" : "bg-green-100 text-green-700"
-                                            }`}>
+                                            <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${darkMode ? "bg-green-900/30 text-green-400" : "bg-green-100 text-green-700"
+                                                }`}>
                                                 {t('activeStatus')}
                                             </span>
                                         </td>
@@ -402,11 +397,10 @@ const DeliverList = () => {
                                             <div className="flex items-center gap-2">
                                                 <button
                                                     onClick={() => handleEdit(deliver.deliver_id)}
-                                                    className={`inline-flex items-center gap-2 px-3 py-2 text-sm rounded-lg transition-colors ${
-                                                        darkMode 
-                                                        ? "text-green-400 hover:text-green-300 hover:bg-green-900/30" 
-                                                        : "text-green-600 hover:text-green-800 hover:bg-green-50"
-                                                    }`}
+                                                    className={`inline-flex items-center gap-2 px-3 py-2 text-sm rounded-lg transition-colors ${darkMode
+                                                            ? "text-green-400 hover:text-green-300 hover:bg-green-900/30"
+                                                            : "text-green-600 hover:text-green-800 hover:bg-green-50"
+                                                        }`}
                                                 >
                                                     <FaEdit className="w-4 h-4" />
                                                     {t('edit')}
@@ -414,11 +408,10 @@ const DeliverList = () => {
                                                 <button
                                                     onClick={() => handleDelete(deliver.deliver_id)}
                                                     disabled={isLoading}
-                                                    className={`inline-flex items-center gap-2 px-3 py-2 text-sm rounded-lg transition-colors disabled:opacity-50 ${
-                                                        darkMode 
-                                                        ? "text-red-400 hover:text-red-300 hover:bg-red-900/30" 
-                                                        : "text-red-600 hover:text-red-800 hover:bg-red-50"
-                                                    }`}
+                                                    className={`inline-flex items-center gap-2 px-3 py-2 text-sm rounded-lg transition-colors disabled:opacity-50 ${darkMode
+                                                            ? "text-red-400 hover:text-red-300 hover:bg-red-900/30"
+                                                            : "text-red-600 hover:text-red-800 hover:bg-red-50"
+                                                        }`}
                                                 >
                                                     <FaTrash className="w-4 h-4" />
                                                     {t('delete')}
@@ -451,11 +444,10 @@ const DeliverList = () => {
                     <div className="flex items-center gap-3">
                         <button
                             onClick={() => refetch()}
-                            className={`px-4 py-2 text-sm font-medium border rounded-lg transition-colors ${
-                                darkMode 
-                                ? "bg-gray-800 border-gray-700 text-gray-300 hover:bg-gray-700" 
-                                : "bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
-                            }`}
+                            className={`px-4 py-2 text-sm font-medium border rounded-lg transition-colors ${darkMode
+                                    ? "bg-gray-800 border-gray-700 text-gray-300 hover:bg-gray-700"
+                                    : "bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
+                                }`}
                         >
                             {t('refresh')}
                         </button>

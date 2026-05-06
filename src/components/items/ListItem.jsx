@@ -14,7 +14,8 @@ import {
 } from "react-icons/ri";
 import { toast } from "react-toastify";
 import api from "../../services/api";
-import { useItemText } from "./itemText";
+import RefreshButton from "../../utils/RefreshButton";
+import { useTranslation } from "react-i18next";
 
 // Custom components
 const Button = ({ children, onClick, variant = "default", icon, disabled, className = "" }) => {
@@ -135,15 +136,15 @@ const GridCard = ({ item, onEdit, onDelete, onView, formatCurrency, getDiscount,
   const inStock = item?.stock?.in_stock || 0;
 
   return (
-    <div className="border border-gray-200 rounded bg-white dark:bg-gray-700 hover:shadow-sm transition-all duration-300 overflow-hidden group">
-      <div onClick={onView} className="relative h-48 bg-gray-50 flex items-center justify-center overflow-hidden cursor-pointer">
+    <div className="border border-gray-200 rounded bg-primary hover:shadow-sm transition-all duration-300 overflow-hidden group">
+      <div onClick={onView} className="relative h-48 flex items-center justify-center overflow-hidden cursor-pointer">
         <img
-          src={item.image}
+          src={item.image || initialImage}
           alt={item.name}
-          className="w-full h-full object-contain p-4 group-hover:scale-105 transition-transform"
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform"
           onError={(e) => {
             e.target.onerror = null;
-            e.target.src = "https://via.placeholder.com/300?text=No+Image";
+            e.target.src = initialImage;
           }}
         />
         <div className="absolute top-2 left-2 flex flex-col gap-1">
@@ -151,9 +152,14 @@ const GridCard = ({ item, onEdit, onDelete, onView, formatCurrency, getDiscount,
             {inStock > 0 ? `${it("Stock:")} ${inStock}` : it("Sold Out")}
           </Tag>
         </div>
-        {item.discount > 0 && (
+        {item.discount > 0 && item.discount < 100 && (
           <div className="absolute top-2 right-0">
             <Tag color="error" className="rounded-l-md border-none font-bold">{item.discount}% {it("off")}</Tag>
+          </div>
+        )}
+        {item.discount == 100 && (
+          <div className="absolute top-2 right-0">
+            <Tag color="error" className="rounded-l-md border-none font-bold">free</Tag>
           </div>
         )}
       </div>
@@ -162,7 +168,7 @@ const GridCard = ({ item, onEdit, onDelete, onView, formatCurrency, getDiscount,
           <p className="text-xs text-gray-500 uppercase font-bold">{item.category_name}</p>
           <h3 className="font-semibold text-gray-800 text-sm line-clamp-1">{item.name}</h3>
         </div>
-        <div className="bg-gray-50 rounded p-2 flex justify-between items-center">
+        <div className=" rounded p-2 flex justify-between items-center">
           <span className="font-bold text-lg text-green-600">{formatCurrency(item.price_discount || item.price)}</span>
           <div className="flex gap-1">
             <button onClick={onView} className="p-1.5 bg-blue-100 text-blue-600 rounded hover:bg-blue-200">
@@ -183,7 +189,7 @@ const GridCard = ({ item, onEdit, onDelete, onView, formatCurrency, getDiscount,
 
 // List View Table
 const ListView = ({ items, navigator, onDelete, formatCurrency, it }) => (
-  <div className="bg-white border border-gray-200 rounded overflow-hidden">
+  <div className="bg-white container mx-auto border border-gray-200 rounded overflow-hidden">
     <div className="overflow-x-auto">
       <table className="w-full border-collapse text-sm">
         <thead className="bg-gray-100 border-b border-gray-300">
@@ -192,10 +198,11 @@ const ListView = ({ items, navigator, onDelete, formatCurrency, it }) => (
             <th className="px-4 py-3 text-left font-medium text-gray-600">{it("Code")}</th>
             <th className="px-4 py-3 text-left font-medium text-gray-600">{it("Stock")}</th>
             <th className="px-4 py-3 text-left font-medium text-gray-600">{it("Price")}</th>
+            <th className="px-4 py-3 text-left font-medium text-gray-600">{it("WholePrice")}</th>
             <th className="px-4 py-3 text-right font-medium text-gray-600">{it("Actions")}</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-gray-200">
+        <tbody className="divide-y divide-gray-200 dark:divide-gray-500">
           {items.map((item) => {
             const inStock = item?.stock?.in_stock || 0;
             return (
@@ -203,12 +210,12 @@ const ListView = ({ items, navigator, onDelete, formatCurrency, it }) => (
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-3">
                     <img
-                      src={item.image}
+                      src={item.image || initialImage}
                       alt={item.name}
                       className="w-10 h-10 object-cover rounded border border-gray-200"
                       onError={(e) => {
                         e.target.onerror = null;
-                        e.target.src = "https://via.placeholder.com/40?text=No+Image";
+                        e.target.src = initialImage;
                       }}
                     />
                     <div>
@@ -226,6 +233,7 @@ const ListView = ({ items, navigator, onDelete, formatCurrency, it }) => (
                   </Tag>
                 </td>
                 <td className="px-4 py-3 font-medium">{formatCurrency(item.price_discount || item.price)}</td>
+                <td className="px-4 py-3 font-medium">{formatCurrency(item.wholesale_price_discount || item.wholesale_priceprice)}</td>
                 <td className="px-4 py-3 text-right">
                   <div className="flex justify-end gap-1">
                     <button
@@ -257,8 +265,10 @@ const ListView = ({ items, navigator, onDelete, formatCurrency, it }) => (
   </div>
 );
 
+const initialImage = import.meta.env.VITE_INITIAL_IMAGE;
+
 const ListItem = () => {
-  const { it } = useItemText();
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [viewMode, setViewMode] = useState(localStorage.getItem("itemViewMode") || "grid");
   const [alertBox, setAlertBox] = useState(false);
@@ -268,7 +278,7 @@ const ListItem = () => {
 
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize, setPageSize] = useState(12);
 
   const [debouncedSearch] = useDebounce(searchTerm, 500);
 
@@ -322,21 +332,21 @@ const ListItem = () => {
     <div className="items-page min-h-screen bg-transparent pb-5">
       <AlertBox
         isOpen={alertBox}
-        title={it("Delete Item")}
-        message={it("This action is permanent. Are you sure?")}
+        title={t("Delete Item")}
+        message={t("This action is permanent. Are you sure?")}
         onConfirm={handleConfirmDelete}
         onCancel={() => setAlertBox(false)}
         confirmColor="error"
       />
 
       {/* Header */}
-      <div className="border-b border-gray-200 p-3">
+      <div className="border-b container mx-auto border-gray-200 p-3">
         <div className="mx-auto flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">{it("Items")}</h1>
+            <h1 className="text-2xl font-bold text-gray-900">{t("Items")}</h1>
             <p className="text-sm text-gray-500 flex items-center gap-2">
               <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-              {totalItems} {it("total items found")}
+              {totalItems} {t("total items found")}
             </p>
           </div>
           <div className="flex gap-3 w-full md:w-auto">
@@ -348,13 +358,14 @@ const ListItem = () => {
             >
               {it("Import")}
             </Button> */}
+            <RefreshButton onRefresh={refetch} />
             <Button
               onClick={() => navigate("create")}
               icon={<RiAddLine />}
               variant="primary"
               className="flex-1 md:flex-none"
             >
-              {it("Add New")}
+              {t("Add New")}
             </Button>
           </div>
         </div>
@@ -362,11 +373,11 @@ const ListItem = () => {
 
       {/* Controls */}
       <div className="mx-auto px-2 mt-2">
-        <div className="flex flex-col lg:flex-row gap-4 mb-6">
+        <div className="container mx-auto flex flex-col lg:flex-row gap-4 mb-6">
           <div className="flex-1 relative">
             <input
-              placeholder={it("Search database by name, code or category...")}
-              className="w-full h-12 pl-10 pr-4 border !bg-white border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-transparent text-sm"
+              placeholder={t("Search database by name, code or category...")}
+              className="w-full h-12 pl-10 pr-4 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-transparent text-sm"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -392,7 +403,7 @@ const ListItem = () => {
               onChange={(e) => { setPageSize(Number(e.target.value)); setCurrentPage(1); }}
               className="border-0 bg-transparent text-sm focus:outline-none"
             >
-              <option value={10}>10 / page</option>
+              <option value={12}>12 / page</option>
               <option value={24}>24 / page</option>
               <option value={48}>48 / page</option>
             </select>
@@ -401,10 +412,10 @@ const ListItem = () => {
 
         {/* Content */}
         {isLoading || isFetching ? (
-          <LoadingSpinner tip={it("Syncing with database...")} />
+          <LoadingSpinner tip={t("Syncing with database...")} />
         ) : items.length > 0 ? (
           viewMode === "grid" ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-6 gap-3">
               {items.map((item) => (
                 <GridCard
                   key={item.id}
@@ -414,7 +425,7 @@ const ListItem = () => {
                   onView={() => navigate(`detail/${item.id}`)}
                   formatCurrency={formatCurrency}
                   getDiscount={getDiscountPercentage}
-                  it={it}
+                  it={t}
                 />
               ))}
             </div>
@@ -424,13 +435,13 @@ const ListItem = () => {
               navigator={navigate}
               onDelete={handleDelete}
               formatCurrency={formatCurrency}
-              it={it}
+              it={t}
             />
           )
         ) : (
           <EmptyState
-            description={it("No results found matching your search")}
-            buttonText={it("Add Item")}
+            description={t("No results found matching your search")}
+            buttonText={t("Add Item")}
             onButtonClick={() => navigate("create")}
           />
         )}
@@ -442,7 +453,7 @@ const ListItem = () => {
               current={currentPage}
               total={totalItems}
               pageSize={pageSize}
-              it={it}
+              it={t}
               onChange={(page) => { setCurrentPage(page); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
             />
           </div>

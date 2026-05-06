@@ -398,7 +398,7 @@ const CustomerForm = () => {
   };
 
   const getSelectClass = (fieldName) => {
-    const baseClass = "w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white";
+    const baseClass = "w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-primary";
     return fieldErrors[fieldName]
       ? `${baseClass} border-red-500 bg-red-50`
       : `${baseClass} border-gray-300 hover:border-gray-400`;
@@ -409,10 +409,10 @@ const CustomerForm = () => {
       <div className=" mx-auto px-2">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-200 mb-2">
             {isUpdate ? "Edit Customer" : "Create New Customer"}
           </h1>
-          <p className="text-gray-600">
+          <p className="text-gray-400">
             {isUpdate
               ? "Update customer information and details"
               : "Add a new customer to your system"
@@ -448,9 +448,9 @@ const CustomerForm = () => {
             {/* Left Column - Image Upload */}
             <div className="space-y-8">
               {/* Image Upload Section */}
-              <div className="bg-gray-50 rounded-xl p-6 border-2 border-dashed border-gray-300">
+              <div className="bg-primary rounded-xl p-6 border-2 border-dashed border-gray-300">
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-lg font-semibold text-gray-800">
+                  <h2 className="text-lg font-semibold">
                     Customer Image
                   </h2>
                   {viewImage && (
@@ -488,7 +488,7 @@ const CustomerForm = () => {
                     ) : (
                       <div className="text-center py-8">
                         <IoMdCloudUpload className="text-5xl text-blue-400 mx-auto mb-4" />
-                        <h3 className="text-lg font-medium text-gray-700 mb-2">Upload customer image</h3>
+                        <h3 className="text-lg font-medium  mb-2">Upload customer image</h3>
                         <p className="text-sm text-gray-500 mb-4">Drag and drop or click to browse</p>
                         <div className="px-6 py-2 bg-blue-500 text-white rounded-lg inline-flex items-center gap-2 hover:bg-blue-600 transition-colors">
                           Browse files
@@ -520,7 +520,7 @@ const CustomerForm = () => {
               </div>
 
               {/* Location Section */}
-              <div className="bg-gray-50 rounded-xl p-6 border border-gray-200">
+              <div className="bg-primary rounded-xl p-6">
 
 
                 {errors.general && (
@@ -557,12 +557,12 @@ const CustomerForm = () => {
             {/* Right Column - Form Fields */}
             <div className="space-y-6">
               {/* Basic Information */}
-              <div className="bg-gray-50 rounded-xl p-6 border border-gray-200">
-                <h2 className="text-lg font-semibold text-gray-800 mb-4">Basic Information</h2>
+              <div className="bg-primary rounded-xl p-6">
+                <h2 className="text-lg font-semibold mb-4">Basic Information</h2>
 
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium mb-2">
                       Customer Name <span className="text-red-500">*</span>
                     </label>
                     <input
@@ -589,7 +589,7 @@ const CustomerForm = () => {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium mb-2">
                         Email Address
                       </label>
                       <input
@@ -609,7 +609,7 @@ const CustomerForm = () => {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium mb-2">
                         Phone Number
                       </label>
                       <input
@@ -631,7 +631,7 @@ const CustomerForm = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium mb-2">
                       Address
                     </label>
                     <input
@@ -657,12 +657,12 @@ const CustomerForm = () => {
               </div>
 
               {/* Location Hierarchy */}
-              <div className="bg-gray-50 rounded-xl p-6 border border-gray-200">
-                <h2 className="text-lg font-semibold text-gray-800 mb-4">Geographical Location</h2>
+              <div className="bg-primary rounded-xl p-6">
+                <h2 className="text-lg font-semibold mb-4">Geographical Location</h2>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Province</label>
+                    <label className="block text-sm font-medium mb-2">Province</label>
                     <select
                       name="province_id"
                       title="provinces"
@@ -672,7 +672,7 @@ const CustomerForm = () => {
                     >
                       <option value="">Select Province</option>
                       {provinces?.map((p) => (
-                        <option key={p.id || p.province_id} value={p.id ?? p.province_id} data-name={p.khmer_name ?? p.name}>
+                        <option className="bg-primary" key={p.id || p.province_id} value={p.id ?? p.province_id} data-name={p.khmer_name ?? p.name}>
                           {p.khmer_name} - {p.name}
                         </option>
                       ))}
@@ -680,7 +680,7 @@ const CustomerForm = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">District</label>
+                    <label className="block text-sm font-medium mb-2">District</label>
                     <select
                       name="district_id"
                       title="districts"
@@ -691,7 +691,7 @@ const CustomerForm = () => {
                     >
                       <option value="">Select District</option>
                       {districts.map((d) => (
-                        <option key={d.id || d.district_id} value={d.id ?? d.district_id} data-name={d.khmer_name ?? d.name} >
+                        <option className="bg-primary" key={d.id || d.district_id} value={d.id ?? d.district_id} data-name={d.khmer_name ?? d.name} >
                           {d.khmer_name} - {d.name}
                         </option>
                       ))}
@@ -710,7 +710,7 @@ const CustomerForm = () => {
                     >
                       <option value="">Select Commune</option>
                       {communes.map((c) => (
-                        <option key={c.id || c.commune_id} value={c.id ?? c.commune_id} data-name={c.khmer_name ?? c.name}>
+                        <option className="bg-primary" key={c.id || c.commune_id} value={c.id ?? c.commune_id} data-name={c.khmer_name ?? c.name}>
                           {c.khmer_name} - {c.name}
                         </option>
                       ))}
@@ -729,7 +729,7 @@ const CustomerForm = () => {
                     >
                       <option value="">Select Village</option>
                       {villages.map((v) => (
-                        <option key={v.id || v.village_id} value={v.id ?? v.village_id} data-name={v.khmer_name ?? v.name}>
+                        <option className="bg-primary" key={v.id || v.village_id} value={v.id ?? v.village_id} data-name={v.khmer_name ?? v.name}>
                           {v.khmer_name} - {v.name}
                         </option>
                       ))}
@@ -748,7 +748,7 @@ const CustomerForm = () => {
                 localStorage.setItem("isUpdate", 0);
                 navigate(-1);
               }}
-              className="px-6 py-3 border border-gray-300 flex gap-2 items-center text-gray-700 rounded-lg hover:bg-gray-50 transition-all duration-200 cursor-pointer font-medium"
+              className="px-6 py-3 border border-gray-300 flex gap-2 items-center rounded-lg hover:bg-gray-50 transition-all duration-200 cursor-pointer font-medium"
             >
               <FaTimes />
               Cancel

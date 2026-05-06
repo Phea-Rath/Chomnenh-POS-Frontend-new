@@ -20,6 +20,7 @@ import { useGetAllCategoriesQuery } from "../../../app/Features/categoriesSlice"
 import dayjs from "dayjs";
 import api from "../../services/api";
 import { useTranslation } from "react-i18next";
+import RefreshButton from "../../utils/RefreshButton";
 
 // Helper functions (unchanged)
 var __rest = (this && this.__rest) || function (s, e) {
@@ -545,14 +546,7 @@ const StockTransactions = () => {
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <button
-              onClick={fetchData}
-              disabled={loading}
-              className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 transition-colors"
-            >
-              <LuRefreshCw className={`text-gray-500 dark:text-gray-400 ${loading ? "animate-spin" : ""}`} />
-              {t("refresh")}
-            </button>
+            <RefreshButton onClick={fetchData} loading={loading} />
             <ExportExel
               data={itemData}
               title={"Stock_Transactions_Report"}
@@ -575,7 +569,7 @@ const StockTransactions = () => {
 
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 mb-6 transition-colors">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-            <div className="flex flex-col sm:flex-row sm:items-center gap-4 flex-1">
+            <div className="flex flex-col flex-wrap sm:flex-row sm:items-center gap-4 flex-1">
               <div className="flex bg-gray-100 dark:bg-gray-700 text-sm rounded-lg p-1 border border-gray-300 dark:border-gray-600 transition-colors">
                 <button
                   onClick={() => setViewMode("table")}
@@ -590,13 +584,6 @@ const StockTransactions = () => {
                 >
                   <LuGrid2X2 className="text-lg" />
                   <span>{t("grid")}</span>
-                </button>
-                <button
-                  onClick={() => setViewMode("compact")}
-                  className={`px-4 py-2 rounded-md transition-all duration-300 flex items-center space-x-2 ${viewMode === "compact" ? "bg-white dark:bg-gray-600 shadow-md text-blue-600 dark:text-blue-400 font-semibold" : "text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"}`}
-                >
-                  <LuList className="text-lg" />
-                  <span>{t("compact")}</span>
                 </button>
               </div>
 
@@ -627,15 +614,15 @@ const StockTransactions = () => {
               </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+            <div className="flex flex-col flex-wrap sm:flex-row sm:items-center gap-3">
               <select
                 value={selectedCategory || ""}
                 onChange={(e) => setSelectedCategory(e.target.value || null)}
                 className="border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 rounded-md px-3 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors"
               >
                 <option value="">{t("allCategories")}</option>
-                {categories?.data?.map((cat) => (
-                  <option key={cat.id} value={cat.category_name}>{cat.category_name}</option>
+                {categories?.data?.map((cat, idx) => (
+                  <option key={idx} value={cat.category_name}>{cat.category_name}</option>
                 ))}
               </select>
 
@@ -682,26 +669,11 @@ const StockTransactions = () => {
 
         {viewMode === "table" ? (
           <TableView />
-        ) : viewMode === "grid" ? (
+        ) : (
           <div className={`grid ${getGridColClass()} gap-6`}>
             {filteredData.map((item, index) => (
               <StockTransactionCard key={`${item.item_id}-${item.created_at}`} item={item} index={index} />
             ))}
-          </div>
-        ) : (
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden transition-colors">
-            <div className="p-6 space-y-3">
-              {filteredData.map((item, index) => (
-                <CompactTransactionCard key={`${item.item_id}-${item.created_at}`} item={item} index={index} />
-              ))}
-              {filteredData.length === 0 && !loading && (
-                <div className="text-center py-12">
-                  <div className="text-gray-400 dark:text-gray-600 text-4xl mb-3">📊</div>
-                  <h3 className="text-lg font-semibold text-gray-600 dark:text-gray-400 mb-1">{t("noOrdersFound")}</h3>
-                  <p className="text-gray-500 dark:text-gray-500 text-sm">{t("tryAdjustingSearch")}</p>
-                </div>
-              )}
-            </div>
           </div>
         )}
       </div>

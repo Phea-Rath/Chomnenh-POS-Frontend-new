@@ -31,6 +31,7 @@ import { useGetAllSaleQuery } from '../../../app/Features/salesSlice';
 import { useGetAllUserQuery } from '../../../app/Features/usersSlice';
 import { useGetAllWasteQuery } from '../../../app/Features/notificationSlice';
 import { useTranslation } from 'react-i18next';
+import RefreshButton from '../../utils/RefreshButton';
 
 const statusOptions = [
     { id: 1, label: 'Pending', icon: FaClock, color: 'bg-yellow-100 text-yellow-800 border-yellow-200' },
@@ -250,13 +251,7 @@ const OrderTracking = () => {
                             </div>
                         </div>
 
-                        <button
-                            onClick={refetch}
-                            title={t('refresh')}
-                            className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 text-slate-600 transition hover:bg-slate-50"
-                        >
-                            <FaSync className={`h-4 w-4 ${isFetching ? 'animate-spin' : ''}`} />
-                        </button>
+                        <RefreshButton onRefresh={refetch} />
                     </div>
 
                     <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1.4fr_0.8fr_0.8fr_auto]">

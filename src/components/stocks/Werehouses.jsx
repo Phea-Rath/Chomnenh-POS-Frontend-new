@@ -10,10 +10,13 @@ import CreateWarehouses from '../../views/stocks/CreateWarehouses';
 import { motion } from 'framer-motion';
 import { useGetAllWarehousesQuery, useDeleteWarehouseMutation } from '../../../app/Features/warehousesSlice';
 import { toast } from 'react-toastify';
-import { RiDeleteBin6Line, RiEdit2Line } from 'react-icons/ri';
+import { RiDeleteBin6Line, RiEdit2Line, RiEyeLine } from 'react-icons/ri';
 import { IoGridOutline, IoListOutline } from 'react-icons/io5';
+import { useNavigate } from 'react-router';
+import RefreshButton from '../../utils/RefreshButton';
 
 const Warehouses = () => {
+  const navigate = useNavigate();
   const [warehouses, setWarehouses] = useState([]);
   const [filteredWarehouses, setFilteredWarehouses] = useState([]);
   const [id, setId] = useState(0);
@@ -88,6 +91,10 @@ const Warehouses = () => {
     setEdit({ id, name, status });
   };
 
+  const handleView = (id) => {
+    navigate(`/inventories/product-in-warehouse/${id}`);
+  };
+
   // Custom components
   const Button = ({ children, onClick, variant = 'default', icon, disabled, className = '' }) => {
     const base = 'inline-flex items-center gap-2 px-3 py-1.5 border rounded text-sm font-medium transition-colors';
@@ -138,11 +145,11 @@ const Warehouses = () => {
   };
 
   const StatCard = ({ title, value, icon, color = 'blue' }) => (
-    <div className={`border border-gray-200 rounded p-4 bg-white`}>
+    <div className={`bg-primary  rounded p-4 `}>
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-gray-600 text-sm font-medium">{title}</p>
-          <p className="text-2xl font-bold text-gray-900">{value}</p>
+          <p className=" text-sm font-medium">{title}</p>
+          <p className="text-2xl font-bold ">{value}</p>
         </div>
         <div className={`p-3 bg-${color}-100 rounded text-${color}-600`}>{icon}</div>
       </div>
@@ -220,6 +227,14 @@ const Warehouses = () => {
           </div>
           <div className="flex gap-2">
             <Button
+              onClick={() => handleView(warehouse.warehouse_id)}
+              variant="success"
+              icon={<RiEyeLine />}
+              className="px-3 py-1 text-xs"
+            >
+              view
+            </Button>
+            <Button
               onClick={() => handleUpdate(warehouse.warehouse_name, warehouse.warehouse_id, warehouse.status)}
               variant="primary"
               icon={<RiEdit2Line />}
@@ -249,7 +264,7 @@ const Warehouses = () => {
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
       transition={{ duration: 0.5 }}
-      className="min-h-screen bg-transparent p-4 md:p-6"
+      className="min-h-screen container mx-auto bg-transparent p-4 md:p-6"
     >
       <AlertBox
         isOpen={alertBox}
@@ -267,14 +282,14 @@ const Warehouses = () => {
           <motion.h1
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
-            className="text-2xl font-bold text-gray-800 flex items-center gap-3"
+            className="text-2xl font-bold text-gray-800 dark:text-white flex items-center gap-3"
           >
             <div className="p-2 bg-blue-100 rounded">
               <TbBuildingWarehouse className="text-blue-600" />
             </div>
             Warehouse Management
           </motion.h1>
-          <p className="text-gray-600 text-sm">Manage your storage facilities and distribution centers</p>
+          <p className="text-gray-400 text-sm">Manage your storage facilities and distribution centers</p>
         </div>
         <Button onClick={() => setIsAddOpen(true)} variant="success" icon={<TbBuildingWarehouse />}>
           Add New Warehouse
@@ -289,7 +304,7 @@ const Warehouses = () => {
       </div>
 
       {/* Controls */}
-      <div className="bg-white border border-gray-200 rounded p-4 mb-6">
+      <div className="bg-primary rounded p-4 mb-6">
         <div className="flex flex-col lg:flex-row lg:items-center gap-4">
           <div className="flex flex-col sm:flex-row sm:items-center gap-4 flex-1">
             <div className="flex border border-gray-300 rounded overflow-hidden">
@@ -319,9 +334,7 @@ const Warehouses = () => {
               />
             </div>
           </div>
-          <Button onClick={refetch} disabled={isLoading} icon={<IoIosSearch />}>
-            Refresh
-          </Button>
+          <RefreshButton onRefresh={refetch}/>
         </div>
       </div>
 
@@ -331,37 +344,37 @@ const Warehouses = () => {
       ) : filteredWarehouses.length === 0 ? (
         <EmptyState onCreate={() => setIsAddOpen(true)} />
       ) : viewMode === 'table' ? (
-        <div className="bg-white border border-gray-200 rounded overflow-hidden">
+        <div className="bg-primary border border-gray-200 rounded overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full border-collapse text-sm">
-              <thead className="bg-gray-100 border-b border-gray-300">
+              <thead className="bg-gray-100 dark:bg-gray-700 dark:text-gray-100 border-b border-gray-300">
                 <tr>
-                  <th className="px-4 py-3 text-left font-medium text-gray-600">#</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-600">Warehouse Name</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-600">Created By</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-600">Status</th>
-                  <th className="px-4 py-3 text-right font-medium text-gray-600">Actions</th>
+                  <th className="px-4 py-3 text-left font-medium">#</th>
+                  <th className="px-4 py-3 text-left font-medium">Warehouse Name</th>
+                  <th className="px-4 py-3 text-left font-medium">Created By</th>
+                  <th className="px-4 py-3 text-left font-medium">Status</th>
+                  <th className="px-4 py-3 text-right font-medium">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {filteredWarehouses.map((wh, index) => {
                   const isDefault = wh.created_by_name === 0;
                   return (
-                    <tr key={wh.warehouse_id} className="hover:bg-gray-50">
-                      <td className="px-4 py-3 text-gray-600">{index + 1}</td>
+                    <tr key={wh.warehouse_id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                      <td className="px-4 py-3 ">{index + 1}</td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
                           <div className="p-1.5 bg-blue-100 rounded">
                             <HiOutlineBuildingOffice2 className="text-blue-600" size={14} />
                           </div>
-                          <span className="font-medium text-gray-800">{wh.warehouse_name}</span>
+                          <span className="font-medium">{wh.warehouse_name}</span>
                         </div>
                       </td>
                       <td className="px-4 py-3">
                         {isDefault ? (
                           <Badge color="warning">Default</Badge>
                         ) : (
-                          <span className="text-gray-600">{wh.created_by_name}</span>
+                          <span className="">{wh.created_by_name}</span>
                         )}
                       </td>
                       <td className="px-4 py-3">
@@ -372,11 +385,19 @@ const Warehouses = () => {
                       <td className="px-4 py-3">
                         <div className="flex justify-end gap-2">
                           <Button
+                            onClick={() => handleView(wh.warehouse_id)}
+                            variant="success"
+                            icon={<RiEyeLine />}
+                            className="px-3 py-1 text-xs"
+                          >
+                            view
+                          </Button>
+                          <Button
                             onClick={() => handleUpdate(wh.warehouse_name, wh.warehouse_id, wh.status)}
                             variant="primary"
                             icon={<RiEdit2Line />}
                             className="px-3 py-1 text-xs"
-                            disabled={[1, 2, 3, 4].includes(wh.warehouse_id)}
+                            disabled={[1, 2, 3, 4, 5].includes(wh.warehouse_id)}
                           >
                             Edit
                           </Button>
@@ -385,7 +406,7 @@ const Warehouses = () => {
                             variant="danger"
                             icon={<RiDeleteBin6Line />}
                             className="px-3 py-1 text-xs"
-                            disabled={[1, 2, 3, 4].includes(wh.warehouse_id)}
+                            disabled={[1, 2, 3, 4, 5].includes(wh.warehouse_id)}
                           >
                             Delete
                           </Button>

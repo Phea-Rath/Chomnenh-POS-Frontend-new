@@ -6,10 +6,11 @@ import { useGetAllSupplierQuery } from '../../../app/Features/suppliesSlice';
 import { Image, Card, Skeleton, Badge, Tag, Empty } from 'antd';
 import { FaMapLocationDot } from "react-icons/fa6";
 import { motion, AnimatePresence } from 'framer-motion';
+import RefreshButton from '../../utils/RefreshButton';
 
 const SupplierList = () => {
   const token = localStorage.getItem('token');
-  const { data: supplierData, error, isLoading } = useGetAllSupplierQuery(token);
+  const { data: supplierData, error, isLoading, refetch } = useGetAllSupplierQuery(token);
   const [suppliers, setSuppliers] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredSuppliers, setFilteredSuppliers] = useState([]);
@@ -86,12 +87,15 @@ const SupplierList = () => {
                 className="w-full pl-10 p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
               />
             </div>
-            <Link
-              to="create"
-              className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 flex items-center space-x-2"
-            >
-              <FaPlus /> <span>Add New Supplier</span>
-            </Link>
+            <div className='flex items-center gap-2'>
+              <RefreshButton onRefresh={refetch} />
+              <Link
+                to="create"
+                className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 flex items-center space-x-2"
+              >
+                <FaPlus /> <span>Add New Supplier</span>
+              </Link>
+            </div>
           </div>
 
           {isLoading && (

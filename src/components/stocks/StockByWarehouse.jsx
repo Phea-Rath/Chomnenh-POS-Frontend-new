@@ -15,6 +15,8 @@ import * as XLSX from 'xlsx';
 import { useTranslation } from 'react-i18next';
 import { useGetAllWarehousesQuery } from '../../../app/Features/warehousesSlice';
 import api from '../../services/api';
+import { useParams } from 'react-router';
+import RefreshButton from '../../utils/RefreshButton';
 
 const STOCK_FIELDS = [
     { key: 'in_stock', label: 'In Stock', kh: 'ក្នុងស្តុក', className: 'text-blue-600 bg-blue-50 dark:bg-blue-900/20 dark:text-blue-400' },
@@ -27,6 +29,7 @@ const STOCK_FIELDS = [
 
 const StockByWarehouse = () => {
     const { t, i18n } = useTranslation();
+    const { warehouse_id } = useParams();
     const isKhmer = i18n.language === 'kh';
     const token = localStorage.getItem('token');
     const [selectedWarehouse, setSelectedWarehouse] = useState('');
@@ -42,7 +45,7 @@ const StockByWarehouse = () => {
 
     useEffect(() => {
         if (!selectedWarehouse && warehouses.length > 0) {
-            setSelectedWarehouse(String(warehouses[0].warehouse_id));
+            setSelectedWarehouse(String(warehouse_id));
         }
     }, [warehouses, selectedWarehouse]);
 
@@ -337,15 +340,7 @@ const StockByWarehouse = () => {
                             </button>
                         </div>
 
-                        <button
-                            type="button"
-                            onClick={() => fetchStocksByWarehouse(selectedWarehouse)}
-                            disabled={!selectedWarehouse || loading}
-                            className="inline-flex items-center gap-2 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-2 text-sm font-medium text-gray-700 dark:text-slate-300 shadow-sm hover:bg-gray-50 dark:hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-60"
-                        >
-                            <FaSyncAlt className={loading ? 'animate-spin' : ''} />
-                            {t('refresh')}
-                        </button>
+                        <RefreshButton onRefresh={() => fetchStocksByWarehouse(selectedWarehouse)} />
 
                         <button
                             type="button"

@@ -6,11 +6,12 @@ import { useGetAllCustomerQuery } from '../../../app/Features/customersSlice';
 import { Image, Card, Skeleton, Badge, Tag, Empty } from 'antd';
 import { FaMapLocationDot } from "react-icons/fa6";
 import { motion, AnimatePresence } from 'framer-motion';
+import RefreshButton from '../../utils/RefreshButton';
 
 const CustomerList = () => {
   const token = localStorage.getItem('token');
   const navigate = useNavigate();
-  const { data: customerData, error, isLoading } = useGetAllCustomerQuery(token);
+  const { data: customerData, error, isLoading, refetch } = useGetAllCustomerQuery(token);
   const [customers, setCustomers] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredCustomers, setFilteredCustomers] = useState([]);
@@ -78,9 +79,9 @@ const CustomerList = () => {
   return (
     <div className="min-h-screen bg-transparent py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-6">Customers</h1>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">Customers</h1>
 
-        <div className="bg-white shadow-lg rounded-lg p-6">
+        <div className="bg-primary shadow-lg rounded-lg p-6">
           <div className="flex justify-between items-center mb-6">
             <div className="relative w-1/3">
               <FaSearch className="absolute left-3 top-3 text-gray-400" />
@@ -92,12 +93,15 @@ const CustomerList = () => {
                 className="w-full pl-10 p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
               />
             </div>
-            <Link
-              to="create"
-              className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 flex items-center space-x-2"
-            >
-              <FaPlus /> <span>Add New Customer</span>
-            </Link>
+            <div className='flex gap-2'>
+              <RefreshButton onRefresh={refetch} />
+              <Link
+                to="create"
+                className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 flex items-center space-x-2"
+              >
+                <FaPlus /> <span>Add New</span>
+              </Link>
+            </div>
           </div>
 
           {isLoading && (
@@ -128,9 +132,9 @@ const CustomerList = () => {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody className="bg-primary divide-y divide-gray-200 dark:divide-gray-400">
                   {currentCustomers.map((customer) => (
-                    <tr key={customer.customer_id} className="hover:bg-gray-50 transition-colors">
+                    <tr key={customer.customer_id} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="avatar">
                           <div className="mask h-12 w-12">
@@ -140,10 +144,10 @@ const CustomerList = () => {
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         {customer.customer_name}
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-600 max-w-xs">
+                      <td className="px-6 py-4 text-sm  max-w-xs">
                         <div className="flex items-start gap-2">
                           <FaMapMarkerAlt className="text-red-500 mt-1 flex-shrink-0" />
                           <span className="line-clamp-2" title={formatAddress(customer)}>
@@ -151,10 +155,10 @@ const CustomerList = () => {
                           </span>
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm ">
                         {customer.customer_tel || "N/A"}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm ">
                         {customer.customer_email || "N/A"}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
@@ -204,7 +208,7 @@ const CustomerList = () => {
                 <button
                   onClick={() => paginate(currentPage - 1)}
                   disabled={currentPage === 1}
-                  className="px-3 py-1 border border-gray-300 rounded-md text-gray-700 disabled:opacity-50"
+                  className="px-3 py-1 border border-gray-300 rounded-md disabled:opacity-50"
                 >
                   Previous
                 </button>
@@ -212,7 +216,7 @@ const CustomerList = () => {
                   <button
                     key={number + 1}
                     onClick={() => paginate(number + 1)}
-                    className={`px-3 py-1 border border-gray-300 rounded-md ${currentPage === number + 1 ? "bg-blue-500 text-white" : "text-gray-700"}`}
+                    className={`px-3 py-1 border border-gray-300 rounded-md ${currentPage === number + 1 ? "bg-blue-500" : ""}`}
                   >
                     {number + 1}
                   </button>
@@ -220,7 +224,7 @@ const CustomerList = () => {
                 <button
                   onClick={() => paginate(currentPage + 1)}
                   disabled={currentPage === totalPages}
-                  className="px-3 py-1 border border-gray-300 rounded-md text-gray-700 disabled:opacity-50"
+                  className="px-3 py-1 border border-gray-300 rounded-md  disabled:opacity-50"
                 >
                   Next
                 </button>

@@ -42,7 +42,7 @@ const Header = ({ darkMode, setDarkMode }) => {
   const headerWidthClass = data?.data?.role_id !== 1 ? (sidebar ? "lg:w-[calc(100vw-250px)]" : "lg:w-[calc(100vw-80px)]") : "w-full";
 
   return (
-    <header className={`fixed shadow-sm no-print drop-shadow-md ${headerWidthClass} top-0 z-50 ${darkMode ? "bg-primary-dark border-gray-700" : "bg-white border-gray-200"}`}>
+    <header className={`fixed shadow-sm no-print w-full drop-shadow-md ${headerWidthClass} top-0 z-50 ${darkMode ? "bg-primary-dark border-gray-700" : "bg-white border-gray-200"}`}>
       <div className="flex justify-between items-center px-4 lg:px-8 py-3">
         {/* Left Section - Logo and Menu */}
         <div className="flex items-center gap-4">

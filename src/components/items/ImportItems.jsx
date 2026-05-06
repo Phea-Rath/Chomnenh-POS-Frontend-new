@@ -22,10 +22,10 @@ import api from "../../services/api";
 import { Alert } from "antd";
 import { useGetAllItemsQuery } from "../../../app/Features/itemsSlice";
 import { useGetAllStockQuery } from "../../../app/Features/stocksSlice";
-import { useItemText } from "./itemText";
+import { useTranslation } from "react-i18next";
 
 const ImportItems = () => {
-  const { it } = useItemText();
+  const { t } = useTranslation();
   const [items, setItems] = useState([]);
   const token = localStorage.getItem("token");
   const [editingId, setEditingId] = useState(null);
@@ -163,10 +163,10 @@ const ImportItems = () => {
         if (!brandId) errors.push(`${item.brand_name} brand`);
 
         if (errors.length > 0) {
-          toast.error(`${errors.join(", ")} ${it("not found in system.")}`);
+          toast.error(`${errors.join(", ")} ${t("not found in system.")}`);
           setError({
             error: true,
-            message: `${errors.join(", ")} ${it("not found in system.")}`,
+            message: `${errors.join(", ")} ${t("not found in system.")}`,
           });
         }
 
@@ -252,7 +252,7 @@ const ImportItems = () => {
       brand_name: "",
       scale_name: ""
     });
-    toast.success(it("Item saved successfully!"));
+    toast.success(t("Item saved successfully!"));
     console.log(items);
 
   };
@@ -436,14 +436,14 @@ const ImportItems = () => {
     setItems(allItemsEditData);
     setIsEditAllMode(false);
     setAllItemsEditData([]);
-    toast.success(it("All changes saved successfully!"));
+    toast.success(t("All changes saved successfully!"));
   };
 
   // Cancel edit all mode
   const handleCancelEditAll = () => {
     setIsEditAllMode(false);
     setAllItemsEditData([]);
-    toast.info(it("Edit all mode cancelled"));
+    toast.info(t("Edit all mode cancelled"));
   };
 
   // Download Excel template
@@ -479,7 +479,7 @@ const ImportItems = () => {
     worksheet['!cols'] = colWidths.map(w => ({ wch: w + 2 }));
 
     XLSX.writeFile(workbook, "Item_Import_Template.xlsx");
-    toast.success(it("Template downloaded successfully!"));
+    toast.success(t("Template downloaded successfully!"));
   };
 
   // Import all items
@@ -487,7 +487,7 @@ const ImportItems = () => {
     const itemsToImport = isEditAllMode ? allItemsEditData : items;
 
     if (!itemsToImport || itemsToImport.length === 0) {
-      toast.error(it("No items to import!"));
+      toast.error(t("No items to import!"));
       return;
     }
 
@@ -501,7 +501,7 @@ const ImportItems = () => {
     );
 
     if (invalidItems.length > 0) {
-      toast.error(`${it("Please fill in all required fields for")} ${invalidItems.length} ${it("item(s)")}`);
+      toast.error(`${t("Please fill in all required fields for")} ${invalidItems.length} ${t("item(s)")}`);
       return;
     }
 
@@ -548,17 +548,17 @@ const ImportItems = () => {
         if (stockContext?.refetch) stockContext.refetch();
         if (refetch) refetch();
         if (saleContext?.refetch) saleContext.refetch();
-        toast.success(it("Items imported successfully!"));
+        toast.success(t("Items imported successfully!"));
         setItems([]);
         setIsEditAllMode(false);
         setAllItemsEditData([]);
         setError({ error: false, message: "" });
       } else {
-        throw new Error(response.data.message || it("Import failed"));
+        throw new Error(response.data.message || t("Import failed"));
       }
     } catch (error) {
       console.error("Import error:", error);
-      toast.error(`${it("Import failed!")} ` + (error.response?.data?.message || error.message));
+      toast.error(`${t("Import failed!")} ` + (error.response?.data?.message || error.message));
     }
   };
 
@@ -595,7 +595,7 @@ const ImportItems = () => {
           <div key={index} className="flex gap-2 items-center">
             <input
               type="text"
-              placeholder={it("Attribute Name")}
+              placeholder={t("Attribute Name")}
               value={attr.name}
               onChange={(e) => isEditAllMode
                 ? handleAllItemsAttributeChange(item.id, index, "name", e.target.value)
@@ -611,15 +611,15 @@ const ImportItems = () => {
               }
               className="w-20 p-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
-              <option value="text">{it("Text")}</option>
-              <option value="number">{it("Number")}</option>
-              <option value="select">{it("Select")}</option>
-              <option value="checkbox">{it("Checkbox")}</option>
-              <option value="date">{it("Date")}</option>
+              <option value="text">{t("Text")}</option>
+              <option value="number">{t("Number")}</option>
+              <option value="select">{t("Select")}</option>
+              <option value="checkbox">{t("Checkbox")}</option>
+              <option value="date">{t("Date")}</option>
             </select>
             <input
               type="text"
-              placeholder={it("Value")}
+              placeholder={t("Value")}
               value={attr.value}
               onChange={(e) => isEditAllMode
                 ? handleAllItemsAttributeChange(item.id, index, "value", e.target.value)
@@ -633,7 +633,7 @@ const ImportItems = () => {
                 : handleRemoveAttribute(index)
               }
               className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
-              title={it("Remove attribute")}
+              title={t("Remove attribute")}
             >
               <FiMinus className="w-4 h-4" />
             </button>
@@ -647,7 +647,7 @@ const ImportItems = () => {
           className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg transition-colors"
         >
           <FiPlus className="w-4 h-4" />
-          {it("Add Attribute")}
+          {t("Add Attribute")}
         </button>
       </div>
     );
@@ -656,7 +656,7 @@ const ImportItems = () => {
   // Render attributes display for non-edit mode
   const renderAttributesDisplay = (attributes) => {
     if (!attributes || attributes.length === 0) {
-      return <span className="text-gray-500 text-sm">{it("No attributes")}</span>;
+      return <span className="text-gray-500 text-sm">{t("No attributes")}</span>;
     }
 
     return (
@@ -668,7 +668,7 @@ const ImportItems = () => {
           </div>
         ))}
         {attributes.length > 2 && (
-          <span className="text-xs text-blue-600">+{attributes.length - 2} {it("more")}</span>
+          <span className="text-xs text-blue-600">+{attributes.length - 2} {t("more")}</span>
         )}
       </div>
     );
@@ -676,8 +676,8 @@ const ImportItems = () => {
 
   return (
     <div className="items-page mx-auto p-2 bg-transparent min-h-screen">
-      <h1 className="text-3xl font-bold text-gray-800 mb-2">{it("Import Items")}</h1>
-      <p className="text-gray-600 mb-8">{it("Import items from Excel file or use the template")}</p>
+      <h1 className="text-3xl font-bold text-gray-800 mb-2">{t("Import Items")}</h1>
+      <p className="text-gray-600 mb-8">{t("Import items from Excel file or use the template")}</p>
 
       {/* File Upload Section */}
       <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 mb-8">
@@ -687,8 +687,8 @@ const ImportItems = () => {
             onClick={() => fileInputRef.current.click()}
           >
             <FiUpload className="mx-auto text-4xl text-blue-500 mb-4" />
-            <p className="text-lg font-medium text-gray-700 mb-2">{it("Upload Excel File")}</p>
-            <p className="text-sm text-gray-500">{it(".xlsx, .xls, .csv files supported")}</p>
+            <p className="text-lg font-medium text-gray-700 mb-2">{t("Upload Excel File")}</p>
+            <p className="text-sm text-gray-500">{t(".xlsx, .xls, .csv files supported")}</p>
             <input
               type="file"
               ref={fileInputRef}
@@ -703,15 +703,15 @@ const ImportItems = () => {
             onClick={downloadTemplate}
           >
             <FiDownload className="mx-auto text-4xl text-green-500 mb-4" />
-            <p className="text-lg font-medium text-gray-700 mb-2">{it("Download Template")}</p>
-            <p className="text-sm text-gray-500">{it("Get sample Excel format")}</p>
+            <p className="text-lg font-medium text-gray-700 mb-2">{t("Download Template")}</p>
+            <p className="text-sm text-gray-500">{t("Get sample Excel format")}</p>
           </div>
         </div>
       </div>
 
       {error.error && (
         <Alert
-          message={it("Error")}
+          message={t("Error")}
           description={error.message}
           type="error"
           showIcon
@@ -725,7 +725,7 @@ const ImportItems = () => {
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <div className="flex flex-col sm:flex-row justify-between items-center p-6 border-b border-gray-200">
           <h2 className="text-xl font-semibold text-gray-800 mb-4 sm:mb-0">
-            {it("Imported Items")} ({items.length})
+            {t("Imported Items")} ({items.length})
           </h2>
           <div className="flex flex-wrap gap-3">
             {isEditAllMode ? (
@@ -734,13 +734,13 @@ const ImportItems = () => {
                   onClick={handleSaveAll}
                   className="inline-flex items-center gap-2 px-5 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors font-medium"
                 >
-                  <FiSave className="w-4 h-4" /> {it("Save All")}
+                  <FiSave className="w-4 h-4" /> {t("Save All")}
                 </button>
                 <button
                   onClick={handleCancelEditAll}
                   className="inline-flex items-center gap-2 px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors font-medium"
                 >
-                  <FiX className="w-4 h-4" /> {it("Cancel")}
+                  <FiX className="w-4 h-4" /> {t("Cancel")}
                 </button>
               </>
             ) : (
@@ -750,20 +750,20 @@ const ImportItems = () => {
                   className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                   disabled={items.length === 0}
                 >
-                  <FiEdit className="w-4 h-4" /> {it("Edit All")}
+                  <FiEdit className="w-4 h-4" /> {t("Edit All")}
                 </button>
                 <button
                   onClick={handleAddNew}
                   className="inline-flex items-center gap-2 px-5 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors font-medium"
                 >
-                  <FiPlus className="w-4 h-4" /> {it("Add Item")}
+                  <FiPlus className="w-4 h-4" /> {t("Add Item")}
                 </button>
                 <button
                   onClick={handleImportAll}
                   className="inline-flex items-center gap-2 px-5 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                   disabled={items.length === 0}
                 >
-                  <RiImportLine className="w-5 h-5" /> {it("Import All")}
+                  <RiImportLine className="w-5 h-5" /> {t("Import All")}
                 </button>
               </>
             )}
@@ -776,15 +776,15 @@ const ImportItems = () => {
               <div className="w-20 h-20 mx-auto mb-6 bg-gray-100 rounded-full flex items-center justify-center">
                 <FiUpload className="w-10 h-10 text-gray-400" />
               </div>
-              <h3 className="text-lg font-medium text-gray-700 mb-2">{it("No Items Imported")}</h3>
+              <h3 className="text-lg font-medium text-gray-700 mb-2">{t("No Items Imported")}</h3>
               <p className="text-gray-500 mb-6">
-                {it("Upload an Excel file or download the template to get started.")}
+                {t("Upload an Excel file or download the template to get started.")}
               </p>
               <button
                 onClick={downloadTemplate}
                 className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
               >
-                <FiDownload /> {it("Download Template")}
+                <FiDownload /> {t("Download Template")}
               </button>
             </div>
           </div>
@@ -794,32 +794,32 @@ const ImportItems = () => {
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                    {it("Item Name")}
+                    {t("Item Name")}
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                    {it("Price")}
+                    {t("Price")}
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                    {it("Wholesale Price")}
+                    {t("Wholesale Price")}
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                    {it("Category")}
+                    {t("Category")}
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                    {it("Brand")}
+                    {t("Brand")}
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                    {it("Scale")}
+                    {t("Scale")}
                   </th>
 
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                    {it("Attributes")}
+                    {t("Attributes")}
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                    {it("Images")}
+                    {t("Images")}
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                    {it("Actions")}
+                    {t("Actions")}
                   </th>
                 </tr>
               </thead>
@@ -837,7 +837,7 @@ const ImportItems = () => {
                             : setEditForm({ ...editForm, item_name: e.target.value })
                           }
                           className="w-full p-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                          placeholder={it("Enter item name")}
+                          placeholder={t("Enter item name")}
                         />
                       ) : (
                         <span className="font-medium text-gray-900">{item.item_name}</span>
@@ -892,7 +892,7 @@ const ImportItems = () => {
                           }
                           className="w-full p-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         >
-                          <option value="">{it("Select Category")}</option>
+                          <option value="">{t("Select Category")}</option>
                           {categories.map(cat => (
                             <option key={cat.category_id} value={cat.category_id}>
                               {cat.category_name}
@@ -900,7 +900,7 @@ const ImportItems = () => {
                           ))}
                         </select>
                       ) : (
-                        <span>{item.category_name || it("N/A")}</span>
+                        <span>{item.category_name || t("N/A")}</span>
                       )}
                     </td>
 
@@ -915,7 +915,7 @@ const ImportItems = () => {
                           }
                           className="w-full p-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         >
-                          <option value="">{it("Select Brand")}</option>
+                          <option value="">{t("Select Brand")}</option>
                           {brands.map(brand => (
                             <option key={brand.brand_id} value={brand.brand_id}>
                               {brand.brand_name}
@@ -923,7 +923,7 @@ const ImportItems = () => {
                           ))}
                         </select>
                       ) : (
-                        <span>{item.brand_name || it("N/A")}</span>
+                        <span>{item.brand_name || t("N/A")}</span>
                       )}
                     </td>
 
@@ -938,7 +938,7 @@ const ImportItems = () => {
                           }
                           className="w-full p-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         >
-                          <option value="">{it("Select Scale")}</option>
+                          <option value="">{t("Select Scale")}</option>
                           {scales.map(scale => (
                             <option key={scale.scale_id} value={scale.scale_id}>
                               {scale.scale_name}
@@ -946,7 +946,7 @@ const ImportItems = () => {
                           ))}
                         </select>
                       ) : (
-                        <span>{item.scale_name || it("N/A")}</span>
+                        <span>{item.scale_name || t("N/A")}</span>
                       )}
                     </td>
 
@@ -970,7 +970,7 @@ const ImportItems = () => {
                           <div key={idx} className="relative">
                             <img
                               src={url}
-                              alt={`${it("Preview")} ${idx + 1}`}
+                              alt={`${t("Preview")} ${idx + 1}`}
                               className="h-12 w-12 object-cover rounded-lg border border-gray-300"
                               onError={(e) => {
                                 e.target.src = "https://via.placeholder.com/48";
@@ -995,7 +995,7 @@ const ImportItems = () => {
                         )}
                         {!isEditAllMode && editingId !== item.id && items[index]?.item_urls?.map((url, idx) => <img
                           src={url}
-                          alt={`${it("Preview")} ${idx + 1}`}
+                          alt={`${t("Preview")} ${idx + 1}`}
                           className="h-12 w-12 object-cover rounded-lg border border-gray-300"
                         />
                         )}
@@ -1018,7 +1018,7 @@ const ImportItems = () => {
                           <button
                             onClick={() => handleDelete(item.id)}
                             className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
-                            title={it("Delete")}
+                            title={t("Delete")}
                           >
                             <FiTrash2 className="w-5 h-5" />
                           </button>
@@ -1027,14 +1027,14 @@ const ImportItems = () => {
                             <button
                               onClick={handleSave}
                               className="p-2 text-green-600 hover:bg-green-50 rounded-lg"
-                              title={it("Save")}
+                              title={t("Save")}
                             >
                               <FiSave className="w-5 h-5" />
                             </button>
                             <button
                               onClick={handleCancel}
                               className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
-                              title={it("Cancel")}
+                              title={t("Cancel")}
                             >
                               <FiX className="w-5 h-5" />
                             </button>
@@ -1044,14 +1044,14 @@ const ImportItems = () => {
                             <button
                               onClick={() => handleEdit(item)}
                               className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg"
-                              title={it("Edit")}
+                              title={t("Edit")}
                             >
                               <FiEdit className="w-5 h-5" />
                             </button>
                             <button
                               onClick={() => handleDelete(item.id)}
                               className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
-                              title={it("Delete")}
+                              title={t("Delete")}
                             >
                               <FiTrash2 className="w-5 h-5" />
                             </button>

@@ -33,6 +33,7 @@ import {
 } from "../../../app/Features/ordersSlice";
 import { useGetPopularStockQuery } from "../../../app/Features/stocksSlice";
 import { useGetAllUserQuery, useGetUserLoginQuery } from "../../../app/Features/usersSlice";
+import RefreshButton from "../../utils/RefreshButton";
 
 const COLORS = ["#6366f1", "#f59e0b", "#10b981", "#ef4444", "#8b5cf6", "#ec4899"];
 
@@ -78,7 +79,7 @@ const definePersents = (currentValue, previousValue) => {
 };
 
 const MetricCard = ({ title, value, persent, isLoss, icon: Icon, colorClass, chartData, chartColor, loading }) => (
-  <div className="bg-white bg-primary p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 transition-all hover:shadow-md relative overflow-hidden">
+  <div className="bg-primary p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 transition-all hover:shadow-md relative overflow-hidden">
     {loading && (
       <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/40 bg-primary/40">
         <div className="w-6 h-6 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
@@ -232,13 +233,8 @@ const Dashboard = () => {
           <p className="text-sm text-gray-500 dark:text-gray-400">{t("performanceInsights")}</p>
         </div>
         <div className="flex items-center gap-3">
-          {/* Language Toggle */}
-          <button
-            onClick={toggleLanguage}
-            className="px-3 py-2 rounded-lg font-medium text-sm transition-colors bg-gray-100 bg-primary text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700"
-          >
-            {i18n.language === "en" ? "KH" : "EN"}
-          </button>
+          
+          <RefreshButton onRefresh={() => {saleQuery.refetch();purchaseQuery.refetch();expenseQuery.refetch();profitQuery.refetch();}} />
 
           <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
             <input

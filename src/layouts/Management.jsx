@@ -10,11 +10,9 @@ import { toast, ToastContainer } from 'react-toastify';
 import echo from '../echo';
 import { useGetAllUserQuery, useGetUserLoginQuery } from '../../app/Features/usersSlice';
 import { useGetAllSaleQuery } from '../../app/Features/salesSlice';
-import { useGetAllItemInStockQuery, useGetAllItemsQuery } from '../../app/Features/itemsSlice';
-import { useGetAllPermissionQuery, useGetPermissionByIdQuery } from '../../app/Features/permissionSlice';
-import { Atom, BlinkBlur, Slab } from 'react-loading-indicators';
+import { useGetAllItemsQuery } from '../../app/Features/itemsSlice';
+import { useGetPermissionByIdQuery } from '../../app/Features/permissionSlice';
 import { useGetAllOrderQuery, useGetOrderByUserQuery } from '../../app/Features/ordersSlice';
-import { Button } from 'antd';
 const outletContext = createContext();
 export const useOutletsContext = () => useContext(outletContext);
 

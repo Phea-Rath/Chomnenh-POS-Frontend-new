@@ -396,7 +396,7 @@ const AddInStock = () => {
         <form onSubmit={handleSubmit}>
           <div className="bg-transparent overflow-hidden">
             <div>
-              <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Left Column - Form Controls */}
                 <div className="lg:col-span-1 space-y-6">
                   {/* Search Items */}
@@ -416,7 +416,6 @@ const AddInStock = () => {
                         option.name.toLowerCase().indexOf(input.toLowerCase()) >= 0
                       }
                       optionLabelProp="name"
-                      className="dark:bg-gray-800"
                     >
                       {fielditems?.map((item) => (
                         <Option key={item.id} value={item.id} name={item.name}>
@@ -428,7 +427,7 @@ const AddInStock = () => {
                               className="border border-gray-200 dark:border-gray-700"
                             />
                             <div className="flex-1 min-w-0">
-                              <div className="font-medium text-gray-900 dark:text-white truncate">
+                              <div className="font-medium text-gray-900 truncate">
                                 {item.name}
                               </div>
                               <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
@@ -452,7 +451,7 @@ const AddInStock = () => {
                     </h3>
 
                     <div className="space-y-4">
-                      <div>
+                      {/* <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                           {t('fromWarehouse')}
                         </label>
@@ -464,7 +463,7 @@ const AddInStock = () => {
                         >
                           <option value={2}>PO</option>
                         </select>
-                      </div>
+                      </div> */}
 
                       <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -507,7 +506,7 @@ const AddInStock = () => {
                           format="YYYY-MM-DD"
                           value={form.stock_date ? dayjs(form.stock_date) : dayjs()}
                           onChange={(date, dateString) => setForm(prev => ({ ...prev, stock_date: dateString }))}
-                          className="w-full dark:bg-gray-800 dark:border-gray-600 dark:text-white"
+                          className="w-full dark:!bg-gray-800 dark:border-gray-600 dark:text-white"
                           size="middle"
                         />
                       </div>
@@ -553,7 +552,7 @@ const AddInStock = () => {
                 </div>
 
                 {/* Right Column - Selected Items */}
-                <div className="lg:col-span-3">
+                <div className="lg:col-span-2">
                   <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden shadow-sm">
                     {/* Items Header */}
                     <div className="px-6 py-4 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 border-b border-gray-200 dark:border-gray-700">

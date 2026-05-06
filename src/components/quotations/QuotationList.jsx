@@ -31,38 +31,11 @@ import { toast } from 'react-toastify';
 import AlertBox from '../../services/AlertBox';
 import { Button, Dropdown, Space } from 'antd';
 import { useGetAllSaleQuery } from '../../../app/Features/salesSlice';
-
-const items = [
-    {
-        label: 'draft',
-        key: 'draft',
-        icon: <FaFileAlt />,
-    },
-    {
-        label: 'submitted',
-        key: 'submitted',
-        icon: <FaHourglassHalf />,
-    },
-    {
-        label: 'approved',
-        key: 'approved',
-        icon: <FaCheckCircle />,
-    },
-    {
-        label: 'rejected',
-        key: 'rejected',
-        icon: <FaTimesCircle />,
-        danger: true
-    },
-];
-const statusOptions = [
-    { value: 'draft', label: 'Draft', icon: FaFileAlt, color: 'bg-gray-100 text-gray-800 border-gray-300' },
-    { value: 'submitted', label: 'Submitted', icon: FaHourglassHalf, color: 'bg-yellow-100 text-yellow-800 border-yellow-300' },
-    { value: 'approved', label: 'Approved', icon: FaCheckCircle, color: 'bg-green-100 text-green-800 border-green-300' },
-    { value: 'rejected', label: 'Rejected', icon: FaTimesCircle, color: 'bg-red-100 text-red-800 border-red-300' },
-];
+import { useTranslation } from 'react-i18next';
+import RefreshButton from '../../utils/RefreshButton';
 
 const QuotationList = () => {
+    const { t, i18n } = useTranslation();
     const navigator = useNavigate();
     const token = localStorage.getItem('token');
     const { data, refetch, isLoading } = useGetAllQuoteQuery(token);
@@ -83,9 +56,50 @@ const QuotationList = () => {
     });
     const [dropdownOpen, setDropdownOpen] = useState(null);
 
-    // const handleButtonClick = e => {
-    //     console.log('click left button', e);
-    // };
+    useEffect(() => {
+        const savedLang = localStorage.getItem("language");
+        if (savedLang) {
+            i18n.changeLanguage(savedLang);
+        }
+    }, [i18n]);
+
+    const toggleLanguage = () => {
+        const newLang = i18n.language === "en" ? "kh" : "en";
+        i18n.changeLanguage(newLang);
+        localStorage.setItem("language", newLang);
+    };
+
+    const statusOptions = [
+        { value: 'draft', label: t('draft'), icon: FaFileAlt, color: 'bg-gray-100 text-gray-800 border-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600' },
+        { value: 'submitted', label: t('submitted'), icon: FaHourglassHalf, color: 'bg-yellow-100 text-yellow-800 border-yellow-300 dark:bg-yellow-900/30 dark:text-yellow-400 dark:border-yellow-700' },
+        { value: 'approved', label: t('approved'), icon: FaCheckCircle, color: 'bg-green-100 text-green-800 border-green-300 dark:bg-green-900/30 dark:text-green-400 dark:border-green-700' },
+        { value: 'rejected', label: t('rejected'), icon: FaTimesCircle, color: 'bg-red-100 text-red-800 border-red-300 dark:bg-red-900/30 dark:text-red-400 dark:border-red-700' },
+    ];
+
+    const menuItems = [
+        {
+            label: t('draft'),
+            key: 'draft',
+            icon: <FaFileAlt />,
+        },
+        {
+            label: t('submitted'),
+            key: 'submitted',
+            icon: <FaHourglassHalf />,
+        },
+        {
+            label: t('approved'),
+            key: 'approved',
+            icon: <FaCheckCircle />,
+        },
+        {
+            label: t('rejected'),
+            key: 'rejected',
+            icon: <FaTimesCircle />,
+            danger: true
+        },
+    ];
+
     const handleMenuClick = async e => {
         try {
             const res = await api.put(`/quote_status/${id}/${e.key}`, {}, {
@@ -99,7 +113,7 @@ const QuotationList = () => {
                 refetch();
                 saleFetch();
                 setQuotations(prev => prev.filter(quote => quote.quotation_id !== id));
-                toast.success('Quote updated status successfully!');
+                toast.success(t('successfully'));
                 setAlertBox(false);
                 setId(0);
             }
@@ -110,16 +124,16 @@ const QuotationList = () => {
     };
 
     const menuProps = {
-        items,
+        items: menuItems,
         onClick: handleMenuClick,
     };
+
     useEffect(() => {
         if (data?.data) {
             setQuotations(data.data);
         }
     }, [data]);
 
-    // Close dropdown when clicking outside
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (!event.target.closest('.dropdown-container')) {
@@ -130,7 +144,6 @@ const QuotationList = () => {
         return () => document.removeEventListener('click', handleClickOutside);
     }, []);
 
-    // Filter quotations based on search and status
     const filteredQuotations = quotations?.filter(quote => {
         const matchesSearch =
             (quote.quotation_number?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
@@ -143,8 +156,6 @@ const QuotationList = () => {
 
         return matchesSearch && matchesStatus;
     });
-
-
 
     const getStatusConfig = (status) => {
         return statusOptions.find(option => option.value === status) || statusOptions[0];
@@ -183,22 +194,6 @@ const QuotationList = () => {
         });
     };
 
-    const handleSelectQuotation = (id) => {
-        setSelectedQuotations(prev =>
-            prev.includes(id)
-                ? prev.filter(quoteId => quoteId !== id)
-                : [...prev, id]
-        );
-    };
-
-    const handleSelectAll = () => {
-        if (selectedQuotations.length === filteredQuotations?.length) {
-            setSelectedQuotations([]);
-        } else {
-            setSelectedQuotations(filteredQuotations?.map(quote => quote.quotation_id) || []);
-        }
-    };
-
     const handleConfirm = async () => {
         try {
             const res = await api.delete(`/quotations/${id}`, {
@@ -209,7 +204,7 @@ const QuotationList = () => {
             if (res.status === 200) {
                 refetch();
                 setQuotations(prev => prev.filter(quote => quote.quotation_id !== id));
-                toast.success('Quote deleted successfully!');
+                toast.success(t('successfully'));
                 setAlertBox(false);
                 setId(0);
             }
@@ -229,41 +224,35 @@ const QuotationList = () => {
         setAlertBox(true);
     };
 
-    const toggleDropdown = (id, e) => {
-        e.stopPropagation();
-        setDropdownOpen(dropdownOpen === id ? null : id);
-    };
-
     const handleBulkStatusUpdate = async (newStatus) => {
         if (selectedQuotations.length === 0) {
-            toast.warning('Please select at least one quotation');
+            toast.warning(t('pleaseAddAtLeastOneItem'));
             return;
         }
 
-        if (window.confirm(`Are you sure you want to update ${selectedQuotations.length} quotations to ${getStatusConfig(newStatus).label}?`)) {
+        if (window.confirm(t('confirmUpdate'))) {
             try {
                 const updates = selectedQuotations.map(async (id) => {
-                    await updateQuoteStatus({
-                        token,
-                        id,
-                        status: newStatus
-                    }).unwrap();
+                    await api.put(`/quote_status/${id}/${newStatus}`, {}, {
+                        headers: {
+                            Authorization: `Bearer ${token}`,
+                        }
+                    });
                 });
 
                 await Promise.all(updates);
 
-                // Update local state
                 setQuotations(prev => prev.map(quote =>
                     selectedQuotations.includes(quote.quotation_id)
                         ? { ...quote, status: newStatus }
                         : quote
                 ));
 
-                toast.success(`${selectedQuotations.length} quotations updated to ${getStatusConfig(newStatus).label}`);
+                toast.success(t('successfully'));
                 setSelectedQuotations([]);
                 refetch();
             } catch (error) {
-                toast.error('Failed to update some quotations');
+                toast.error(t('processFailed'));
             }
         }
     };
@@ -271,7 +260,7 @@ const QuotationList = () => {
     const handleBulkDelete = async () => {
         if (selectedQuotations.length === 0) return;
 
-        if (window.confirm(`Are you sure you want to delete ${selectedQuotations.length} quotations?`)) {
+        if (window.confirm(t('deleteQuotation'))) {
             try {
                 const deletions = selectedQuotations.map(async (id) => {
                     await api.delete(`/quotations/${id}`, {
@@ -285,115 +274,112 @@ const QuotationList = () => {
                 setQuotations(prev => prev.filter(quote => !selectedQuotations.includes(quote.quotation_id)));
                 setSelectedQuotations([]);
                 refetch();
-                toast.success(`${selectedQuotations.length} quotations deleted successfully`);
+                toast.success(t('successfully'));
             } catch (error) {
-                toast.error('Failed to delete some quotations');
+                toast.error(t('processFailed'));
             }
         }
     };
 
-    // List View Component
     const ListView = () => (
-        <div className="overflow-x-auto bg-white rounded-lg shadow-sm border border-gray-200 relative">
-            <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+        <div className="overflow-x-auto bg-primary rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 relative">
+            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                <thead className="bg-gray-50 dark:bg-gray-900">
                     <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Quotation #
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                            {t('quotationNo')}
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Date
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                            {t('date')}
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Customer
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                            {t('customer')}
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Total Amount
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                            {t('totalAmount')}
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Status
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                            {t('status')}
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Due Date
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                            {t('dueDate')}
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Actions
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                            {t('actions')}
                         </th>
                     </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody className="bg-primary divide-y divide-gray-200 dark:divide-gray-700">
                     {filteredQuotations?.map((quote) => {
                         const statusConfig = getStatusConfig(quote.status);
                         const StatusIcon = statusConfig.icon;
                         return (
-                            <tr key={quote.quotation_id} className="hover:bg-gray-50 transition-colors">
-
+                            <tr key={quote.quotation_id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
                                 <td className="px-6 py-4 whitespace-nowrap">
-                                    <div className="text-sm font-medium text-blue-600">
+                                    <div className="text-sm font-medium text-blue-600 dark:text-blue-400">
                                         {quote.quotation_number}
                                     </div>
-                                    <div className="text-sm text-gray-500">{quote.notes}</div>
+                                    <div className="text-sm text-gray-500 dark:text-gray-400">{quote.notes}</div>
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap">
-                                    <div className="flex items-center text-sm text-gray-900">
-                                        <FaCalendarAlt className="mr-2 text-gray-400 w-4 h-4" />
+                                    <div className="flex items-center text-sm text-gray-900 dark:text-gray-200">
+                                        <FaCalendarAlt className="mr-2 text-gray-400 dark:text-gray-500 w-4 h-4" />
                                         {quote.date ? new Date(quote.date).toLocaleDateString() : 'N/A'}
                                     </div>
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap">
                                     <div className="flex items-center">
-                                        <FaUser className="mr-2 text-gray-400 w-4 h-4" />
-                                        <span className="text-sm text-gray-900">{quote.customer_name || 'N/A'}</span>
+                                        <FaUser className="mr-2 text-gray-400 dark:text-gray-500 w-4 h-4" />
+                                        <span className="text-sm text-gray-900 dark:text-gray-200">{quote.customer_name || 'N/A'}</span>
                                     </div>
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap">
-                                    <div className="flex items-center text-sm font-semibold text-gray-900">
-                                        <FaDollarSign className="mr-1 text-gray-400 w-4 h-4" />
-                                        ${quote.grand_total || '0.00'}
+                                    <div className="flex items-center text-sm font-semibold text-gray-900 dark:text-gray-200">
+                                        <FaDollarSign className="mr-1 text-gray-400 dark:text-gray-500 w-4 h-4" />
+                                        {quote.grand_total || '0.00'}
                                     </div>
-                                    <div className="text-xs text-gray-500">
-                                        ${quote.order_total || '0.00'} + ${quote.delivery_fee || '0.00'} delivery
+                                    <div className="text-xs text-gray-500 dark:text-gray-400">
+                                        {quote.order_total || '0.00'} + {quote.delivery_fee || '0.00'} {t('delivery')}
                                     </div>
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap">
-
                                     <Space.Compact>
-                                        <Button>{quote.status}</Button>
-                                        <Dropdown disabled={quote.status == 'approved'} menu={menuProps} onOpenChange={() => setId(quote.quotation_id)} placement="bottomRight">
-                                            <Button icon={<StatusIcon />} />
+                                        <Button className="dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600">{t(quote.status)}</Button>
+                                        <Dropdown disabled={quote.status == 'approved'} menu={menuProps} onChange={() => setId(quote.quotation_id)} placement="bottomRight">
+                                            <Button className="dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600" icon={<StatusIcon />} />
                                         </Dropdown>
                                     </Space.Compact>
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                                     {quote.date_term ? new Date(quote.date_term).toLocaleDateString() : 'N/A'}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                     <div className="flex space-x-3">
                                         <button
                                             onClick={() => navigator(`detail/${quote.quotation_id}`)}
-                                            className="text-blue-600 hover:text-blue-800 transition-colors p-1 hover:bg-blue-50 rounded"
-                                            title="View Details"
+                                            className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors p-1 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded"
+                                            title={t('viewDetails')}
                                         >
                                             <FaEye className="w-4 h-4" />
                                         </button>
                                         <button
                                             onClick={() => navigator(`edit/${quote.quotation_id}`)}
-                                            className="text-green-600 hover:text-green-800 transition-colors p-1 hover:bg-green-50 rounded"
-                                            title="Edit"
+                                            className="text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-300 transition-colors p-1 hover:bg-green-50 dark:hover:bg-green-900/30 rounded"
+                                            title={t('edit')}
                                         >
                                             <FaEdit className="w-4 h-4" />
                                         </button>
                                         <button
                                             onClick={() => navigator(`receipt/${quote.quotation_id}`)}
-                                            className="text-purple-600 hover:text-purple-800 transition-colors p-1 hover:bg-purple-50 rounded"
-                                            title="Print Receipt"
+                                            className="text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 transition-colors p-1 hover:bg-purple-50 dark:hover:bg-purple-900/30 rounded"
+                                            title={t('printReceipt')}
                                         >
                                             <FaPrint className="w-4 h-4" />
                                         </button>
                                         <button
                                             onClick={() => handleDelete(quote.quotation_id)}
-                                            className="text-red-600 hover:text-red-800 transition-colors p-1 hover:bg-red-50 rounded"
-                                            title="Delete"
+                                            className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 transition-colors p-1 hover:bg-red-50 dark:hover:bg-red-900/30 rounded"
+                                            title={t('delete')}
                                         >
                                             <FaTrash className="w-4 h-4" />
                                         </button>
@@ -407,7 +393,6 @@ const QuotationList = () => {
         </div>
     );
 
-    // Grid View Component
     const GridView = () => (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredQuotations?.map((quote) => {
@@ -415,86 +400,86 @@ const QuotationList = () => {
                 const StatusIcon = statusConfig.icon;
 
                 return (
-                    <div key={quote.quotation_id} className="bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-300">
+                    <div key={quote.quotation_id} className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow duration-300">
                         <div className="p-6">
                             <div className="flex justify-between items-start mb-4">
                                 <div>
-                                    <h3 className="text-lg font-semibold text-blue-600">
+                                    <h3 className="text-lg font-semibold text-blue-600 dark:text-blue-400">
                                         {quote.quotation_number}
                                     </h3>
-                                    <p className="text-sm text-gray-500 mt-1">{quote.notes}</p>
+                                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{quote.notes}</p>
                                 </div>
                                 <Space.Compact>
-                                    <Button>{quote.status}</Button>
-                                    <Dropdown disabled={quote.status == 'approved'} menu={menuProps} placement="bottomRight">
-                                        <Button icon={<StatusIcon />} />
+                                    <Button className="dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600">{t(quote.status)}</Button>
+                                    <Dropdown disabled={quote.status == 'approved'} menu={menuProps} onChange={() => setId(quote.quotation_id)} placement="bottomRight">
+                                        <Button className="dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600" icon={<StatusIcon />} />
                                     </Dropdown>
                                 </Space.Compact>
                             </div>
 
                             <div className="space-y-3 mb-4">
                                 <div className="flex items-center justify-between">
-                                    <span className="text-gray-600 flex items-center text-sm">
+                                    <span className="text-gray-600 dark:text-gray-400 flex items-center text-sm">
                                         <FaCalendarAlt className="mr-2 w-4 h-4" />
-                                        Date:
+                                        {t('date')}:
                                     </span>
-                                    <span className="font-medium text-sm">{quote.date ? new Date(quote.date).toLocaleDateString() : 'N/A'}</span>
+                                    <span className="font-medium text-sm dark:text-gray-200">{quote.date ? new Date(quote.date).toLocaleDateString() : 'N/A'}</span>
                                 </div>
 
                                 <div className="flex items-center justify-between">
-                                    <span className="text-gray-600 flex items-center text-sm">
+                                    <span className="text-gray-600 dark:text-gray-400 flex items-center text-sm">
                                         <FaUser className="mr-2 w-4 h-4" />
-                                        Customer:
+                                        {t('customer')}:
                                     </span>
-                                    <span className="font-medium text-sm">{quote.customer_name || 'N/A'}</span>
+                                    <span className="font-medium text-sm dark:text-gray-200">{quote.customer_name || 'N/A'}</span>
                                 </div>
 
                                 <div className="flex items-center justify-between">
-                                    <span className="text-gray-600 flex items-center text-sm">
+                                    <span className="text-gray-600 dark:text-gray-400 flex items-center text-sm">
                                         <FaDollarSign className="mr-2 w-4 h-4" />
-                                        Total:
+                                        {t('total')}:
                                     </span>
-                                    <span className="font-bold">${quote.grand_total || '0.00'}</span>
+                                    <span className="font-bold dark:text-gray-200">{quote.grand_total || '0.00'}</span>
                                 </div>
 
                                 <div className="flex items-center justify-between">
-                                    <span className="text-gray-600 text-sm">Due Date:</span>
-                                    <span className="font-medium text-sm">{quote.date_term ? new Date(quote.date_term).toLocaleDateString() : 'N/A'}</span>
+                                    <span className="text-gray-600 dark:text-gray-400 text-sm">{t('dueDate')}:</span>
+                                    <span className="font-medium text-sm dark:text-gray-200">{quote.date_term ? new Date(quote.date_term).toLocaleDateString() : 'N/A'}</span>
                                 </div>
                             </div>
 
-                            <div className="border-t border-gray-200 pt-4">
-                                <div className="text-sm text-gray-600 mb-2">Items:</div>
+                            <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
+                                <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">{t('items')}:</div>
                                 <div className="space-y-2">
                                     {quote.details?.slice(0, 3).map((item, index) => (
                                         <div key={index} className="flex justify-between text-sm">
-                                            <span className="truncate">{item.item_name}</span>
-                                            <span className="font-medium">${item.total_price || '0.00'}</span>
+                                            <span className="truncate dark:text-gray-300">{item.item_name}</span>
+                                            <span className="font-medium dark:text-gray-200">{item.total_price || '0.00'}</span>
                                         </div>
                                     ))}
                                     {quote.details?.length > 3 && (
-                                        <div className="text-sm text-gray-500 text-center">
-                                            +{quote.details.length - 3} more items
+                                        <div className="text-sm text-gray-500 dark:text-gray-400 text-center">
+                                            +{quote.details.length - 3} {t('more')}
                                         </div>
                                     )}
                                 </div>
                             </div>
 
-                            <div className="flex justify-between mt-6 pt-4 border-t border-gray-200">
-                                <button onClick={() => navigator(`detail/${quote.quotation_id}`)} className="flex items-center text-blue-600 hover:text-blue-800 text-sm font-medium hover:bg-blue-50 px-2 py-1 rounded">
-                                    <FaEye className="mr-1" /> View
+                            <div className="flex justify-between mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+                                <button onClick={() => navigator(`detail/${quote.quotation_id}`)} className="flex items-center text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 text-sm font-medium hover:bg-blue-50 dark:hover:bg-blue-900/30 px-2 py-1 rounded">
+                                    <FaEye className="mr-1" /> {t('viewDetails')}
                                 </button>
-                                <button onClick={() => navigator(`edit/${quote.quotation_id}`)} className="flex items-center text-green-600 hover:text-green-800 text-sm font-medium hover:bg-green-50 px-2 py-1 rounded">
-                                    <FaEdit className="mr-1" /> Edit
+                                <button onClick={() => navigator(`edit/${quote.quotation_id}`)} className="flex items-center text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-300 text-sm font-medium hover:bg-green-50 dark:hover:bg-green-900/30 px-2 py-1 rounded">
+                                    <FaEdit className="mr-1" /> {t('edit')}
                                 </button>
-                                <button onClick={() => navigator(`receipt/${quote.quotation_id}`)} className="flex items-center text-purple-600 hover:text-purple-800 text-sm font-medium hover:bg-purple-50 px-2 py-1 rounded">
-                                    <FaPrint className="mr-1" /> Print
+                                <button onClick={() => navigator(`receipt/${quote.quotation_id}`)} className="flex items-center text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 text-sm font-medium hover:bg-purple-50 dark:hover:bg-purple-900/30 px-2 py-1 rounded">
+                                    <FaPrint className="mr-1" /> {t('print')}
                                 </button>
                                 <button
                                     onClick={() => handleDelete(quote.quotation_id)}
-                                    className="flex items-center text-red-600 hover:text-red-800 text-sm font-medium hover:bg-red-50 px-2 py-1 rounded"
+                                    className="flex items-center text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 text-sm font-medium hover:bg-red-50 dark:hover:bg-red-900/30 px-2 py-1 rounded"
                                 >
-                                    <FaTrash className="mr-1" /> Delete
+                                    <FaTrash className="mr-1" /> {t('delete')}
                                 </button>
                             </div>
                         </div>
@@ -509,134 +494,65 @@ const QuotationList = () => {
             <div className="flex items-center justify-center min-h-[400px]">
                 <div className="text-center">
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-                    <p className="mt-4 text-gray-600">Loading quotations...</p>
+                    <p className="mt-4 text-gray-600 dark:text-gray-400">{t('loadingDetails')}</p>
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="p-4 md:p-6 lg:p-8">
-            {/* Delete Confirmation Alert */}
+        <div className="p-4 md:p-6 lg:p-8 min-h-screen">
             <AlertBox
                 isOpen={alertBox}
-                title="Delete Quotation"
-                message="Are you sure you want to delete this quotation? This action cannot be undone."
+                title={t('deleteQuotation')}
+                message={t('confirmDeleteQuotation')}
                 onConfirm={handleConfirm}
                 onCancel={handleCancel}
-                confirmText="Delete"
-                cancelText="Cancel"
+                confirmText={t('delete')}
+                cancelText={t('cancel')}
                 confirmColor="error"
             />
 
-            {/* Status Update Modal */}
-            {statusUpdateModal.isOpen && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-                    <div className="bg-white rounded-xl shadow-xl w-full max-w-md">
-                        <div className="p-6">
-                            <div className="flex items-center justify-between mb-4">
-                                <h3 className="text-xl font-bold text-gray-800">Update Status</h3>
-                                <button
-                                    onClick={closeStatusUpdateModal}
-                                    className="text-gray-400 hover:text-gray-600"
-                                >
-                                    <FaTimes className="w-5 h-5" />
-                                </button>
-                            </div>
-
-                            <div className="mb-6">
-                                <p className="text-gray-600 mb-2">
-                                    Quotation: <span className="font-semibold">{statusUpdateModal.quoteNumber}</span>
-                                </p>
-                                <p className="text-gray-600">
-                                    Current Status: {getStatusBadge(statusUpdateModal.currentStatus)}
-                                </p>
-                            </div>
-
-                            <div className="space-y-3 mb-6">
-                                {statusOptions.map((option) => {
-                                    const Icon = option.icon;
-                                    return (
-                                        <button
-                                            key={option.value}
-                                            onClick={() => setStatusUpdateModal(prev => ({ ...prev, newStatus: option.value }))}
-                                            className={`w-full flex items-center justify-between p-3 rounded-lg border-2 transition-all ${statusUpdateModal.newStatus === option.value
-                                                ? 'border-blue-500 bg-blue-50'
-                                                : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
-                                                }`}
-                                        >
-                                            <div className="flex items-center">
-                                                <Icon className={`mr-3 w-5 h-5 ${option.color.split(' ')[1]}`} />
-                                                <span className="font-medium">{option.label}</span>
-                                            </div>
-                                            {statusUpdateModal.newStatus === option.value && (
-                                                <FaCheck className="text-blue-600" />
-                                            )}
-                                        </button>
-                                    );
-                                })}
-                            </div>
-
-                            <div className="flex justify-end gap-3">
-                                <button
-                                    onClick={closeStatusUpdateModal}
-                                    className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    onClick={''}
-                                    className="px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-lg font-medium transition-colors"
-                                >
-                                    Update Status
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Header */}
             <div className="mb-3">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-3">
                     <div>
-                        <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Quotations</h1>
-                        <p className="text-gray-600 mt-1">Manage and track all your quotations</p>
+                        <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">{t('quotations')}</h1>
+                        <p className="text-gray-600 dark:text-gray-400 mt-1">{t('manageTrackQuotations')}</p>
                     </div>
                     <div className="flex items-center gap-3">
+                        <RefreshButton onRefresh={refetch} />
                         <button
                             onClick={() => navigator('create')}
                             className="inline-flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 shadow-md hover:shadow-lg transition-all duration-300 font-medium"
                         >
                             <FaEdit className="w-4 h-4" />
-                            New Quotation
+                            {t('newQuotation')}
                         </button>
                     </div>
                 </div>
 
-                {/* Search and Filters */}
-                <div className="bg-white rounded-xl p-4 md:p-5 shadow-sm border text-sm border-gray-200">
+                <div className="bg-primary rounded-xl p-4 md:p-5 shadow-sm border text-sm border-gray-200 dark:border-gray-700">
                     <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                         <div className="flex flex-col md:flex-row gap-4">
                             <div className="relative flex-1 min-w-[250px]">
-                                <FaSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                                <FaSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-4 h-4" />
                                 <input
                                     type="text"
-                                    placeholder="Search by number, notes, or customer..."
+                                    placeholder={t('searchQuotationPlaceholder')}
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
-                                    className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                                    className="w-full pl-12 pr-4 py-3 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-gray-900 dark:text-gray-200"
                                 />
                             </div>
                             <div className="flex items-center gap-3">
                                 <div className="flex items-center gap-2">
-                                    <FaFilter className="text-gray-500 w-4 h-4" />
+                                    <FaFilter className="text-gray-500 dark:text-gray-400 w-4 h-4" />
                                     <select
                                         value={statusFilter}
                                         onChange={(e) => setStatusFilter(e.target.value)}
-                                        className="border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                                        className="border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-gray-200"
                                     >
-                                        <option value="all">All Status</option>
+                                        <option value="all">{t('allStatus')}</option>
                                         {statusOptions.map(option => (
                                             <option key={option.value} value={option.value}>
                                                 {option.label}
@@ -648,17 +564,16 @@ const QuotationList = () => {
                         </div>
 
                         <div className="flex items-center gap-3">
-                            {/* View Toggle */}
-                            <div className="flex border border-gray-300 rounded-lg overflow-hidden">
+                            <div className="flex border border-gray-300 dark:border-gray-700 rounded-lg overflow-hidden">
                                 <button
                                     onClick={() => setViewMode('list')}
-                                    className={`p-3 ${viewMode === 'list' ? 'bg-blue-100 text-blue-600' : 'text-gray-600 hover:bg-gray-50'}`}
+                                    className={`p-3 ${viewMode === 'list' ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'}`}
                                 >
                                     <FaList className="w-4 h-4" />
                                 </button>
                                 <button
                                     onClick={() => setViewMode('grid')}
-                                    className={`p-3 ${viewMode === 'grid' ? 'bg-blue-100 text-blue-600' : 'text-gray-600 hover:bg-gray-50'}`}
+                                    className={`p-3 ${viewMode === 'grid' ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'}`}
                                 >
                                     <FaTh className="w-4 h-4" />
                                 </button>
@@ -668,17 +583,16 @@ const QuotationList = () => {
                 </div>
             </div>
 
-            {/* Stats Cards */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-3">
                 {statusOptions.map((status) => (
-                    <div key={status.value} className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+                    <div key={status.value} className="bg-primary p-4 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
                         <div className="flex items-center">
                             <div className={`p-3 ${status.color.split(' ')[0]} rounded-lg`}>
                                 <status.icon className={status.color.split(' ')[1]} />
                             </div>
                             <div className="ml-4">
-                                <p className="text-sm text-gray-600">{status.label}</p>
-                                <p className="text-2xl font-bold">
+                                <p className="text-sm text-gray-600 dark:text-gray-400">{status.label}</p>
+                                <p className="text-2xl font-bold dark:text-white">
                                     {quotations?.filter(q => q.status === status.value).length || 0}
                                 </p>
                             </div>
@@ -687,73 +601,17 @@ const QuotationList = () => {
                 ))}
             </div>
 
-            {/* Bulk Actions */}
-            {selectedQuotations.length > 0 && (
-                <div className="mb-3 bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-xl border border-blue-200">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                        <div className="flex items-center gap-3">
-                            <div className="px-3 py-1 bg-blue-600 text-white rounded-full text-sm font-medium">
-                                {selectedQuotations.length} selected
-                            </div>
-                            <span className="text-gray-700">Select an action:</span>
-                        </div>
-                        <div className="flex flex-wrap gap-2">
-                            <div className="relative dropdown-container">
-                                <button
-                                    onClick={() => setDropdownOpen('bulk-status')}
-                                    className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium text-sm hover:bg-blue-700 transition-colors"
-                                >
-                                    <FaSyncAlt className="w-4 h-4" />
-                                    Update Status
-                                    <FaChevronDown className="w-3 h-3" />
-                                </button>
-
-                                {dropdownOpen === 'bulk-status' && (
-                                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
-                                        <div className="py-1">
-                                            {statusOptions.map((option) => {
-                                                const Icon = option.icon;
-                                                return (
-                                                    <button
-                                                        key={option.value}
-                                                        onClick={() => {
-                                                            handleBulkStatusUpdate(option.value);
-                                                            setDropdownOpen(null);
-                                                        }}
-                                                        className="w-full flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                                                    >
-                                                        <Icon className={`mr-3 w-4 h-4 ${option.color.split(' ')[1]}`} />
-                                                        Set as {option.label}
-                                                    </button>
-                                                );
-                                            })}
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                            <button
-                                onClick={handleBulkDelete}
-                                className="px-4 py-2 bg-red-600 text-white rounded-lg font-medium text-sm hover:bg-red-700 transition-colors"
-                            >
-                                Delete Selected
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Main Content */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div className="bg-primary rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
                 {filteredQuotations?.length === 0 ? (
                     <div className="text-center py-16 px-4">
-                        <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <FaTag className="w-10 h-10 text-gray-400" />
+                        <div className="w-20 h-20 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <FaTag className="w-10 h-10 text-gray-400 dark:text-gray-500" />
                         </div>
-                        <h3 className="text-lg font-medium text-gray-700 mb-2">No quotations found</h3>
-                        <p className="text-gray-500 mb-6 max-w-md mx-auto">
+                        <h3 className="text-lg font-medium text-gray-700 dark:text-gray-200 mb-2">{t('noQuotationsFound')}</h3>
+                        <p className="text-gray-500 dark:text-gray-400 mb-6 max-w-md mx-auto">
                             {searchTerm || statusFilter !== 'all'
-                                ? 'No quotations match your search criteria. Try adjusting your filters.'
-                                : 'You have not created any quotations yet. Start by creating your first quotation.'
+                                ? t('noQuotationsMatchSearch')
+                                : t('noQuotationsCreated')
                             }
                         </p>
                         <button
@@ -761,24 +619,22 @@ const QuotationList = () => {
                             className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 shadow-md hover:shadow-lg transition-all duration-300 font-medium"
                         >
                             <FaEdit className="w-4 h-4" />
-                            Create New Quotation
+                            {t('createFirstQuotation')}
                         </button>
                     </div>
                 ) : (
                     <>
-                        {/* Summary Bar */}
-                        <div className="px-6 py-4 border-b border-gray-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-500 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                             <div>
-                                <span className="text-sm text-gray-600">
-                                    Showing {filteredQuotations?.length} of {quotations?.length} quotations
+                                <span className="text-sm text-gray-600 dark:text-gray-400">
+                                    {t('showing')} {filteredQuotations?.length} {t('of')} {quotations?.length} {t('quotations')}
                                 </span>
                             </div>
-                            <div className="text-sm font-semibold text-gray-800">
-                                Total Value: ${filteredQuotations?.reduce((sum, quote) => sum + parseFloat(quote.grand_total || 0), 0).toFixed(2)}
+                            <div className="text-sm font-semibold text-gray-800 dark:text-gray-200">
+                                {t('totalValue')}: {filteredQuotations?.reduce((sum, quote) => sum + parseFloat(quote.grand_total || 0), 0).toFixed(2)}
                             </div>
                         </div>
 
-                        {/* Content */}
                         <div className="p-4">
                             {viewMode === 'list' ? <ListView /> : <GridView />}
                         </div>

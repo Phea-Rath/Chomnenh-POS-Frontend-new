@@ -29,6 +29,7 @@ import { toast } from 'react-toastify';
 import * as XLSX from 'xlsx';
 import api from '../../services/api';
 import AlertBox from '../../services/AlertBox';
+import RefreshButton from '../../utils/RefreshButton';
 
 const Stocks = () => {
   const { t } = useTranslation();
@@ -266,7 +267,7 @@ const Stocks = () => {
           </div>
 
           {/* Transfer info */}
-          <div className="flex items-center justify-between bg-gray-50 dark:bg-blue-500/30 p-3 rounded-lg mb-3 border border-gray-100 dark:border-gray-700">
+          <div className="flex items-center justify-between bg-gray-50 dark:!bg-blue-900/50 p-3 rounded-lg mb-3 border border-gray-100 dark:border-gray-700">
             <div className="flex items-center gap-1.5 min-w-0">
               <FaWarehouse className="text-blue-500 shrink-0" />
               <span className="text-xs font-medium text-gray-700 dark:text-gray-300 truncate">{stock.from_warehouse_name}</span>
@@ -435,24 +436,10 @@ const Stocks = () => {
             <p className="text-gray-600 dark:text-gray-400">{t('trackInventoryMovements')}</p>
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
+          <div className="flex flex-col flex-wrap text-xs sm:flex-row gap-3 w-full lg:w-auto">
             {/* View Mode Toggle */}
-            <div className="flex  bg-primary rounded-lg border border-gray-200 dark:border-gray-700 p-1 shadow-sm">
-              <button
-                onClick={() => handleViewModeChange('grid')}
-                className={`p-2 rounded-md transition-all ${viewMode === 'grid' ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'}`}
-                title={t('gridView')}
-              >
-                <IoIosGrid size={20} />
-              </button>
-              <button
-                onClick={() => handleViewModeChange('list')}
-                className={`p-2 rounded-md transition-all ${viewMode === 'list' ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'}`}
-                title={t('listView')}
-              >
-                <IoIosList size={20} />
-              </button>
-            </div>
+            <RefreshButton refetch={refetch} />
+            
 
             {/* Export Button */}
             <button
@@ -483,10 +470,26 @@ const Stocks = () => {
               placeholder={t('searchStockPlaceholder')}
               value={searchTerm}
               onChange={handleSearch}
-              className="w-full pl-12 pr-4 py-2.5  bg-primary border border-gray-300 dark:border-gray-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white transition-all shadow-sm"
+              className="w-full pl-12 pr-4 py-2.5 !bg-transparent border border-gray-300 dark:border-gray-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white transition-all shadow-sm"
             />
           </div>
-          <div className="flex items-center gap-3  bg-primary px-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
+          <div className="flex bg-primary rounded-lg border border-gray-200 dark:border-gray-700 p-1 shadow-sm">
+              <button
+                onClick={() => handleViewModeChange('grid')}
+                className={`p-2 rounded-md transition-all ${viewMode === 'grid' ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'}`}
+                title={t('gridView')}
+              >
+                <IoIosGrid size={20} />
+              </button>
+              <button
+                onClick={() => handleViewModeChange('list')}
+                className={`p-2 rounded-md transition-all ${viewMode === 'list' ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'}`}
+                title={t('listView')}
+              >
+                <IoIosList size={20} />
+              </button>
+            </div>
+          <div className="flex items-center gap-3  bg-white px-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
             <span className="text-sm text-gray-600 dark:text-gray-400 font-medium">{t('show')}:</span>
             <select
               value={limit}
@@ -494,7 +497,7 @@ const Stocks = () => {
                 setLimit(Number(e.target.value));
                 setPage(1);
               }}
-              className="bg-transparent text-sm font-bold text-blue-600 dark:text-blue-400 focus:outline-none cursor-pointer"
+              className="!bg-transparent text-sm font-bold text-blue-600 dark:text-blue-400 focus:outline-none cursor-pointer"
             >
               <option value={10}>{t('showItems', { count: 10 })}</option>
               <option value={25}>{t('showItems', { count: 25 })}</option>

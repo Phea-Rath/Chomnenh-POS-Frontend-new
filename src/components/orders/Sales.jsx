@@ -464,6 +464,7 @@ const Sales = () => {
     setOrderCount(newCount);
   }
 
+  // Function to increase quantity
   function handleQtyPlus(id, selectionKey) {
     const findItem = orders.items.find(item =>
       item.id === id && item.selectionKey === selectionKey
@@ -524,6 +525,7 @@ const Sales = () => {
     setOrderCount(newCount);
   }
 
+  // Function to handle input quantity
   function handleInputQuantity(id, selectionKey, qty) {
     const findItem = orders.items.find(item =>
       item.id === id && item.selectionKey === selectionKey
@@ -584,6 +586,7 @@ const Sales = () => {
     setOrderCount(newCount);
   }
 
+  // Function to decrease quantity
   function handleQty(id, selectionKey) {
     const findItem = orders.items.find(item =>
       item.id === id && item.selectionKey === selectionKey
@@ -637,6 +640,7 @@ const Sales = () => {
     setOrderCount(newCount);
   }
 
+  // Function to delete item
   function handleDelete(id, selectionKey) {
 
     const findItem = orders.items.find((item, index) =>
@@ -1157,7 +1161,7 @@ const Sales = () => {
                   {t("telegram")}
                 </Button>
               </div>
-              <Button key="cancel" className={`w-full h-10 bg-transparent text-gray-600 font-bold hover:bg-gray-200 border-none bg-transparent dark:text-gray-300 dark:hover:bg-gray-600`} onClick={closeQrModal}>
+              <Button key="cancel" className={`w-full h-10 text-gray-600 font-bold hover:bg-gray-200 border-none bg-transparent dark:text-gray-300 dark:hover:bg-gray-600`} onClick={closeQrModal}>
                 {t("close")}
               </Button>
               <Button
@@ -1303,7 +1307,7 @@ const Sales = () => {
                 key={cat.category_id}
                 value={cat.category_id}
                 onClick={onFilterCategory}
-                className="px-3 py-1 bg-gray-200 text-gray-800 bg-transparent dark:text-white rounded-full text-sm font-medium hover:bg-gray-300 dark:hover:bg-gray-600"
+                className="px-3 py-1 bg-chomnenh-light text-white rounded-full text-sm font-medium hover:bg-primary dark:hover:bg-primary"
               >
                 {cat.category_name}
               </button>
@@ -1318,12 +1322,12 @@ const Sales = () => {
               <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
                 {[...Array(8)].map((_, index) => (
                   <div key={index} className="border rounded p-4 animate-pulse border-gray-200 bg-primary dark:border-gray-700">
-                    <div className="h-48 rounded mb-4 bg-gray-200 bg-transparent"></div>
-                    <div className="h-4 rounded w-3/4 mb-2 bg-gray-200 bg-transparent"></div>
-                    <div className="h-3 rounded w-1/2 mb-4 bg-gray-200 bg-transparent"></div>
+                    <div className="h-48 rounded mb-4 bg-transparent"></div>
+                    <div className="h-4 rounded w-3/4 mb-2 bg-transparent"></div>
+                    <div className="h-3 rounded w-1/2 mb-4 bg-transparent"></div>
                     <div className="flex justify-between">
-                      <div className="h-6 rounded w-1/4 bg-gray-200 bg-transparent"></div>
-                      <div className="h-8 rounded w-1/3 bg-gray-200 bg-transparent"></div>
+                      <div className="h-6 rounded w-1/4 bg-transparent"></div>
+                      <div className="h-8 rounded w-1/3 bg-transparent"></div>
                     </div>
                   </div>
                 ))}
@@ -1418,7 +1422,7 @@ const Sales = () => {
                       </div>
 
                       {/* Quantity Controls */}
-                      <div className="flex items-center justify-end pt-3 border-t border-gray-100 dark:border-gray-700">
+                      <div className="flex items-center justify-end pt-3 border-t border-gray-100 dark:border-gray-500">
                         <button
                           onClick={() => handleOrder(item, item.quantity)}
                           disabled={item.in_stock <= 0}

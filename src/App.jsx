@@ -16,7 +16,6 @@ import Stocks from "./components/stocks/Stocks";
 import StockTransfer from "./views/stocks/StockTransfer";
 import StockTransferList from "./components/stocks/StockTransferList";
 import RecordStock from "./components/stocks/RecordStock";
-import StockTransition from "./components/stocks/StockTransaction";
 import RecordStockSales from "./components/stocks/RecordStockSales";
 import Analysis from "./components/dashboard/Analysis";
 import PrintExpanse from "./components/expenses/PrintExpanse";
@@ -112,6 +111,7 @@ import DealsPage from "./markets/pages/DealsPage";
 import CompaniesPage from "./markets/CompaniesPage";
 import CompanyStore from "./markets/CompanyStore";
 import ShoppingCart from "./markets/ShoppingCart";
+import WhiteBoard from "./utils/WhiteBoard";
 
 
 function ProtectedRoute({ children }) {
@@ -192,6 +192,10 @@ const router = createBrowserRouter([
       {
         path: "/inventories/werehouse",
         element: <Werehouses />,
+      },
+      {
+        path: "/inventories/product-in-warehouse/:warehouse_id",
+        element: <StockByWarehouse />,
       },
       {
         path: "/inventories/product-in-warehouse",
@@ -331,10 +335,6 @@ const router = createBrowserRouter([
       {
         path: "/home/record-stock-sale",
         element: <RecordStockSales />,
-      },
-      {
-        path: "/home/stock-transition",
-        element: <StockTransition />,
       },
       {
         path: "/home/analyze-stock",
@@ -624,6 +624,10 @@ const router = createBrowserRouter([
   {
     path: "/scan-attendance",
     element: <ScanAttendance />,
+  },
+  {
+    path: "/white-board",
+    element: <WhiteBoard />,
   },
 ]
 );

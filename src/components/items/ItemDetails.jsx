@@ -22,10 +22,10 @@ import { Tag, Divider, Badge, Card, Statistic, Tooltip } from "antd";
 import { FaPalette, FaRuler, FaTag } from "react-icons/fa";
 import { useGetAllSaleQuery } from "../../../app/Features/salesSlice";
 import Barcode from 'react-barcode';
-import { useItemText } from "./itemText";
+import { useTranslation } from "react-i18next";
 
 const ItemDetails = () => {
-  const { it } = useItemText();
+  const { t } = useTranslation();
   const { id } = useParams();
   const navigator = useNavigate();
   const token = localStorage.getItem("token");
@@ -64,16 +64,16 @@ const ItemDetails = () => {
     >
       <AlertBox
         isOpen={alertBox}
-        title={it("Permanently Delete?")}
-        message={`${it("Are you sure you want to delete")} "${currentItem.name}"?`}
+        title={t("Permanently Delete?")}
+        message={`${t("Are you sure you want to delete")} "${currentItem.name}"?`}
         onConfirm={async () => {
           setAlertBox(false);
           setLoading(true);
           try {
             await deleteItem({ id: currentItem.id, token });
-            toast.success(it("Item removed"));
+            toast.success(t("Item removed"));
             navigator(-1);
-          } catch (e) { toast.error(it("Delete failed")); }
+          } catch (e) { toast.error(t("Delete failed")); }
           setLoading(false);
         }}
         onCancel={() => setAlertBox(false)}
@@ -93,7 +93,7 @@ const ItemDetails = () => {
             <h1 className="text-xl font-bold text-gray-800 flex items-center gap-2">
               {currentItem.name} <Tag color="blue" className="rounded-full">{currentItem.code}</Tag>
             </h1>
-            <p className="text-sm text-gray-500">{it("In")} {currentItem.category_name} • {it("By")} {currentItem.brand_name}</p>
+            <p className="text-sm text-gray-500">{t("In")} {currentItem.category_name} • {t("By")} {currentItem.brand_name}</p>
           </div>
         </div>
         <div className="flex gap-2">
@@ -104,7 +104,7 @@ const ItemDetails = () => {
             onClick={() => navigator(`/inventories/list/update/${currentItem.id}`)}
             className="flex items-center gap-2 bg-blue-600 text-white px-6 py-2.5 rounded-xl hover:bg-blue-700 shadow-md transition-all font-medium"
           >
-            <RiEditLine /> {it("Edit Product")}
+            <RiEditLine /> {t("Edit Product")}
           </button>
         </div>
       </div>
@@ -118,7 +118,7 @@ const ItemDetails = () => {
               <AnimatePresence mode="wait">
                 <motion.img
                   key={currentImageIndex}
-                  src={currentItem.images?.[currentImageIndex]?.image || currentItem.image}
+                  src={currentItem.images?.[currentImageIndex]?.image || currentItem.image || import.meta.env.VITE_INITIAL_IMAGE}
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 1.1 }}
@@ -169,23 +169,23 @@ const ItemDetails = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 relative overflow-hidden">
               <div className="absolute top-0 right-0 p-4"><MdAttachMoney className="text-gray-100 text-6xl" /></div>
-              <p className="text-sm font-medium text-gray-400 uppercase tracking-wider">{it("Retail Price")}</p>
+              <p className="text-sm font-medium text-gray-400 uppercase tracking-wider">{t("Retail Price")}</p>
               <div className="mt-2 flex items-end gap-3">
                 <h2 className="text-3xl font-bold text-gray-800">{formatCurrency(currentItem.price_discount)}</h2>
                 {currentItem.price > currentItem.price_discount && (
                   <span className="text-gray-400 line-through mb-1">{formatCurrency(currentItem.price)}</span>
                 )}
               </div>
-              <Badge status="processing" text={it("Active Listing")} className="mt-4" />
+              <Badge status="processing" text={t("Active Listing")} className="mt-4" />
             </div>
 
 
             <div className="bg-blue-600 p-6 rounded-3xl shadow-lg shadow-blue-100 relative overflow-hidden">
               <div className="absolute top-0 right-0 p-4"><MdTrendingUp className="text-blue-500 text-6xl" /></div>
-              <p className="text-sm font-medium text-blue-100 uppercase tracking-wider">{it("Wholesale Rate")}</p>
+              <p className="text-sm font-medium text-blue-100 uppercase tracking-wider">{t("Wholesale Rate")}</p>
               <div className="mt-2 flex items-end gap-3">
                 <h2 className="text-3xl font-bold text-white">{formatCurrency(currentItem.wholesale_price_discount)}</h2>
-                <Tag color="blue" className="bg-white/20 border-none text-white ml-2">{it("Min. Bulk")}</Tag>
+                <Tag color="blue" className="bg-white/20 border-none text-white ml-2">{t("Min. Bulk")}</Tag>
               </div>
             </div>
             <Barcode value={currentItem.barcode} />
@@ -195,10 +195,10 @@ const ItemDetails = () => {
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
-              { label: it('In Stock'), val: currentItem.stock?.in_stock || 0, icon: <MdInventory />, color: 'text-emerald-600', bg: 'bg-emerald-50 dark:bg-emerald-900/30' },
-              { label: it('Units Sold'), val: currentItem.stock?.sold || 0, icon: <MdShoppingCart />, color: 'text-blue-600', bg: 'bg-blue-50 dark:bg-blue-900/30' },
-              { label: it('Rating'), val: currentItem.rating || 'N/A', icon: <MdStar />, color: 'text-amber-600', bg: 'bg-amber-50 dark:bg-amber-900/30' },
-              { label: it('Discount'), val: `${currentItem.discount}%`, icon: <MdLocalOffer />, color: 'text-purple-600', bg: 'bg-purple-50 dark:bg-purple-900/30' },
+              { label: t('In Stock'), val: currentItem.stock?.in_stock || 0, icon: <MdInventory />, color: 'text-emerald-600', bg: 'bg-emerald-50 dark:bg-emerald-900/30' },
+              { label: t('Units Sold'), val: currentItem.stock?.sold || 0, icon: <MdShoppingCart />, color: 'text-blue-600', bg: 'bg-blue-50 dark:bg-blue-900/30' },
+              { label: t('Rating'), val: currentItem.rating || 'N/A', icon: <MdStar />, color: 'text-amber-600', bg: 'bg-amber-50 dark:bg-amber-900/30' },
+              { label: t('Discount'), val: `${currentItem.discount}%`, icon: <MdLocalOffer />, color: 'text-purple-600', bg: 'bg-purple-50 dark:bg-purple-900/30' },
             ].map((stat, i) => (
               <div key={i} className="bg-white p-4 rounded-2xl border border-gray-100 text-center">
                 <div className={`w-10 h-10 ${stat.bg} ${stat.color} rounded-xl flex items-center justify-center mx-auto mb-2 text-xl`}>
@@ -213,7 +213,7 @@ const ItemDetails = () => {
           {/* Detailed Specifications */}
           <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-100">
             <h3 className="text-lg font-bold text-gray-800 mb-6 flex items-center gap-2">
-              <MdInventory className="text-blue-500" /> {it("Technical Specifications")}
+              <MdInventory className="text-blue-500" /> {t("Technical Specifications")}
             </h3>
 
             <div className="space-y-8">
@@ -221,7 +221,7 @@ const ItemDetails = () => {
               {colors.length > 0 && (
                 <div>
                   <label className="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2 mb-4">
-                    <FaPalette /> {it("Available Finishes")}
+                    <FaPalette /> {t("Available Finishes")}
                   </label>
                   <div className="flex gap-4 flex-wrap">
                     {colors.map((c, i) => (
@@ -243,7 +243,7 @@ const ItemDetails = () => {
               {sizes.length > 0 && (
                 <div>
                   <label className="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2 mb-4">
-                    <FaRuler /> {it("Size Selection")}
+                    <FaRuler /> {t("Size Selection")}
                   </label>
                   <div className="flex gap-2 flex-wrap">
                     {sizes.map((s, i) => (
@@ -281,10 +281,10 @@ const ItemDetails = () => {
             <div className="flex items-center gap-3">
               <div className={`w-3 h-3 rounded-full animate-pulse ${currentItem.stock?.in_stock > 0 ? 'bg-emerald-500' : 'bg-red-500'}`} />
               <span className="font-bold text-sm">
-                {currentItem.stock?.in_stock > 0 ? `${currentItem.stock.in_stock} ${it("Units available in warehouse")}` : it("Item Out of Stock")}
+                {currentItem.stock?.in_stock > 0 ? `${currentItem.stock.in_stock} ${t("Units available in warehouse")}` : t("Item Out of Stock")}
               </span>
             </div>
-            <button className="text-xs font-bold underline uppercase tracking-tight">{it("View Stock Logs")}</button>
+            <button className="text-xs font-bold underline uppercase tracking-tight">{t("View Stock Logs")}</button>
           </div>
         </div>
       </div>

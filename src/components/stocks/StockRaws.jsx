@@ -7,7 +7,7 @@ import { useDeleteStockMutation, useGetAllStockRawQuery } from '../../../app/Fea
 import { useGetAllSaleQuery } from '../../../app/Features/salesSlice';
 import { useTranslation } from 'react-i18next';
 import {
-    FaWarehouse,
+    FaWarehouse, 
     FaExchangeAlt,
     FaCalendarAlt,
     FaUser,
@@ -29,6 +29,7 @@ import { toast } from 'react-toastify';
 import * as XLSX from 'xlsx';
 import api from '../../services/api';
 import AlertBox from '../../services/AlertBox';
+import RefreshButton from '../../utils/RefreshButton';
 
 const StockRaws = () => {
     const { t } = useTranslation();
@@ -226,7 +227,7 @@ const StockRaws = () => {
                     <p className="text-sm text-gray-600 dark:text-gray-400">{title}</p>
                     <p className="text-2xl font-bold text-gray-900 dark:text-white">{value}</p>
                 </div>
-                <div className="p-2 bg-white bg-primary rounded-full">{icon}</div>
+                <div className="p-2 bg-primary rounded-full">{icon}</div>
             </div>
         </div>
     );
@@ -426,28 +427,13 @@ const StockRaws = () => {
 
                     <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
                         {/* View Mode Toggle */}
-                        <div className="flex bg-white bg-primary rounded-lg border border-gray-200 dark:border-gray-700 p-1 shadow-sm">
-                            <button
-                                onClick={() => handleViewModeChange('grid')}
-                                className={`p-2 rounded-md transition-all ${viewMode === 'grid' ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'}`}
-                                title={t('gridView')}
-                            >
-                                <IoIosGrid size={20} />
-                            </button>
-                            <button
-                                onClick={() => handleViewModeChange('list')}
-                                className={`p-2 rounded-md transition-all ${viewMode === 'list' ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'}`}
-                                title={t('listView')}
-                            >
-                                <IoIosList size={20} />
-                            </button>
-                        </div>
+                        <RefreshButton onRefresh={refetch} />
 
                         {/* Export Button */}
                         <button
                             onClick={exportToExcel}
                             disabled={exportLoading}
-                            className="px-4 py-2 bg-white bg-primary border border-blue-300 dark:border-blue-700 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 flex items-center gap-2 shadow-sm disabled:opacity-50 transition-colors"
+                            className="px-4 py-2 bg-primary border border-blue-300 dark:border-blue-700 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 flex items-center gap-2 shadow-sm disabled:opacity-50 transition-colors"
                             title={t('exportExcel')}
                         >
                             <FaFileExport />
@@ -475,7 +461,23 @@ const StockRaws = () => {
                             className="w-full pl-12 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white bg-primary dark:text-white"
                         />
                     </div>
-                    <div className="flex items-center gap-3 bg-white bg-primary px-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
+                    <div className="flex bg-primary rounded-lg border border-gray-200 dark:border-gray-700 p-1 shadow-sm">
+                            <button
+                                onClick={() => handleViewModeChange('grid')}
+                                className={`p-2 rounded-md transition-all ${viewMode === 'grid' ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'}`}
+                                title={t('gridView')}
+                            >
+                                <IoIosGrid size={20} />
+                            </button>
+                            <button
+                                onClick={() => handleViewModeChange('list')}
+                                className={`p-2 rounded-md transition-all ${viewMode === 'list' ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'}`}
+                                title={t('listView')}
+                            >
+                                <IoIosList size={20} />
+                            </button>
+                        </div>
+                    <div className="flex items-center gap-3 bg-primary px-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
                         <span className="text-sm text-gray-600 dark:text-gray-400 font-medium">{t('show')}:</span>
                         <select
                             value={limit}
@@ -535,7 +537,7 @@ const StockRaws = () => {
                         ))}
                     </div>
                 ) : (
-                    <div className="bg-white bg-primary rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+                    <div className=" bg-primary rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
                         <div className="overflow-x-auto">
                             <table className="w-full">
                                 <thead className="bg-gradient-to-r from-gray-50 to-blue-50 dark:from-gray-900 dark:to-blue-900/20 border-b border-gray-200 dark:border-gray-700">

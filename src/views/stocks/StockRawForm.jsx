@@ -64,7 +64,7 @@ const StockRawForm = () => {
     // Initialize form state
     const [form, setForm] = useState({
         from_warehouse: 2,
-        warehouse_id: 1,
+        warehouse_id: 5,
         stock_type_id: 2,
         stock_remark: "",
         stock_date: dayjs().format('YYYY-MM-DD'),
@@ -313,7 +313,7 @@ const StockRawForm = () => {
                 <form onSubmit={handleSubmit}>
                     <div className="bg-transparent overflow-hidden">
                         <div>
-                            <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                                 {/* Left Column - Form Controls */}
                                 <div className="lg:col-span-1 space-y-6">
                                     {/* Search Raw Materials */}
@@ -367,7 +367,7 @@ const StockRawForm = () => {
                                         </h3>
 
                                         <div className="space-y-4">
-                                            <div>
+                                            {/* <div>
                                                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                                     {t('fromWarehouse')}
                                                 </label>
@@ -380,7 +380,7 @@ const StockRawForm = () => {
                                                     <option value="">Select From Warehouse</option>
                                                     <option value={2}>PO</option>
                                                 </select>
-                                            </div>
+                                            </div> */}
 
                                             <div>
                                                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -470,7 +470,7 @@ const StockRawForm = () => {
                                 </div>
 
                                 {/* Right Column - Selected Materials */}
-                                <div className="lg:col-span-3">
+                                <div className="lg:col-span-2">
                                     <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden shadow-sm">
                                         {/* Items Header */}
                                         <div className="px-6 py-4 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 border-b border-gray-200 dark:border-gray-700">

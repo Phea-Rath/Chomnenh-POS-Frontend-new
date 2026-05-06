@@ -42,6 +42,7 @@ import { BiEdit, BiTrash } from "react-icons/bi";
 import { useTranslation } from "react-i18next";
 import { set } from "date-fns";
 import { MdPayment } from "react-icons/md";
+import RefreshButton from "../../utils/RefreshButton";
 
 const Purchases = () => {
   const { t } = useTranslation();
@@ -360,14 +361,8 @@ const Purchases = () => {
           </div>
 
           <div className="flex items-center space-x-3">
-            <button
-              onClick={refetch}
-              disabled={isLoading}
-              className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-700 disabled:opacity-50 flex items-center gap-2 transition-colors"
-            >
-              <LuRefreshCw className={isLoading ? "animate-spin" : ""} />
-              {t('refresh')}
-            </button>
+            <RefreshButton onRefresh={refetch} />
+            
             <ExportExel data={filteredPurchases} title="Purchase" />
             <Link to="add">
               <button className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 flex items-center gap-2 transition-colors">

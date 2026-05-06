@@ -18,6 +18,7 @@ import { useGetAllExpanseTypesQuery } from "../../../app/Features/expenseTypesSl
 import { toast } from "react-toastify";
 import ExportExel from "../../services/ExportExel";
 import { useTranslation } from "react-i18next";
+import RefreshButton from "../../utils/RefreshButton";
 
 const ExpContext = createContext();
 export function useExpContext() {
@@ -252,6 +253,7 @@ const Expanses = () => {
             </div>
 
             <div className="flex items-center gap-3">
+              <RefreshButton onRefresh={refetch} />
               <ExportExel data={expenses} title={t('expenses')} />
               <div className={`flex rounded-lg border p-1 ${darkMode ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"}`}>
                 <button

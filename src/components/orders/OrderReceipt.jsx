@@ -121,7 +121,7 @@ const OrderReceipt = () => {
           {profile.image && !logoError && (
             <div className="mb-5 flex justify-center">
               <img
-                src={logoLoaded || profile.image}
+                src={profile.image}
                 className="h-16 w-16 rounded-full border border-slate-200 object-cover"
                 alt={profile.profile_name || "Company logo"}
                 onError={() => setLogoError(true)}

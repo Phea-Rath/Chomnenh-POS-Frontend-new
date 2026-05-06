@@ -24,13 +24,30 @@ import { scale } from "framer-motion";
 import { currencyFormat, totalPirceQuanDiscount } from "../../services/serviceFunction";
 import { useGetAllQuoteQuery, useGetQuoteByIdQuery } from "../../../app/Features/quoteSlice";
 import { useDebounce } from "use-debounce";
+import { useTranslation } from "react-i18next";
 
 const { Option } = Select;
 
 const QuotationForm = () => {
+    const { t, i18n } = useTranslation();
     const { id } = useParams(); // Get stock ID from URL if editing
     const isEditMode = Boolean(id);
     const [stocktype, setstocktype] = useState([]);
+
+    const toggleLanguage = () => {
+        const newLang = i18n.language === "en" ? "kh" : "en";
+        i18n.changeLanguage(newLang);
+        localStorage.setItem("language", newLang);
+        localStorage.setItem("i18nextLng", newLang);
+    };
+
+    useEffect(() => {
+        const savedLang = localStorage.getItem("language");
+        if (savedLang) {
+            i18n.changeLanguage(savedLang);
+        }
+    }, [i18n]);
+
     const [search, setSearch] = useState("");
     const [debounce] = useDebounce(search, 500);
     const [alertBox, setAlertBox] = useState(false);
@@ -391,55 +408,55 @@ const QuotationForm = () => {
     }, [selectItems.length]);
 
     return (
-        <section className="px-6 py-6 bg-transparent min-h-screen">
+        <section className="px-6 py-6 bg-transparent min-h-screen view-page">
             <AlertBox
                 isOpen={alertBox}
-                title="Confirmation"
-                message={`Are you sure you want to ${isEditMode ? 'update' : 'create'} this quote?`}
+                title={t('confirmation')}
+                message={t('confirmCreateQuoteMsg', { action: isEditMode ? t('update') : t('create') })}
                 onConfirm={handleConfirm}
                 onCancel={handleCancel}
-                confirmText={isEditMode ? "Update" : "Create"}
-                cancelText="Cancel"
+                confirmText={isEditMode ? t('update') : t('create')}
+                cancelText={t('cancel')}
             />
 
             <div className=" mx-auto">
                 {/* Header */}
                 <div className="flex justify-between items-center mb-8">
                     <div>
-                        <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                            {isEditMode ? 'Edit Quote' : 'Create New Quote'}
+                        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-3">
+                            {isEditMode ? t('editQuote') : t('createQuote')}
                         </h1>
-                        <p className="text-gray-600">
-                            {isEditMode ? `Editing Quote ID: ${id}` : 'Create a new quotation for customer'}
+                        <p className="text-gray-600 dark:text-gray-400">
+                            {isEditMode ? t('editingQuoteId', { id }) : t('createQuotationForCustomer')}
                         </p>
                     </div>
                     <div className="flex items-center gap-3">
-                        <span className="text-sm text-gray-500">
-                            {isEditMode ? `Quote #: ${stockData?.data?.quote_number || id}` : 'New Quote'}
+                        <span className="text-sm text-gray-500 dark:text-gray-400">
+                            {isEditMode ? t('quoteNo') + `: ${stockData?.data?.quote_number || id}` : t('newQuote')}
                         </span>
                     </div>
                 </div>
 
                 <form onSubmit={handleSubmit}>
-                    <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+                    <div className="bg-primary rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
                         {/* Header */}
-                        <div className="px-8 py-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-gray-50">
+                        <div className="px-8 py-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-blue-50 to-gray-50 dark:from-gray-800 dark:to-gray-800">
                             <div className="flex items-center gap-3">
-                                <MdLocalShipping className="text-2xl text-blue-600" />
-                                <h2 className="text-xl font-semibold text-gray-800">
-                                    {isEditMode ? 'Edit Quote Information' : 'Quote Information'}
+                                <MdLocalShipping className="text-2xl text-blue-600 dark:text-blue-400" />
+                                <h2 className="text-xl font-semibold text-gray-800 dark:text-white">
+                                    {isEditMode ? t('editQuoteInfo') : t('quoteInfo')}
                                 </h2>
                             </div>
                         </div>
 
                         <div className="p-8">
-                            <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                                 {/* Left Column - Form Controls */}
                                 <div className="lg:col-span-1 space-y-6">
                                     {/* Search Items */}
                                     <div className="space-y-2">
-                                        <label className="block text-sm font-medium text-gray-700">
-                                            <span className="text-red-500">*</span> Search Items
+                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                            <span className="text-red-500">*</span> {t('searchItems')}
                                         </label>
                                         <Select
                                             onSelect={onSelectItem}
@@ -447,7 +464,7 @@ const QuotationForm = () => {
                                             onSearch={(value) => setSearch(value)}
                                             showSearch
                                             style={{ width: '100%' }}
-                                            placeholder="Search items by name..."
+                                            placeholder={t('searchItemsPlaceholder')}
                                             size="large"
                                             filterOption={(input, option) =>
                                                 option.name.toLowerCase().indexOf(input.toLowerCase()) >= 0
@@ -461,18 +478,18 @@ const QuotationForm = () => {
                                                             size="small"
                                                             src={item.image}
                                                             icon={<FaBox />}
-                                                            className="border border-gray-200"
+                                                            className="border border-gray-200 dark:border-gray-700"
                                                         />
                                                         <div className="flex-1 min-w-0">
                                                             <div className="font-medium text-gray-900 truncate">
                                                                 {item.name}
                                                             </div>
-                                                            <div className="text-xs text-gray-500 truncate">
+                                                            <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
                                                                 {item.code} • {item.brand_name}
                                                             </div>
                                                         </div>
                                                         <Tag color="blue" className="ml-auto">
-                                                            ${item.price}
+                                                            {item.in_stock} {t('inStock')}
                                                         </Tag>
                                                     </div>
                                                 </Option>
@@ -482,15 +499,15 @@ const QuotationForm = () => {
 
                                     {/* Search Customers */}
                                     <div className="space-y-2">
-                                        <label className="block text-sm font-medium text-gray-700">
-                                            <span className="text-red-500">*</span> Search Customers
+                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                            <span className="text-red-500">*</span> {t('searchCustomers')}
                                         </label>
                                         <Select
                                             value={form.customer_id || undefined}
                                             onSelect={onSelectCustmer}
                                             showSearch
                                             style={{ width: '100%' }}
-                                            placeholder="Search Customer by name..."
+                                            placeholder={t('searchCustomersPlaceholder')}
                                             size="large"
                                             filterOption={(input, option) =>
                                                 option.name.toLowerCase().indexOf(input.toLowerCase()) >= 0
@@ -504,7 +521,7 @@ const QuotationForm = () => {
                                                             size="small"
                                                             src={c.image}
                                                             icon={<FaBox />}
-                                                            className="border border-gray-200"
+                                                            className="border border-gray-200 dark:border-gray-700"
                                                         />
                                                         <div className="flex-1 min-w-0">
                                                             <div className="font-medium text-gray-900 truncate">
@@ -518,16 +535,16 @@ const QuotationForm = () => {
                                     </div>
 
                                     {/* Quote Details Card */}
-                                    <div className="bg-gradient-to-br from-gray-50 to-blue-50 rounded-xl p-6 border border-gray-200 space-y-4">
-                                        <h3 className="font-medium text-gray-800 flex items-center gap-2">
-                                            <FaEdit className="text-blue-500" />
-                                            Quote Details
+                                    <div className="bg-gradient-to-br from-gray-50 to-blue-50 dark:from-gray-900 dark:to-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 space-y-4">
+                                        <h3 className="font-medium text-gray-800 dark:text-white flex items-center gap-2">
+                                            <FaEdit className="text-blue-500 dark:text-blue-400" />
+                                            {t('quoteDetails')}
                                         </h3>
 
                                         <div className="space-y-4">
                                             <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                    Quote Date
+                                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                                    {t('quoteDate')}
                                                 </label>
                                                 <DatePicker
                                                     format="YYYY-MM-DD"
@@ -544,19 +561,20 @@ const QuotationForm = () => {
                                                             };
                                                         });
                                                     }}
-                                                    className="w-full"
+                                                    className="w-full dark:!bg-gray-900 dark:text-white dark:border-gray-700"
                                                 />
                                             </div>
 
                                             <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                    Term (Days)
+                                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                                    {t('termDays')}
                                                 </label>
                                                 <Input
                                                     type="number"
                                                     min={1}
                                                     onWheel={(e) => e.target.blur()}   // 👈 បិទ scroll change
                                                     value={form.credit_term || ""}
+                                                    className="dark:bg-gray-900 dark:text-white dark:border-gray-700"
                                                     onChange={(e) => {
                                                         const term = Number(e.target.value || 0);
                                                         setForm(prev => ({
@@ -571,21 +589,21 @@ const QuotationForm = () => {
                                             </div>
 
                                             <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                    Expire Date
+                                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                                    {t('expireDate')}
                                                 </label>
                                                 <DatePicker
                                                     format="YYYY-MM-DD"
                                                     value={form.date_term ? dayjs(form.date_term) : null}
                                                     disabled
-                                                    className="w-full"
+                                                    className="w-full dark:bg-gray-900 dark:text-white dark:border-gray-700"
                                                 />
                                             </div>
 
                                             <div className="grid grid-cols-2 gap-3">
                                                 <div>
-                                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                        Delivery Fee
+                                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                                        {t('deliveryFee')}
                                                     </label>
                                                     <InputNumber
                                                         type="number"
@@ -596,12 +614,12 @@ const QuotationForm = () => {
                                                             setForm(prev => ({ ...prev, delivery_fee: value }));
                                                             calculateForm(selectItems, { ...form, delivery_fee: value });
                                                         }}
-                                                        className="w-full"
+                                                        className="w-full dark:bg-gray-900 dark:text-white dark:border-gray-700"
                                                     />
                                                 </div>
                                                 <div>
-                                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                        Tax %
+                                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                                        {t('tax')}
                                                     </label>
                                                     <InputNumber
                                                         type="number"
@@ -615,70 +633,71 @@ const QuotationForm = () => {
                                                             setForm(prev => ({ ...prev, tax: value }));
                                                             calculateForm(selectItems, { ...form, tax: value });
                                                         }}
-                                                        className="w-full"
+                                                        className="w-full dark:bg-gray-900 dark:text-white dark:border-gray-700"
                                                     />
                                                 </div>
                                             </div>
 
                                             {isEditMode && <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                    Status
+                                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                                    {t('status')}
                                                 </label>
                                                 <Select
                                                     value={form.status}
                                                     onChange={(value) => setForm(prev => ({ ...prev, status: value }))}
-                                                    className="w-full"
+                                                    className="w-full dark:bg-gray-900 dark:text-white dark:border-gray-700"
                                                 >
-                                                    <Option value="draft">Draft</Option>
-                                                    <Option value="submitted">Submitted</Option>
-                                                    <Option value="approved">Approved</Option>
-                                                    <Option value="rejected">Rejected</Option>
-                                                    <Option value="converted">Converted to Order</Option>
+                                                    <Option value="draft">{t('draft')}</Option>
+                                                    <Option value="submitted">{t('submitted')}</Option>
+                                                    <Option value="approved">{t('approved')}</Option>
+                                                    <Option value="rejected">{t('rejected')}</Option>
+                                                    <Option value="converted">{t('converted')}</Option>
                                                 </Select>
                                             </div>}
 
                                             <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                    Notes
+                                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                                    {t('note')}
                                                 </label>
                                                 <Input.TextArea
                                                     value={form.notes}
                                                     onChange={(e) => setForm(prev => ({ ...prev, notes: e.target.value }))}
                                                     rows={3}
-                                                    placeholder="Additional notes or comments..."
+                                                    placeholder={t('notePlaceholder') || "Additional notes or comments..."}
+                                                    className="dark:bg-gray-900 dark:text-white dark:border-gray-700"
                                                 />
                                             </div>
                                         </div>
                                     </div>
 
                                     {/* Summary Card */}
-                                    <div className="bg-gradient-to-br from-purple-50 to-blue-50 rounded-xl p-6 border border-gray-200 space-y-4">
-                                        <h3 className="font-medium text-gray-800 flex items-center gap-2">
-                                            <FaEdit className="text-purple-500" />
-                                            Summary
+                                    <div className="bg-gradient-to-br from-purple-50 to-blue-50 dark:from-gray-900 dark:to-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 space-y-4">
+                                        <h3 className="font-medium text-gray-800 dark:text-white flex items-center gap-2">
+                                            <FaEdit className="text-purple-500 dark:text-purple-400" />
+                                            {t('summary')}
                                         </h3>
 
                                         <div className="space-y-3">
                                             <div className="flex justify-between">
-                                                <span className="text-gray-600">Sub Total:</span>
-                                                <span className="font-semibold">${Number(form.order_total || 0)?.toFixed(2) || '0.00'}</span>
+                                                <span className="text-gray-600 dark:text-gray-400">{t('subtotal')}:</span>
+                                                <span className="font-semibold dark:text-white">${Number(form.order_total || 0)?.toFixed(2) || '0.00'}</span>
                                             </div>
                                             <div className="flex justify-between">
-                                                <span className="text-gray-600">Delivery Fee:</span>
-                                                <span className="font-semibold">${Number(form.delivery_fee || 0)?.toFixed(2) || '0.00'}</span>
+                                                <span className="text-gray-600 dark:text-gray-400">{t('deliveryFee')}:</span>
+                                                <span className="font-semibold dark:text-white">${Number(form.delivery_fee || 0)?.toFixed(2) || '0.00'}</span>
                                             </div>
                                             <div className="flex justify-between">
-                                                <span className="text-gray-600">Discount:</span>
-                                                <span className="font-semibold text-green-600">-${Number(form.total_discount || 0)?.toFixed(2) || '0.00'}</span>
+                                                <span className="text-gray-600 dark:text-gray-400">{t('discount')}:</span>
+                                                <span className="font-semibold text-green-600 dark:text-green-400">-${Number(form.total_discount || 0)?.toFixed(2) || '0.00'}</span>
                                             </div>
                                             <div className="flex justify-between">
-                                                <span className="text-gray-600">Tax ({form.tax}%):</span>
-                                                <span className="font-semibold text-orange-600">${Number(form.tax_amount || 0)?.toFixed(2) || '0.00'}</span>
+                                                <span className="text-gray-600 dark:text-gray-400">{t('tax')} ({form.tax}%):</span>
+                                                <span className="font-semibold text-orange-600 dark:text-orange-400">${Number(form.tax_amount || 0)?.toFixed(2) || '0.00'}</span>
                                             </div>
-                                            <Divider className="my-2" />
+                                            <Divider className="my-2 dark:border-gray-700" />
                                             <div className="flex justify-between text-lg font-bold">
-                                                <span className="text-gray-800">Grand Total:</span>
-                                                <span className="text-blue-600">${Number(form.grand_total || 0)?.toFixed(2) || '0.00'}</span>
+                                                <span className="text-gray-800 dark:text-white">{t('grandTotal')}:</span>
+                                                <span className="text-blue-600 dark:text-blue-400">${Number(form.grand_total || 0)?.toFixed(2) || '0.00'}</span>
                                             </div>
                                         </div>
                                     </div>
@@ -689,12 +708,12 @@ const QuotationForm = () => {
                                             type="submit"
                                             disabled={selectItems.length === 0 || !form.customer_id}
                                             className={`flex-1 py-3 px-4 rounded-xl font-medium transition-all duration-200 flex items-center justify-center gap-2 ${selectItems.length === 0 || !form.customer_id
-                                                ? 'bg-gray-300 cursor-not-allowed text-gray-500'
+                                                ? 'bg-gray-300 dark:bg-gray-700 cursor-not-allowed text-gray-500 dark:text-gray-400'
                                                 : 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white shadow-lg hover:shadow-xl'
                                                 }`}
                                         >
                                             {isEditMode ? <FaSave /> : <MdLocalShipping />}
-                                            {isEditMode ? 'Update Quote' : 'Create Quote'}
+                                            {isEditMode ? t('updateQuote') : t('createQuote')}
                                         </button>
                                         <Link to="/home/quotations" className="flex-1">
                                             <button
@@ -702,28 +721,28 @@ const QuotationForm = () => {
                                                 className="w-full bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 text-white py-3 px-4 rounded-xl font-medium transition-all duration-200 flex items-center justify-center gap-2"
                                             >
                                                 <FaTimes />
-                                                Cancel
+                                                {t('cancel')}
                                             </button>
                                         </Link>
                                     </div>
                                 </div>
 
                                 {/* Right Column - Selected Items */}
-                                <div className="lg:col-span-3">
-                                    <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+                                <div className="lg:col-span-2">
+                                    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden shadow-sm">
                                         {/* Items Header */}
-                                        <div className="px-6 py-4 bg-gradient-to-r from-blue-50 to-purple-50 border-b border-gray-200">
+                                        <div className="px-6 py-4 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-gray-800 dark:to-gray-800 border-b border-gray-200 dark:border-gray-700">
                                             <div className="flex justify-between items-center">
                                                 <div>
-                                                    <h3 className="text-lg font-semibold text-gray-800">Selected Items</h3>
-                                                    <p className="text-sm text-gray-600 mt-1">
-                                                        {selectItems.length} item(s) selected •
-                                                        Total Quantity: {selectItems?.reduce((sum, item) => sum + (parseInt(item.quantity) || 0), 0)} •
-                                                        SubTotal: ${Number(form.order_total || 0)?.toFixed(2) || '0.00'}
+                                                    <h3 className="text-lg font-semibold text-gray-800 dark:text-white">{t('selectedItems')}</h3>
+                                                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                                                        {t('itemsSelected', { count: selectItems.length })} •
+                                                        {t('quantity')}: {selectItems?.reduce((sum, item) => sum + (parseInt(item.quantity) || 0), 0)} •
+                                                        {t('subtotal')}: ${Number(form.order_total || 0)?.toFixed(2) || '0.00'}
                                                     </p>
                                                 </div>
                                                 <Tag color={isEditMode ? "orange" : "blue"} className="font-medium text-sm">
-                                                    {isEditMode ? 'Editing Mode' : 'Creating Mode'}
+                                                    {isEditMode ? t('editingMode') : t('creatingMode')}
                                                 </Tag>
                                             </div>
                                         </div>
@@ -732,23 +751,23 @@ const QuotationForm = () => {
                                         {selectItems.length > 0 ? (
                                             <div className="overflow-x-auto">
                                                 <table className="w-full">
-                                                    <thead className="bg-gray-50">
+                                                    <thead className="bg-gray-50 dark:bg-gray-900/50">
                                                         <tr>
-                                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">#</th>
-                                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Item</th>
-                                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Price</th>
-                                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Quantity</th>
-                                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Discount %</th>
-                                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Total</th>
-                                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Actions</th>
+                                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">#</th>
+                                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">{t('item')}</th>
+                                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">{t('price')}</th>
+                                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">{t('quantity')}</th>
+                                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">{t('discount')} %</th>
+                                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">{t('total')}</th>
+                                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">{t('actions')}</th>
                                                         </tr>
                                                     </thead>
-                                                    <tbody className="divide-y divide-gray-200">
+                                                    <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                                                         {selectItems.map((item, index) => {
                                                             return (
-                                                                <tr key={index} className="hover:bg-blue-50/30 transition-colors text-sm">
+                                                                <tr key={index} className="hover:bg-blue-50/30 dark:hover:bg-gray-700/30 transition-colors text-sm">
                                                                     <td className="px-6 py-4">
-                                                                        <div className="text-sm font-medium text-gray-900">{index + 1}</div>
+                                                                        <div className="text-sm font-medium text-gray-900 dark:text-white">{index + 1}</div>
                                                                     </td>
                                                                     <td className="px-6 py-4">
                                                                         <div className="flex items-center gap-3">
@@ -756,11 +775,11 @@ const QuotationForm = () => {
                                                                                 size="large"
                                                                                 src={item.image}
                                                                                 icon={<FaBox />}
-                                                                                className="border border-gray-200"
+                                                                                className="border border-gray-200 dark:border-gray-700"
                                                                             />
                                                                             <div>
-                                                                                <div className="font-medium text-gray-900">{item.name || item.item_name}</div>
-                                                                                <div className="text-sm text-gray-500">{item.code || item.item_code}</div>
+                                                                                <div className="font-medium text-gray-900 dark:text-white">{item.name || item.item_name}</div>
+                                                                                <div className="text-sm text-gray-500 dark:text-gray-400">{item.code || item.item_code}</div>
                                                                                 {item.brand_name && (
                                                                                     <div className="text-xs text-gray-400 mt-1">
                                                                                         <Tag color="blue" size="small">{item.brand_name}</Tag>
@@ -777,7 +796,7 @@ const QuotationForm = () => {
                                                                             value={item.price}
                                                                             onWheel={(e) => e.target.blur()}
                                                                             onChange={(value) => handleChange(index, "price", value)}
-                                                                            className="w-24"
+                                                                            className="w-24 dark:bg-gray-900 dark:text-white dark:border-gray-700"
                                                                         />
                                                                     </td>
                                                                     <td className="px-6 py-4">
@@ -788,7 +807,7 @@ const QuotationForm = () => {
                                                                             value={item.quantity}
                                                                             onWheel={(e) => e.target.blur()}
                                                                             onChange={(value) => handleChange(index, 'quantity', value)}
-                                                                            className="w-24"
+                                                                            className="w-24 dark:bg-gray-900 dark:text-white dark:border-gray-700"
                                                                         />
                                                                     </td>
                                                                     <td className="px-6 py-4">
@@ -800,20 +819,20 @@ const QuotationForm = () => {
                                                                             value={item.discount}
                                                                             onWheel={(e) => e.target.blur()}
                                                                             onChange={(value) => handleChange(index, "discount", value)}
-                                                                            className="w-24"
+                                                                            className="w-24 dark:bg-gray-900 dark:text-white dark:border-gray-700"
                                                                         // formatter={value => `${value}%`}
                                                                         // parser={value => value.replace('%', '')}
                                                                         />
                                                                     </td>
-                                                                    <td className="px-6 py-4 font-semibold">
+                                                                    <td className="px-6 py-4 font-semibold dark:text-white">
                                                                         ${item.total || '0.00'}
                                                                     </td>
                                                                     <td className="px-6 py-4">
                                                                         <button
                                                                             onClick={() => handleRemove(index)}
                                                                             type="button"
-                                                                            className="p-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors"
-                                                                            title="Remove item"
+                                                                            className="p-2 text-red-600 hover:text-red-800 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                                                                            title={t('remove')}
                                                                         >
                                                                             <FaTrash />
                                                                         </button>
@@ -826,12 +845,12 @@ const QuotationForm = () => {
                                             </div>
                                         ) : (
                                             <div className="text-center py-16">
-                                                <div className="w-24 h-24 bg-gradient-to-r from-blue-100 to-purple-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                                                    <FaBox className="text-3xl text-blue-500" />
+                                                <div className="w-24 h-24 bg-gradient-to-r from-blue-100 to-purple-100 dark:from-blue-900 dark:to-purple-900 rounded-full flex items-center justify-center mx-auto mb-6">
+                                                    <FaBox className="text-3xl text-blue-500 dark:text-blue-400" />
                                                 </div>
-                                                <h3 className="text-xl font-semibold text-gray-700 mb-2">No Items Selected</h3>
-                                                <p className="text-gray-500 max-w-md mx-auto mb-6">
-                                                    Search and select items from the left panel to add them to your quote.
+                                                <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-2">{t('noItemsSelected')}</h3>
+                                                <p className="text-gray-500 dark:text-gray-400 max-w-md mx-auto mb-6">
+                                                    {t('searchSelectItemsMsg')}
                                                 </p>
                                             </div>
                                         )}
@@ -840,19 +859,19 @@ const QuotationForm = () => {
                                     {/* Summary Footer */}
                                     {selectItems.length > 0 && (
                                         <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-                                            <div className="bg-green-50 border border-green-100 rounded-xl p-4">
-                                                <div className="text-sm text-green-800 mb-1">Total Items</div>
-                                                <div className="text-2xl font-bold text-green-900">{selectItems.length}</div>
+                                            <div className="bg-green-50 dark:bg-green-900/20 border border-green-100 dark:border-green-800 rounded-xl p-4">
+                                                <div className="text-sm text-green-800 dark:text-green-400 mb-1">{t('totalItems')}</div>
+                                                <div className="text-2xl font-bold text-green-900 dark:text-green-300">{selectItems.length}</div>
                                             </div>
-                                            <div className="bg-blue-50 border border-blue-100 rounded-xl p-4">
-                                                <div className="text-sm text-blue-800 mb-1">Total Quantity</div>
-                                                <div className="text-2xl font-bold text-blue-900">
+                                            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 rounded-xl p-4">
+                                                <div className="text-sm text-blue-800 dark:text-blue-400 mb-1">{t('totalQuantity')}</div>
+                                                <div className="text-2xl font-bold text-blue-900 dark:text-blue-300">
                                                     {selectItems.reduce((sum, item) => sum + (parseInt(item.quantity) || 0), 0)}
                                                 </div>
                                             </div>
-                                            <div className="bg-purple-50 border border-purple-100 rounded-xl p-4">
-                                                <div className="text-sm text-purple-800 mb-1">Grand Total</div>
-                                                <div className="text-2xl font-bold text-purple-900">
+                                            <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-100 dark:border-purple-800 rounded-xl p-4">
+                                                <div className="text-sm text-purple-800 dark:text-purple-400 mb-1">{t('grandTotal')}</div>
+                                                <div className="text-2xl font-bold text-purple-900 dark:text-purple-300">
                                                     ${Number(form.grand_total || 0)?.toFixed(2) || '0.00'}
                                                 </div>
                                             </div>
