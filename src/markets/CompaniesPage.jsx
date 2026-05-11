@@ -5,7 +5,7 @@ const CompaniesPage = () => {
     const { data: companies } = useGetAllProfileQuery();
 
     return (
-        <div className=" -mt-8 -mx-4 pb-12">
+        <div className=" -mt-8 text-gray-800 -mx-4 pb-12">
             {/* Discover Hero Section */}
             <div className="bg-gradient-to-r from-[#325b8d] to-[#37475a] py-12 mb-8">
                 <div className="container mx-auto px-6">

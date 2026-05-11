@@ -81,7 +81,7 @@ const ItemDetails = () => {
       />
 
       {/* --- TOP NAVIGATION BAR --- */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
         <div className="flex items-center gap-4">
           <button
             onClick={() => navigator(-1)}
@@ -90,31 +90,31 @@ const ItemDetails = () => {
             <RiArrowLeftSLine size={24} />
           </button>
           <div>
-            <h1 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+            <h1 className="text-xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
               {currentItem.name} <Tag color="blue" className="rounded-full">{currentItem.code}</Tag>
             </h1>
-            <p className="text-sm text-gray-500">{t("In")} {currentItem.category_name} • {t("By")} {currentItem.brand_name}</p>
+            <p className="text-sm text-gray-500 dark:text-gray-100">{t("In")} {currentItem.category_name} • {t("By")} {currentItem.brand_name}</p>
           </div>
         </div>
         <div className="flex gap-2">
-          <button onClick={() => setAlertBox(true)} className="p-2.5 text-red-500 hover:bg-red-50 rounded-xl transition-all">
+          <button onClick={() => setAlertBox(true)} className="p-2.5 text-red-500 hover:bg-red-50 rounded-sm transition-all">
             <RiDeleteBin6Line size={20} />
           </button>
           <button
             onClick={() => navigator(`/inventories/list/update/${currentItem.id}`)}
-            className="flex items-center gap-2 bg-blue-600 text-white px-6 py-2.5 rounded-xl hover:bg-blue-700 shadow-md transition-all font-medium"
+            className="flex items-center gap-2 bg-blue-600 text-white px-6 py-2.5 rounded-sm hover:bg-blue-700 shadow-md transition-all font-medium"
           >
             <RiEditLine /> {t("Edit Product")}
           </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-8">
 
         {/* --- LEFT: MEDIA GALLERY (Sticky) --- */}
         <div className="lg:col-span-5">
           <div className="sticky top-8 space-y-4">
-            <div className="relative group bg-white rounded-3xl p-6 shadow-sm border border-gray-100 aspect-square flex items-center justify-center overflow-hidden">
+            <div className="relative group rounded-sm p-6 border-2 border-dashed border-gray-100 aspect-square flex items-center justify-center overflow-hidden">
               <AnimatePresence mode="wait">
                 <motion.img
                   key={currentImageIndex}
@@ -132,15 +132,15 @@ const ItemDetails = () => {
                   <button
                     disabled={currentImageIndex === 0}
                     onClick={() => setCurrentImageIndex(prev => prev - 1)}
-                    className="p-2 bg-white/90 shadow-lg rounded-full disabled:opacity-30"
+                    className="p-2 bg-white/90 dark:bg-blue-900 rounded-full disabled:opacity-30"
                   >
                     <MdKeyboardArrowLeft size={24} />
                   </button>
                   <button
                     disabled={currentImageIndex === currentItem.images.length - 1}
                     onClick={() => setCurrentImageIndex(prev => prev + 1)}
-                    className="p-2 bg-white/90 shadow-lg rounded-full disabled:opacity-30"
-                  >
+                    className="p-2 bg-white/90 dark:bg-blue-900 rounded-full disabled:opacity-30"
+                  >  
                     <MdKeyboardArrowRight size={24} />
                   </button>
                 </div>
@@ -153,9 +153,9 @@ const ItemDetails = () => {
                 <button
                   key={idx}
                   onClick={() => setCurrentImageIndex(idx)}
-                  className={`relative min-w-[80px] h-20 rounded-2xl border-2 transition-all ${currentImageIndex === idx ? 'border-blue-500 ring-4 ring-blue-50' : 'border-transparent bg-white shadow-sm'}`}
+                  className={`relative min-w-[80px] h-20 rounded-sm border-2 transition-all ${currentImageIndex === idx ? 'border-blue-500 ring-4 ring-blue-50' : 'border-transparent bg-white '}`}
                 >
-                  <img src={img.image} className="w-full h-full object-cover rounded-xl" />
+                  <img src={img.image} className="w-full h-full object-cover rounded-sm" />
                 </button>
               ))}
             </div>
@@ -167,7 +167,7 @@ const ItemDetails = () => {
 
           {/* Price Insights */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 relative overflow-hidden">
+            <div className="bg-white p-6 rounded-sm  border border-gray-100 relative overflow-hidden">
               <div className="absolute top-0 right-0 p-4"><MdAttachMoney className="text-gray-100 text-6xl" /></div>
               <p className="text-sm font-medium text-gray-400 uppercase tracking-wider">{t("Retail Price")}</p>
               <div className="mt-2 flex items-end gap-3">
@@ -180,7 +180,7 @@ const ItemDetails = () => {
             </div>
 
 
-            <div className="bg-blue-600 p-6 rounded-3xl shadow-lg shadow-blue-100 relative overflow-hidden">
+            <div className="bg-blue-600 p-6 rounded-sm  shadow-blue-100 relative overflow-hidden">
               <div className="absolute top-0 right-0 p-4"><MdTrendingUp className="text-blue-500 text-6xl" /></div>
               <p className="text-sm font-medium text-blue-100 uppercase tracking-wider">{t("Wholesale Rate")}</p>
               <div className="mt-2 flex items-end gap-3">
@@ -188,7 +188,7 @@ const ItemDetails = () => {
                 <Tag color="blue" className="bg-white/20 border-none text-white ml-2">{t("Min. Bulk")}</Tag>
               </div>
             </div>
-            <Barcode value={currentItem.barcode} />
+            <Barcode height={50} value={currentItem.barcode} />
           </div>
 
           {/* Quick Stats Grid */}
@@ -200,19 +200,19 @@ const ItemDetails = () => {
               { label: t('Rating'), val: currentItem.rating || 'N/A', icon: <MdStar />, color: 'text-amber-600', bg: 'bg-amber-50 dark:bg-amber-900/30' },
               { label: t('Discount'), val: `${currentItem.discount}%`, icon: <MdLocalOffer />, color: 'text-purple-600', bg: 'bg-purple-50 dark:bg-purple-900/30' },
             ].map((stat, i) => (
-              <div key={i} className="bg-white p-4 rounded-2xl border border-gray-100 text-center">
-                <div className={`w-10 h-10 ${stat.bg} ${stat.color} rounded-xl flex items-center justify-center mx-auto mb-2 text-xl`}>
+              <div key={i} className="text-center">
+                <div className={`w-10 h-10 ${stat.bg} ${stat.color} rounded-sm flex items-center justify-center mx-auto mb-2 text-xl`}>
                   {stat.icon}
                 </div>
-                <p className="text-xs text-gray-400 font-medium mb-1 uppercase">{stat.label}</p>
-                <p className="text-lg font-bold text-gray-700">{stat.val}</p>
+                <p className="text-xs text-gray-900 dark:text-white font-medium mb-1 uppercase">{stat.label}</p>
+                <p className="text-lg font-bold text-gray-400">{stat.val}</p>
               </div>
             ))}
           </div>
 
           {/* Detailed Specifications */}
-          <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-100">
-            <h3 className="text-lg font-bold text-gray-800 mb-6 flex items-center gap-2">
+          <div>
+            <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-6 flex items-center gap-2">
               <MdInventory className="text-blue-500" /> {t("Technical Specifications")}
             </h3>
 
@@ -220,7 +220,7 @@ const ItemDetails = () => {
               {/* Colors */}
               {colors.length > 0 && (
                 <div>
-                  <label className="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2 mb-4">
+                  <label className="text-xs font-bold text-gray-400 dark:text-white uppercase tracking-widest flex items-center gap-2 mb-4">
                     <FaPalette /> {t("Available Finishes")}
                   </label>
                   <div className="flex gap-4 flex-wrap">
@@ -228,7 +228,7 @@ const ItemDetails = () => {
                       <Tooltip title={c} key={i}>
                         <div className="group flex flex-col items-center gap-2">
                           <div
-                            className="w-12 h-12 rounded-2xl border-4 border-white shadow-md ring-1 ring-gray-100 transition-transform group-hover:scale-110"
+                            className="w-12 h-12 rounded-sm border-4 border-white shadow-md ring-1 ring-gray-100 transition-transform group-hover:scale-110"
                             style={{ backgroundColor: c }}
                           />
                           <span className="text-[10px] font-mono text-gray-400 uppercase">{c}</span>
@@ -247,7 +247,7 @@ const ItemDetails = () => {
                   </label>
                   <div className="flex gap-2 flex-wrap">
                     {sizes.map((s, i) => (
-                      <span key={i} className="px-5 py-2.5 bg-gray-50 text-gray-700 rounded-xl border border-gray-200 text-sm font-bold hover:border-blue-400 transition-colors">
+                      <span key={i} className="px-5 py-2.5 bg-gray-50 text-gray-700 rounded-sm border border-gray-200 text-sm font-bold hover:border-blue-400 transition-colors">
                         {s.toUpperCase()}
                       </span>
                     ))}
@@ -261,7 +261,7 @@ const ItemDetails = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {otherSpecs.map((attr, i) => (
                   <div key={i} className="flex items-center gap-4 group">
-                    <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center text-gray-400 group-hover:bg-blue-50 group-hover:text-blue-500 transition-colors">
+                    <div className="w-10 h-10 rounded-sm bg-gray-50 flex items-center justify-center text-gray-400 group-hover:bg-blue-50 group-hover:text-blue-500 transition-colors">
                       <FaTag size={14} />
                     </div>
                     <div>
@@ -277,7 +277,7 @@ const ItemDetails = () => {
           </div>
 
           {/* Inventory Status Bar */}
-          <div className={`p-4 rounded-2xl border flex items-center justify-between ${currentItem.stock?.in_stock > 0 ? 'bg-emerald-50 border-emerald-100 text-emerald-700' : 'bg-red-50 border-red-100 text-red-700'}`}>
+          {/* <div className={`p-4 rounded-sm border flex items-center justify-between ${currentItem.stock?.in_stock > 0 ? 'bg-emerald-50 border-emerald-100 text-emerald-700' : 'bg-red-50 border-red-100 text-red-700'}`}>
             <div className="flex items-center gap-3">
               <div className={`w-3 h-3 rounded-full animate-pulse ${currentItem.stock?.in_stock > 0 ? 'bg-emerald-500' : 'bg-red-500'}`} />
               <span className="font-bold text-sm">
@@ -285,7 +285,7 @@ const ItemDetails = () => {
               </span>
             </div>
             <button className="text-xs font-bold underline uppercase tracking-tight">{t("View Stock Logs")}</button>
-          </div>
+          </div> */}
         </div>
       </div>
     </motion.div>

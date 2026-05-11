@@ -12,7 +12,7 @@ import {
   useGetStockByOrderIdQuery,
 } from "../../../app/Features/stocksSlice";
 import api from "../../services/api";
-import { message, Select, Tag, Card, Badge, Tooltip, Avatar } from "antd";
+import { message, Select, Tag, Card, Badge, Tooltip, Avatar, DatePicker } from "antd";
 import { useGetAllItemInStockQuery, useGetAllItemsQuery } from "../../../app/Features/itemsSlice";
 import { toast } from "react-toastify";
 import { useGetAllCustomerQuery } from "../../../app/Features/customersSlice";
@@ -23,6 +23,11 @@ import { useDebounce } from "use-debounce";
 import { FaBox } from "react-icons/fa";
 
 import { useTranslation } from "react-i18next";
+import RichSearch from "../../utils/RichSearch";
+import { MdDeleteSweep } from "react-icons/md";
+import Input from "../../utils/Input";
+import dayjs from "dayjs";
+import Button from "../../utils/Button";
 
 const UpdateOrders = () => {
   const { t } = useTranslation();
@@ -605,75 +610,26 @@ const UpdateOrders = () => {
               {/* Left Column - Item Selection */}
               <div className="lg:col-span-2 space-y-6">
                 {/* Item Selection Card */}
-                <Card className={`shadow-lg border-0 ${darkMode ? "!bg-gray-800 !text-white" : ""}`}>
+                <div>
                   <div className="mb-4">
                     <h3 className={`text-lg font-semibold mb-2 ${darkMode ? "text-gray-200" : "text-gray-700"}`}>
                       {t("addItemsToOrder")}
                     </h3>
-                    <Select
-                      onSelect={handleSelectItem}
-                      onSearch={(value) => setSearchItem(value)}
-                      onPopupScroll={onScrollFetch}
-                      showSearch
-                      style={{ width: "100%" }}
+                    
+
+                    <RichSearch
+                      onSelected={handleSelectItem}
                       placeholder={t("searchAndSelectItems")}
-                      optionLabelProp="name"
-                      size="large"
-                      optionFilterProp="name"
-                      dropdownStyle={{ backgroundColor: darkMode ? '#1f2937' : '#fff' }}
-                      className={darkMode ? "dark-select" : ""}
-                      options={items.map((item) => ({
-                        value: item.id,
-                        name: item.name,
-                        label: (
-                          <div className={`flex items-center gap-3 p-2 ${darkMode ? "text-white" : ""}`}>
-                            <div className={`h-12 w-12 rounded-lg border overflow-hidden flex-shrink-0 ${darkMode ? "border-gray-700" : "border-gray-200"}`}>
-                              <img
-                                src={item.image}
-                                alt={item.name}
-                                className="h-full w-full object-contain p-1"
-                                onError={(e) => {
-                                  e.target.onerror = null;
-                                  e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(item.name)}&background=3b82f6&color=fff&size=128`;
-                                }}
-                              />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex justify-between items-center">
-                                <span className={`font-medium truncate ${darkMode ? "text-gray-200" : "text-gray-800"}`}>
-                                  {item.name}
-                                </span>
-                                <span className="text-green-600 font-bold text-sm">
-                                  ${Number(getItemPrice(item, form.sale_type) || 0).toFixed(2)}
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-2 mt-1">
-                                <span className={`text-xs ${darkMode ? "text-gray-500" : "text-gray-500"}`}>
-                                  {item.code}
-                                </span>
-                                {item.discount > 0 && (
-                                  <Badge
-                                    count={`-${item.discount}%`}
-                                    className="bg-gradient-to-r from-red-500 to-pink-600"
-                                    style={{ fontSize: '10px', padding: '0 6px' }}
-                                  />
-                                )}
-                                {item.in_stock > 0 ? (
-                                  <span className="text-xs text-green-600">{t("stock")}: {item.in_stock}</span>
-                                ) : (
-                                  <span className="text-xs text-red-600">{t("outOfStock")}</span>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        ),
-                      }))}
+                      onSearch={(value) => setSearchItem(value)}
+                      onScrollReader={onScrollFetch}
+                      keyFields={{id: 'id', title: 'name', subtitle: 'code', image: 'image', price: 'price', quantity: 'in_stock'}}
+                      data={items}
                     />
                   </div>
-                </Card>
+                </div>
 
-                {/* Items Table Card */}
-                <Card className={`shadow-lg border-0 ${darkMode ? "!bg-gray-800 !text-white" : ""}`}>
+                {/* Items Table */}
+                <div>
                   <h3 className={`text-lg font-semibold mb-4 ${darkMode ? "text-gray-200" : "text-gray-700"}`}>
                     {t("orderItems")}
                   </h3>
@@ -694,7 +650,7 @@ const UpdateOrders = () => {
                       </div>
                     ) : (
                       <table className={`min-w-full divide-y ${darkMode ? "divide-gray-700" : "divide-gray-200"}`}>
-                        <thead className={darkMode ? "bg-gray-700" : "bg-gradient-to-r from-gray-50 to-blue-50"}>
+                        <thead className={darkMode ? "bg-primary" : "bg-gradient-to-r from-gray-50 to-blue-50"}>
                           <tr>
                             <th scope="col" className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${darkMode ? "text-gray-300" : "text-gray-600"}`}>
                               {t("product")}
@@ -718,7 +674,7 @@ const UpdateOrders = () => {
                             <tr key={`${item.id}-${index}`} className={`transition-colors ${darkMode ? "hover:bg-gray-700" : "hover:bg-gray-50"}`}>
                               <td className="px-4 py-4">
                                 <div className="flex items-center">
-                                  <div className={`h-14 w-14 rounded-lg border overflow-hidden flex-shrink-0 ${darkMode ? "border-gray-700" : "border-gray-200"}`}>
+                                  {/* <div className={`h-14 w-14 rounded-lg border overflow-hidden flex-shrink-0 ${darkMode ? "border-gray-700" : "border-gray-200"}`}>
                                     <img
                                       src={item.item_image || item.image}
                                       alt={item.item_name}
@@ -728,7 +684,7 @@ const UpdateOrders = () => {
                                         e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(item.item_name)}&background=3b82f6&color=fff&size=128`;
                                       }}
                                     />
-                                  </div>
+                                  </div> */}
                                   <div className="ml-3">
                                     <div className={`font-medium ${darkMode ? "text-gray-200" : "text-gray-900"}`}>
                                       {item.item_name || item.name}
@@ -749,7 +705,19 @@ const UpdateOrders = () => {
                               </td>
                               <td className="px-4 py-4">
                                 <div className="flex items-center">
-                                  <input
+                                  {/* <input
+                                    type="number"
+                                    min={1}
+                                    max={item?.in_stock + (orderData?.data?.items[index]?.quantity || 0)}
+                                    value={item.quantity}
+                                    onChange={(e) => handleItemChange(index, "quantity", e.target.value, item.id)}
+                                    className={`w-20 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-center ${
+                                      darkMode 
+                                        ? "bg-gray-700 border-gray-600 text-white" 
+                                        : "bg-white border-gray-300"
+                                    }`}
+                                  /> */}
+                                  <Input
                                     type="number"
                                     min={1}
                                     max={item?.in_stock + (orderData?.data?.items[index]?.quantity || 0)}
@@ -786,13 +754,13 @@ const UpdateOrders = () => {
                                 <button
                                   type="button"
                                   onClick={() => handleRemoveItem(item)}
-                                  className={`px-4 py-2 text-sm border rounded-lg transition-all duration-200 font-medium ${
+                                  className={`px-4 py-2 cursor-pointer text-sm border rounded-lg transition-all duration-200 font-medium ${
                                     darkMode
                                       ? "bg-red-900/20 text-red-400 border-red-900/50 hover:bg-red-900/40"
                                       : "bg-gradient-to-r from-red-50 to-red-100 text-red-600 border-red-200 hover:from-red-100 hover:to-red-200"
                                   }`}
                                 >
-                                  {t("remove")}
+                                  <MdDeleteSweep className="text-xl"/>
                                 </button>
                               </td>
                             </tr>
@@ -801,19 +769,222 @@ const UpdateOrders = () => {
                       </table>
                     )}
                   </div>
-                </Card>
+                </div>
               </div>
 
               {/* Right Column - Order & Payment Details */}
               <div className="space-y-6">
-                {/* Order Summary Card */}
-                <Card className={`shadow-lg border-0 ${darkMode ? "!bg-gray-800/50 !text-white" : "bg-gradient-to-br from-blue-50 to-indigo-50"}`}>
+                
+
+                {/* Order Details */}
+                <div>
+                  <h3 className={`text-lg font-semibold mb-4 ${darkMode ? "text-gray-200" : "text-gray-700"}`}>
+                    {t("orderDetails")}
+                  </h3>
+                  <div className="grow">
+                      <label className={`block text-sm font-medium mb-2 ${darkMode ? "text-gray-400" : "text-gray-700"}`}>
+                        {t("saleType")}
+                      </label>
+                      <div className="flex gap-3">
+                        <Button
+                          type="button"
+                          outline={form.sale_type !== 'sale'}
+                          onClick={() => handleFormChange({ target: { name: 'sale_type', value: 'sale' } })}
+                          
+                        >
+                          {t("retailSale")}
+                        </Button>
+                        <Button
+                          type="button"
+                          outline={form.sale_type !== 'wholesale'}
+                          onClick={() => handleFormChange({ target: { name: 'sale_type', value: 'wholesale' } })}
+                        >
+                          {t("wholesale")}
+                        </Button>
+                      </div>
+                    </div>
+                  <div className="space-y-4 flex flex-wrap gap-4 mt-3">
+                    {/* Sale Type Selection */}
+                    
+
+                    {/* Customer Selection (for wholesale) */}
+                    <div className={form.sale_type === "wholesale" ? "block grow" : "hidden"}>
+                      <label className={`block text-sm font-medium mb-2 ${darkMode ? "text-gray-400" : "text-gray-700"}`}>
+                        {t("customer")}
+                      </label>
+                      
+                      <RichSearch
+                        data={customers?.data}
+                        value={form.order_customer_id}
+                        onSelected={handleSelectFCustomer}
+                        placeholder={t("selectCustomer")}
+                        keyFields={{
+                          id: 'customer_id',
+                          title: 'customer_name',
+                          subtitle: 'customer_tel',
+                          image: 'image',
+                        }}
+                      />
+                    </div>
+
+                    {/* Contact Information */}
+                    <div className={form.sale_type === "sale" ? "block" : "hidden"}>
+                      <label className={`block text-sm font-medium mb-2 ${darkMode ? "text-gray-400" : "text-gray-700"}`}>
+                        {t("customerTel")}
+                      </label>
+                     
+                      <Input
+                        type="tel"
+                        name="order_tel"
+                        value={form.order_tel}
+                        onChange={handleFormChange}
+                        placeholder={t("enterPhoneNumber")}
+                      />
+                    </div>
+
+                    
+
+                    {/* Order Date */}
+                    <div>
+                      <label className={`block text-sm font-medium mb-2 ${darkMode ? "text-gray-400" : "text-gray-700"}`}>
+                        {t("orderDate")}
+                      </label>
+                      <DatePicker
+                        type="date"
+                        name="order_date"
+                        value={form.order_date?dayjs(form.order_date):''}
+                        onChange={handleFormChange}
+                        className="date-picker"
+                      />
+                    </div>
+                    {/* Address */}
+                    <div>
+                      <label className={`block text-sm font-medium mb-2 ${darkMode ? "text-gray-400" : "text-gray-700"}`}>
+                        {t("deliveryAddress")}
+                      </label>
+                      <textarea
+                        name="order_address"
+                        value={form.order_address}
+                        onChange={handleFormChange}
+                        rows={3}
+                        className="textarea-input"
+                        placeholder={t("enterDeliveryAddress")}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Payment Details */}
+                <div>
+                  <h3 className={`text-lg font-semibold mb-4 ${darkMode ? "text-gray-200" : "text-gray-700"}`}>
+                    {t("paymentInfo")}
+                  </h3>
+                  <div className="space-y-4 flex flex-wrap gap-3">
+                    {/* Payment Method */}
+                    <div className="grow" >
+                      <label className={`block text-sm font-medium mb-2 ${darkMode ? "text-gray-400" : "text-gray-700"}`}>
+                        {t("paymentMethod")}
+                      </label>
+                      <RichSearch
+                        data={[
+                          {
+                            value: "cash",
+                            label: "Cash",
+                          },
+                          {
+                            value: "bank",
+                            label: "Bank",
+                          }
+                        ]}
+                        keyFields={{
+                          id: 'value',
+                          title: 'label',
+                        }}
+                        onSelected={handleFormChange}
+                        value={form.order_payment_method}
+                      />
+                    </div>
+
+                    {/* Tax (for wholesale) */}
+                    <div className={form.sale_type === "wholesale" ? "block grow" : "hidden"}>
+                      <label className={`block text-sm font-medium mb-2 ${darkMode ? "text-gray-400" : "text-gray-700"}`}>
+                        {t("taxPercentage")}(%)
+                      </label>
+                      <div className="relative">
+                        <Input
+                          type="number"
+                          name="order_tax"
+                          min="0"
+                          max="100"
+                          step="0.1"
+                          value={form.order_tax}
+                          onChange={handleFormChange}
+                          className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                            darkMode 
+                              ? "bg-gray-700 border-gray-600 text-white" 
+                              : "bg-white border-gray-300"
+                          }`}
+                          placeholder="0.00"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Delivery Fee */}
+                    <div className="grow">
+                      <label className={`block text-sm font-medium mb-2 ${darkMode ? "text-gray-400" : "text-gray-700"}`}>
+                        {t("deliveryFee")}($)
+                      </label>
+                      <div className="relative">
+                        
+                        <Input
+                          type="number"
+                          name="delivery_fee"
+                          min="0"
+                          step="0.01"
+                          value={form.delivery_fee}
+                          onChange={handleFormChange}
+                          className={`w-full pl-8 pr-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                            darkMode 
+                              ? "bg-gray-700 border-gray-600 text-white" 
+                              : "bg-white border-gray-300"
+                          }`}
+                          placeholder="0.00"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Payment Amount */}
+                    <div className="grow">
+                      <label className={`block text-sm font-medium mb-2 ${darkMode ? "text-gray-400" : "text-gray-700"}`}>
+                        {t("paymentAmountLabel")}($)
+                      </label>
+                      <div className="relative">
+                        
+                        <Input
+                          type="number"
+                          name="payment"
+                          min="0"
+                          step="0.01"
+                          value={form.payment}
+                          onChange={handleFormChange}
+                          className={`w-full pl-8 pr-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                            darkMode 
+                              ? "bg-gray-700 border-gray-600 text-white" 
+                              : "bg-white border-gray-300"
+                          }`}
+                          placeholder="0.00"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div>
                   <h3 className={`text-lg font-semibold mb-4 ${darkMode ? "text-gray-200" : "text-gray-700"}`}>
                     {t("orderSummary")}
                   </h3>
                   <div className="space-y-4">
                     <div className="space-y-3">
-                      <div className={`flex justify-between items-center pb-2 border-b ${darkMode ? "border-gray-700" : "border-gray-200"}`}>
+                      <div className={`flex justify-between items-center pb-2 border-b ${darkMode ? "border-gray-400" : "border-gray-200"}`}>
                         <span className={darkMode ? "text-gray-400" : "text-gray-600"}>{t("itemsSubtotal")}</span>
                         <span className={`font-medium ${darkMode ? "text-gray-200" : "text-gray-800"}`}>
                           ${Number(form.order_subtotal || 0).toFixed(2)}
@@ -856,7 +1027,7 @@ const UpdateOrders = () => {
                         )}
                       </div>
 
-                      <div className={`border-t pt-3 ${darkMode ? "border-gray-700" : "border-gray-200"}`}>
+                      <div className={`border-t pt-3 ${darkMode ? "border-gray-400" : "border-gray-200"}`}>
                         <div className="flex justify-between items-center text-lg">
                           <span className={`font-bold ${darkMode ? "text-white" : "text-gray-800"}`}>{t("totalAmount")}</span>
                           <span className="font-bold text-green-600">${Number(form.order_total || 0).toFixed(2)}</span>
@@ -881,275 +1052,25 @@ const UpdateOrders = () => {
                       </div>
                     </div>
                   </div>
-                </Card>
-
-                {/* Order Details Card */}
-                <Card className={`shadow-lg border-0 ${darkMode ? "!bg-gray-800 !text-white" : ""}`}>
-                  <h3 className={`text-lg font-semibold mb-4 ${darkMode ? "text-gray-200" : "text-gray-700"}`}>
-                    {t("orderDetails")}
-                  </h3>
-                  <div className="space-y-4">
-                    {/* Sale Type Selection */}
-                    <div>
-                      <label className={`block text-sm font-medium mb-2 ${darkMode ? "text-gray-400" : "text-gray-700"}`}>
-                        {t("saleType")}
-                      </label>
-                      <div className="flex gap-3">
-                        <button
-                          type="button"
-                          onClick={() => handleFormChange({ target: { name: 'sale_type', value: 'sale' } })}
-                          className={`flex-1 py-3 rounded-lg border transition-all duration-200 ${
-                            form.sale_type === 'sale'
-                              ? 'bg-blue-500 text-white border-blue-500 shadow-md'
-                              : darkMode
-                                ? 'border-gray-700 text-gray-400 hover:border-blue-500 hover:bg-blue-500/10'
-                                : 'border-gray-300 text-gray-600 hover:border-blue-300 hover:bg-blue-50'
-                          }`}
-                        >
-                          {t("retailSale")}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleFormChange({ target: { name: 'sale_type', value: 'wholesale' } })}
-                          className={`flex-1 py-3 rounded-lg border transition-all duration-200 ${
-                            form.sale_type === 'wholesale'
-                              ? 'bg-blue-500 text-white border-blue-500 shadow-md'
-                              : darkMode
-                                ? 'border-gray-700 text-gray-400 hover:border-blue-500 hover:bg-blue-500/10'
-                                : 'border-gray-300 text-gray-600 hover:border-blue-300 hover:bg-blue-50'
-                          }`}
-                        >
-                          {t("wholesale")}
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Customer Selection (for wholesale) */}
-                    <div className={form.sale_type === "wholesale" ? "block" : "hidden"}>
-                      <label className={`block text-sm font-medium mb-2 ${darkMode ? "text-gray-400" : "text-gray-700"}`}>
-                        {t("customer")}
-                      </label>
-                      <Select
-                        onChange={handleSelectFCustomer}
-                        showSearch
-                        value={form.order_customer_id}
-                        style={{ width: "100%" }}
-                        placeholder={t("selectCustomer")}
-                        optionLabelProp="name"
-                        optionFilterProp="name"
-                        size="large"
-                        dropdownStyle={{ backgroundColor: darkMode ? '#1f2937' : '#fff' }}
-                        className={darkMode ? "dark-select" : ""}
-                        options={customers?.data?.map((customer) => ({
-                          value: customer.customer_id,
-                          name: customer.customer_name,
-                          label: (
-                            <div className={`flex items-center gap-3 py-1 ${darkMode ? "text-white" : ""}`}>
-                              <div className={`h-10 w-10 rounded-full flex items-center justify-center ${
-                                darkMode ? "bg-gray-700" : "bg-gradient-to-r from-blue-100 to-indigo-100"
-                              }`}>
-                                {customer.image ? (
-                                  <img src={customer.image} alt={customer.customer_name} className="h-full w-full rounded-full object-cover" />
-                                ) : (
-                                  <span className="text-blue-600 font-medium">
-                                    {customer.customer_name.charAt(0)}
-                                  </span>
-                                )}
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <div className={`font-medium truncate ${darkMode ? "text-gray-200" : "text-gray-800"}`}>
-                                  {customer.customer_name}
-                                </div>
-                                <div className="text-xs text-gray-500 truncate">{customer.customer_tel}</div>
-                              </div>
-                            </div>
-                          ),
-                        }))}
-                      />
-                    </div>
-
-                    {/* Contact Information */}
-                    <div className={form.sale_type === "sale" ? "block" : "hidden"}>
-                      <label className={`block text-sm font-medium mb-2 ${darkMode ? "text-gray-400" : "text-gray-700"}`}>
-                        {t("customerTel")}
-                      </label>
-                      <input
-                        type="tel"
-                        name="order_tel"
-                        value={form.order_tel}
-                        onChange={handleFormChange}
-                        className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                          darkMode 
-                            ? "bg-gray-700 border-gray-600 text-white placeholder-gray-500" 
-                            : "bg-white border-gray-300"
-                        }`}
-                        placeholder={t("enterPhoneNumber")}
-                      />
-                    </div>
-
-                    {/* Address */}
-                    <div>
-                      <label className={`block text-sm font-medium mb-2 ${darkMode ? "text-gray-400" : "text-gray-700"}`}>
-                        {t("deliveryAddress")}
-                      </label>
-                      <textarea
-                        name="order_address"
-                        value={form.order_address}
-                        onChange={handleFormChange}
-                        rows={3}
-                        className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none ${
-                          darkMode 
-                            ? "bg-gray-700 border-gray-600 text-white placeholder-gray-500" 
-                            : "bg-white border-gray-300"
-                        }`}
-                        placeholder={t("enterDeliveryAddress")}
-                      />
-                    </div>
-
-                    {/* Order Date */}
-                    <div>
-                      <label className={`block text-sm font-medium mb-2 ${darkMode ? "text-gray-400" : "text-gray-700"}`}>
-                        {t("orderDate")}
-                      </label>
-                      <input
-                        type="date"
-                        name="order_date"
-                        value={form.order_date}
-                        onChange={handleFormChange}
-                        className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                          darkMode 
-                            ? "bg-gray-700 border-gray-600 text-white" 
-                            : "bg-white border-gray-300"
-                        }`}
-                      />
-                    </div>
-                  </div>
-                </Card>
-
-                {/* Payment Details Card */}
-                <Card className={`shadow-lg border-0 ${darkMode ? "!bg-gray-800 !text-white" : ""}`}>
-                  <h3 className={`text-lg font-semibold mb-4 ${darkMode ? "text-gray-200" : "text-gray-700"}`}>
-                    {t("paymentInfo")}
-                  </h3>
-                  <div className="space-y-4">
-                    {/* Payment Method */}
-                    <div>
-                      <label className={`block text-sm font-medium mb-2 ${darkMode ? "text-gray-400" : "text-gray-700"}`}>
-                        {t("paymentMethod")}
-                      </label>
-                      <select
-                        name="order_payment_method"
-                        value={form.order_payment_method}
-                        onChange={handleFormChange}
-                        className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                          darkMode 
-                            ? "bg-gray-700 border-gray-600 text-white" 
-                            : "bg-white border-gray-300"
-                        }`}
-                      >
-                        <option value="cash">{t("cash")}</option>
-                        <option value="bank">{t("bank")}</option>
-                      </select>
-                    </div>
-
-                    {/* Tax (for wholesale) */}
-                    <div className={form.sale_type === "wholesale" ? "block" : "hidden"}>
-                      <label className={`block text-sm font-medium mb-2 ${darkMode ? "text-gray-400" : "text-gray-700"}`}>
-                        {t("taxPercentage")}
-                      </label>
-                      <div className="relative">
-                        <input
-                          type="number"
-                          name="order_tax"
-                          min="0"
-                          max="100"
-                          step="0.1"
-                          value={form.order_tax}
-                          onChange={handleFormChange}
-                          className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                            darkMode 
-                              ? "bg-gray-700 border-gray-600 text-white" 
-                              : "bg-white border-gray-300"
-                          }`}
-                          placeholder="0.00"
-                        />
-                        <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                          <span className="text-gray-500">%</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Delivery Fee */}
-                    <div>
-                      <label className={`block text-sm font-medium mb-2 ${darkMode ? "text-gray-400" : "text-gray-700"}`}>
-                        {t("deliveryFee")}
-                      </label>
-                      <div className="relative">
-                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                          <span className="text-gray-500">$</span>
-                        </div>
-                        <input
-                          type="number"
-                          name="delivery_fee"
-                          min="0"
-                          step="0.01"
-                          value={form.delivery_fee}
-                          onChange={handleFormChange}
-                          className={`w-full pl-8 pr-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                            darkMode 
-                              ? "bg-gray-700 border-gray-600 text-white" 
-                              : "bg-white border-gray-300"
-                          }`}
-                          placeholder="0.00"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Payment Amount */}
-                    <div>
-                      <label className={`block text-sm font-medium mb-2 ${darkMode ? "text-gray-400" : "text-gray-700"}`}>
-                        {t("paymentAmountLabel")}
-                      </label>
-                      <div className="relative">
-                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                          <span className="text-gray-500">$</span>
-                        </div>
-                        <input
-                          type="number"
-                          name="payment"
-                          min="0"
-                          step="0.01"
-                          value={form.payment}
-                          onChange={handleFormChange}
-                          className={`w-full pl-8 pr-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                            darkMode 
-                              ? "bg-gray-700 border-gray-600 text-white" 
-                              : "bg-white border-gray-300"
-                          }`}
-                          placeholder="0.00"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </Card>
+                </div>
 
                 {/* Action Buttons */}
-                <div className="space-y-3">
-                  <button
+                <div className="space-y-3 flex flex-wrap gap-3">
+                  <Button
                     type="submit"
-                    className="w-full px-6 py-4 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-semibold rounded-lg hover:from-green-600 hover:to-emerald-700 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 shadow-lg"
+                    variant="success"
                   >
                     {t("update")}
-                  </button>
+                  </Button>
                   <Link
                     to="/order-list"
-                    className={`block w-full px-6 py-4 font-semibold text-center rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 ${
-                      darkMode
-                        ? "bg-gray-700 text-gray-200 hover:bg-gray-600 focus:ring-gray-600"
-                        : "bg-gradient-to-r from-gray-100 to-gray-200 text-gray-800 hover:from-gray-200 hover:to-gray-300 focus:ring-gray-300"
-                    }`}
                   >
-                    {t("cancel")}
+                    <Button
+                      variant="danger"
+                      outline
+                    >
+                      {t("cancel")}
+                    </Button>
                   </Link>
                 </div>
               </div>

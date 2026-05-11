@@ -11,7 +11,7 @@ import {
   useGetAllItemsQuery,
   useGetItemByIdQuery,
 } from "../../../app/Features/itemsSlice";
-import { Button, Divider, Input, Select, Space } from "antd";
+import { Divider, Select, Space } from "antd";
 import { FaSave, FaTimes, FaPalette, FaTag, FaBox, FaTrash, FaPlus, FaEdit } from "react-icons/fa";
 import api from "../../services/api";
 import { useNavigate, useParams } from "react-router";
@@ -20,6 +20,9 @@ import { useGetAllSaleQuery } from "../../../app/Features/salesSlice";
 import { IoPulseOutline } from "react-icons/io5";
 import { useGetAllAttributeQuery } from "../../../app/Features/attributesSlice";
 import { useTranslation } from "react-i18next";
+import Input from "../../utils/Input";
+import RichSearch from "../../utils/RichSearch";
+import Button from "../../utils/Button";
 
 const ItemForm = () => {
   const { t } = useTranslation();
@@ -397,7 +400,7 @@ const ItemForm = () => {
           <select
             value={attribute.value[0] || "false"}
             onChange={(e) => updateAttributeValue(index, e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100"
+            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100"
           >
             <option value="true">{t('booleanTrue', 'True')}</option>
             <option value="false">{t('booleanFalse', 'False')}</option>
@@ -410,7 +413,7 @@ const ItemForm = () => {
               value={Array.isArray(attribute.value) ? attribute.value.join(",") : attribute.value}
               onChange={(e) => updateAttributeValue(index, e.target.value)}
               placeholder={t('enterValuesSeparatedByCommas', "Enter values separated by commas (e.g., Red,Blue,Green)")}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100"
               rows="3"
             />
           </div>
@@ -422,7 +425,7 @@ const ItemForm = () => {
             onWheel={(e) => e.target.blur()}   // 👈 បិទ scroll change
             value={Array.isArray(attribute.value) ? attribute.value[0] : attribute.value || ""}
             onChange={(e) => updateAttributeValue(index, e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100"
+            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100"
           />
         );
       default:
@@ -454,8 +457,8 @@ const ItemForm = () => {
   };
 
   const inputRef = useRef(null);
-  const onAttributeName = event => {
-    setAttributeName(event.target.value);
+  const onAttributeName = value => {
+    setAttributeName(value);
   };
 
   const addItem = e => {
@@ -490,7 +493,7 @@ const ItemForm = () => {
   };
 
   return (
-    <div className="view-page min-h-screen bg-transparent py-8">
+    <div className=" bg-transparent py-8">
       <div className="mx-auto px-2">
         <AlertBox
           isOpen={alertBox}
@@ -512,12 +515,11 @@ const ItemForm = () => {
           </p>
         </div>
 
-        <div className="bg-transparent rounded-2xl p-6">
-
+        <div>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Left Column - Image Upload */}
             <div className="lg:col-span-1">
-              <div className="bg-gray-50 dark:bg-slate-800/50 rounded-xl shadow-sm p-6 border-2 border-dashed border-gray-300 dark:border-gray-600">
+              <div>
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-lg font-semibold text-gray-800 dark:text-white">
                     {t('productImages')}
@@ -641,22 +643,21 @@ const ItemForm = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Basic Information */}
                 <div className="space-y-4">
-                  <div className="bg-gray-50 dark:bg-slate-800/50 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm">
+                  <div>
                     <div className="flex items-center gap-3 mb-4">
                       <FaTag className="text-blue-500 text-xl" />
                       <h2 className="text-lg font-semibold text-gray-800 dark:text-white">{t('basicInformation')}</h2>
                     </div>
 
-                    <div className="space-y-4">
-                      <div>
+                    <div className="space-y-4 flex flex-wrap gap-3">
+                      <div className="grow">
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                           {t('itemName')} <span className="text-red-500">*</span>
                         </label>
-                        <input
-                          onChange={(e) => setItem({ ...item, name: e.target.value })}
+                        <Input
+                          onChange={(value) => setItem({ ...item, name: value })}
                           value={item.name}
                           type="text"
-                          className={getInputClass('name')}
                           placeholder={t('enterProductName')}
                           data-field="name"
                         />
@@ -668,32 +669,29 @@ const ItemForm = () => {
                         )}
                       </div>
 
-                      <div>
+                      <div className="grow">
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                           {t('itemCode')}
                         </label>
-                        <input
-                          onChange={(e) => setItem({ ...item, code: e.target.value })}
+                        <Input
+                          onChange={(value) => setItem({ ...item, code: value })}
                           value={item.code}
                           type="text"
-                          className={getInputClass('code')}
                           placeholder="PRD-00001"
                           data-field="code"
                         />
                       </div>
 
-                      <div>
+                      <div className="grow">
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                           {t('retailPrice')} <span className="text-red-500">*</span>
                         </label>
-                        <input
-                          onChange={(e) => setItem({ ...item, price: e.target.value })}
+                        <Input
+                          onChange={(value) => setItem({ ...item, price: value })}
                           value={item.price}
                           type="number"
-                          onWheel={(e) => e.target.blur()}   // 👈 បិទ scroll change
                           step="0.1"
                           min="0"
-                          className={getInputClass('price')}
                           placeholder="0.00"
                           data-field="price"
                         />
@@ -705,18 +703,16 @@ const ItemForm = () => {
                         )}
                       </div>
 
-                      <div>
+                      <div className="grow">
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                           {t('wholesalePrice')}
                         </label>
-                        <input
-                          onChange={(e) => setItem({ ...item, wholesale_price: e.target.value })}
+                        <Input
+                          onChange={(value) => setItem({ ...item, wholesale_price: value })}
                           value={item.wholesale_price}
                           type="number"
-                          onWheel={(e) => e.target.blur()}   // 👈 បិទ scroll change
                           step="0.1"
                           min="0"
-                          className={getInputClass('wholesale_price')}
                           placeholder="0.00"
                           data-field="wholesale_price"
                         />
@@ -725,7 +721,7 @@ const ItemForm = () => {
                   </div>
 
                   {/* Pricing & Discount */}
-                  <div className="bg-gray-50 dark:bg-slate-800/50 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm">
+                  <div>
                     <div className="flex items-center gap-3 mb-4">
                       <FaTag className="text-green-500 text-xl" />
                       <h2 className="text-lg font-semibold text-gray-800 dark:text-white">{t('pricingAndDiscount')}</h2>
@@ -736,11 +732,10 @@ const ItemForm = () => {
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                           {t('discountPercentage')}
                         </label>
-                        <input
-                          onChange={(e) => setItem({ ...item, discount: e.target.value })}
+                        <Input
+                          onChange={(value) => setItem({ ...item, discount: value })}
                           value={item.discount}
                           type="number"
-                          onWheel={(e) => e.target.blur()}   // 👈 បិទ scroll change
                           step="0.5"
                           min="0"
                           max="100"
@@ -755,18 +750,18 @@ const ItemForm = () => {
 
                 {/* Specifications */}
                 <div className="space-y-4">
-                  <div className="bg-gray-50 dark:bg-slate-800/50 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm">
+                  <div>
                     <div className="flex items-center gap-3 mb-4">
                       <FaBox className="text-purple-500 text-xl" />
                       <h2 className="text-lg font-semibold text-gray-800 dark:text-white">{t('specifications')}</h2>
                     </div>
 
-                    <div className="space-y-4">
-                      <div>
+                    <div className="space-y-4 flex flex-wrap gap-3">
+                      <div className="grow">
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                           {t('category')} <span className="text-red-500">*</span>
                         </label>
-                        <select
+                        {/* <select
                           onChange={(e) => setItem({ ...item, category_id: e.target.value })}
                           value={item.category_id}
                           className={getSelectClass('category_id')}
@@ -778,7 +773,17 @@ const ItemForm = () => {
                               {category_name}
                             </option>
                           ))}
-                        </select>
+                        </select> */}
+                        <RichSearch
+                          data={categories}
+                          value={item.category_id}
+                          onSelected={(value) => setItem({ ...item, category_id: value })}
+                          keyFields={{
+                            id: 'category_id',
+                            title: 'category_name',
+                          }}
+                          placeholder={t('selectCategory')}
+                        />
                         {errors.category_id && (
                           <div className="flex items-center gap-2 text-red-500 text-sm mt-2">
                             <span className="w-2 h-2 bg-red-500 rounded-full"></span>
@@ -787,11 +792,11 @@ const ItemForm = () => {
                         )}
                       </div>
 
-                      <div>
+                      <div className="grow">
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                           {t('brand')} <span className="text-red-500">*</span>
                         </label>
-                        <select
+                        {/* <select
                           onChange={(e) => setItem({ ...item, brand_id: e.target.value })}
                           value={item.brand_id}
                           className={getSelectClass('brand_id')}
@@ -803,7 +808,17 @@ const ItemForm = () => {
                               {brand_name}
                             </option>
                           ))}
-                        </select>
+                        </select> */}
+                        <RichSearch
+                          data={brands}
+                          value={item.brand_id}
+                          placeholder={t('selectBrand')}
+                          onSelected={(value) => setItem({ ...item, brand_id: value })}
+                          keyFields={{
+                            id: 'brand_id',
+                            title: 'brand_name',
+                          }}
+                        />
                         {errors.brand_id && (
                           <div className="flex items-center gap-2 text-red-500 text-sm mt-2">
                             <span className="w-2 h-2 bg-red-500 rounded-full"></span>
@@ -812,11 +827,11 @@ const ItemForm = () => {
                         )}
                       </div>
 
-                      <div>
+                      <div className="grow">
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                           {t('scale')} <span className="text-red-500">*</span>
                         </label>
-                        <select
+                        {/* <select
                           onChange={(e) => setItem({ ...item, scale_id: e.target.value })}
                           value={item.scale_id}
                           className={getSelectClass('scale_id')}
@@ -828,7 +843,17 @@ const ItemForm = () => {
                               {scale_name}
                             </option>
                           ))}
-                        </select>
+                        </select> */}
+                        <RichSearch
+                          data={scales}
+                          value={item.scale_id}
+                          placeholder={t('selectScale')}
+                          onSelected={(value) => setItem({ ...item, scale_id: value })}
+                          keyFields={{
+                            id: 'scale_id',
+                            title: 'scale_name',
+                          }}
+                        />
                         {errors.scale_id && (
                           <div className="flex items-center gap-2 text-red-500 text-sm mt-2">
                             <span className="w-2 h-2 bg-red-500 rounded-full"></span>
@@ -838,7 +863,7 @@ const ItemForm = () => {
                       </div>
 
                       {/* Color Selection - Integrated with Attributes */}
-                      <div>
+                      <div className="grow">
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                           {t('colors')}
                         </label>
@@ -923,26 +948,29 @@ const ItemForm = () => {
                         <div className="flex-1 w-full">
                           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('attributeName')}</label>
                           <Select
-                            className="dark:bg-slate-800 dark:text-white"
+                            className="w-full dark:[&_.ant-select-selector]:!bg-slate-800 dark:[&_.ant-select-selector]:!border-gray-600 dark:[&_.ant-select-selector]:!text-white dark:[&_.ant-select-selection-placeholder]:!text-gray-400 dark:[&_.ant-select-arrow]:!text-gray-400"
                             style={{ width: '100%' }}
                             placeholder={t('selectAttributeName')}
+                            size="large"
                             value={attribute.name}
+                            // dropdownClassName="dark:!bg-gray-800 dark:[&_.ant-select-item]:!text-white dark:[&_.ant-select-item-option-selected]:!bg-slate-700 dark:[&_.ant-select-item-option-active]:!bg-slate-700/80"
+                            // popupClassName="dark:[&_.ant-select-item]:!bg-slate-800 dark:[&_.ant-select-item]:!text-white dark:[&_.ant-select-item-option-selected]:!bg-slate-700 dark:[&_.ant-select-item-option-active]:!bg-slate-700/80"
                             onChange={(value) => updateAttribute(actualIndex, 'name', value)}
                             popupRender={menu => (
-                              <div className="dark:bg-slate-800">
+                              <div >
                                 {menu}
-                                <Divider className="dark:bg-gray-700" style={{ margin: '8px 0' }} />
+                                <Divider className="dark:bg-gray-200" style={{ margin: '8px 0' }} />
                                 <Space style={{ padding: '0 8px 4px' }}>
-                                  <Input
-                                    className="dark:bg-slate-700 dark:text-white dark:border-gray-600"
-                                    placeholder={t('enterNewAttributeName')}
+                                  <input
+                                    placeholder={t('Name')}
+                                    className="w-18 border border-gray-300 rounded-sm p-1 focus:outline-0"
                                     ref={inputRef}
                                     value={attributeName}
                                     onChange={onAttributeName}
                                     onKeyDown={e => e.stopPropagation()}
                                   />
                                   <Button className="dark:text-blue-400" type="text" icon={<IoPulseOutline />} onClick={addItem}>
-                                    {t('addAttribute')}
+                                    add
                                   </Button>
                                 </Space>
                               </div>
@@ -958,7 +986,7 @@ const ItemForm = () => {
                         </div>
                         <div className="flex-1 w-full">
                           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('attributeType')}</label>
-                          <select
+                          {/* <select
                             value={attribute.type}
                             onChange={(e) => updateAttribute(actualIndex, 'type', e.target.value)}
                             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100"
@@ -966,7 +994,28 @@ const ItemForm = () => {
                             <option value="text">{t('text')}</option>
                             <option value="number">{t('number')}</option>
                             <option value="boolean">{t('boolean')}</option>
-                          </select>
+                          </select> */}
+                          <RichSearch
+                            data={[
+                              {
+                                value:'text',
+                                label:'Text'
+                              },
+                              {
+                                value:'number',
+                                label:'Number'
+                              },
+                              {
+                                value:'boolean',
+                                label:'Boolean'
+                              }
+                            ]}
+                            keyFields={{
+                              id: "value",
+                              title: "label"
+                            }}
+                            onSelected={value=> updateAttribute(actualIndex, 'type', value)}
+                          />
                         </div>
                         <div className="flex-1 w-full">
                           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('attributeValue')}</label>
@@ -999,24 +1048,24 @@ const ItemForm = () => {
 
           {/* Action Buttons */}
           <div className="flex justify-end space-x-4 pt-8 mt-8 border-t border-gray-200 dark:border-gray-700">
-            <button
+            <Button
               type="button"
-              className="px-6 py-3 border border-gray-300 dark:border-gray-600 flex gap-2 items-center text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800 transition-all duration-200 cursor-pointer font-medium"
+              variant="danger"
+              outline
               onClick={() => navigator(-1)}
               disabled={loading}
             >
               <FaTimes />
               {t('cancel')}
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
-              className="px-8 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 gap-3 flex items-center space-x-2 disabled:opacity-50 transition-all duration-200 cursor-pointer font-medium shadow-lg hover:shadow-xl"
               onClick={handleSubmit}
               disabled={loading}
             >
               {isEditMode ? <FaEdit className="text-lg" /> : <FaSave className="text-lg" />}
               {loading ? (isEditMode ? t('updating') : t('creating')) : (isEditMode ? t('updateItem') : t('createItem'))}
-            </button>
+            </Button>
           </div>
         </div>
       </div>

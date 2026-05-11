@@ -22,7 +22,7 @@ import { motion } from 'framer-motion';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import { Link, useNavigate } from 'react-router';
-import ExportExel from '../../services/ExportExel';
+import ExportExcel from '../../services/ExportExcel';
 import { BiEdit } from 'react-icons/bi';
 import api from '../../services/api';
 import { useGetAllRawMaterialQuery } from '../../../app/Features/RawMaterialSlice';
@@ -550,14 +550,14 @@ const RawMaterials = () => {
                             <LuRefreshCw className={loading || queryLoading ? 'animate-spin' : ''} />
                             {t('refresh')}
                         </button>
-                        <ExportExel
+                        <ExportExcel
                             data={exportData}
                             title="Raw_Materials_Report"
                             className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center gap-2 transition-colors"
                         >
                             <LuDownload />
                             {t('export')}
-                        </ExportExel>
+                        </ExportExcel>
                         <Link to="create">
                             <button className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 flex items-center gap-2 transition-colors">
                                 <LuPlus />

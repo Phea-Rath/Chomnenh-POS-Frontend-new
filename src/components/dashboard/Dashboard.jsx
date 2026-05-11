@@ -79,7 +79,7 @@ const definePersents = (currentValue, previousValue) => {
 };
 
 const MetricCard = ({ title, value, persent, isLoss, icon: Icon, colorClass, chartData, chartColor, loading }) => (
-  <div className="bg-primary p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 transition-all hover:shadow-md relative overflow-hidden">
+  <div className="bg-primary p-6 rounded-sm shadow-sm border border-gray-100 dark:border-gray-700 transition-all hover:shadow-md relative overflow-hidden">
     {loading && (
       <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/40 bg-primary/40">
         <div className="w-6 h-6 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
@@ -92,7 +92,7 @@ const MetricCard = ({ title, value, persent, isLoss, icon: Icon, colorClass, cha
           ${Number(value || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
         </h3>
       </div>
-      <div className={`p-3 rounded-xl ${colorClass}`}><Icon size={24} /></div>
+      <div className={`p-3 rounded-sm ${colorClass}`}><Icon size={24} /></div>
     </div>
     <div className="flex items-center gap-2 mb-6">
       <span className={`flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full ${isLoss ? "bg-red-50 text-red-600" : "bg-green-50 text-green-600"}`}>
@@ -110,12 +110,12 @@ const MetricCard = ({ title, value, persent, isLoss, icon: Icon, colorClass, cha
 );
 
 const ChartArea = ({ title, children, loading }) => (
-  <div className="bg-white bg-primary p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 relative">
+  <div className="bg-white bg-primary p-6 rounded-sm shadow-sm border border-gray-100 dark:border-gray-700 relative">
     <div className="flex justify-between items-center mb-8">
       <h3 className="text-lg font-bold text-gray-900 dark:text-white">{title}</h3>
     </div>
     {loading && (
-      <div className="absolute inset-0 z-10 flex items-center justify-center rounded-2xl bg-white/40 bg-primary/40">
+      <div className="absolute inset-0 z-10 flex items-center justify-center rounded-sm bg-white/40 bg-primary/40">
         <div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
       </div>
     )}
@@ -211,13 +211,13 @@ const Dashboard = () => {
   if (userLogin?.data?.role_id === 1) {
     return (
       <div className="max-w-2xl mx-auto p-8">
-        <div className="bg-white rounded-3xl p-10 shadow-xl border border-gray-100 text-center">
-          <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-indigo-50 text-indigo-600 mb-6">
+        <div className="bg-white rounded-sm p-10 shadow-xl border border-gray-100 text-center">
+          <div className="inline-flex items-center justify-center w-20 h-20 rounded-sm bg-indigo-50 text-indigo-600 mb-6">
             <RiShoppingCartFill size={40} />
           </div>
           <h1 className="text-3xl font-bold text-gray-900 mb-3">System Administrator</h1>
           <p className="text-gray-500 mb-8">Full administrative control active.</p>
-          <Link to="/setting" className="inline-flex items-center justify-between bg-indigo-600 text-white rounded-2xl px-8 py-5 shadow-lg hover:bg-indigo-700 transition-all">
+          <Link to="/setting" className="inline-flex items-center justify-between bg-indigo-600 text-white rounded-sm px-8 py-5 shadow-lg hover:bg-indigo-700 transition-all">
             <span className="font-bold text-lg">System Settings</span>
           </Link>
         </div>
@@ -241,19 +241,19 @@ const Dashboard = () => {
               type="date"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
-              className="bg-primary px-4 py-2 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 text-sm text-gray-700 dark:text-gray-200"
+              className="bg-primary px-4 py-2 rounded-sm shadow-sm border border-gray-100 dark:border-gray-700 text-sm text-gray-700 dark:text-gray-200"
             />
             <input
               type="date"
               value={endDate}
               min={startDate}
               onChange={(e) => setEndDate(e.target.value)}
-              className="bg-primary px-4 py-2 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 text-sm text-gray-700 dark:text-gray-200"
+              className="bg-primary px-4 py-2 rounded-sm shadow-sm border border-gray-100 dark:border-gray-700 text-sm text-gray-700 dark:text-gray-200"
             />
             <select
               value={userId}
               onChange={(e) => setUserId(e.target.value)}
-              className="bg-primary px-4 py-2 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 text-sm text-gray-700 dark:text-gray-200"
+              className="bg-primary px-4 py-2 rounded-sm shadow-sm border border-gray-100 dark:border-gray-700 text-sm text-gray-700 dark:text-gray-200"
             >
               <option value="">All Users</option>
               {usersData?.data?.map((user) => (
@@ -265,7 +265,7 @@ const Dashboard = () => {
             <button
               type="button"
               onClick={resetFilters}
-              className="bg-indigo-600 text-white px-4 py-2 rounded-xl text-sm font-semibold hover:bg-indigo-700 transition-colors"
+              className="bg-indigo-600 text-white px-4 py-2 rounded-sm text-sm font-semibold hover:bg-indigo-700 transition-colors"
             >
               Reset Filter
             </button>
@@ -310,12 +310,12 @@ const Dashboard = () => {
         </div>
 
         <div className="space-y-8">
-          <div className="bg-white bg-primary p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
+          <div className="bg-white bg-primary p-6 rounded-sm shadow-sm border border-gray-100 dark:border-gray-700">
             <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6">{t("topSellingItems")}</h3>
             <div className="space-y-6">
               {popularSales?.data?.map((s, i) => (
                 <div key={i} className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-xl p-1 border border-gray-100 dark:border-gray-600 bg-gray-50 dark:bg-gray-700">
+                  <div className="w-12 h-12 rounded-sm p-1 border border-gray-100 dark:border-gray-600 bg-gray-50 dark:bg-gray-700">
                     <img className="w-full h-full object-contain" src={s.image} alt="" />
                   </div>
                   <div className="flex-1 min-w-0">
@@ -331,7 +331,7 @@ const Dashboard = () => {
             </div>
           </div>
 
-          <div className="bg-white bg-primary p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 text-center">
+          <div className="bg-white bg-primary p-6 rounded-sm shadow-sm border border-gray-100 dark:border-gray-700 text-center">
             <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">{t("marketShare")}</h3>
             <div className="flex justify-center mb-4">
               <PieChart width={160} height={160}>
@@ -368,19 +368,19 @@ const Dashboard = () => {
             </ResponsiveContainer>
           </ChartArea>
         </div>
-        <div className="bg-primary p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
+        <div className="bg-primary p-6 rounded-sm shadow-sm border border-gray-100 dark:border-gray-700">
           <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6">{t("recentStockIn")}</h3>
           <div className="space-y-6">
             {popularStock?.data?.map((s, idx) => (
               <div key={idx} className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-indigo-50 dark:bg-indigo-900">
+                <div className="w-10 h-10 rounded-sm flex items-center justify-center bg-indigo-50 dark:bg-indigo-900">
                   <img className="w-6 h-6 object-contain" src={s.image} alt="" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <h4 className="text-sm font-bold text-gray-800 dark:text-gray-200 truncate">{s.item_name}</h4>
                   <p className="text-xs text-gray-400">{s.brand_name}</p>
                 </div>
-                <div className="text-emerald-600 dark:text-emerald-400 font-bold text-sm bg-emerald-50 dark:bg-emerald-900 px-2 py-1 rounded-lg">+{s.total_quantity}</div>
+                <div className="text-emerald-600 dark:text-emerald-400 font-bold text-sm bg-emerald-50 dark:bg-emerald-900 px-2 py-1 rounded-sm">+{s.total_quantity}</div>
               </div>
             ))}
           </div>
@@ -401,7 +401,7 @@ const Dashboard = () => {
             </ResponsiveContainer>
           </ChartArea>
         </div>
-        <div className="bg-primary p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
+        <div className="bg-primary p-6 rounded-sm shadow-sm border border-gray-100 dark:border-gray-700">
           <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6">{t("majorExpenses")}</h3>
           <div className="space-y-6">
             {popularExpanses?.data?.map((ex, idx) => (

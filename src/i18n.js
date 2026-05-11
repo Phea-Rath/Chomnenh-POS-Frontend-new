@@ -1234,7 +1234,8 @@ const resources = {
       showing: "Showing",
       of: "of",
       // Items
-      WholePrice: "Wholesale Price"
+      WholePrice: "Wholesale Price",
+      new: "New"
     }
   },
   kh: {
@@ -2468,7 +2469,8 @@ const resources = {
       showing: "កំពុងបង្ហាញ",
       of: "នៃ",
       // Items
-      WholePrice: "តម្លៃលក់ដុំ"
+      WholePrice: "តម្លៃលក់ដុំ",
+      new: "ថ្មី"
     }
   }
 };

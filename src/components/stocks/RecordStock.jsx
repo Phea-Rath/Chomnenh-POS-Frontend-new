@@ -15,7 +15,7 @@ import {
 } from "react-icons/lu";
 import { CiBoxList } from "react-icons/ci";
 import { motion } from "framer-motion";
-import ExportExel from "../../services/ExportExel";
+import ExportExcel from "../../services/ExportExcel";
 import { useGetAllCategoriesQuery } from "../../../app/Features/categoriesSlice";
 import dayjs from "dayjs";
 import api from "../../services/api";
@@ -547,14 +547,14 @@ const StockTransactions = () => {
           </div>
           <div className="flex items-center gap-3">
             <RefreshButton onClick={fetchData} loading={loading} />
-            <ExportExel
+            <ExportExcel
               data={itemData}
               title={"Stock_Transactions_Report"}
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 transition-colors"
             >
               <LuDownload />
               {t("export")}
-            </ExportExel>
+            </ExportExcel>
           </div>
         </div>
 

@@ -16,6 +16,8 @@ import { toast } from "react-toastify";
 import api from "../../services/api";
 import RefreshButton from "../../utils/RefreshButton";
 import { useTranslation } from "react-i18next";
+import RichSearch from "../../utils/RichSearch";
+import Pagination from "../../utils/Pagination";
 
 // Custom components
 const Button = ({ children, onClick, variant = "default", icon, disabled, className = "" }) => {
@@ -83,60 +85,15 @@ const EmptyState = ({ description, buttonText, onButtonClick }) => (
   </div>
 );
 
-const Pagination = ({ current, total, pageSize, onChange, it }) => {
-  const totalPages = Math.ceil(total / pageSize);
-  const start = (current - 1) * pageSize + 1;
-  const end = Math.min(current * pageSize, total);
 
-  return (
-    <div className="flex items-center justify-between gap-4 bg-white border border-gray-200 rounded px-4 py-2">
-      <div className="text-sm text-gray-600">
-        {it("Showing")} {start} {it("to")} {end} {it("of")} {total} {it("items")}
-      </div>
-      <div className="flex items-center gap-2">
-        <button
-          onClick={() => onChange(1)}
-          disabled={current === 1}
-          className="p-1 border border-gray-300 rounded hover:bg-gray-100 disabled:opacity-50"
-        >
-          ⟪
-        </button>
-        <button
-          onClick={() => onChange(current - 1)}
-          disabled={current === 1}
-          className="p-1 border border-gray-300 rounded hover:bg-gray-100 disabled:opacity-50"
-        >
-          ⟨
-        </button>
-        <span className="px-3 py-1 text-sm">
-          {it("Page")} {current} {it("of")} {totalPages}
-        </span>
-        <button
-          onClick={() => onChange(current + 1)}
-          disabled={current === totalPages}
-          className="p-1 border border-gray-300 rounded hover:bg-gray-100 disabled:opacity-50"
-        >
-          ⟩
-        </button>
-        <button
-          onClick={() => onChange(totalPages)}
-          disabled={current === totalPages}
-          className="p-1 border border-gray-300 rounded hover:bg-gray-100 disabled:opacity-50"
-        >
-          ⟫
-        </button>
-      </div>
-    </div>
-  );
-};
 
 // Grid Card component
-const GridCard = ({ item, onEdit, onDelete, onView, formatCurrency, getDiscount, it }) => {
+const GridCard = ({ item, onEdit, onDelete, onView, formatCurrency, getDiscount, t }) => {
   const discount = getDiscount(item.price, item.price_discount);
   const inStock = item?.stock?.in_stock || 0;
 
   return (
-    <div className="border border-gray-200 rounded bg-primary hover:shadow-sm transition-all duration-300 overflow-hidden group">
+    <div className="rounded bg-primary hover:shadow-sm transition-all duration-300 overflow-hidden group">
       <div onClick={onView} className="relative h-48 flex items-center justify-center overflow-hidden cursor-pointer">
         <img
           src={item.image || initialImage}
@@ -149,12 +106,12 @@ const GridCard = ({ item, onEdit, onDelete, onView, formatCurrency, getDiscount,
         />
         <div className="absolute top-2 left-2 flex flex-col gap-1">
           <Tag color={inStock > 0 ? "success" : "error"}>
-            {inStock > 0 ? `${it("Stock:")} ${inStock}` : it("Sold Out")}
+            {inStock > 0 ? `${t("Stock:")} ${inStock}` : t("Sold Out")}
           </Tag>
         </div>
         {item.discount > 0 && item.discount < 100 && (
           <div className="absolute top-2 right-0">
-            <Tag color="error" className="rounded-l-md border-none font-bold">{item.discount}% {it("off")}</Tag>
+            <Tag color="error" className="rounded-l-md border-none font-bold">{item.discount}% {t("off")}</Tag>
           </div>
         )}
         {item.discount == 100 && (
@@ -165,8 +122,8 @@ const GridCard = ({ item, onEdit, onDelete, onView, formatCurrency, getDiscount,
       </div>
       <div className="p-3">
         <div className="mb-2">
-          <p className="text-xs text-gray-500 uppercase font-bold">{item.category_name}</p>
-          <h3 className="font-semibold text-gray-800 text-sm line-clamp-1">{item.name}</h3>
+          <p className="text-xs text-gray-500 dark:text-gray-400 uppercase font-bold">{item.category_name}</p>
+          <h3 className="font-semibold text-gray-800 dark:text-white text-sm line-clamp-1">{item.name}</h3>
         </div>
         <div className=" rounded p-2 flex justify-between items-center">
           <span className="font-bold text-lg text-green-600">{formatCurrency(item.price_discount || item.price)}</span>
@@ -188,25 +145,25 @@ const GridCard = ({ item, onEdit, onDelete, onView, formatCurrency, getDiscount,
 };
 
 // List View Table
-const ListView = ({ items, navigator, onDelete, formatCurrency, it }) => (
-  <div className="bg-white container mx-auto border border-gray-200 rounded overflow-hidden">
+const ListView = ({ items, navigator, onDelete, formatCurrency, t }) => (
+  <div className="bg-white container mx-auto border border-gray-200 dark:border-gray-700 rounded overflow-hidden">
     <div className="overflow-x-auto">
       <table className="w-full border-collapse text-sm">
-        <thead className="bg-gray-100 border-b border-gray-300">
+        <thead className="bg-gray-100 border-b border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-white">
           <tr>
-            <th className="px-4 py-3 text-left font-medium text-gray-600">{it("Product")}</th>
-            <th className="px-4 py-3 text-left font-medium text-gray-600">{it("Code")}</th>
-            <th className="px-4 py-3 text-left font-medium text-gray-600">{it("Stock")}</th>
-            <th className="px-4 py-3 text-left font-medium text-gray-600">{it("Price")}</th>
-            <th className="px-4 py-3 text-left font-medium text-gray-600">{it("WholePrice")}</th>
-            <th className="px-4 py-3 text-right font-medium text-gray-600">{it("Actions")}</th>
+            <th className="px-4 py-3 text-left font-medium">{t("Product")}</th>
+            <th className="px-4 py-3 text-left font-medium">{t("Code")}</th>
+            <th className="px-4 py-3 text-left font-medium">{t("Stock")}</th>
+            <th className="px-4 py-3 text-left font-medium">{t("Price")}</th>
+            <th className="px-4 py-3 text-left font-medium">{t("WholePrice")}</th>
+            <th className="px-4 py-3 text-right font-medium">{t("Actions")}</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-gray-200 dark:divide-gray-500">
+        <tbody className="divide-y divide-gray-200 bg-primary dark:divide-gray-500">
           {items.map((item) => {
             const inStock = item?.stock?.in_stock || 0;
             return (
-              <tr key={item.id} className="hover:bg-gray-50">
+              <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-3">
                     <img
@@ -219,7 +176,7 @@ const ListView = ({ items, navigator, onDelete, formatCurrency, it }) => (
                       }}
                     />
                     <div>
-                      <div className="font-medium text-gray-800">{item.name}</div>
+                      <div className="font-medium text-gray-800 dark:text-white">{item.name}</div>
                       <div className="text-xs text-gray-500">{item.category_name}</div>
                     </div>
                   </div>
@@ -229,7 +186,7 @@ const ListView = ({ items, navigator, onDelete, formatCurrency, it }) => (
                 </td>
                 <td className="px-4 py-3">
                   <Tag color={inStock > 0 ? "success" : "error"}>
-                    {inStock} {it("In Stock")}
+                    {inStock} {t("In Stock")}
                   </Tag>
                 </td>
                 <td className="px-4 py-3 font-medium">{formatCurrency(item.price_discount || item.price)}</td>
@@ -238,7 +195,7 @@ const ListView = ({ items, navigator, onDelete, formatCurrency, it }) => (
                   <div className="flex justify-end gap-1">
                     <button
                       onClick={() => navigator(`detail/${item.id}`)}
-                      className="p-1.5 text-gray-500 hover:bg-gray-100 rounded"
+                      className="p-1.5 text-green-500 hover:bg-green-50 rounded"
                     >
                       <RiEyeLine size={14} />
                     </button>
@@ -309,11 +266,11 @@ const ListItem = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.data.status === 200) {
-        toast.success(it("Item deleted successfully"));
+        toast.success(t("Item deleted successfully"));
         refetch();
       }
     } catch (error) {
-      toast.error(error?.message || it("Error deleting item"));
+      toast.error(error?.response?.data?.message || error?.message || error || t("Error deleting item"));
     } finally {
       setLoading(false);
       setDeleteItemId(null);
@@ -340,10 +297,10 @@ const ListItem = () => {
       />
 
       {/* Header */}
-      <div className="border-b container mx-auto border-gray-200 p-3">
+      <div className="container mx-auto border-gray-200 p-3">
         <div className="mx-auto flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">{t("Items")}</h1>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t("Items")}</h1>
             <p className="text-sm text-gray-500 flex items-center gap-2">
               <span className="w-2 h-2 bg-green-500 rounded-full"></span>
               {totalItems} {t("total items found")}
@@ -356,7 +313,7 @@ const ListItem = () => {
               variant="default"
               className="flex-1 md:flex-none"
             >
-              {it("Import")}
+              {t("Import")}
             </Button> */}
             <RefreshButton onRefresh={refetch} />
             <Button
@@ -384,21 +341,21 @@ const ListItem = () => {
             <IoIosSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
           </div>
 
-          <div className="flex items-center gap-2 bg-white p-1 border border-gray-300 rounded self-end lg:self-auto">
+          <div className="flex items-center gap-2 bg-primary p-1 rounded self-end lg:self-auto">
             <button
               onClick={() => { setViewMode("grid"); localStorage.setItem("itemViewMode", "grid"); }}
-              className={`p-2 rounded ${viewMode === "grid" ? "bg-blue-600 text-white" : "text-gray-600 hover:bg-gray-100"}`}
+              className={`p-2 rounded ${viewMode === "grid" ? "bg-blue-600 text-white" : "dark:text-gray-100 text-gray-800 hover:bg-gray-100"}`}
             >
               <IoIosGrid size={20} />
             </button>
             <button
               onClick={() => { setViewMode("list"); localStorage.setItem("itemViewMode", "list"); }}
-              className={`p-2 rounded ${viewMode === "list" ? "bg-blue-600 text-white" : "text-gray-600 hover:bg-gray-100"}`}
+              className={`p-2 rounded ${viewMode === "list" ? "bg-blue-600 text-white" : "dark:text-gray-100 text-gray-800 hover:bg-gray-100"}`}
             >
               <IoIosList size={20} />
             </button>
             <div className="w-px h-6 bg-gray-300 mx-1" />
-            <select
+            {/* <select
               value={pageSize}
               onChange={(e) => { setPageSize(Number(e.target.value)); setCurrentPage(1); }}
               className="border-0 bg-transparent text-sm focus:outline-none"
@@ -406,7 +363,20 @@ const ListItem = () => {
               <option value={12}>12 / page</option>
               <option value={24}>24 / page</option>
               <option value={48}>48 / page</option>
-            </select>
+            </select> */}
+            <RichSearch
+              value={pageSize}
+              onSelected={value => { setPageSize(Number(value)); setCurrentPage(1); }}
+              data={[
+                { label: "12/page", value: 12 },
+                { label: "24/page", value: 24 },
+                { label: "48/page", value: 48 }
+              ]}
+              keyFields={{
+                id: "value",
+                title: 'label'
+              }}
+            />
           </div>
         </div>
 
@@ -425,7 +395,7 @@ const ListItem = () => {
                   onView={() => navigate(`detail/${item.id}`)}
                   formatCurrency={formatCurrency}
                   getDiscount={getDiscountPercentage}
-                  it={t}
+                  t={t}
                 />
               ))}
             </div>
@@ -435,7 +405,7 @@ const ListItem = () => {
               navigator={navigate}
               onDelete={handleDelete}
               formatCurrency={formatCurrency}
-              it={t}
+              t={t}
             />
           )
         ) : (
@@ -453,7 +423,7 @@ const ListItem = () => {
               current={currentPage}
               total={totalItems}
               pageSize={pageSize}
-              it={t}
+              t={t}
               onChange={(page) => { setCurrentPage(page); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
             />
           </div>

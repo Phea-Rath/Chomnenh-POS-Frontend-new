@@ -66,7 +66,7 @@ const Inventories = () => {
                                     to={perm?.menu_path}
                                     className={`
                                         group flex flex-col items-center justify-center p-6 border-gradient-gold
-                                        rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm
+                                        rounded-sm border border-gray-100 dark:border-gray-700 shadow-sm
                                         hover:shadow-xl hover:shadow-gray-200/50 dark:hover:shadow-black/20 transition-all duration-300
                                         w-full min-h-[160px] text-center space-y-4
                                         ${color.hoverBorder}

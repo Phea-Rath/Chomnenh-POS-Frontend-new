@@ -18,7 +18,7 @@ import {
   LuChevronsRight,
 } from "react-icons/lu";
 import { motion } from "framer-motion";
-import ExportExel from "../../services/ExportExel";
+import ExportExcel from "../../services/ExportExcel";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import { useGetAllOrderTransectionQuery } from "../../../app/Features/ordersSlice";
@@ -241,7 +241,7 @@ const RecordStockSale = () => {
             <LuRefreshCw className={`text-gray-500 dark:text-gray-400 ${isLoading ? "animate-spin" : ""}`} />
             {t("refresh")}
           </button>
-          <ExportExel
+          <ExportExcel
             data={filteredData.map((item) => ({
               [t("productID")]: item.item_id,
               [t("productName")]: item.item_name,
@@ -258,7 +258,7 @@ const RecordStockSale = () => {
           >
             <LuDownload />
             {t("export")}
-          </ExportExel>
+          </ExportExcel>
         </div>
       </div>
 

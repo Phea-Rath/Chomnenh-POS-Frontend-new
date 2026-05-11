@@ -24,7 +24,7 @@ import { useGetAllSupplierQuery } from "../../../app/Features/suppliesSlice";
 import { toast } from "react-toastify";
 import { useLocation, useNavigate, useParams } from "react-router";
 import { useGetAllPurchaseQuery, useGetAllPurchaseRawQuery } from "../../../app/Features/purchasesSlice";
-import { DatePicker, Input, Select, Card, Badge, Tag, Divider, Radio } from "antd";
+import { Select, Card, Badge, Tag, Divider, Radio, DatePicker } from "antd";
 const { Option } = Select;
 import dayjs from "dayjs";
 import { motion } from "framer-motion";
@@ -32,6 +32,10 @@ import { useGetAllSaleQuery } from "../../../app/Features/salesSlice";
 import { useDebounce } from "use-debounce";
 import { useGetAllRawMaterialQuery } from "../../../app/Features/RawMaterialSlice";
 import { useTranslation } from "react-i18next";
+import ItemTable from "../../utils/ItemTable";
+import RichSearch from "../../utils/RichSearch";
+import Input from "../../utils/Input";
+import Button from "../../utils/Button";
 
 const CreatePurchase = () => {
   const { t } = useTranslation();
@@ -361,6 +365,26 @@ const CreatePurchase = () => {
     }));
   };
 
+  const handleQtyChange = (index, newQty) => {
+    if (newQty <= 0) {
+      setErrors({ items: t('invalidQuantity') });
+      return;
+    }
+
+    setFormData((prev) => {
+      const updatedItems = [...prev.items];
+      updatedItems[index].quantity = newQty;
+      updatedItems[index].total_amount = newQty * updatedItems[index].item_cost;
+      const total = updatedItems.reduce((sum, item) => sum + item.total_amount, 0);
+      return {
+        ...prev,
+        items: updatedItems,
+        total_amount: total,
+        balance: total - prev.total_paid,
+      };
+    });
+  };
+
   const addPayment = () => {
     if (paymentAmount <= 0) {
       setErrors({ paymentModal: t('invalidPaymentAmount') });
@@ -548,8 +572,19 @@ const CreatePurchase = () => {
     }
   };
 
+  const convertSupplier = (supplier) => {
+    if (!supplier) return [];
+
+    return supplier.map((item) => ({
+      id: item.supplier_id,
+      title: item.supplier_name,
+      subtitle: item.phone_number,
+      image: item.image,
+    }));
+  };
+
   return (
-    <div className="view-page min-h-screen bg-transparent py-8 transition-colors">
+    <div className="view-page bg-transparent py-8 transition-colors">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-8">
@@ -583,7 +618,7 @@ const CreatePurchase = () => {
               animate={{ opacity: 1, y: 0 }}
               className="mb-6"
             >
-              <Card className="border-red-200 bg-red-50 dark:!bg-red-900/10 dark:!border-red-800 shadow-sm">
+              <div className="border-red-200 bg-red-50 dark:!bg-red-900/10 dark:!border-red-800 shadow-sm">
                 <div className="flex items-start gap-3">
                   <div className="p-2 bg-red-100 dark:!bg-red-900/30 rounded-lg">
                     <FaExclamationTriangle className="text-red-600 dark:!text-red-400" />
@@ -597,7 +632,7 @@ const CreatePurchase = () => {
                     </ul>
                   </div>
                 </div>
-              </Card>
+              </div>
             </motion.div>
           )}
         </div>
@@ -612,7 +647,7 @@ const CreatePurchase = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3 }}
               >
-                <Card className="shadow-lg border-0 dark:!bg-gray-800 dark:!border-gray-700 transition-colors">
+                <div className="">
                   <div className="flex items-center gap-2 mb-4">
                     <FaWarehouse className="text-blue-500" />
                     <h2 className="text-lg font-bold text-gray-800 dark:!text-gray-100">{t('supplierInformation')}</h2>
@@ -626,32 +661,18 @@ const CreatePurchase = () => {
                           {t('supplier')} <span className="text-red-500">*</span>
                         </span>
                       </label>
-                      <Select
-                        name="supplier_id"
-                        value={formData.supplier_id}
-                        onChange={(value) => handleInputChange('supplier_id', value)}
-                        className={`w-full ${fieldErrors.supplier_id ? 'border-red-500' : ''} dark:!bg-gray-700 dark:!text-gray-200`}
-                        placeholder={t('selectSupplier')}
-                        size="large"
-                        optionLabelProp="name"
-                        dropdownClassName="dark:!bg-gray-800 dark:!border-gray-700"
-                      >
-                        {suppliers?.map((supplier) => (
-                          <Option key={supplier?.supplier_id} name={supplier?.supplier_name} value={supplier?.supplier_id}>
-                            <div className="flex items-center gap-3">
-                              <img
-                                src={supplier?.image}
-                                alt={supplier?.supplier_name}
-                                className="w-8 h-8 rounded-full object-cover"
-                              />
-                              <div>
-                                <div className="font-medium dark:!text-gray-200">{supplier?.supplier_name}</div>
-                                <div className="text-xs text-gray-500 dark:!text-gray-400">{supplier?.supplier_tel}</div>
-                              </div>
-                            </div>
-                          </Option>
-                        ))}
-                      </Select>
+                      <RichSearch
+                        data={suppliers}
+                        keyFields={{
+                          id: 'supplier_id',
+                          title: 'supplier_name',
+                          image: 'image',
+                          subtitle: 'supplier_tel',
+                        }}
+                        onSelected={(value) => handleInputChange('supplier_id', value)}
+
+                      />
+                      
                       {fieldErrors.supplier_id && (
                         <div className="text-red-500 text-sm mt-1">{fieldErrors.supplier_id}</div>
                       )}
@@ -664,20 +685,13 @@ const CreatePurchase = () => {
                           {t('purchaseDate')} <span className="text-red-500">*</span>
                         </span>
                       </label>
-                      <DatePicker
-                        name="purchase_date"
-                        value={formData.purchase_date ? dayjs(formData.purchase_date) : null}
-                        onChange={(date, dateString) => handleInputChange('purchase_date', dateString)}
-                        className={`w-full ${fieldErrors.purchase_date ? 'border-red-500' : ''} dark:!bg-gray-700 dark:!text-gray-200 dark:!border-gray-600`}
-                        size="large"
-                        format="YYYY-MM-DD"
-                      />
+                      <DatePicker className="date-picker" size="large" onChange={(date, dateString) => handleInputChange('purchase_date', dateString)} />
                       {fieldErrors.purchase_date && (
                         <div className="text-red-500 text-sm mt-1">{fieldErrors.purchase_date}</div>
                       )}
                     </div>
                   </div>
-                </Card>
+                </div>
               </motion.div>
 
               {/* Items Section */}
@@ -686,24 +700,25 @@ const CreatePurchase = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3, delay: 0.1 }}
               >
-                <Card className="shadow-lg border-0 dark:!bg-gray-800 dark:!border-gray-700 transition-colors">
+                <div className="">
                   <div className="flex items-center justify-between mb-6">
                     <div className="flex items-center gap-2">
                       <FaBox className="text-blue-500" />
                       <h2 className="text-lg font-bold text-gray-800 dark:!text-gray-100">{t('purchaseItems')}</h2>
                     </div>
-                    <button
+                    <Button
                       type="button"
                       onClick={() => setShowItemModal(true)}
-                      className="px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all flex items-center gap-2"
+                      variant='success'
+                      outline={false}
                     >
                       <FaPlus /> {t('addItem')}
-                    </button>
+                    </Button>
                   </div>
 
                   {formData.items.length === 0 ? (
-                    <div className="text-center py-12 bg-gray-50 dark:!bg-gray-900/50 rounded-lg border-2 border-dashed border-gray-300 dark:!border-gray-700">
-                      <FaBox className="text-gray-400 dark:!text-gray-600 text-4xl mx-auto mb-4" />
+                    <div className="text-center py-12 bg-gray-50 dark:!bg-blue-900/50 rounded-lg border-2 border-dashed border-gray-300 dark:!border-gray-700">
+                      <FaBox className="text-gray-400 dark:!text-gray-400 text-4xl mx-auto mb-4" />
                       <p className="text-gray-500 dark:!text-gray-400 mb-4">{t('noItemsAdded')}</p>
                       <button
                         type="button"
@@ -714,61 +729,20 @@ const CreatePurchase = () => {
                       </button>
                     </div>
                   ) : (
-                    <div className="space-y-4">
-                      {formData.items.map((item, index) => (
-                        <div
-                          key={index}
-                          className="bg-gray-50 dark:!bg-gray-900/30 rounded-xl p-4 border border-gray-200 dark:!border-gray-700 hover:border-blue-300 dark:!hover:bg-gray-700 dark:!hover:border-blue-500 transition-colors"
-                        >
-                          <div className="flex items-start justify-between">
-                            <div className="flex items-start gap-4">
-                              <div className="h-16 w-16 rounded-lg border border-gray-300 dark:!border-gray-600 overflow-hidden bg-white dark:!bg-gray-800 flex-shrink-0">
-                                {item.image ? (
-                                  <img
-                                    src={item.image}
-                                    alt={item.name}
-                                    className="h-full w-full object-contain p-1"
-                                  />
-                                ) : (
-                                  <div className="h-full w-full flex items-center justify-center bg-blue-100 dark:!bg-blue-900/20">
-                                    <FaBox className="text-blue-500 dark:!text-blue-400" />
-                                  </div>
-                                )}
-                              </div>
-                              <div>
-                                <div className="flex items-center gap-3 mb-1">
-                                  <h3 className="font-bold text-gray-800 dark:!text-gray-100">{item.name}</h3>
-                                  <Tag color="blue" className="text-xs">
-                                    {item.code}
-                                  </Tag>
-                                </div>
-                                <div className="flex items-center gap-4 text-sm text-gray-600 dark:!text-gray-400">
-                                  <span>{t('quantity')}: <span className="font-bold text-gray-800 dark:!text-gray-200">{item.quantity}</span></span>
-                                  <span>{t('unitCost')}: <span className="font-bold text-gray-800 dark:!text-gray-200">${item.item_cost.toFixed(2)}</span></span>
-                                  <span className="bg-blue-100 dark:!bg-blue-900/40 text-blue-700 dark:!text-blue-300 px-2 py-1 rounded">
-                                    ${(item.quantity * item.item_cost).toFixed(2)}
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => removeItem(index)}
-                              className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                            >
-                              <FaTrash />
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+                    <ItemTable
+                    t={t} 
+                    data={formData.items} 
+                    onDelete={removeItem} 
+                    onQtyChange={handleQtyChange} 
+                    haedTitle={[{title: t('item'), key: 'item'}, {title: t('quantity'), key: 'quantity'}, {title: t('price'), key: 'price'}, {title: t('total'), key: 'total'}, {title: '', key: 'action'}]}
+                    />
                   )}
                   {errors.items && (
                     <div className="text-red-500 text-sm mt-2 p-3 bg-red-50 dark:!bg-red-900/10 rounded-lg">
                       {errors.items}
                     </div>
                   )}
-                </Card>
+                </div>
               </motion.div>
 
               {/* Payments Section */}
@@ -777,25 +751,26 @@ const CreatePurchase = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3, delay: 0.2 }}
               >
-                <Card className="shadow-lg border-0 dark:!bg-gray-800 dark:!border-gray-700 transition-colors">
+                <div className="">
                   <div className="flex items-center justify-between mb-6">
                     <div className="flex items-center gap-2">
                       <FaDollarSign className="text-green-500" />
                       <h2 className="text-lg font-bold text-gray-800 dark:!text-gray-100">{t('paymentInformation')}</h2>
                     </div>
-                    <button
+                    <Button
                       type="button"
                       onClick={() => setShowPaymentModal(true)}
-                      className="px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg hover:from-green-600 hover:to-green-700 transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                       disabled={formData.balance <= 0}
+                      variant='success'
+                      outline={false}
                     >
                       <FaPlus /> {t('addPayment')}
-                    </button>
+                    </Button>
                   </div>
 
                   {formData.payments.length === 0 ? (
-                    <div className="text-center py-8 bg-gray-50 dark:!bg-gray-900/50 rounded-lg border-2 border-dashed border-gray-300 dark:!border-gray-700">
-                      <FaDollarSign className="text-gray-400 dark:!text-gray-600 text-3xl mx-auto mb-3" />
+                    <div className="text-center py-8 bg-gray-50 dark:!bg-blue-900/50 rounded-lg border-2 border-dashed border-gray-300 dark:!border-gray-700">
+                      <FaDollarSign className="text-gray-400 dark:!text-gray-400 text-3xl mx-auto mb-3" />
                       <p className="text-gray-500 dark:!text-gray-400">{t('noPaymentsRecorded')}</p>
                     </div>
                   ) : (
@@ -825,19 +800,19 @@ const CreatePurchase = () => {
                       {errors.payments}
                     </div>
                   )}
-                </Card>
+                </div>
               </motion.div>
             </div>
 
             {/* Right Column - Summary */}
             <div className="space-y-6">
-              {/* Summary Card */}
+              {/* Summary div */}
               <motion.div
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.3 }}
               >
-                <Card className="shadow-lg border-0 sticky top-6 dark:!bg-gray-800 dark:!border-gray-700 transition-colors">
+                <div className="">
                   <h2 className="text-lg font-bold text-gray-800 dark:!text-gray-100 mb-6 flex items-center gap-2">
                     <FaLayerGroup className="text-blue-500" />
                     {t('purchaseSummary')}
@@ -849,77 +824,74 @@ const CreatePurchase = () => {
                       <span className="font-bold text-gray-800 dark:!text-gray-100">${formData.sub_total.toFixed(2)}</span>
                     </div>
 
-                    <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-gray-600 dark:!text-gray-400 flex items-center gap-2">
-                          <FaPercent className="text-gray-400" />
-                          {t('tax')} ({formData.tax_rate}%)
-                        </span>
-                        <span className="font-bold text-gray-800 dark:!text-gray-100">${formData.tax_amount.toFixed(2)}</span>
+                    <div className="flex flex-wrap items-center justify-between gap-2 w-full">
+                      <div className=" grow">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-gray-600 dark:!text-gray-400 flex items-center gap-2">
+                            <FaPercent className="text-gray-400" />
+                            {t('tax')}
+                          </span>
+                          {/* <span className="font-bold text-gray-800 dark:!text-gray-100">${formData.tax_rate.toFixed(2)}</span> */}
+                        </div>
+                        <Input
+                          type="number"
+                          name="tax_rate"
+                          value={formData.tax_rate}
+                          onChange={(value) => handleInputChange('tax_rate', value)}
+                          placeholder={t('taxRate')}
+                          className={`w-full ${fieldErrors.tax_rate ? 'border-red-500' : ''} dark:!bg-gray-700 dark:!text-gray-200 dark:!border-gray-600`}
+                          min="0"
+                          max="100"
+                          step="0.1"
+                        />
+                        {fieldErrors.tax_rate && (
+                          <div className="text-red-500 text-sm mt-1">{fieldErrors.tax_rate}</div>
+                        )}
                       </div>
-                      <Input
-                        type="number"
-                        name="tax_rate"
-                        value={formData.tax_rate}
-                        onWheel={(e) => e.target.blur()}
-                        onChange={(e) => handleInputChange('tax_rate', e.target.value)}
-                        placeholder={t('taxRate')}
-                        className={`w-full ${fieldErrors.tax_rate ? 'border-red-500' : ''} dark:!bg-gray-700 dark:!text-gray-200 dark:!border-gray-600`}
-                        min="0"
-                        max="100"
-                        step="0.1"
-                      />
-                      {fieldErrors.tax_rate && (
-                        <div className="text-red-500 text-sm mt-1">{fieldErrors.tax_rate}</div>
-                      )}
-                    </div>
-
-                    <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-gray-600 dark:!text-gray-400 flex items-center gap-2">
-                          <FaTruck className="text-gray-400" />
-                          {t('shippingFee')}
-                        </span>
-                        <span className="font-bold text-gray-800 dark:!text-gray-100">${formData.shipping_fee.toFixed(2)}</span>
+                      <div className=" grow">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-gray-600 dark:!text-gray-400 flex items-center gap-2">
+                            <FaTruck className="text-gray-400" />
+                            {t('shippingFee')}
+                          </span>
+                          {/* <span className="font-bold text-gray-800 dark:!text-gray-100">${formData.shipping_fee.toFixed(2)}</span> */}
+                        </div>
+                        <Input
+                          type="number"
+                          name="shipping_fee"
+                          value={formData.shipping_fee}
+                          onChange={(value) => handleInputChange('shipping_fee', value)}
+                          placeholder={t('shippingFee')}
+                          className={`w-full ${fieldErrors.shipping_fee ? 'border-red-500' : ''} dark:!bg-gray-700 dark:!text-gray-200 dark:!border-gray-600`}
+                          min="0"
+                          step="0.1"
+                        />
+                        {fieldErrors.shipping_fee && (
+                          <div className="text-red-500 text-sm mt-1">{fieldErrors.shipping_fee}</div>
+                        )}
                       </div>
-                      <Input
-                        type="number"
-                        name="shipping_fee"
-                        value={formData.shipping_fee}
-                        onWheel={(e) => e.target.blur()}
-                        onChange={(e) => handleInputChange('shipping_fee', e.target.value)}
-                        placeholder={t('shippingFee')}
-                        className={`w-full ${fieldErrors.shipping_fee ? 'border-red-500' : ''} dark:!bg-gray-700 dark:!text-gray-200 dark:!border-gray-600`}
-                        min="0"
-                        step="0.1"
-                      />
-                      {fieldErrors.shipping_fee && (
-                        <div className="text-red-500 text-sm mt-1">{fieldErrors.shipping_fee}</div>
-                      )}
-                    </div>
-
-                    <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-gray-600 dark:!text-gray-400 flex items-center gap-2">
-                          <FaTruck className="text-gray-400" />
-                          {t('exchangeRate')}
-                        </span>
-                        <span className="font-bold text-gray-800 dark:!text-gray-100">៛{parseFloat(formData.exchange_rate).toFixed(2)}</span>
+                      <div className=" grow">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-gray-600 dark:!text-gray-400 flex items-center gap-2">
+                            <FaTruck className="text-gray-400" />
+                            {t('exchangeRate')}(៛)
+                          </span>
+                          {/* <span className="font-bold text-gray-800 dark:!text-gray-100">៛{parseFloat(formData.exchange_rate).toFixed(2)}</span> */}
+                        </div>
+                        <Input
+                          type="number"
+                          name="exchange_rate"
+                          value={formData.exchange_rate}
+                          onChange={(value) => handleInputChange('exchange_rate', value)}
+                          placeholder={t('exchangeRate')}
+                          className={`w-full ${fieldErrors.exchange_rate ? 'border-red-500' : ''} dark:!bg-gray-700 dark:!text-gray-200 dark:!border-gray-600`}
+                          min="0"
+                          step="1"
+                        />
+                        {fieldErrors.exchange_rate && (
+                          <div className="text-red-500 text-sm mt-1">{fieldErrors.exchange_rate}</div>
+                        )}
                       </div>
-                      <Input
-                        type="number"
-                        name="exchange_rate"
-                        value={formData.exchange_rate}
-                        onWheel={(e) => e.target.blur()}
-                        onChange={(e) => handleInputChange('exchange_rate', e.target.value)}
-                        placeholder={t('exchangeRate')}
-                        className={`w-full ${fieldErrors.exchange_rate ? 'border-red-500' : ''} dark:!bg-gray-700 dark:!text-gray-200 dark:!border-gray-600`}
-                        min="0"
-                        step="0.1"
-                      />
-                      {fieldErrors.exchange_rate && (
-                        <div className="text-red-500 text-sm mt-1">{fieldErrors.exchange_rate}</div>
-                      )}
                     </div>
 
                     <Divider className="my-4 dark:!border-gray-700" />
@@ -956,26 +928,28 @@ const CreatePurchase = () => {
                     </div>
 
                     {/* Action Buttons */}
-                    <div className="space-y-3 mt-6">
-                      <button
+                    <div className=" mt-6 flex justify-center items-center gap-2">
+                      <Button
                         type="submit"
                         disabled={loading}
-                        className="w-full py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-lg hover:from-blue-600 hover:to-indigo-700 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                        variant='primary'
+                        outline={false}
                       >
-                        <FaSave />
-                        {loading ? t('processing') : isEditMode ? t('updatePurchase') : t('createPurchase')}
-                      </button>
-                      <button
+                        <FaSave />Save
+                        {/* {loading ? t('processing') : isEditMode ? t('updatePurchase') : t('createPurchase')} */}
+                      </Button>
+                      <Button
                         type="button"
+                        variant='danger'
+                        outline={true}
                         onClick={() => window.history.back()}
-                        className="w-full py-3 border border-gray-300 dark:!border-gray-600 text-gray-700 dark:!text-gray-300 rounded-lg hover:bg-gray-50 dark:!hover:bg-gray-700/50 transition-all flex items-center justify-center gap-2"
                       >
-                        <FaTimes />
-                        {t('cancel')}
-                      </button>
+                        <FaTimes />Back
+                        {/* {t('cancel')} */}
+                      </Button>
                     </div>
                   </div>
-                </Card>
+                </div>
               </motion.div>
             </div>
           </div>
@@ -1133,7 +1107,7 @@ const CreatePurchase = () => {
                         type="number"
                         value={quantity}
                         onWheel={(e) => e.target.blur()}
-                        onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
+                        onChange={(value) => setQuantity(parseInt(value) || 1)}
                         size="large"
                         placeholder={t('enterQuantity')}
                         className="dark:!bg-gray-700 dark:!text-gray-200 dark:!border-gray-600"
@@ -1147,10 +1121,10 @@ const CreatePurchase = () => {
                         type="number"
                         value={itemCost}
                         onWheel={(e) => e.target.blur()}
-                        onChange={(e) => setItemCost(parseFloat(e.target.value) || 0)}
+                        onChange={(value) => setItemCost(parseFloat(value) || 0)}
                         size="large"
                         min="0"
-                        step="0.01"
+                        step="0.1"
                         placeholder={t('enterCost')}
                         className="dark:!bg-gray-700 dark:!text-gray-200 dark:!border-gray-600"
                       />
@@ -1246,12 +1220,11 @@ const CreatePurchase = () => {
                 <Input
                   type="number"
                   value={paymentAmount}
-                  onWheel={(e) => e.target.blur()}
-                  onChange={(e) => setPaymentAmount(parseFloat(e.target.value) || 0)}
+                  onChange={(value) => setPaymentAmount(parseFloat(value) || 0)}
                   size="large"
                   min="0"
                   max={formData.balance}
-                  step="0.01"
+                  step="1"
                   placeholder={t('enterAmount')}
                   prefix={<FaDollarSign className="text-gray-400" />}
                   className="dark:!bg-gray-700 dark:!text-gray-200 dark:!border-gray-600"
@@ -1268,7 +1241,7 @@ const CreatePurchase = () => {
                 <DatePicker
                   value={paymentDate ? dayjs(paymentDate) : null}
                   onChange={(date, dateString) => setPaymentDate(dateString)}
-                  className="w-full dark:!bg-gray-700 dark:!text-gray-200 dark:!border-gray-600"
+                  className="date-picker"
                   size="large"
                   format="YYYY-MM-DD"
                 />
@@ -1301,3 +1274,5 @@ const CreatePurchase = () => {
 };
 
 export default CreatePurchase;
+
+

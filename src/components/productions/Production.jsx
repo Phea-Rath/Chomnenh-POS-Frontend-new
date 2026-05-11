@@ -26,7 +26,7 @@ import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
-import ExportExcel from '../../services/ExportExel';
+import ExportExcel from '../../services/ExportExcel';
 import { BiEdit } from 'react-icons/bi';
 import { BsGrid3X3 } from 'react-icons/bs';
 import { useGetAllProductionQuery } from '../../../app/Features/productSlice';

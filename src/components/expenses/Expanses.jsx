@@ -16,7 +16,7 @@ import {
 } from "../../../app/Features/expensesSlice";
 import { useGetAllExpanseTypesQuery } from "../../../app/Features/expenseTypesSlice";
 import { toast } from "react-toastify";
-import ExportExel from "../../services/ExportExel";
+import ExportExcel from "../../services/ExportExcel";
 import { useTranslation } from "react-i18next";
 import RefreshButton from "../../utils/RefreshButton";
 
@@ -254,7 +254,7 @@ const Expanses = () => {
 
             <div className="flex items-center gap-3">
               <RefreshButton onRefresh={refetch} />
-              <ExportExel data={expenses} title={t('expenses')} />
+              <ExportExcel data={expenses} title={t('expenses')} />
               <div className={`flex rounded-lg border p-1 ${darkMode ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"}`}>
                 <button
                   onClick={() => setViewMode("table")}

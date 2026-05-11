@@ -112,6 +112,7 @@ import CompaniesPage from "./markets/CompaniesPage";
 import CompanyStore from "./markets/CompanyStore";
 import ShoppingCart from "./markets/ShoppingCart";
 import WhiteBoard from "./utils/WhiteBoard";
+import ImportTools from "./utils/ImportTools";
 
 
 function ProtectedRoute({ children }) {
@@ -574,6 +575,10 @@ const router = createBrowserRouter([
       {
         path: 'aba',
         element: <ABAPaymentComponent />
+      },
+      {
+        path: 'import-tool',
+        element: <ImportTools />
       }
 
     ],
@@ -618,6 +623,7 @@ const router = createBrowserRouter([
         path: 'shopping-cart',
         element: <ShoppingCart />
       }
+
     ]
   },
 

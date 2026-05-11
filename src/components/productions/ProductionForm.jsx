@@ -378,6 +378,8 @@ const ProductionForm = () => {
                 raw_materials: formattedRawMaterials
             };
 
+            console.log(payload);
+
             let response;
             if (isEditMode) {
                 response = await api.put(`/production/${id}`, payload, {

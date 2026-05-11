@@ -21,7 +21,7 @@ export default function HomePage() {
   }, [data]);
 
   return (
-    <section className="min-h-screen container mx-auto -mt-8">
+    <section className="min-h-screen text-gray-800 container mx-auto -mt-8">
       {/* Hero Section */}
       <div className="relative h-[400px] md:h-[600px] overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[#eaeded] z-10" />

@@ -183,7 +183,7 @@ const OrderReceipt = () => {
                     )}
                   </td>
                   <td className="border-b border-dashed border-slate-300 px-3 py-5 text-center align-top text-lg">
-                    {item.quantity}
+                    {item.quantity} {item.scale_name}
                   </td>
                   <td className="border-b border-dashed border-slate-300 px-3 py-5 text-right align-top text-lg">
                     {formatMoney(Number(item.price || 0) * Number(item.quantity || 0))}

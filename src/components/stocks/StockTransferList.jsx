@@ -29,6 +29,11 @@ import * as XLSX from 'xlsx';
 import { FaEdit, FaEye, FaTrash } from "react-icons/fa";
 import api from "../../services/api";
 import { useTranslation } from "react-i18next";
+import RefreshButton from "../../utils/RefreshButton";
+import ExportExcel from "../../services/ExportExcel";
+import Button from "../../utils/Button";
+import RichSearch from "../../utils/RichSearch";
+import { DatePicker } from "antd";
 
 // Helper for debouncing
 const useDebounce = (value, delay) => {
@@ -60,7 +65,7 @@ const StockTransferList = () => {
   const [warehouses, setWarehouses] = useState([]);
   const [exportLoading, setExportLoading] = useState(false);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
-  const [viewMode, setViewMode] = useState('table'); // 'table' or 'grid'
+  const [viewMode, setViewMode] = useState('grid'); // 'table' or 'grid'
 
   // Responsive detection
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
@@ -72,9 +77,9 @@ const StockTransferList = () => {
 
   // Auto switch to grid view on mobile
   useEffect(() => {
-    if (isMobile && viewMode === 'table') {
+    if (viewMode === 'table') {
       setViewMode('grid');
-    } else if (!isMobile && viewMode === 'grid') {
+    } else if ( viewMode === 'grid') {
       setViewMode('table');
     }
   }, [isMobile]);
@@ -103,7 +108,9 @@ const StockTransferList = () => {
         if (item.from_warehouse_name) warehouseSet.add(item.from_warehouse_name);
         if (item.to_warehouse_name) warehouseSet.add(item.to_warehouse_name);
       });
-      setWarehouses(Array.from(warehouseSet));
+      const warehouse = [ 'all',...Array.from(warehouseSet)].map(wh => ({ value: wh, label: `${t(wh)}` }));
+      
+      setWarehouses(warehouse);
     }
   }, [data]);
 
@@ -204,8 +211,8 @@ const StockTransferList = () => {
     }));
   };
 
-  const handlePageSizeChange = (e) => {
-    const size = parseInt(e.target.value);
+  const handlePageSizeChange = (value) => {
+    const size = parseInt(value);
     setTableParams(prev => ({
       ...prev,
       pagination: { ...prev.pagination, pageSize: size, current: 1 },
@@ -272,13 +279,13 @@ const StockTransferList = () => {
   };
 
   const StatCard = ({ title, value, icon, color = 'blue' }) => (
-    <div className={`border border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-gradient-to-br from-${color}-50 to-${color}-100 dark:from-gray-500/20 dark:to-gray-500/20 transition-all`}>
+    <div className={`border border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-gradient-to-br from-${color}-50 to-${color}-100 dark:from-blue-500/20 dark:to-gray-500/20 transition-all`}>
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">{title}</p>
+          <p className="text-gray-600 dark:text-gray-200 text-sm font-medium">{title}</p>
           <p className="text-2xl font-bold text-gray-900 dark:text-white">{value}</p>
         </div>
-        <div className={`p-3 bg-white dark:bg-gray-800 rounded-full text-${color}-600 dark:text-${color}-400 shadow-sm`}>{icon}</div>
+        <div className={`p-3 bg-white dark:bg-gradient-to-br from-${color}-50 to-${color}-100 dark:from-blue-500/20 dark:to-gray-500/20 rounded-full text-${color}-600 dark:text-${color}-400 `}>{icon}</div>
       </div>
     </div>
   );
@@ -286,18 +293,11 @@ const StockTransferList = () => {
   const Pagination = () => {
     const totalPages = Math.ceil(tableParams.pagination.total / tableParams.pagination.pageSize);
     return (
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 transition-colors">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-transparent transition-colors">
         <div className="flex items-center gap-2">
           <span className="text-sm text-gray-600 dark:text-gray-400">{t('rowsPerPage')}:</span>
-          <select
-            value={tableParams.pagination.pageSize}
-            onChange={handlePageSizeChange}
-            className="border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 rounded-md px-2 py-1 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors"
-          >
-            {[10, 25, 50, 100].map(size => (
-              <option key={size} value={size}>{size}</option>
-            ))}
-          </select>
+          {tableParams.pagination.pageSize}
+          
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -342,19 +342,19 @@ const StockTransferList = () => {
     const paginatedData = filteredData.slice(start, start + tableParams.pagination.pageSize);
 
     return (
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden transition-colors">
+      <div className="bg-primary rounded-sm border border-gray-200 dark:border-gray-700 overflow-hidden transition-colors">
         <div className="overflow-x-auto">
           <table className="w-full border-collapse text-sm">
-            <thead className="bg-gray-100 dark:bg-gray-700 border-b border-gray-300 dark:border-gray-600">
+            <thead className="bg-gray-100 dark:bg-gray-700 border-b border-gray-300 dark:border-gray-400">
               <tr>
-                <th className="p-3 text-left font-semibold text-gray-700 dark:text-gray-200 border-r border-gray-300 dark:border-gray-600 w-16">#</th>
-                <th className="p-3 text-left font-semibold text-gray-700 dark:text-gray-200 border-r border-gray-300 dark:border-gray-600 cursor-pointer" onClick={() => handleSort('stock_no')}>
+                <th className="p-3 text-left font-semibold text-gray-700 dark:text-gray-200 border-r border-gray-300 dark:border-gray-400 w-16">#</th>
+                <th className="p-3 text-left font-semibold text-gray-700 dark:text-gray-200 border-r border-gray-300 dark:border-gray-400 cursor-pointer" onClick={() => handleSort('stock_no')}>
                   {t('stockNumber')} {tableParams.sortField === 'stock_no' && (tableParams.sortOrder === 'ascend' ? '↑' : '↓')}
                 </th>
                 {!isMobile && (
-                  <th className="p-3 text-left font-semibold text-gray-700 dark:text-gray-200 border-r border-gray-300 dark:border-gray-600">{t('transferDetails')}</th>
+                  <th className="p-3 text-left font-semibold text-gray-700 dark:text-gray-200 border-r border-gray-300 dark:border-gray-400">{t('transferDetails')}</th>
                 )}
-                <th className="p-3 text-center font-semibold text-gray-700 dark:text-gray-200 border-r border-gray-300 dark:border-gray-600 cursor-pointer" onClick={() => handleSort('quantity')}>
+                <th className="p-3 text-center font-semibold text-gray-700 dark:text-gray-200 border-r border-gray-300 dark:border-gray-400 cursor-pointer" onClick={() => handleSort('quantity')}>
                   {t('quantityCount')} {tableParams.sortField === 'quantity' && (tableParams.sortOrder === 'ascend' ? '↑' : '↓')}
                 </th>
                 <th className="p-3 text-center font-semibold text-gray-700 dark:text-gray-200">{t('actions')}</th>
@@ -364,7 +364,7 @@ const StockTransferList = () => {
               {paginatedData.map((item, idx) => {
                 const index = start + idx + 1;
                 return (
-                  <tr key={`${item.stock_id}-${item.created_at}`} className="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                  <tr key={`${item.stock_id}-${item.created_at}`} className="border-b border-gray-200 dark:border-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
                     <td className="p-3 text-center font-medium text-gray-600 dark:text-gray-400">{index}</td>
                     <td className="p-3">
                       <div className="font-semibold text-gray-900 dark:text-white">{item.stock_no}</div>
@@ -433,7 +433,7 @@ const StockTransferList = () => {
       <div className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
           {paginatedData.map((item, idx) => (
-            <div key={`${item.stock_id}-${item.created_at}`} className="border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 p-4 shadow-sm transition-colors">
+            <div key={`${item.stock_id}-${item.created_at}`} className="border border-gray-200 dark:border-gray-700 rounded-lg bg-primary p-4  transition-colors">
               <div className="flex justify-between items-start">
                 <div>
                   <div className="flex items-center gap-2 mb-2">
@@ -454,7 +454,7 @@ const StockTransferList = () => {
                   <div className="text-xs text-gray-500 dark:text-gray-400">{t('unitsCount')}</div>
                 </div>
               </div>
-              <div className="flex items-center justify-between mt-3 text-xs text-gray-500 dark:text-gray-400 border-t border-gray-100 dark:border-gray-700 pt-2 transition-colors">
+              <div className="flex items-center justify-between mt-3 text-xs text-gray-500 dark:text-gray-400 border-t border-gray-100 dark:border-gray-400 pt-2 transition-colors">
                 <div className="flex items-center gap-1">
                   <LuCalendar className="w-3 h-3" />
                   {dayjs(item.created_at).format('MMM DD, YYYY HH:mm')}
@@ -519,7 +519,7 @@ const StockTransferList = () => {
               >
                 <option value="all">{t('allWarehouses')}</option>
                 {warehouses.map(w => (
-                  <option key={w} value={w}>{w}</option>
+                  <option key={w.value} value={w.value}>{w.label}</option>
                 ))}
               </select>
             </div>
@@ -596,40 +596,20 @@ const StockTransferList = () => {
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
-            {!isMobile && (
-              <div className="flex border border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden transition-colors">
-                <button
-                  onClick={() => setViewMode('table')}
-                  className={`p-2 transition-colors ${viewMode === 'table' ? 'bg-blue-600 text-white' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
-                >
-                  <LuList />
-                </button>
-                <button
-                  onClick={() => setViewMode('grid')}
-                  className={`p-2 transition-colors ${viewMode === 'grid' ? 'bg-blue-600 text-white' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
-                >
-                  <LuGrid3X3 />
-                </button>
-              </div>
-            )}
-            <button
-              onClick={fetchData}
-              disabled={loading}
-              className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 flex items-center gap-2 transition-colors"
-            >
-              <LuRefreshCw className={loading ? 'animate-spin' : ''} /> {!isMobile && t('refresh')}
-            </button>
-            <button
+            
+            <RefreshButton onRefresh={fetchData} />
+            <ExportExcel data={filteredData} title={t('stockTransfers')}/>
+            {/* <button
               onClick={exportToExcel}
               disabled={exportLoading}
               className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2 transition-colors"
             >
               <LuDownload /> {!isMobile && (exportLoading ? t('exporting') : t('export'))}
-            </button>
+            </button> */}
             <Link to="/transfer-stock">
-              <button className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 flex items-center gap-2 transition-colors">
+              <Button variant="success" >
                 <LuPlus /> {!isMobile && t('newTransfer')}
-              </button>
+              </Button>
             </Link>
           </div>
         </div>
@@ -643,9 +623,9 @@ const StockTransferList = () => {
 
         {/* Filters - Desktop */}
         {!isMobile && (
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 mb-3 transition-colors">
+          <div className="mb-3">
             <div className="flex flex-wrap text-sm items-center gap-4">
-              <div className="flex-1 min-w-[200px]">
+              <div className="flex-1 min-w-[200px] grow">
                 <div className="relative">
                   <LuSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                   <input
@@ -653,39 +633,103 @@ const StockTransferList = () => {
                     placeholder={t('searchTransfers')}
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-400 text-gray-900 dark:text-white rounded-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
                   />
                 </div>
               </div>
-              <select
+              {/* <select
                 value={selectedWarehouse}
                 onChange={(e) => setSelectedWarehouse(e.target.value)}
                 className="px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
               >
                 <option value="all">{t('allWarehouses')}</option>
                 {warehouses.map(w => (
-                  <option key={w} value={w}>{w}</option>
+                  <option key={w.value} value={w.value}>{w.label}</option>
                 ))}
-              </select>
-              <input
+              </select> */}
+              <RichSearch
+                data={warehouses}
+                value={selectedWarehouse}
+                keyFields={{
+                  id: "value",
+                  title: "label",
+                }}
+                onSelected={(value) => setSelectedWarehouse(value)}
+              />
+              {/* <input
                 type="date"
                 value={dateRange.start ? dayjs(dateRange.start).format('YYYY-MM-DD') : ''}
                 onChange={(e) => setDateRange(prev => ({ ...prev, start: e.target.value ? dayjs(e.target.value) : null }))}
                 className="px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-md transition-colors"
                 placeholder={t('startDate')}
+              /> */}
+              <DatePicker
+                value={dateRange.start ? dayjs(dateRange.start) : null}
+                onChange={(e) => setDateRange(prev => ({ ...prev, start: e ? dayjs(e) : null }))}
+                className="date-picker"
+                placeholder={t('startDate')}
               />
-              <input
+              {/* <input
                 type="date"
                 value={dateRange.end ? dayjs(dateRange.end).format('YYYY-MM-DD') : ''}
                 onChange={(e) => setDateRange(prev => ({ ...prev, end: e.target.value ? dayjs(e.target.value) : null }))}
                 className="px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-md transition-colors"
                 placeholder={t('endDate')}
+              /> */}
+              <DatePicker
+                value={dateRange.end ? dayjs(dateRange.end) : null}
+                onChange={(e) => setDateRange(prev => ({ ...prev, end: e ? dayjs(e) : null }))}
+                className="date-picker"
+                placeholder={t('endDate')}
               />
+              {!isMobile && (
+              <div className="flex border border-gray-300 dark:border-gray-400 rounded-sm overflow-hidden transition-colors">
+                <button
+                  onClick={() => setViewMode('table')}
+                  className={`p-3 transition-colors ${viewMode === 'table' ? 'bg-blue-600 text-white' : ' text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+                >
+                  <LuList />
+                </button>
+                <button
+                  onClick={() => setViewMode('grid')}
+                  className={`p-3 transition-colors ${viewMode === 'grid' ? 'bg-blue-600 text-white' : ' text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+                >
+                  <LuGrid3X3 />
+                </button>
+              </div>
+            )}
+            
+          <RichSearch
+            data={[
+              {
+                id: 10,
+                label: '10 show'
+              },
+              {
+                id: 25,
+                label: '25 show'
+              },
+              {
+                id: 50,
+                label: '50 show'
+              },
+              {
+                id: 100,
+                label: '100 show'
+              }
+            ]}
+            keyFields={{
+              id: "id",
+              title: "label",
+            }}
+            value={tableParams.pagination.pageSize}
+            onSelected={handlePageSizeChange}
+          />
               <button
                 onClick={resetFilters}
-                className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                className="px-4 py-2 border border-gray-300 dark:border-gray-400 rounded-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
               >
-                {t('resetFilters')}
+                {t('reset')}
               </button>
             </div>
           </div>
@@ -727,7 +771,7 @@ const StockTransferList = () => {
           </div>
         ) : filteredData.length === 0 ? (
           <EmptyState />
-        ) : viewMode === 'table' && !isMobile ? (
+        ) : viewMode === 'table' ? (
           <TableView />
         ) : (
           <GridView />

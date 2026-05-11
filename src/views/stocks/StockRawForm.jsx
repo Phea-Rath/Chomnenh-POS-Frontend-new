@@ -12,13 +12,17 @@ import {
     useUpdateStockRawMutation,
     useGetStockRawByIdQuery,
 } from "../../../app/Features/stocksSlice";
-import { DatePicker, Select, Tag, Avatar, Input } from "antd";
+import { DatePicker, Select, Tag, Avatar } from "antd";
 import { useDebounce } from "use-debounce";
 import dayjs from 'dayjs';
 import { toast } from "react-toastify";
 import { useTranslation } from "react-i18next";
 import { FaTrash, FaEdit, FaSave, FaTimes, FaBox, FaFlask } from "react-icons/fa";
 import { MdLocalShipping } from "react-icons/md";
+import Button from "../../utils/Button";
+import RichSearch from "../../utils/RichSearch";
+// import DatePicker from "../../utils/DatePicker";
+import Input from "../../utils/Input";
 
 const { Option } = Select;
 
@@ -78,7 +82,8 @@ const StockRawForm = () => {
             (item) =>
                 item.warehouse_id !== 2 &&
                 item.warehouse_id !== 3 &&
-                item.warehouse_id !== 4
+                item.warehouse_id !== 4 &&
+                item.warehouse_id !== 1
         );
         setToWarehouse(newWare || []);
     }, [stockTypeRes.data, rawMaterialRes.data, warehouseRes.data]);
@@ -283,9 +288,10 @@ const StockRawForm = () => {
             setLimit(prev => prev + 10);
         }
     }
-
+   
+    
     return (
-        <section className="view-page px-6 py-6 bg-transparent min-h-screen">
+        <section className="view-page px-6 py-6 bg-transparent">
             <AlertBox
                 isOpen={alertBox}
                 title={t('confirmation')}
@@ -296,9 +302,9 @@ const StockRawForm = () => {
                 cancelText={t('cancel')}
             />
 
-            <div className=" mx-auto">
+            <div className=" mx-auto overflow-visible">
                 {/* Header */}
-                <div className="flex justify-between items-center mb-8">
+                <div className="flex justify-between items-center mb-8 overflow-visible">
                     <div>
                         <MdLocalShipping className="text-2xl text-blue-600 dark:text-blue-400" />
                         <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
@@ -311,167 +317,13 @@ const StockRawForm = () => {
                 </div>
 
                 <form onSubmit={handleSubmit}>
-                    <div className="bg-transparent overflow-hidden">
+                    <div className="bg-transparent overflow-visible">
                         <div>
                             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                                {/* Left Column - Form Controls */}
-                                <div className="lg:col-span-1 space-y-6">
-                                    {/* Search Raw Materials */}
-                                    <div className="space-y-2">
-                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                            <span className="text-red-500">*</span> {t('searchRawMaterials')}
-                                        </label>
-                                        <Select
-                                            onSelect={onSelectMaterial}
-                                            onPopupScroll={onScrollFetch}
-                                            showSearch
-                                            onSearch={(value) => setSearchMaterial(value)}
-                                            style={{ width: '100%' }}
-                                            placeholder={t('searchRawMaterialsPlaceholder')}
-                                            size="large"
-                                            className="dark:!bg-gray-800 dark:!border-gray-700"
-                                            filterOption={(input, option) =>
-                                                option.name.toLowerCase().indexOf(input.toLowerCase()) >= 0
-                                            }
-                                            optionLabelProp="name"
-                                            dropdownClassName="dark:!bg-gray-800 dark:!border-gray-700"
-                                        >
-                                            {fieldMaterials?.map((item) => (
-                                                <Option key={item.id} value={item.id} name={item.material_name} className="dark:hover:!bg-gray-700">
-                                                    <div className="flex items-center gap-3 py-1">
-                                                        <Avatar
-                                                            size="small"
-                                                            src={item.image}
-                                                            icon={<FaFlask />}
-                                                            className="border border-gray-200 dark:border-gray-700"
-                                                        />
-                                                        <div className="flex-1 min-w-0">
-                                                            <div className="font-medium text-gray-900 dark:text-white truncate">
-                                                                {item.material_name}
-                                                            </div>
-                                                            <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                                                                {item.material_code}
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </Option>
-                                            ))}
-                                        </Select>
-                                    </div>
-
-                                    {/* Stock Details Card */}
-                                    <div className="bg-gradient-to-br from-gray-50 to-blue-50 dark:from-gray-800 dark:to-blue-900/20 rounded-xl p-6 border shadow-sm border-gray-200 dark:border-gray-700 space-y-4">
-                                        <h3 className="font-medium text-gray-800 dark:text-white flex items-center gap-2">
-                                            <FaEdit className="text-blue-500 dark:text-blue-400" />
-                                            {t('stockDetails')}
-                                        </h3>
-
-                                        <div className="space-y-4">
-                                            {/* <div>
-                                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                                    {t('fromWarehouse')}
-                                                </label>
-                                                <select
-                                                    onChange={(e) => setForm(prev => ({ ...prev, from_warehouse: e.target.value }))}
-                                                    value={form.from_warehouse}
-                                                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 dark:text-white text-sm"
-                                                    required
-                                                >
-                                                    <option value="">Select From Warehouse</option>
-                                                    <option value={2}>PO</option>
-                                                </select>
-                                            </div> */}
-
-                                            <div>
-                                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                                    {t('stockType')}
-                                                </label>
-                                                <select
-                                                    value={form.stock_type_id}
-                                                    onChange={(e) => setForm(prev => ({ ...prev, stock_type_id: e.target.value }))}
-                                                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 dark:text-white text-sm"
-                                                    required
-                                                >
-                                                    <option value="">{t('selectStockType') || "Select stock type"}</option>
-                                                    {stockTypeRes?.data?.data?.map(s => <option key={s.stock_type_id} value={s.stock_type_id}>{s.stock_type_name}</option>)}
-                                                </select>
-                                            </div>
-
-                                            <div>
-                                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                                    {t('toWarehouse')} <span className="text-red-500">*</span>
-                                                </label>
-                                                <select
-                                                    value={form.warehouse_id}
-                                                    onChange={(e) => setForm(prev => ({ ...prev, warehouse_id: e.target.value }))}
-                                                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 dark:text-white text-sm"
-                                                    required
-                                                >
-                                                    <option value="" disabled>{t('selectWarehouse')}</option>
-                                                    {toWarehouse?.map((item) => (
-                                                        <option key={item.warehouse_id} value={item.warehouse_id}>
-                                                            {item.warehouse_name}
-                                                        </option>
-                                                    ))}
-                                                </select>
-                                            </div>
-
-                                            <div>
-                                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                                    {t('stockDate')}
-                                                </label>
-                                                <DatePicker
-                                                    format="YYYY-MM-DD"
-                                                    value={form.stock_date ? dayjs(form.stock_date) : dayjs()}
-                                                    onChange={(date, dateString) => setForm(prev => ({ ...prev, stock_date: dateString }))}
-                                                    className="w-full dark:!bg-gray-700 dark:!border-gray-600 dark:!text-white"
-                                                    size="middle"
-                                                />
-                                            </div>
-
-                                            <div>
-                                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                                    {t('remark')}
-                                                </label>
-                                                <textarea
-                                                    value={form.stock_remark}
-                                                    onChange={(e) => setForm(prev => ({ ...prev, stock_remark: e.target.value }))}
-                                                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none text-sm bg-white dark:bg-gray-700 dark:text-white"
-                                                    placeholder={t('remarksPlaceholder')}
-                                                    rows="3"
-                                                />
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* Action Buttons */}
-                                    <div className="flex gap-3 pt-4">
-                                        <button
-                                            type="submit"
-                                            disabled={selectMaterials.length === 0}
-                                            className={`flex-1 py-3 px-4 rounded-xl font-medium transition-all duration-200 flex items-center justify-center gap-2 ${selectMaterials.length === 0
-                                                ? 'bg-gray-300 dark:bg-gray-700 cursor-not-allowed text-gray-500 dark:text-gray-400'
-                                                : 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white shadow-lg hover:shadow-xl'
-                                                }`}
-                                        >
-                                            {isEditMode ? <FaSave /> : <MdLocalShipping />}
-                                            {isEditMode ? t('updateStock') : t('createStock')}
-                                        </button>
-                                        <Link to={-1} className="flex-1">
-                                            <button
-                                                type="button"
-                                                className="w-full bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 text-white py-3 px-4 rounded-xl font-medium transition-all duration-200 flex items-center justify-center gap-2"
-                                            >
-                                                <FaTimes />
-                                                {t('cancel')}
-                                            </button>
-                                        </Link>
-                                    </div>
-                                </div>
-
+                                
                                 {/* Right Column - Selected Materials */}
                                 <div className="lg:col-span-2">
-                                    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden shadow-sm">
+                                    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-sm overflow-visible">
                                         {/* Items Header */}
                                         <div className="px-6 py-4 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 border-b border-gray-200 dark:border-gray-700">
                                             <div className="flex justify-between items-center">
@@ -488,7 +340,7 @@ const StockRawForm = () => {
 
                                         {/* Items Table */}
                                         {selectMaterials.length > 0 ? (
-                                            <div className="overflow-x-auto">
+                                            <div className="overflow-auto">
                                                 <table className="w-full">
                                                     <thead className="bg-gray-50 dark:bg-gray-900/50">
                                                         <tr>
@@ -547,12 +399,13 @@ const StockRawForm = () => {
                                                                         />
                                                                     </td>
                                                                     <td className="px-6 py-4">
+                                                                        
                                                                         <DatePicker
                                                                             format="YYYY-MM-DD"
                                                                             value={materialLists[index]?.expire_date ? dayjs(materialLists[index].expire_date) : null}
                                                                             onChange={(date, dateString) => handleChange(index, 'expire_date', dateString)}
-                                                                            className="w-full dark:!bg-gray-700 dark:!border-gray-600 dark:!text-white"
-                                                                            size="middle"
+                                                                            className="date-picker" 
+                                                                            size="large"
                                                                         />
                                                                     </td>
                                                                     <td className="px-6 py-4">
@@ -603,6 +456,111 @@ const StockRawForm = () => {
                                         </div>
                                     )}
                                 </div>
+                                {/* Left Column - Form Controls */}
+                                <div className="lg:col-span-1 space-y-6">
+                                    {/* Search Raw Materials */}
+                                    <div className="space-y-2">
+                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                            <span className="text-red-500">*</span> {t('searchRawMaterials')}
+                                        </label>
+                                        <RichSearch data={fieldMaterials} keyFields={{id: 'id', title: 'material_name', subtitle: 'material_code', image: 'material_image', price: 'material_cost', quantity: 'stock'}} onScrollReader={onScrollFetch} onSelected={onSelectMaterial} onSearch={setSearchMaterial} placeholder={t('searchRawMaterialsPlaceholder')}/>
+                                    </div>      
+
+                                    {/* Stock Details Card */}
+                                    <div className="">
+                                        <h3 className="font-medium text-gray-800 dark:text-white flex items-center gap-2">
+                                            <FaEdit className="text-blue-500 dark:text-blue-400" />
+                                            {t('stockDetails')}
+                                        </h3>
+
+                                        <div className="space-y-4 flex flex-wrap gap-3 items-center">
+                                            {/* <div>
+                                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                                    {t('fromWarehouse')}
+                                                </label>
+                                                <select
+                                                    onChange={(e) => setForm(prev => ({ ...prev, from_warehouse: e.target.value }))}
+                                                    value={form.from_warehouse}
+                                                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 dark:text-white text-sm"
+                                                    required
+                                                >
+                                                    <option value="">Select From Warehouse</option>
+                                                    <option value={2}>PO</option>
+                                                </select>
+                                            </div> */}
+
+                                            <div className="grow">
+                                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                                    {t('stockType')}
+                                                </label>
+                                                <RichSearch 
+                                                    placeholder={t('selectStockType')}
+                                                    data={stockTypeRes?.data?.data} keyFields={{id: 'stock_type_id', title: 'stock_type_name'}} 
+                                                    onSelected={(id)=>setForm(prev => ({ ...prev, stock_type_id: id }))}/>
+                                            </div>
+
+                                            <div className="grow">
+                                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                                    {t('toWarehouse')} <span className="text-red-500">*</span>
+                                                </label>
+                                                <RichSearch 
+                                                    placeholder={t('selectWarehouse')}
+                                                    value={form.warehouse_id}
+                                                    data={toWarehouse} keyFields={{id: 'warehouse_id', title: 'warehouse_name'}} 
+                                                    onSelected={(id)=>setForm(prev => ({ ...prev, warehouse_id: id }))}/>
+                                            </div>
+
+                                            <div className="grow">
+                                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                                    {t('stockDate')}
+                                                </label>
+                                                <DatePicker
+                                                    format="YYYY-MM-DD"
+                                                    value={form.stock_date ? dayjs(form.stock_date) : dayjs()}
+                                                    onChange={(date, dateString) => setForm(prev => ({ ...prev, stock_date: dateString }))}
+                                                    className="date-picker"
+                                                    size="large"
+                                                />
+                                            </div>
+
+                                            <div className="grow">
+                                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                                    {t('remark')}
+                                                </label>
+                                                <textarea
+                                                    value={form.stock_remark}
+                                                    onChange={(e) => setForm(prev => ({ ...prev, stock_remark: e.target.value }))}
+                                                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-400 rounded-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none text-sm dark:text-white"
+                                                    placeholder={t('remarksPlaceholder')}
+                                                    rows="3"
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Action Buttons */}
+                                    <div className="flex gap-3 pt-4">
+                                        <Button
+                                            type="submit"
+                                            disabled={selectMaterials.length === 0}
+                                            
+                                        >
+                                            {isEditMode ? <FaSave /> : <MdLocalShipping />}
+                                            {isEditMode ? t('updateStock') : t('createStock')}
+                                        </Button>
+                                        <Link to={-1} className="flex-1">
+                                            <Button
+                                                type="button"
+                                                variant="danger"
+                                                outline
+                                            >
+                                                <FaTimes />
+                                                {t('cancel')}
+                                            </Button>
+                                        </Link>
+                                    </div>
+                                </div>
+
                             </div>
                         </div>
                     </div>

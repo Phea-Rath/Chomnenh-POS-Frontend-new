@@ -6,11 +6,15 @@ import { useGetAllStockTypesQuery } from '../../../app/Features/stockTypesSlice'
 import { useGetItemsByStockQuery } from '../../../app/Features/itemsSlice';
 import { useGetAllWarehousesQuery } from '../../../app/Features/warehousesSlice';
 import { useCreateStockMutation, useGetAllStockQuery, useGetStockByIdQuery, useUpdateStockMutation } from '../../../app/Features/stocksSlice';
-import { Select, Tag } from 'antd';
+import { DatePicker, Select, Tag } from 'antd';
 import { toast } from 'react-toastify';
 import api from '../../services/api';
 import { useDebounce } from 'use-debounce';
 import { useTranslation } from 'react-i18next';
+import Button from '../../utils/Button';
+import RichSearch from '../../utils/RichSearch';
+import Input from '../../utils/Input';
+import dayjs from 'dayjs';
 
 const StockTransfer = () => {
   const { t } = useTranslation();
@@ -131,7 +135,7 @@ const StockTransfer = () => {
       );
     } else {
       setselectItems(prev => {
-        return [...prev, { ...finding, quantity: 1 }];
+        return [...prev, { ...finding, quantity: 1, expire_date: null }];
       });
     }
   }
@@ -169,7 +173,9 @@ const StockTransfer = () => {
       if (isUpdate) {
         response = await updateStock({ id: form.stock_id || id, itemData: payload, token });
       } else {
-        response = await createStock({ itemData: payload, token });
+        response = await api.post(`stock_masters`, payload, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
       }
 
       if (response.data.status === 200) {
@@ -205,7 +211,12 @@ const StockTransfer = () => {
   }
 
   function handleSubmit(e) {
+    
     e.preventDefault();
+    if(form.from_warehouse == form.warehouse_id){
+      toast.error(t('warehouseCannotBeSame'));
+      return;
+    }
     setAlertBox(true);
     setForm(prev => {
       return { ...prev, items: selectItems }
@@ -235,15 +246,15 @@ const StockTransfer = () => {
     });
   }
 
-  const onSelectWarehouse = async (e) => {
-    setForm(prev => { return { ...prev, from_warehouse: e.target.value } });
-    const dataSelected = toWarehouse.filter(item => item.warehouse_id != e.target.value);
-    const itemSelected = items.filter(item => item.warehouse_id == e.target.value);
+  const onSelectWarehouse = async (value) => {
+    setForm(prev => { return { ...prev, from_warehouse: value } });
+    const dataSelected = toWarehouse.filter(item => item.warehouse_id != value);
+    const itemSelected = items.filter(item => item.warehouse_id == value);
     settoWarehouseSelect(dataSelected);
     setfielditems(itemSelected || []);
     setselectItems([]);
 
-    api.get(`stock_by_warehouse/${e.target.value}`, {
+    api.get(`stock_by_warehouse/${value}`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -280,156 +291,11 @@ const StockTransfer = () => {
           <div className="bg-transparent rounded-xl overflow-hidden">
             <div>
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Left Column - Form Controls */}
-                <div className="lg:col-span-1 space-y-4">
-                  <div className="form-group">
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      <span className="flex items-center gap-2">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                        </svg>
-                        {t('selectItems')}
-                      </span>
-                    </label>
-                    <Select
-                      size='large'
-                      style={{ width: '100%' }}
-                      placeholder={t('searchItems')}
-                      onChange={onSelectItem}
-                      onSearch={(value) => setSearchTerm(value)}
-                      options={options}
-                      showSearch
-                      className="dark:!bg-gray-800 dark:text-white"
-                      dropdownClassName="dark:bg-gray-800"
-                      filterOption={(input, option) =>
-                        option.name.toLowerCase().indexOf(input.toLowerCase()) >= 0
-                      }
-                    />
-                  </div>
-
-                  <div className="space-y-4 p-4 bg-gray-50 dark:bg-gray-800 shadow-sm rounded-lg border border-gray-200 dark:border-gray-700 transition-colors">
-                    <div className="form-group">
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 uppercase">
-                        <span className="flex items-center gap-2">
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                          </svg>
-                          {t('fromWarehouse')}
-                        </span>
-                      </label>
-                      <select
-                        onChange={onSelectWarehouse}
-                        value={form.from_warehouse}
-                        className='w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-900 dark:text-white transition-colors'
-                        required
-                      >
-                        <option value="">{t('selectSourceWarehouse')}</option>
-                        {warehousesSelect.map((item) => (
-                          <option key={item.warehouse_id} value={item.warehouse_id}>
-                            {item.warehouse_name}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div className="form-group">
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 uppercase">
-                        <span className="flex items-center gap-2">
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" />
-                          </svg>
-                          {t('stockType')}
-                        </span>
-                      </label>
-                      <select
-                        name="stock_type_id"
-                        value={form.stock_type_id}
-                        className='w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-900 dark:text-white transition-colors'
-                        onChange={(e) => {
-                          setForm(prev => { return { ...prev, stock_type_id: e.target.value } });
-                        }}
-                        required
-                      >
-                        <option value="">{t('selectStockType')}</option>
-                        {stocktype.map((item) => (
-                          <option key={item.stock_type_id} value={item.stock_type_id}>
-                            {item.stock_type_name}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div className="form-group">
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 uppercase">
-                        <span className="flex items-center gap-2">
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                          </svg>
-                          {t('toWarehouse')}
-                        </span>
-                      </label>
-                      <select
-                        name="to_warehouse_id"
-                        value={form.warehouse_id}
-                        className='w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-900 dark:text-white transition-colors'
-                        onChange={(e) => setForm(prev => { return { ...prev, warehouse_id: e.target.value } })}
-                        required
-                      >
-                        <option value="">{t('selectDestinationWarehouse')}</option>
-                        {toWarehouseSelect.map((item) => (
-                          <option key={item.warehouse_id} value={item.warehouse_id}>
-                            {item.warehouse_name}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div className="form-group">
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 uppercase">
-                        <span className="flex items-center gap-2">
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
-                          </svg>
-                          {t('description')}
-                        </span>
-                      </label>
-                      <textarea
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none bg-white dark:bg-gray-900 dark:text-white transition-colors"
-                        placeholder={t('enterDescriptionRemarks')}
-                        rows="3"
-                        name="stock_remark"
-                        value={form.stock_remark}
-                        onChange={(e) => setForm(prev => { return { ...prev, stock_remark: e.target.value } })}
-                      ></textarea>
-                    </div>
-                  </div>
-
-                  <div className='flex gap-3 pt-4'>
-                    <button
-                      type="submit"
-                      disabled={loading || selectItems.length === 0}
-                      className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 dark:disabled:bg-gray-700 text-white py-2.5 px-4 rounded-md font-medium transition-all duration-200 flex items-center justify-center gap-2 shadow-sm"
-                    >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-                      </svg>
-                      <span>{loading ? (isUpdate ? t('updating') : t('creating')) : (isUpdate ? t('updateTransfer') : t('createTransfer'))}</span>
-                    </button>
-                    <Link to={-1} className="flex-1">
-                      <button
-                        type="button"
-                        className="w-full bg-gray-500 hover:bg-gray-600 text-white py-2.5 px-4 rounded-md font-medium transition-colors duration-200 shadow-sm"
-                      >
-                        {t('cancel')}
-                      </button>
-                    </Link>
-                  </div>
-                </div>
+                
 
                 {/* Right Column - Selected Items Table */}
                 <div className="lg:col-span-2">
-                  <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden shadow-sm transition-colors">
+                  <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-sm overflow-hidden transition-colors">
                     <div className="px-4 py-3 bg-gradient-to-r from-gray-50 to-blue-50 dark:from-gray-900/50 dark:to-gray-900/30 border-b border-gray-200 dark:border-gray-700">
                       <div className="flex items-center justify-between">
                         <div>
@@ -486,7 +352,7 @@ const StockTransfer = () => {
                                 </td>
                                 <td className="px-4 py-3">
                                   <div className="flex items-center gap-2">
-                                    <input
+                                    {/* <input
                                       type="number"
                                       min="1"
                                       max={Number(item.stock.in_stock)}
@@ -503,6 +369,23 @@ const StockTransfer = () => {
                                       }}
                                       value={item.quantity ?? 1}
                                       required
+                                    /> */}
+                                    <Input
+                                       type='number'
+                                       min='1'
+                                       max={Number(item.stock.in_stock)}
+                                       placeholder="0"
+                                       onWheel={(e) => e.target.blur()}
+                                       name="quantity"
+                                       onChange={(e) => {
+                                         if (Number(item.stock.in_stock) < Number(e.target.value)) {
+                                           toast.warning(`${t('only')} ${item.stock.in_stock} ${t('itemsAvailableInStock')}`);
+                                           return;
+                                         }
+                                         handleChange(index, 'quantity', e.target.value)
+                                       }}
+                                       value={item.quantity ?? 1}
+                                       required
                                     />
                                     <span className="text-xs text-gray-500 dark:text-gray-400">
                                       / {Number(item.stock.in_stock)} {t('inStock')}
@@ -510,13 +393,21 @@ const StockTransfer = () => {
                                   </div>
                                 </td>
                                 <td className="px-4 py-3">
-                                  <input
+                                  {/* <input
                                     type="date"
                                     className="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-900 dark:text-white transition-colors"
                                     name="expire_date"
                                     defaultValue={item.expire_date || ''}
                                     onChange={(e) => handleChange(index, 'expire_date', e.target.value)}
                                     value={item.expire_date}
+                                    required
+                                  /> */}
+                                  <DatePicker
+                                    name='expire_date'
+                                    format="YYYY-MM-DD"
+                                    className='date-picker'
+                                    onChange={(date, dateString) => handleChange(index, 'expire_date', dateString)}
+                                    value={item.expire_date ? dayjs(item.expire_date) : null}
                                     required
                                   />
                                 </td>
@@ -546,6 +437,185 @@ const StockTransfer = () => {
                         <p className="text-gray-400 dark:text-gray-500 text-sm">{t('selectItemsFromDropdownToTransfer')}</p>
                       </div>
                     )}
+                  </div>
+                </div>
+                {/* Left Column - Form Controls */}
+                <div className="lg:col-span-1 space-y-4">
+                  <div className="form-group">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      <span className="flex items-center gap-2">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                        {t('selectItem')}
+                      </span>
+                    </label>
+                    
+
+                    <RichSearch 
+                      data={fielditems}
+                      keyFields={{
+                        id: 'item_id',
+                        title: 'item_name',
+                        image: 'image',
+                        quantity: 'stock'
+                      }}
+                      placeholder={t('searchItems')}
+                      onSelected={onSelectItem}
+                      onSearch={(value) => setSearchTerm(value)}
+                    />
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-3">
+                    <div className="form-group grow">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 uppercase">
+                        <span className="flex items-center gap-2">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                          </svg>
+                          {t('fromWarehouse')}
+                        </span>
+                      </label>
+                      {/* <select
+                        onChange={(e) => onSelectWarehouse(e.target.value)}
+                        value={form.from_warehouse}
+                        className='w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-900 dark:text-white transition-colors'
+                        required
+                      >
+                        <option value="">{t('selectSourceWarehouse')}</option>
+                        {warehousesSelect.map((item) => (
+                          <option key={item.warehouse_id} value={item.warehouse_id}>
+                            {item.warehouse_name}
+                          </option>
+                        ))}
+                      </select> */}
+                      <RichSearch
+                        data={warehousesSelect}
+                        keyFields={{
+                          id: 'warehouse_id',
+                          title: 'warehouse_name'
+                        }}
+                        value={form.from_warehouse}
+                        placeholder={t('selectSourceWarehouse')}
+                        onSelected={onSelectWarehouse}
+                      />
+                    </div>
+
+                    <div className="form-group grow">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 uppercase">
+                        <span className="flex items-center gap-2">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" />
+                          </svg>
+                          {t('stockType')}
+                        </span>
+                      </label>
+                      {/* <select
+                        name="stock_type_id"
+                        value={form.stock_type_id}
+                        className='w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-900 dark:text-white transition-colors'
+                        onChange={(e) => {
+                          setForm(prev => { return { ...prev, stock_type_id: e.target.value } });
+                        }}
+                        required
+                      >
+                        <option value="">{t('selectStockType')}</option>
+                        {stocktype.map((item) => (
+                          <option key={item.stock_type_id} value={item.stock_type_id}>
+                            {item.stock_type_name}
+                          </option>
+                        ))}
+                      </select> */}
+
+                      <RichSearch
+                        data={stocktype}
+                        keyFields={{
+                          id: 'stock_type_id',
+                          title: 'stock_type_name'
+                        }}
+                        value={form.stock_type_id}
+                        placeholder={t('selectStockType')}
+                        onSelected={(value) => {
+                          setForm(prev => { return { ...prev, stock_type_id: value } });
+                        }}
+                      />
+                    </div>
+
+                    <div className="form-group grow">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 uppercase">
+                        <span className="flex items-center gap-2">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                          </svg>
+                          {t('toWarehouse')}
+                        </span>
+                      </label>
+                      {/* <select
+                        name="to_warehouse_id"
+                        value={form.warehouse_id}
+                        className='w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-900 dark:text-white transition-colors'
+                        onChange={(e) => setForm(prev => { return { ...prev, warehouse_id: e.target.value } })}
+                        required
+                      >
+                        <option value="">{t('selectDestinationWarehouse')}</option>
+                        {toWarehouseSelect.map((item) => (
+                          <option key={item.warehouse_id} value={item.warehouse_id}>
+                            {item.warehouse_name}
+                          </option>
+                        ))}
+                      </select> */}
+                      <RichSearch
+                        data={toWarehouseSelect}
+                        keyFields={{
+                          id: 'warehouse_id',
+                          title: 'warehouse_name'
+                        }}
+                        value={form.warehouse_id || null}
+                        placeholder={t('selectDestinationWarehouse')}
+                        onSelected={(value) => setForm(prev => { return { ...prev, warehouse_id: value } })}
+                      />
+                    </div>
+
+                    <div className="form-group grow">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 uppercase">
+                        <span className="flex items-center gap-2">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
+                          </svg>
+                          {t('description')}
+                        </span>
+                      </label>
+                      <textarea
+                        className="textarea-input"
+                        placeholder={t('description')}
+                        rows="3"
+                        name="stock_remark"
+                        value={form.stock_remark}
+                        onChange={(e) => setForm(prev => { return { ...prev, stock_remark: e.target.value } })}
+                      ></textarea>
+                    </div>
+                  </div>
+
+                  <div className='flex gap-3 pt-4'>
+                    <Button
+                      type="submit"
+                      disabled={loading || selectItems.length === 0}
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                      </svg>
+                      <span>{loading ? (isUpdate ? t('updating') : t('creating')) : (isUpdate ? t('updateTransfer') : t('createTransfer'))}</span>
+                    </Button>
+                    <Link to={-1} className="flex-1">
+                      <Button
+                        type="button"
+                        variant='danger'
+                        outline
+                      >
+                        {t('cancel')}
+                      </Button>
+                    </Link>
                   </div>
                 </div>
               </div>

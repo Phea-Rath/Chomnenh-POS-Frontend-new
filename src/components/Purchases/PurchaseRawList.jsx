@@ -40,7 +40,7 @@ import { LuRefreshCw } from "react-icons/lu";
 import { FaXmark } from "react-icons/fa6";
 import dayjs from "dayjs";
 import api from "../../services/api";
-import ExportExel from "../../services/ExportExel";
+import ExportExcel from "../../services/ExportExcel";
 import { useGetAllRawMaterialQuery } from "../../../app/Features/RawMaterialSlice";
 import { BiEdit, BiTrash } from "react-icons/bi";
 import { useTranslation } from "react-i18next";
@@ -372,7 +372,7 @@ const PurchaseRawList = () => {
                             <LuRefreshCw className={isLoading ? "animate-spin" : ""} />
                             {t('refresh')}
                         </button>
-                        <ExportExel data={filteredPurchases} title="Purchase" />
+                        <ExportExcel data={filteredPurchases} title="Purchase" />
                         <Link to="add">
                             <button className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 flex items-center gap-2 transition-colors">
                                 <FaPlus />

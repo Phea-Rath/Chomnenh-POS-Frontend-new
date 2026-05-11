@@ -1,5 +1,6 @@
 import * as XLSX from 'xlsx';
-const ExportExel = ({ data, title }) => {
+import { PiExport } from 'react-icons/pi';
+const ExportExcel = ({ data, title }) => {
     const handleExport = () => {
         var wb = XLSX.utils.book_new();
         var ws = XLSX.utils.json_to_sheet(data);
@@ -41,10 +42,10 @@ const ExportExel = ({ data, title }) => {
 
 
     return (
-        <button onClick={handleExport} className="btn bg-[#03C755] text-white border-[#00b544]">
-            Export Excel
+        <button onClick={handleExport} className="bg-[#1879b9] text-white border-[#1879b9] p-2 text-xs flex gap-2 items-center rounded-sm ">
+            <PiExport className='text-xl font-extrabold'/> Export Excel
         </button>
     )
 
 }
-export default ExportExel;
+export default ExportExcel;

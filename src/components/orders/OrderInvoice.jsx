@@ -201,6 +201,7 @@ const OrderInvoice = () => {
                       const price = Number(item.item_price || item.price || 0);
                       const rowTotal = qty * price;
 
+
                       return (
                         <tr key={item.id || index} className="border-b border-gray-100 dark:border-gray-700 align-top">
                           <td className="px-3 py-4">
@@ -211,7 +212,7 @@ const OrderInvoice = () => {
                             </div>
                           </td>
                           <td className="px-3 py-4 text-center dark:text-gray-200">
-                            {qty} {item.unit || ""}
+                            {qty} {item.scale_name || ""}
                           </td>
                           <td className="px-3 py-4 text-right dark:text-gray-200">{money(price * exchangeRate)} ៛</td>
                           <td className="px-3 py-4 text-right font-medium dark:text-gray-200">{money(rowTotal * exchangeRate)} ៛</td>

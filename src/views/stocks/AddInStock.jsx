@@ -14,7 +14,7 @@ import {
   useUpdateStockMutation,
   useGetStockByIdQuery,
 } from "../../../app/Features/stocksSlice";
-import { DatePicker, Select, Tag, Avatar, Input } from "antd";
+import { Select, Tag, Avatar, DatePicker } from "antd";
 import { useGetAllSaleQuery } from "../../../app/Features/salesSlice";
 import { useGetAllWasteQuery } from "../../../app/Features/notificationSlice";
 import { toast } from "react-toastify";
@@ -23,6 +23,9 @@ import { MdLocalShipping } from "react-icons/md";
 import dayjs from 'dayjs'; // Import dayjs instead of moment
 import { useDebounce } from "use-debounce";
 import { useTranslation } from "react-i18next";
+import Button from "../../utils/Button";
+import RichSearch from "../../utils/RichSearch";
+import Input from "../../utils/Input";
 
 const { Option } = Select;
 
@@ -86,7 +89,8 @@ const AddInStock = () => {
       (item) =>
         item.warehouse_id !== 2 &&
         item.warehouse_id !== 3 &&
-        item.warehouse_id !== 4
+        item.warehouse_id !== 4 &&
+        item.warehouse_id !== 5
     );
     settoWarehouse(newWare || []);
   }, [stockRes.data, itemsRes.data, warehouseRes.data]);
@@ -397,163 +401,11 @@ const AddInStock = () => {
           <div className="bg-transparent overflow-hidden">
             <div>
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* Left Column - Form Controls */}
-                <div className="lg:col-span-1 space-y-6">
-                  {/* Search Items */}
-                  <div className="space-y-2">
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                      <span className="text-red-500">*</span> {t('searchItems')}
-                    </label>
-                    <Select
-                      onSelect={onSelectItem}
-                      onPopupScroll={onScrollFetch}
-                      showSearch
-                      onSearch={(value) => setSearchItem(value)}
-                      style={{ width: '100%' }}
-                      placeholder={t('searchItemsByName')}
-                      size="large"
-                      filterOption={(input, option) =>
-                        option.name.toLowerCase().indexOf(input.toLowerCase()) >= 0
-                      }
-                      optionLabelProp="name"
-                    >
-                      {fielditems?.map((item) => (
-                        <Option key={item.id} value={item.id} name={item.name}>
-                          <div className="flex items-center gap-3 py-1">
-                            <Avatar
-                              size="small"
-                              src={item.image}
-                              icon={<FaBox />}
-                              className="border border-gray-200 dark:border-gray-700"
-                            />
-                            <div className="flex-1 min-w-0">
-                              <div className="font-medium text-gray-900 truncate">
-                                {item.name}
-                              </div>
-                              <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                                {item.code} • {item.brand_name}
-                              </div>
-                            </div>
-                            <Tag color="blue" className="ml-auto">
-                              ${item.price}
-                            </Tag>
-                          </div>
-                        </Option>
-                      ))}
-                    </Select>
-                  </div>
-
-                  {/* Stock Details Card */}
-                  <div className="bg-gradient-to-br from-gray-50 to-blue-50 dark:from-gray-800 dark:to-blue-900/20 rounded-xl p-6 border shadow-sm border-gray-200 dark:border-gray-700 space-y-4">
-                    <h3 className="font-medium text-gray-800 dark:text-gray-200 flex items-center gap-2">
-                      <FaEdit className="text-blue-500 dark:text-blue-400" />
-                      {t('stockDetails')}
-                    </h3>
-
-                    <div className="space-y-4">
-                      {/* <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                          {t('fromWarehouse')}
-                        </label>
-                        <select
-                          onChange={(e) => setForm(prev => ({ ...prev, from_warehouse: e.target.value }))}
-                          value={form.from_warehouse}
-                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 dark:text-white text-sm"
-                          required
-                        >
-                          <option value={2}>PO</option>
-                        </select>
-                      </div> */}
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                          {t('stockType')}
-                        </label>
-                        <select
-                          value={form.stock_type_id}
-                          onChange={(e) => setForm(prev => ({ ...prev, stock_type_id: e.target.value }))}
-                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 dark:text-white text-sm"
-                          required
-                        >
-                          <option value={2}>{t('stockIn')}</option>
-                        </select>
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                          {t('toWarehouse')} <span className="text-red-500">*</span>
-                        </label>
-                        <select
-                          value={form.warehouse_id}
-                          onChange={(e) => setForm(prev => ({ ...prev, warehouse_id: e.target.value }))}
-                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 dark:text-white text-sm"
-                          required
-                        >
-                          <option value="" disabled>{t('selectWarehouse')}</option>
-                          {toWarehouse?.map((item) => (
-                            <option key={item.warehouse_id} value={item.warehouse_id}>
-                              {item.warehouse_name}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                          {t('stockDate')}
-                        </label>
-                        <DatePicker
-                          format="YYYY-MM-DD"
-                          value={form.stock_date ? dayjs(form.stock_date) : dayjs()}
-                          onChange={(date, dateString) => setForm(prev => ({ ...prev, stock_date: dateString }))}
-                          className="w-full dark:!bg-gray-800 dark:border-gray-600 dark:text-white"
-                          size="middle"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                          {t('remark')}
-                        </label>
-                        <textarea
-                          value={form.stock_remark}
-                          onChange={(e) => setForm(prev => ({ ...prev, stock_remark: e.target.value }))}
-                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none bg-white dark:bg-gray-800 dark:text-white text-sm"
-                          placeholder={t('remarksPlaceholder')}
-                          rows="3"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Action Buttons */}
-                  <div className="flex gap-3 pt-4">
-                    <button
-                      type="submit"
-                      disabled={selectItems.length === 0}
-                      className={`flex-1 py-3 px-4 rounded-xl font-medium transition-all duration-200 flex items-center justify-center gap-2 ${selectItems.length === 0
-                        ? 'bg-gray-300 dark:bg-gray-700 cursor-not-allowed text-gray-500 dark:text-gray-400'
-                        : 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white shadow-lg hover:shadow-xl'
-                        }`}
-                    >
-                      {isEditMode ? <FaSave /> : <MdLocalShipping />}
-                      {isEditMode ? t('updateStock') : t('createStock')}
-                    </button>
-                    <Link to={-1} className="flex-1">
-                      <button
-                        type="button"
-                        className="w-full bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 text-white py-3 px-4 rounded-xl font-medium transition-all duration-200 flex items-center justify-center gap-2"
-                      >
-                        <FaTimes />
-                        {t('cancel')}
-                      </button>
-                    </Link>
-                  </div>
-                </div>
+                
 
                 {/* Right Column - Selected Items */}
                 <div className="lg:col-span-2">
-                  <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden shadow-sm">
+                  <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-sm overflow-hidden">
                     {/* Items Header */}
                     <div className="px-6 py-4 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 border-b border-gray-200 dark:border-gray-700">
                       <div className="flex justify-between items-center">
@@ -575,8 +427,8 @@ const AddInStock = () => {
                           <thead className="bg-gray-50 dark:bg-gray-900/50">
                             <tr>
                               <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">#</th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">{t('item')}</th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">{t('productAttributes')}</th>
+                              {/* <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">{t('item')}</th> */}
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">{t('product')}</th>
                               <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">{t('quantity')}</th>
                               <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">{t('expireDate')}</th>
                               <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">{t('actions')}</th>
@@ -592,23 +444,23 @@ const AddInStock = () => {
                                   </td>
                                   <td className="px-6 py-4">
                                     <div className="flex items-center gap-3">
-                                      <Avatar
+                                      {/* <Avatar
                                         size="large"
                                         src={item.image}
                                         icon={<FaBox />}
                                         className="border border-gray-200 dark:border-gray-700"
-                                      />
+                                      /> */}
                                       <div>
                                         <div className="font-medium text-gray-900 dark:text-white">{item.name}</div>
                                         <div className="text-xs text-gray-500 dark:text-gray-400">{item.code}</div>
-                                        <div className="text-xs text-gray-400 mt-1">
+                                        {/* <div className="text-xs text-gray-400 mt-1">
                                           <Tag color="blue" size="small">{item.category_name}</Tag>
                                           <Tag color="green" size="small">${item.price}</Tag>
-                                        </div>
+                                        </div> */}
                                       </div>
                                     </div>
                                   </td>
-                                  <td className="px-6 py-4">
+                                  {/* <td className="px-6 py-4">
                                     <div className="space-y-2">
                                       {itemAttributes.map((attr, attrIndex) => (
                                         <div key={attrIndex} className="flex items-center gap-2">
@@ -622,25 +474,25 @@ const AddInStock = () => {
                                         <span className="text-sm text-gray-400 dark:text-gray-500">{t('noAttributes')}</span>
                                       )}
                                     </div>
-                                  </td>
-                                  <td className="px-6 py-4">
+                                  </td> */}
+                                  <td className="px-6 py-4 w-20">
                                     <Input
                                       type="number"
                                       min="1"
                                       value={item.quantity}
                                       onWheel={(e) => e.target.blur()}
                                       onChange={(e) => handleChange(index, 'quantity', false, e.target.value)}
-                                      className="w-24 text-center dark:bg-gray-800 dark:border-gray-600 dark:text-white"
+                                      className="!w-20 text-center dark:bg-gray-800 dark:border-gray-600 dark:text-white"
                                       size="middle"
                                     />
                                   </td>
-                                  <td className="px-6 py-4">
+                                  <td className="px-6 py-4 w-35">
                                     <DatePicker
                                       format="YYYY-MM-DD"
                                       value={itemLists[index]?.expire_date ? dayjs(itemLists[index].expire_date) : null}
                                       onChange={(date, dateString) => handleChange(index, 'expire_date', false, dateString)}
-                                      className="w-full dark:bg-gray-800 dark:border-gray-600 dark:text-white"
-                                      size="middle"
+                                      className="date-picker"
+                                      size="large"
                                     />
                                   </td>
                                   <td className="px-6 py-4">
@@ -660,7 +512,7 @@ const AddInStock = () => {
                         </table>
                       </div>
                     ) : (
-                      <div className="text-center py-16">
+                      <div className="text-center py-16 ">
                         <div className="w-24 h-24 bg-gradient-to-r from-blue-100 to-purple-100 dark:from-blue-900/20 dark:to-purple-900/20 rounded-full flex items-center justify-center mx-auto mb-6">
                           <FaBox className="text-3xl text-blue-500 dark:text-blue-400" />
                         </div>
@@ -690,6 +542,130 @@ const AddInStock = () => {
                       </div>
                     </div>
                   )}
+                </div>
+                {/* Left Column - Form Controls */}
+                <div className="lg:col-span-1 space-y-6">
+                  {/* Search Items */}
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                      <span className="text-red-500">*</span> {t('searchItems')}
+                    </label>
+                    
+                    <RichSearch
+                      // value={searchItem}
+                      placeholder={t('searchItemsByName')}
+                      data={fielditems}
+                      keyFields={{id: "id", title: "name", subtitle:"code", image:"image", price:"price", quantity:"quantity"}}
+                      onSelected={onSelectItem}
+                      onScrollReader={onScrollFetch}
+                      onSearch={(value)=>setSearchItem(value)}
+                    />
+                  </div>
+
+                  {/* Stock Details Card */}
+                  <div className="">
+                    <h3 className="font-medium text-gray-800 dark:text-gray-200 flex items-center gap-2">
+                      <FaEdit className="text-blue-500 dark:text-blue-400" />
+                      {t('stockDetails')}
+                    </h3>
+
+                    <div className="space-y-4 flex flex-wrap gap-3 items-center">
+                      {/* <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          {t('fromWarehouse')}
+                        </label>
+                        <select
+                          onChange={(e) => setForm(prev => ({ ...prev, from_warehouse: e.target.value }))}
+                          value={form.from_warehouse}
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 dark:text-white text-sm"
+                          required
+                        >
+                          <option value={2}>PO</option>
+                        </select>
+                      </div> */}
+
+                      {/* <div className="grow">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          {t('stockType')}
+                        </label>
+                        <select
+                          value={form.stock_type_id}
+                          onChange={(e) => setForm(prev => ({ ...prev, stock_type_id: e.target.value }))}
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 dark:text-white text-sm"
+                          required
+                        >
+                          <option value={2}>{t('stockIn')}</option>
+                        </select>
+                        <RichSearch 
+                          value={form.stock_type_id}
+                          data={stockTypes}
+                          keyFields={{id: "stock_type_id", title: "stock_type_name", }}
+                          onSelected={(e) => setForm(prev => ({ ...prev, stock_type_id: e.target.value }))}
+                        />
+                      </div> */}
+
+                      <div className="grow">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          {t('toWarehouse')} <span className="text-red-500">*</span>
+                        </label>
+                        <RichSearch 
+                          value={form.warehouse_id}
+                          data={toWarehouse} 
+                          keyFields={{id: "warehouse_id", title: "warehouse_name", }}
+                          onSelected={(value) => setForm(prev => ({ ...prev, warehouse_id: value }))}
+                        />
+                      </div>
+
+                      <div className="grow">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          {t('stockDate')}
+                        </label>
+                        <DatePicker
+                          format="YYYY-MM-DD"
+                          value={form.stock_date ? dayjs(form.stock_date) : dayjs()}
+                          onChange={(date, dateString) => setForm(prev => ({ ...prev, stock_date: dateString }))}
+                          className="date-picker"
+                          size="large"
+                        />
+                      </div>
+
+                      <div className="grow">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          {t('remark')}
+                        </label>
+                        <textarea
+                          value={form.stock_remark}
+                          onChange={(e) => setForm(prev => ({ ...prev, stock_remark: e.target.value }))}
+                          className="textarea-input"
+                          placeholder={t('remarksPlaceholder')}
+                          rows="3"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="flex gap-3 justify-between items-center">
+                    <Button
+                      type="submit"
+                      disabled={selectItems.length === 0}
+                      variant={'primary'}
+                      outline={false}
+                    >
+                      {isEditMode ? <FaSave /> : <MdLocalShipping />}
+                      {isEditMode ? t('updateStock') : t('createStock')}
+                    </Button>
+                    <Link to={-1} className="flex-1">
+                      <Button
+                        type="button"
+                        variant={'danger'}
+                        outline={false}
+                      >
+                        <FaTimes />
+                        {t('cancel')}
+                      </Button>
+                    </Link>
+                  </div>
                 </div>
               </div>
             </div>

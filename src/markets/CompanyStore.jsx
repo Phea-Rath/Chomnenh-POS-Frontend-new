@@ -26,7 +26,7 @@ const CompanyStore = () => {
     }
 
     return (
-        <div className="bg-white min-h-screen -mt-8 -mx-4">
+        <div className="bg-white text-gray-800 min-h-screen -mt-8 -mx-4">
             {/* Brand Banner */}
             <div className="relative h-64 md:h-80 bg-gray-200 overflow-hidden">
                 <img 
