@@ -156,9 +156,12 @@
       color: #E2E8F0;
     }
   }
+  .white-icon-sidebar{
+    filter: brightness(0) invert(1) !important;
+  }
 
   .white-icon {
-    filter: brightness(0) invert(0) !important;
+    filter: brightness(0) invert(0.3) !important;
 
     @variant dark {
       filter: brightness(0) invert(1) !important;

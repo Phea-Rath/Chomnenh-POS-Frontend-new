@@ -60,7 +60,7 @@ const ExchangeRate = () => {
             USD to KHR Exchange Rate
           </h1>
         </div>
-        <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-900 rounded-md">
+        <div className="flex items-center justify-between p-4 bg-chomnenh-light rounded-md">
           {isEditing ? (
             <div className="flex items-center w-full">
               <input
@@ -79,7 +79,7 @@ const ExchangeRate = () => {
             </div>
           ) : (
             <>
-              <span className="text-lg font-semibold text-gray-700 dark:text-gray-300">
+              <span className="text-lg font-semibold text-gray-300">
                 1 USD = {usdToKhr} KHR
               </span>
               <button

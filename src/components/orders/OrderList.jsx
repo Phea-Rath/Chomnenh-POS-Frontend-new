@@ -434,11 +434,54 @@ const OrderList = () => {
                  <LuCalendar size={10} /> {formatDate(order.order_date)}
                </div>
                <div className="flex gap-1">
-                  <button onClick={() => order.sale_type === "sale" ? navigate("receipt/" + order.order_id) : navigate("invoice/" + order.order_id)} className="p-1.5 bg-blue-100 dark:bg-blue-900/30 text-blue-600 rounded hover:bg-blue-200"><LuEye size={12} /></button>
-                  {!order.is_cancelled && (
-                    <button onClick={() => navigate("edit/" + order.order_id)} className="p-1.5 bg-green-100 dark:bg-green-900/30 text-green-600 rounded hover:bg-green-200"><LuFileText size={12} /></button>
-                  )}
-                  <button onClick={() => handleDelete(order.order_id)} className="p-1.5 bg-red-100 dark:bg-red-900/30 text-red-600 rounded hover:bg-red-200"><LuTrash2 size={12} /></button>
+                  <div className="flex justify-center gap-2">
+                    <button
+                      onClick={() => order.sale_type === "sale" ? navigate("receipt/" + order.order_id) : navigate("invoice/" + order.order_id)}
+                      className="p-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded hover:bg-blue-200 transition-colors"
+                      title={t('view')}
+                    ><LuEye size={14} /></button>
+                    
+                    {!order.is_cancelled && (
+                      <button
+                        onClick={() => navigate("edit/" + order.order_id)}
+                        className="p-2 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded hover:bg-green-200 transition-colors"
+                        title={t('edit')}
+                      ><LuFileText size={14} /></button>
+                    )}
+
+                    {!order.is_cancelled && order.balance > 0 && (
+                      <button
+                        onClick={() => {
+                          setPaymentAmount(order.balance);
+                          setBalanceAmount({ pay: order.payment, balance: order.balance });
+                          setId(order.order_id);
+                          setShowPaymentModal(true);
+                        }}
+                        className="p-2 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded hover:bg-purple-200 transition-colors"
+                        title={t('pay')}
+                      ><LuCreditCard size={14} /></button>
+                    )}
+
+                    {!order.is_cancelled ? (
+                      <button
+                        onClick={() => handleOrderCancel(order.order_id)}
+                        className="p-2 bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 rounded hover:bg-orange-200 transition-colors"
+                        title={t('cancel')}
+                      ><LuBan size={14} /></button>
+                    ) : (
+                      <button
+                        onClick={() => handleOrderUncancel(order.order_id)}
+                        className="p-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded hover:bg-blue-200 transition-colors"
+                        title={t('uncancel')}
+                      ><LuRotateCcw size={14} /></button>
+                    )}
+
+                    <button
+                      onClick={() => handleDelete(order.order_id)}
+                      className="p-2 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded hover:bg-red-200 transition-colors"
+                      title={t('delete')}
+                    ><LuTrash2 size={14} /></button>
+                  </div>
                </div>
             </div>
           </div>

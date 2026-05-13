@@ -72,9 +72,9 @@ const Inventories = () => {
                                         ${color.hoverBorder}
                                     `}
                                 >
-                                    <div className={`p-4 rounded-2xl ${color.iconBg} transition-transform group-hover:scale-110 duration-300`}>
+                                    <div className={`p-2 rounded-sm ${color.iconBg} transition-transform group-hover:scale-110 duration-300`}>
                                         <img
-                                            className="w-10 h-10 object-contain"
+                                            className="w-10 h-10 white-icon object-contain"
                                             src={perm?.menu_icon}
                                             alt={perm?.menu_name}
                                         />

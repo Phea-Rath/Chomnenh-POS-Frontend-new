@@ -70,13 +70,13 @@ const Sidebar = ({ darkMode }) => {
       <div
         onClick={() => { if (isMobile) setSidebar(false); navigate(item.menu_path); }}
         title={collapsed ? item.menu_name : undefined}
-        className={`group flex items-center ${collapsed && !isMobile ? 'justify-center px-0 py-3 mx-2' : 'gap-3 px-4 py-1 mx-4'} rounded-2xl cursor-pointer transition-all duration-300 mb-1
+        className={`group flex items-center ${collapsed && !isMobile ? 'justify-center px-0 py-3 mx-2' : 'gap-3 px-4 py-1 mx-4'} rounded-sm cursor-pointer transition-all duration-300 mb-1
           ${isActive
             ? 'bg-[#1e3a5f] text-white shadow-lg'
             : 'text-[#93c5fd] hover:bg-[#1e3a5f]/40 hover:text-white'}`}
       >
-        <div className={`p-2 rounded-xl transition-all duration-300
-          ${isActive ? 'bg-white/20' : 'bg-[#1e3a5f]/50 group-hover:bg-[#1e3a5f]'}`}>
+        <div className={`p-2 rounded-xl white-icon-sidebar transition-all duration-300
+          `}>
           {item?.menu_icon && <img className={item?.menu_icon ? 'w-5 h-5' : ''} src={item?.menu_icon} alt="" />}
         </div>
 

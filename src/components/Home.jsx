@@ -100,11 +100,11 @@ const Home = () => {
 
                     {/* Icon Section */}
                     <div className="flex justify-between items-start">
-                      <div className={`p-4 rounded-2xl ${color.bg} ${color.icon} text-2xl transition-transform duration-500 group-hover:rotate-[360deg]`}>
-                        <img className="w-5 h-5" src={perm?.menu_icon} alt="" />
+                      <div className={`p-2 rounded-sm ${color.bg} ${color.icon} text-2xl transition-transform duration-500 group-hover:rotate-[360deg]`}>
+                        <img className="w-7 h-7 white-icon" src={perm?.menu_icon} alt="" />
                       </div>
                       {/* <div className={`text-[10px] uppercase tracking-widest font-bold px-3 py-1 rounded-full ${color.tag} ${color.icon} dark:bg-gray-700 dark:text-slate-300`}>
-                        {t("active")}
+                        {t("active")
                       </div> */}
                     </div>
 

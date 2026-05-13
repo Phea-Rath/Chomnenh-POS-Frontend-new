@@ -145,6 +145,7 @@ const Menus = () => {
                 <table className="w-full text-left border-collapse">
                     <thead>
                         <tr className={`border-b ${darkMode ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
+                            <th className={`px-6 py-4 text-xs font-semibold uppercase tracking-wider ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>Image</th>
                             <th className={`px-6 py-4 text-xs font-semibold uppercase tracking-wider ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>Name</th>
                             <th className={`px-6 py-4 text-xs font-semibold uppercase tracking-wider ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>Type</th>
                             <th className={`px-6 py-4 text-xs font-semibold uppercase tracking-wider ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>Route Path</th>
@@ -162,6 +163,7 @@ const Menus = () => {
                             </tr>
                         ) : filteredMenu.map((item) => (
                             <tr key={item.menu_id} className={`transition-colors ${darkMode ? 'hover:bg-slate-800/50' : 'hover:bg-slate-50/50'}`}>
+                                <td className='p-2 flex justify-center items-center'><img src={item.menu_icon} alt={item.menu_name} className="w-10 white-icon h-10 object-cover" /></td>
                                 <td className="px-6 py-4">
                                     <div style={{ paddingLeft: 12 + item._level * 16 }}>
                                         <span className={`font-medium ${darkMode ? 'text-slate-200' : 'text-slate-900'}`}>{item.menu_name}</span>
