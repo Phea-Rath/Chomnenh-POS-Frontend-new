@@ -18,6 +18,8 @@ import RefreshButton from "../../utils/RefreshButton";
 import { useTranslation } from "react-i18next";
 import RichSearch from "../../utils/RichSearch";
 import Pagination from "../../utils/Pagination";
+import { useGetAllCategoriesQuery } from "../../../app/Features/categoriesSlice";
+import { useGetAllBrandQuery } from "../../../app/Features/brandsSlice";
 
 // Custom components
 const Button = ({ children, onClick, variant = "default", icon, disabled, className = "" }) => {
@@ -146,7 +148,7 @@ const GridCard = ({ item, onEdit, onDelete, onView, formatCurrency, getDiscount,
 
 // List View Table
 const ListView = ({ items, navigator, onDelete, formatCurrency, t }) => (
-  <div className="bg-white container mx-auto border border-gray-200 dark:border-gray-700 rounded overflow-hidden">
+  <div className="bg-white  mx-auto border border-gray-200 dark:border-gray-700 rounded overflow-hidden">
     <div className="overflow-x-auto">
       <table className="w-full border-collapse text-sm">
         <thead className="bg-gray-100 border-b border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-white">
@@ -232,10 +234,15 @@ const ListItem = () => {
   const [deleteItemId, setDeleteItemId] = useState(null);
   const { setLoading } = useOutletsContext();
   const token = localStorage.getItem("token");
-
+  const categoryContext = useGetAllCategoriesQuery(token);
+  const categories = useMemo(() => categoryContext.data?.data || [], [categoryContext.data]);
+  const [selectedCategory, setSelectedCategory] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(12);
+  const [selectedBrand, setSelectedBrand] = useState("");
+  const brandContext = useGetAllBrandQuery(token);
+  const brands = useMemo(() => brandContext.data?.data || [], [brandContext.data]);
 
   const [debouncedSearch] = useDebounce(searchTerm, 500);
 
@@ -243,7 +250,9 @@ const ListItem = () => {
     token,
     limit: pageSize,
     page: currentPage,
-    search: debouncedSearch
+    search: debouncedSearch,
+    category_id: selectedCategory,
+    brand_id: selectedBrand,
   });
 
   const items = useMemo(() => data?.data || [], [data]);
@@ -277,6 +286,15 @@ const ListItem = () => {
     }
   };
 
+  useEffect(() => {
+    if (selectedCategory) {
+      refetch();
+    }
+    if (selectedBrand) {
+      refetch();
+    }
+  }, [selectedCategory, selectedBrand]);
+
   const formatCurrency = (amount) =>
     new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount || 0);
 
@@ -286,7 +304,7 @@ const ListItem = () => {
   };
 
   return (
-    <div className="items-page min-h-screen bg-transparent pb-5">
+    <div className="items-page bg-transparent pb-5">
       <AlertBox
         isOpen={alertBox}
         title={t("Delete Item")}
@@ -297,7 +315,7 @@ const ListItem = () => {
       />
 
       {/* Header */}
-      <div className="container mx-auto border-gray-200 p-3">
+      <div className=" mx-auto border-gray-200 p-3">
         <div className="mx-auto flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t("Items")}</h1>
@@ -330,27 +348,27 @@ const ListItem = () => {
 
       {/* Controls */}
       <div className="mx-auto px-2 mt-2">
-        <div className="container mx-auto flex flex-col lg:flex-row gap-4 mb-6">
-          <div className="flex-1 relative">
+        <div className=" mx-auto flex flex-col items-center lg:flex-row gap-4 mb-6">
+          <div className="flex-1 h-10 relative">
             <input
-              placeholder={t("Search database by name, code or category...")}
-              className="w-full h-12 pl-10 pr-4 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-transparent text-sm"
+              placeholder={t("Search products...")}
+              className="w-full h-full pl-10 pr-4 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-transparent text-sm"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
             <IoIosSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
           </div>
 
-          <div className="flex items-center gap-2 bg-primary p-1 rounded self-end lg:self-auto">
+          <div className="flex items-center gap-2 p-1 rounded self-end lg:self-auto">
             <button
               onClick={() => { setViewMode("grid"); localStorage.setItem("itemViewMode", "grid"); }}
-              className={`p-2 rounded ${viewMode === "grid" ? "bg-blue-600 text-white" : "dark:text-gray-100 text-gray-800 hover:bg-gray-100"}`}
+              className={`p-2 rounded ${viewMode === "grid" ? "bg-blue-600 text-white" : "dark:text-gray-100 text-gray-800 hover:bg-gray-100 dark:hover:bg-gray-600"}`}
             >
               <IoIosGrid size={20} />
             </button>
             <button
               onClick={() => { setViewMode("list"); localStorage.setItem("itemViewMode", "list"); }}
-              className={`p-2 rounded ${viewMode === "list" ? "bg-blue-600 text-white" : "dark:text-gray-100 text-gray-800 hover:bg-gray-100"}`}
+              className={`p-2 rounded ${viewMode === "list" ? "bg-blue-600 text-white" : "dark:text-gray-100 text-gray-800 hover:bg-gray-100 dark:hover:bg-gray-600"}`}
             >
               <IoIosList size={20} />
             </button>
@@ -378,6 +396,62 @@ const ListItem = () => {
               }}
             />
           </div>
+        </div>
+
+        {/* Categories Filters */}
+        <label htmlFor="categoryFilter" className="mb-2 block text-xs font-medium text-gray-700 dark:text-gray-300">{t("Filter by Category")}</label>
+        <div className="flex gap-2 overflow-x-auto mb-6 pb-1">
+          <button
+            onClick={() => setSelectedCategory("")}
+            className={`px-4 py-2 rounded text-sm font-medium whitespace-nowrap ${
+              selectedCategory === ""
+                ? "bg-blue-600 text-white shadow-sm"
+                : "bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700"
+            }`}
+          >
+            {t("All Categories")}
+          </button>
+          {categories.map((cat) => (
+            <button
+              key={cat.id}
+              onClick={() => setSelectedCategory(cat.category_id)}
+              className={`px-4 py-2 rounded text-sm font-medium whitespace-nowrap ${
+                selectedCategory === cat.category_id
+                  ? "bg-blue-600 text-white shadow-sm"
+                  : "bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700"
+              }`}
+            >
+              {cat.category_name}
+            </button>
+          ))}
+        </div>
+
+        {/* filter by brands */}
+        <label htmlFor="brandFilter" className="mb-2 block text-xs font-medium text-gray-700 dark:text-gray-300">{t("Filter by Brand")}</label>
+        <div className="flex gap-2 overflow-x-auto mb-6 pb-1">
+          <button
+            onClick={() => setSelectedBrand("")}
+            className={`px-4 py-2 rounded text-sm font-medium whitespace-nowrap ${
+              selectedBrand === ""
+                ? "bg-blue-600 text-white shadow-sm"
+                : "bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700"
+            }`}
+          >
+            {t("All Brands")}
+          </button>
+          {brands.map((brand) => (
+            <button
+              key={brand.id}
+              onClick={() => setSelectedBrand(brand.brand_id)}
+              className={`px-4 py-2 rounded text-sm font-medium whitespace-nowrap ${
+                selectedBrand === brand.brand_id
+                  ? "bg-blue-600 text-white shadow-sm"
+                  : "bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700"
+              }`}
+            >
+              {brand.brand_name}
+            </button>
+          ))}
         </div>
 
         {/* Content */}

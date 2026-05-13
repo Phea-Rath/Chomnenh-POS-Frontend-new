@@ -6,7 +6,7 @@ const Pagination = ({ current, total, pageSize, onChange, t }) => {
   return (
     <div className="flex items-center justify-between gap-4 bg-primary border border-gray-200 rounded px-4 py-2">
       <div className="text-sm text-gray-600 dark:text-gray-100">
-        {t("Showing")} {start} {t("to")} {end} {t("of")} {total} {t("items")}
+        {t("Showing")} {start} {t("to")} {end} {t("of")} {total}
       </div>
       <div className="flex items-center gap-2">
         <button

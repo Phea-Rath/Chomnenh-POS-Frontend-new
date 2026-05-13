@@ -73,7 +73,6 @@ export default function RichSearch({ data = [], keyFields={}, onScrollReader, on
         if(query){
             setQuery('');
             inputRef.current.value = '';
-            setPlaceholder(query);
             inputRef.current.placeholder = query;
         }
     }
@@ -92,7 +91,7 @@ export default function RichSearch({ data = [], keyFields={}, onScrollReader, on
 
 
     return (
-        <div className="mx-auto" ref={containerRef}>
+        <div className="mx-auto w-full" ref={containerRef}>
             {/* <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Select Product
             </label> */}
@@ -132,7 +131,7 @@ export default function RichSearch({ data = [], keyFields={}, onScrollReader, on
                     exit={{ opacity: 0, y: -10 }} 
                     transition={{ duration: 0.2 }} 
                     onScroll={onScrollReader} 
-                    className="absolute left-0 right-0 z-[9999] mt-1 max-h-60 overflow-auto rounded-xl border border-gray-200 bg-transparent backdrop-blur-md shadow-2xl dark:border-gray-700">
+                    className="absolute left-0 right-0 z-[9999] mt-1 max-h-60 overflow-auto rounded-sm border border-gray-200 bg-transparent backdrop-blur-md shadow-sm dark:border-gray-700">
                         {filteredItems.map((item, idx) => (
                             <li
                                 key={idx}

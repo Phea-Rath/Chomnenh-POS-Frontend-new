@@ -8,7 +8,9 @@ const Input = ({
   min = 0, 
   max = 100, 
   step = 1,
-  onChange 
+  onChange,
+  addonAfter,
+  ...props
 }) => {
   const [internalValue, setInternalValue] = useState(value ?? (type === "number" ? min : ""));
 
@@ -74,19 +76,19 @@ const Input = ({
   };
 
   return (
-    <div className="w-full">
-      <div className="relative group">
+    <div className="w-full min-w-20 border rounded-sm border-gray-200 dark:border-gray-400 flex justify-center items-center">
+      <div className="relative group w-full">
         <input
           type={type === "number" ? "text" : type}
           inputMode={type === "number" ? "decimal" : "text"} // Better mobile keyboard
           value={internalValue}
           onChange={handleInputChange}
           placeholder={placeholder}
+          {...props}
           className={`
-            w-full px-4 py-2 bg-transparent 
-            text-gray-900 dark:text-gray-100
-            border border-gray-200 dark:border-gray-400
-            rounded-sm transition-all outline-none min-w-20
+            w-full px-4 py-2 bg-transparent
+            text-gray-900 dark:text-gray-100 placeholder:text-gray-400
+             transition-all outline-none
             focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500
             ${type === 'number' ? 'pr-10' : 'pr-4'}
           `}
@@ -115,6 +117,11 @@ const Input = ({
           </div>
         )}
       </div>
+        {addonAfter && (
+          <div className="flex justify-center items-center px-2 py-2 border-l border-gray-200 dark:border-gray-400">
+            {addonAfter}
+          </div>
+        )}
     </div>
   );
 };

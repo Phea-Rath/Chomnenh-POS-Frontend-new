@@ -239,10 +239,10 @@ const OrderTracking = () => {
     return (
         <div className="component-page min-h-screen bg-transparent">
             <div className="mx-auto space-y-4">
-                <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                <div className="rounded-sm border border-slate-200 bg-white p-4 ">
                     <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                         <div className="flex items-center gap-3">
-                            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+                            <div className="flex h-10 w-10 items-center justify-center rounded-sm bg-blue-50 text-blue-600">
                                 <FaTruck className="h-4 w-4" />
                             </div>
                             <div>
@@ -263,7 +263,7 @@ const OrderTracking = () => {
                                     value={filters.search}
                                     onChange={(event) => handleFilterChange('search', event.target.value)}
                                     placeholder={t('searchOrderTracking')}
-                                    className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-9 pr-4 text-sm text-slate-800 outline-none transition focus:border-blue-500 focus:bg-white"
+                                    className="w-full rounded-sm border border-slate-200 bg-slate-50 py-2.5 pl-9 pr-4 text-sm text-slate-800 outline-none transition focus:border-blue-500 focus:bg-white"
                                 />
                             </div>
                         </div>
@@ -272,7 +272,7 @@ const OrderTracking = () => {
                             <select
                                 value={filters.deliver_id}
                                 onChange={(event) => handleFilterChange('deliver_id', event.target.value)}
-                                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-800 outline-none transition focus:border-blue-500 focus:bg-white"
+                                className="w-full rounded-sm border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-800 outline-none transition focus:border-blue-500 focus:bg-white"
                             >
                                 <option value="">{t('allDelivery')}</option>
                                 {delivers?.data?.map((service) => (
@@ -287,7 +287,7 @@ const OrderTracking = () => {
                             <select
                                 value={filters.user_id}
                                 onChange={(event) => handleFilterChange('user_id', event.target.value)}
-                                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-800 outline-none transition focus:border-blue-500 focus:bg-white"
+                                className="w-full rounded-sm border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-800 outline-none transition focus:border-blue-500 focus:bg-white"
                             >
                                 <option value="">{t('allUsers')}</option>
                                 {usersData?.data?.map((user) => (
@@ -302,7 +302,7 @@ const OrderTracking = () => {
                             <button
                                 onClick={() => setFilters({ search: '', deliver_id: '', user_id: '', page: 1, limit: PAGE_SIZE })}
                                 title={t('clearFilters')}
-                                className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 text-slate-600 transition hover:bg-slate-50"
+                                className="inline-flex h-10 w-10 items-center justify-center rounded-sm border border-slate-200 text-slate-600 transition hover:bg-slate-50"
                             >
                                 <FaXmark className="h-4 w-4" />
                             </button>
@@ -314,7 +314,7 @@ const OrderTracking = () => {
                     {orderStats.map((status) => {
                         const Icon = status.icon;
                         return (
-                            <div key={status.id} className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
+                            <div key={status.id} className="rounded-sm border border-slate-200 bg-white p-3 ">
                                 <div className="flex items-center gap-2">
                                     <div className={`rounded-lg p-1.5 ${status.color}`}>
                                         <Icon className="h-4 w-4" />
@@ -330,7 +330,7 @@ const OrderTracking = () => {
                 </div>
 
                 {orders.length === 0 ? (
-                    <div className="rounded-3xl border border-slate-200 bg-white p-12 text-center shadow-sm">
+                    <div className="rounded-3xl border border-slate-200 bg-white p-12 text-center ">
                         <div className="mx-auto mb-5 flex h-24 w-24 items-center justify-center rounded-full bg-slate-100">
                             <FaTruck className="h-11 w-11 text-slate-400" />
                         </div>
@@ -348,7 +348,7 @@ const OrderTracking = () => {
                                 return (
                                     <div
                                         key={order.order_id}
-                                        className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:shadow-md"
+                                        className="overflow-hidden rounded-sm border border-slate-200 bg-white  transition hover:shadow-md"
                                     >
                                         <div className="border-b border-slate-100 p-4">
                                             <div className="mb-3 flex items-start justify-between gap-3">
@@ -388,7 +388,7 @@ const OrderTracking = () => {
                                             </div>
 
                                             {isEditing(order.order_id, 'status') && (
-                                                <div className="mb-3 rounded-xl border border-blue-100 bg-blue-50 p-2.5">
+                                                <div className="mb-3 rounded-sm border border-blue-100 bg-blue-50 p-2.5">
                                                     <div className="mb-2 flex items-center justify-between">
                                                         <span className="text-xs font-semibold uppercase tracking-wide text-slate-600">{t('updateStatus')}</span>
                                                         <button
@@ -419,7 +419,7 @@ const OrderTracking = () => {
                                             )}
 
                                             <div className="space-y-2">
-                                                <div className="flex items-center gap-2 rounded-xl bg-slate-50 p-2.5">
+                                                <div className="flex items-center gap-2 rounded-sm bg-slate-50 p-2.5">
                                                     <div className="rounded-lg bg-blue-100 p-1.5 text-blue-600">
                                                         <FaPhone className="h-3.5 w-3.5" />
                                                     </div>
@@ -429,7 +429,7 @@ const OrderTracking = () => {
                                                     </div>
                                                 </div>
 
-                                                <div className="flex items-center gap-2 rounded-xl bg-slate-50 p-2.5">
+                                                <div className="flex items-center gap-2 rounded-sm bg-slate-50 p-2.5">
                                                     <div className="rounded-lg bg-emerald-100 p-1.5 text-emerald-600">
                                                         <FaMapMarkerAlt className="h-3.5 w-3.5" />
                                                     </div>
@@ -440,14 +440,14 @@ const OrderTracking = () => {
                                                 </div>
 
                                                 <div className="grid grid-cols-2 gap-2">
-                                                    <div className="rounded-xl bg-slate-50 p-2.5">
+                                                    <div className="rounded-sm bg-slate-50 p-2.5">
                                                         <div className="mb-1 flex items-center gap-1.5 text-[11px] text-slate-500">
                                                             <FaTruck className="h-3 w-3" />
                                                             Delivery
                                                         </div>
                                                         <div className="truncate text-xs font-medium text-slate-800">{order.deliver_name || 'Unknown'}</div>
                                                     </div>
-                                                    <div className="rounded-xl bg-slate-50 p-2.5">
+                                                    <div className="rounded-sm bg-slate-50 p-2.5">
                                                         <div className="mb-1 flex items-center gap-1.5 text-[11px] text-slate-500">
                                                             <FaUser className="h-3 w-3" />
                                                             User ID
@@ -492,26 +492,26 @@ const OrderTracking = () => {
                                                                         localStorage.setItem('guestId', order.created_by);
                                                                         handleInputChange(order.order_id, 'delivery_fee', event.target.value);
                                                                     }}
-                                                                    className="w-full rounded-xl border border-slate-200 px-3 py-2 pl-8 text-sm outline-none transition focus:border-blue-500"
+                                                                    className="w-full rounded-sm border border-slate-200 px-3 py-2 pl-8 text-sm outline-none transition focus:border-blue-500"
                                                                     placeholder="0.00"
                                                                 />
                                                             </div>
                                                             <button
                                                                 onClick={() => handleSaveField(order.order_id, 'delivery_fee')}
-                                                                className="rounded-xl bg-green-50 p-2.5 text-green-700 transition hover:bg-green-100"
+                                                                className="rounded-sm bg-green-50 p-2.5 text-green-700 transition hover:bg-green-100"
                                                                 disabled={editingOrder === order.order_id}
                                                             >
                                                                 <FaCheck className="h-4 w-4" />
                                                             </button>
                                                             <button
                                                                 onClick={handleCancelEdit}
-                                                                className="rounded-xl bg-red-50 p-2.5 text-red-700 transition hover:bg-red-100"
+                                                                className="rounded-sm bg-red-50 p-2.5 text-red-700 transition hover:bg-red-100"
                                                             >
                                                                 <FaTimes className="h-4 w-4" />
                                                             </button>
                                                         </div>
                                                     ) : (
-                                                        <div className="rounded-xl bg-slate-50 px-3 py-2.5 text-sm text-slate-700">
+                                                        <div className="rounded-sm bg-slate-50 px-3 py-2.5 text-sm text-slate-700">
                                                             ${Number(order.delivery_fee || 0).toFixed(2)}
                                                         </div>
                                                     )}
@@ -540,7 +540,7 @@ const OrderTracking = () => {
                                                             <select
                                                                 value={tempValues[order.order_id]?.deliver_id ?? order.deliver_id ?? ''}
                                                                 onChange={(event) => handleInputChange(order.order_id, 'deliver_id', event.target.value)}
-                                                                className="flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none transition focus:border-blue-500"
+                                                                className="flex-1 rounded-sm border border-slate-200 bg-white px-3 py-2 text-sm outline-none transition focus:border-blue-500"
                                                             >
                                                                 <option value="">{t('deliveryService')}</option>
                                                                 {delivers?.data?.map((service) => (
@@ -551,20 +551,20 @@ const OrderTracking = () => {
                                                             </select>
                                                             <button
                                                                 onClick={() => handleSaveField(order.order_id, 'deliver_id')}
-                                                                className="rounded-xl bg-green-50 p-2.5 text-green-700 transition hover:bg-green-100"
+                                                                className="rounded-sm bg-green-50 p-2.5 text-green-700 transition hover:bg-green-100"
                                                                 disabled={editingOrder === order.order_id}
                                                             >
                                                                 <FaCheck className="h-4 w-4" />
                                                             </button>
                                                             <button
                                                                 onClick={handleCancelEdit}
-                                                                className="rounded-xl bg-red-50 p-2.5 text-red-700 transition hover:bg-red-100"
+                                                                className="rounded-sm bg-red-50 p-2.5 text-red-700 transition hover:bg-red-100"
                                                             >
                                                                 <FaTimes className="h-4 w-4" />
                                                             </button>
                                                         </div>
                                                     ) : (
-                                                        <div className="rounded-xl bg-slate-50 px-3 py-2.5 text-sm text-slate-700">
+                                                        <div className="rounded-sm bg-slate-50 px-3 py-2.5 text-sm text-slate-700">
                                                             {order.deliver_name || t('unknown')}
                                                         </div>
                                                     )}
@@ -597,7 +597,7 @@ const OrderTracking = () => {
                             })}
                         </div>
 
-                        <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:flex-row md:items-center md:justify-between">
+                        <div className="flex flex-col gap-3 rounded-sm border border-slate-200 bg-white p-4  md:flex-row md:items-center md:justify-between">
                             <div className="text-xs text-slate-600">
                                 {t('showingPageOf', { page: pagination.current_page || 1, total: totalPages })}
                             </div>
@@ -607,7 +607,7 @@ const OrderTracking = () => {
                                     onClick={() => handleFilterChange('page', Math.max(1, filters.page - 1))}
                                     disabled={(pagination.current_page || 1) <= 1}
                                     title={t('previousPage')}
-                                    className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                    className="inline-flex h-9 w-9 items-center justify-center rounded-sm border border-slate-200 text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
                                 >
                                     <FaChevronLeft className="h-3.5 w-3.5" />
                                 </button>
@@ -618,7 +618,7 @@ const OrderTracking = () => {
                                         <button
                                             key={pageNumber}
                                             onClick={() => handleFilterChange('page', pageNumber)}
-                                            className={`h-9 min-w-9 rounded-xl px-3 text-xs font-semibold transition ${pageNumber === (pagination.current_page || 1)
+                                            className={`h-9 min-w-9 rounded-sm px-3 text-xs font-semibold transition ${pageNumber === (pagination.current_page || 1)
                                                 ? 'bg-slate-900 text-white'
                                                 : 'border border-slate-200 text-slate-700 hover:bg-slate-50'
                                                 }`}
@@ -631,7 +631,7 @@ const OrderTracking = () => {
                                     onClick={() => handleFilterChange('page', Math.min(totalPages, filters.page + 1))}
                                     disabled={(pagination.current_page || 1) >= totalPages}
                                     title={t('nextPage')}
-                                    className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                    className="inline-flex h-9 w-9 items-center justify-center rounded-sm border border-slate-200 text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
                                 >
                                     <FaChevronRight className="h-3.5 w-3.5" />
                                 </button>
@@ -655,7 +655,7 @@ const OrderTracking = () => {
                                     </div>
                                     <button
                                         onClick={handleCloseItemsModal}
-                                        className="rounded-xl p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
+                                        className="rounded-sm p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
                                     >
                                         <FaTimes className="h-5 w-5" />
                                     </button>
@@ -665,15 +665,15 @@ const OrderTracking = () => {
                             <div className="max-h-[60vh] overflow-y-auto p-6">
                                 <div className="space-y-4">
                                     {selectedOrder.items?.map((item) => (
-                                        <div key={item.id} className="flex items-start gap-4 rounded-2xl bg-slate-50 p-4">
+                                        <div key={item.id} className="flex items-start gap-4 rounded-sm bg-slate-50 p-4">
                                             {item.item_image || item.images?.[0]?.image ? (
                                                 <img
                                                     src={item.item_image || item.images?.[0]?.image}
                                                     alt={item.item_name}
-                                                    className="h-16 w-16 rounded-xl border border-slate-200 object-cover"
+                                                    className="h-16 w-16 rounded-sm border border-slate-200 object-cover"
                                                 />
                                             ) : (
-                                                <div className="flex h-16 w-16 items-center justify-center rounded-xl border border-dashed border-slate-300 bg-white text-xs text-slate-400">
+                                                <div className="flex h-16 w-16 items-center justify-center rounded-sm border border-dashed border-slate-300 bg-white text-xs text-slate-400">
                                                     {t('noImage')}
                                                 </div>
                                             )}
@@ -697,15 +697,15 @@ const OrderTracking = () => {
                                                 </div>
 
                                                 <div className="mt-3 grid grid-cols-3 gap-3 text-xs">
-                                                    <div className="rounded-xl border border-slate-200 bg-white p-3">
+                                                    <div className="rounded-sm border border-slate-200 bg-white p-3">
                                                         <div className="text-slate-500">{t('quantity')}</div>
                                                         <div className="mt-1 font-medium text-slate-800">{item.quantity}</div>
                                                     </div>
-                                                    <div className="rounded-xl border border-slate-200 bg-white p-3">
+                                                    <div className="rounded-sm border border-slate-200 bg-white p-3">
                                                         <div className="text-slate-500">{t('price')}</div>
                                                         <div className="mt-1 font-medium text-slate-800">${Number(item.price || 0).toFixed(2)}</div>
                                                     </div>
-                                                    <div className="rounded-xl border border-slate-200 bg-white p-3">
+                                                    <div className="rounded-sm border border-slate-200 bg-white p-3">
                                                         <div className="text-slate-500">Discount</div>
                                                         <div className="mt-1 font-medium text-green-600">{Number(item.discount || 0)}%</div>
                                                     </div>
@@ -715,7 +715,7 @@ const OrderTracking = () => {
                                     ))}
                                 </div>
 
-                                <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-4">
+                                <div className="mt-6 rounded-sm border border-slate-200 bg-white p-4">
                                     <h4 className="mb-3 font-semibold text-slate-800">{t('orderSummary')}</h4>
                                     <div className="space-y-2 text-sm">
                                         <div className="flex justify-between text-slate-600">
@@ -741,7 +741,7 @@ const OrderTracking = () => {
                             <div className="flex justify-end border-t border-slate-200 bg-slate-50 p-6">
                                 <button
                                     onClick={handleCloseItemsModal}
-                                    className="rounded-2xl border border-slate-200 px-6 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-white"
+                                    className="rounded-sm border border-slate-200 px-6 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-white"
                                 >
                                     {t('close')}
                                 </button>

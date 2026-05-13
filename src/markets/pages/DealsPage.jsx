@@ -100,7 +100,7 @@ const DealsPage = () => {
     };
 
     return (
-        <div className="min-h-screen">
+        <div className="min-h-screen text-gray-800">
             {/* Deals Header */}
             <div className="border-b border-gray-200 py-4 px-6">
                 <h1 className="text-2xl font-bold text-gray-900">Today's Deals</h1>

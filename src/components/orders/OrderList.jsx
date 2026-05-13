@@ -1,97 +1,125 @@
-import React, { useEffect, useState } from "react";
-import { IoIosSearch, IoIosGrid, IoIosList } from "react-icons/io";
-import { Link, useNavigate } from "react-router";
+import React, { useEffect, useState, useMemo } from "react";
+import {
+  LuSearch,
+  LuPlus,
+  LuRefreshCw,
+  LuDownload,
+  LuEye,
+  LuTrash2,
+  LuList,
+  LuDollarSign,
+  LuShoppingBag,
+  LuCalendar,
+  LuUser,
+  LuPhone,
+  LuMapPin,
+  LuClipboardList,
+  LuChartBar,
+  LuChevronLeft,
+  LuChevronRight,
+  LuChevronsLeft,
+  LuChevronsRight,
+  LuBan,
+  LuRotateCcw,
+  LuFileText,
+  LuCreditCard,
+  LuPackage
+} from 'react-icons/lu';
+import { motion } from 'framer-motion';
+import { useNavigate, Link } from 'react-router';
 import { useOutletsContext } from "../../layouts/Management";
 import AlertBox from "../../services/AlertBox";
-import { motion } from "framer-motion";
 import {
   useCancelOrderMutation,
   useDeleteOrderMutation,
   useGetAllOrderQuery,
   useUncancelOrderMutation,
 } from "../../../app/Features/ordersSlice";
-import { Tag, Card, Badge, Tooltip, Empty, Button, Statistic } from "antd";
-import {
-  FaReceipt,
-  FaEdit,
-  FaBan,
-  FaUndo,
-  FaTrash,
-  FaTruck,
-  FaUser,
-  FaPhone,
-  FaMapMarkerAlt,
-  FaCalendarAlt,
-  FaDollarSign,
-  FaCreditCard,
-  FaShoppingBag,
-  FaMoneyBillWave
-} from "react-icons/fa";
+import { Tooltip } from "antd";
 import { toast } from "react-toastify";
 import { totalSum } from "../../services/serviceFunction";
 import { useTranslation } from "react-i18next";
 import { MdPayment } from "react-icons/md";
 import api from "../../services/api";
-import { set } from "date-fns";
+import { useDebounce } from 'use-debounce';
+import dayjs from 'dayjs';
+import relativeTime from 'dayjs/plugin/relativeTime';
 
-const { Countdown } = Statistic;
+dayjs.extend(relativeTime);
 
 const OrderList = () => {
   const { t } = useTranslation();
-  const navigator = useNavigate();
-  const [orderItems, setOrderItems] = useState([]);
-  const [data, setData] = useState([]);
+  const navigate = useNavigate();
+  const token = localStorage.getItem('token');
+  const { setLoading, loading: contextLoading } = useOutletsContext();
+
+  // State management
+  const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearch] = useDebounce(searchTerm, 500);
+  const [viewMode, setViewMode] = useState(localStorage.getItem("orderViewMode") || "grid");
+  const [pagination, setPagination] = useState({
+    current: 1,
+    pageSize: 10,
+    total: 0,
+    pageSizeOptions: [10, 20, 50, 100]
+  });
+
   const [id, setId] = useState(0);
   const [alertBox, setAlertBox] = useState(false);
   const [alertBoxCancel, setAlertBoxCancel] = useState(false);
   const [alertBoxUncancel, setAlertBoxUncancel] = useState(false);
-  const [viewMode, setViewMode] = useState(localStorage.getItem("orderViewMode") || "grid");
 
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentAmount, setPaymentAmount] = useState(0);
   const [balanceAmount, setBalanceAmount] = useState({ pay: 0, balance: 0 });
-  const {
-    setLoading,
-    loading,
-  } = useOutletsContext();
-  const token = localStorage.getItem("token");
+
   const {
     data: orderData,
-    isLoading,
-    isError,
+    isLoading: queryLoading,
     refetch,
-  } = useGetAllOrderQuery(token);
+  } = useGetAllOrderQuery({
+    token,
+    limit: pagination.pageSize,
+    page: pagination.current,
+    search: debouncedSearch
+  });
+
   const [deleteOrder] = useDeleteOrderMutation();
   const [cancelOrder] = useCancelOrderMutation();
   const [uncancelOrder] = useUncancelOrderMutation();
 
   useEffect(() => {
-    setOrderItems(orderData?.data || []);
-    setData(orderData?.data || []);
+    if (orderData?.pagination) {
+      setPagination(prev => ({
+        ...prev,
+        total: orderData.pagination.total
+      }));
+    }
   }, [orderData]);
 
-  function handleOrderCancel(order_id) {
+  // Handlers
+  const handleOrderCancel = (order_id) => {
     setAlertBoxCancel(true);
     setId(order_id);
-  }
+  };
 
-  function handleOrderUncancel(order_id) {
+  const handleOrderUncancel = (order_id) => {
     setAlertBoxUncancel(true);
     setId(order_id);
-  }
+  };
 
-  function handleDelete(order_id) {
+  const handleDelete = (order_id) => {
     setAlertBox(true);
     setId(order_id);
-  }
+  };
 
-  function handleCancel() {
+  const handleCancel = () => {
     setAlertBox(false);
     setAlertBoxCancel(false);
     setAlertBoxUncancel(false);
-  }
+  };
 
-  async function handleConfirm() {
+  const handleConfirmDelete = async () => {
     try {
       setAlertBox(false);
       setLoading(true);
@@ -99,15 +127,15 @@ const OrderList = () => {
       if (res.data.status === 200) {
         refetch();
         toast.success(res.data.message || t("orderDeletedSuccessfully"));
-        setLoading(false);
       }
     } catch (error) {
-      toast.error(error.message || error || t("orderDeleteFailed"));
+      toast.error(error.message || t("orderDeleteFailed"));
+    } finally {
       setLoading(false);
     }
-  }
+  };
 
-  async function handleCancelOrder() {
+  const handleConfirmCancelOrder = async () => {
     try {
       setAlertBoxCancel(false);
       setLoading(true);
@@ -115,15 +143,15 @@ const OrderList = () => {
       if (res.data.status === 200) {
         refetch();
         toast.success(res.data.message || t("orderCanceledSuccessfully"));
-        setLoading(false);
       }
     } catch (error) {
-      toast.error(error.message || error || t("orderCancelFailed"));
+      toast.error(error.message || t("orderCancelFailed"));
+    } finally {
       setLoading(false);
     }
-  }
+  };
 
-  async function handleUncancelOrder() {
+  const handleConfirmUncancelOrder = async () => {
     try {
       setAlertBoxUncancel(false);
       setLoading(true);
@@ -131,93 +159,293 @@ const OrderList = () => {
       if (res.data.status === 200) {
         refetch();
         toast.success(res.data.message || t("orderUncanceledSuccessfully"));
-        setLoading(false);
       }
     } catch (error) {
-      toast.error(error.message || error || t("orderUncancelFailed"));
+      toast.error(error.message || t("orderUncancelFailed"));
+    } finally {
       setLoading(false);
     }
-  }
-  async function handlePaymentOrder() {
+  };
+
+  const handlePaymentOrder = async () => {
     try {
       setLoading(true);
       const res = await api.put(`/order_payment/${id}/${paymentAmount}`, null, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       });
-      console.log(res);
-
-      if (res.data.status == 200) {
+      if (res.data.status === 200) {
         refetch();
         toast.success(res.data.message || t("orderPaymentedSuccessfully"));
-        setLoading(false);
         setShowPaymentModal(false);
       } else {
         toast.error(res.data.message || t("orderPaymentFailed"));
-        setLoading(false);
       }
     } catch (error) {
-      toast.error(error.message || error || t("orderPaymentFailed"));
+      toast.error(t("orderPaymentFailed"));
+    } finally {
       setLoading(false);
     }
-  }
-
-  function onSearch(event) {
-    const value = event.target.value;
-    if (value) {
-      const filterItem = data.filter((item) =>
-        item.order_no.toLowerCase().includes(value.toLowerCase()) ||
-        item.customer_name?.toLowerCase().includes(value.toLowerCase()) ||
-        item.order_tel?.includes(value)
-      );
-      setOrderItems(filterItem);
-    } else {
-      setOrderItems(data);
-    }
-  }
-
-  const getStatusColor = (online, isCancelled) => {
-    if (isCancelled) return "red";
-    if (online === 1) return "green";
-    return "blue";
-  };
-
-  const getStatusText = (online, isCancelled) => {
-    if (isCancelled) return t("cancelled");
-    if (online === 1) return t("online");
-    return t("direct");
-  };
-
-  const getPaymentStatusColor = (online) => {
-    return online === "paid" ? "green" : "orange";
-  };
-
-  const getSaleTypeColor = (type) => {
-    return type === "sale" ? "blue" : "purple";
   };
 
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-US', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 2
     }).format(amount || 0);
   };
 
-  const handleViewModeChange = (mode) => {
-    setViewMode(mode);
-    localStorage.setItem("orderViewMode", mode);
-  };
+  const formatDate = (date) => dayjs(date).format('MMM D, YYYY');
 
-  const getItemsSummary = (items) => {
-    if (!items?.length || items?.length == 0) {
-      return { totalItems: 0, totalValue: 0 };
+  // Stats
+  const stats = useMemo(() => {
+    const orders = orderData?.data || [];
+    const totalSales = totalSum(orders, "order_total");
+    const totalPaid = totalSum(orders, "payment");
+    const totalBalance = totalSum(orders, "balance");
+    return {
+      totalSales,
+      totalPaid,
+      totalBalance,
+      orderCount: pagination.total
+    };
+  }, [orderData, pagination.total]);
+
+  // Helpers
+  const getStatusBadge = (order) => {
+    if (order.is_cancelled) {
+      return <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400">{t('cancelled')}</span>;
     }
-
-    const totalItems = items?.reduce((sum, item) => sum + (item.quantity || 0), 0) || 0;
-    const totalValue = items?.reduce((sum, item) => sum + (item.price * item.quantity || 0), 0) || 0;
-    return { totalItems, totalValue };
+    if (order.online === 1) {
+      return <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">{t('online')}</span>;
+    }
+    return <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">{t('direct')}</span>;
   };
+
+  const getPaymentStatusBadge = (status) => {
+    const colors = status === 'paid' 
+      ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' 
+      : 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400';
+    return <span className={`inline-flex items-center px-2 py-1 rounded-full text-[10px] uppercase font-bold ${colors}`}>{status}</span>;
+  };
+
+  // Components
+  const StatCard = ({ title, value, icon, color = 'blue' }) => (
+    <div className={`border border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-gradient-to-br from-white to-${color}-50 dark:from-gray-800 dark:to-${color}-900/10 transition-all`}>
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">{title}</p>
+          <p className="text-2xl font-bold text-gray-900 dark:text-white">{value}</p>
+        </div>
+        <div className={`p-3 bg-gradient-to-r from-${color}-100 to-${color}-200 dark:from-${color}-900/30 dark:to-${color}-800/20 rounded-full text-${color}-600 dark:text-${color}-400`}>
+          {icon}
+        </div>
+      </div>
+    </div>
+  );
+
+  const Pagination = () => {
+    const totalPages = Math.ceil(pagination.total / pagination.pageSize);
+    const start = (pagination.current - 1) * pagination.pageSize + 1;
+    const end = Math.min(pagination.current * pagination.pageSize, pagination.total);
+    return (
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 transition-colors">
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-gray-600 dark:text-gray-400">{t('rowsPerPage')}:</span>
+          <select
+            value={pagination.pageSize}
+            onChange={(e) => setPagination(prev => ({ ...prev, pageSize: parseInt(e.target.value), current: 1 }))}
+            className="border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 rounded-md px-2 py-1 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+          >
+            {pagination.pageSizeOptions.map(size => (
+              <option key={size} value={size}>{size}</option>
+            ))}
+          </select>
+        </div>
+        <div className="flex items-center gap-2">
+          <button onClick={() => setPagination(p => ({...p, current: 1}))} disabled={pagination.current === 1} className="p-1 border border-gray-300 dark:border-gray-600 rounded-md disabled:opacity-50 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"><LuChevronsLeft /></button>
+          <button onClick={() => setPagination(p => ({...p, current: Math.max(1, p.current - 1)}))} disabled={pagination.current === 1} className="p-1 border border-gray-300 dark:border-gray-600 rounded-md disabled:opacity-50 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"><LuChevronLeft /></button>
+          <span className="text-sm text-gray-700 dark:text-gray-300">{t('page')} {pagination.current} {t('of')} {totalPages || 1}</span>
+          <button onClick={() => setPagination(p => ({...p, current: Math.min(totalPages, p.current + 1)}))} disabled={pagination.current === totalPages || totalPages === 0} className="p-1 border border-gray-300 dark:border-gray-600 rounded-md disabled:opacity-50 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"><LuChevronRight /></button>
+          <button onClick={() => setPagination(p => ({...p, current: totalPages}))} disabled={pagination.current === totalPages || totalPages === 0} className="p-1 border border-gray-300 dark:border-gray-600 rounded-md disabled:opacity-50 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"><LuChevronsRight /></button>
+        </div>
+        <div className="text-sm text-gray-600 dark:text-gray-400">{t('showing')} {start} {t('to')} {end} {t('of')} {pagination.total} {t('orders')}</div>
+      </div>
+    );
+  };
+
+  const TableView = () => (
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden transition-colors">
+      <div className="overflow-x-auto">
+        <table className="w-full border-collapse text-sm">
+          <thead className="bg-gray-100 dark:bg-gray-700 border-b border-gray-300 dark:border-gray-600">
+            <tr>
+              <th className="p-3 text-left font-semibold text-gray-700 dark:text-gray-200 border-r dark:border-gray-600">{t('orderNo')}</th>
+              <th className="p-3 text-left font-semibold text-gray-700 dark:text-gray-200 border-r dark:border-gray-600">{t('customer')}</th>
+              <th className="p-3 text-left font-semibold text-gray-700 dark:text-gray-200 border-r dark:border-gray-600">{t('date')}</th>
+              <th className="p-3 text-center font-semibold text-gray-700 dark:text-gray-200 border-r dark:border-gray-600">{t('items')}</th>
+              <th className="p-3 text-right font-semibold text-gray-700 dark:text-gray-200 border-r dark:border-gray-600">{t('total')}</th>
+              <th className="p-3 text-center font-semibold text-gray-700 dark:text-gray-200 border-r dark:border-gray-600">{t('payment')}</th>
+              <th className="p-3 text-center font-semibold text-gray-700 dark:text-gray-200 border-r dark:border-gray-600">{t('status')}</th>
+              <th className="p-3 text-center font-semibold text-gray-700 dark:text-gray-200">{t('actions')}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {(orderData?.data || []).map((order) => (
+              <tr key={order.order_id} className={`border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors ${order.is_cancelled ? 'bg-red-50 dark:bg-red-900/10' : ''}`}>
+                <td className="p-3">
+                   <div className="font-mono font-semibold text-blue-600 dark:text-blue-400">{order.order_no}</div>
+                   <div className="text-[10px] uppercase font-bold text-gray-400">{order.sale_type}</div>
+                </td>
+                <td className="p-3">
+                  <div className="font-medium text-gray-900 dark:text-white">{order.customer_name}</div>
+                  <div className="text-xs text-gray-500">{order.order_tel}</div>
+                </td>
+                <td className="p-3">
+                  <div className="text-gray-900 dark:text-gray-200">{formatDate(order.order_date)}</div>
+                  <div className="text-[10px] text-gray-400">{dayjs(order.order_date).fromNow()}</div>
+                </td>
+                <td className="p-3 text-center">
+                  <span className="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded text-xs">
+                    {order.items?.length || 0}
+                  </span>
+                </td>
+                <td className="p-3 text-right font-bold text-green-600 dark:text-green-400">
+                  {formatCurrency(order.order_total)}
+                </td>
+                <td className="p-3 text-center">
+                  {getPaymentStatusBadge(order.order_payment_status)}
+                </td>
+                <td className="p-3 text-center">
+                  {getStatusBadge(order)}
+                </td>
+                <td className="p-3">
+                  <div className="flex justify-center gap-2">
+                    <button
+                      onClick={() => order.sale_type === "sale" ? navigate("receipt/" + order.order_id) : navigate("invoice/" + order.order_id)}
+                      className="p-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded hover:bg-blue-200 transition-colors"
+                      title={t('view')}
+                    ><LuEye size={14} /></button>
+                    
+                    {!order.is_cancelled && (
+                      <button
+                        onClick={() => navigate("edit/" + order.order_id)}
+                        className="p-2 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded hover:bg-green-200 transition-colors"
+                        title={t('edit')}
+                      ><LuFileText size={14} /></button>
+                    )}
+
+                    {!order.is_cancelled && order.balance > 0 && (
+                      <button
+                        onClick={() => {
+                          setPaymentAmount(order.balance);
+                          setBalanceAmount({ pay: order.payment, balance: order.balance });
+                          setId(order.order_id);
+                          setShowPaymentModal(true);
+                        }}
+                        className="p-2 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded hover:bg-purple-200 transition-colors"
+                        title={t('pay')}
+                      ><LuCreditCard size={14} /></button>
+                    )}
+
+                    {!order.is_cancelled ? (
+                      <button
+                        onClick={() => handleOrderCancel(order.order_id)}
+                        className="p-2 bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 rounded hover:bg-orange-200 transition-colors"
+                        title={t('cancel')}
+                      ><LuBan size={14} /></button>
+                    ) : (
+                      <button
+                        onClick={() => handleOrderUncancel(order.order_id)}
+                        className="p-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded hover:bg-blue-200 transition-colors"
+                        title={t('uncancel')}
+                      ><LuRotateCcw size={14} /></button>
+                    )}
+
+                    <button
+                      onClick={() => handleDelete(order.order_id)}
+                      className="p-2 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded hover:bg-red-200 transition-colors"
+                      title={t('delete')}
+                    ><LuTrash2 size={14} /></button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <Pagination />
+    </div>
+  );
+
+  const GridView = () => (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      {(orderData?.data || []).map((order) => (
+        <div
+          
+          className={`border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition-all overflow-hidden ${order.is_cancelled ? 'bg-red-50 dark:bg-red-900/10' : ''}`}
+        >
+          <div className="p-4">
+            <div className="flex justify-between items-start mb-3">
+              <span className="font-mono font-semibold text-blue-600 dark:text-blue-400">{order.order_no}</span>
+              {getStatusBadge(order)}
+            </div>
+
+            <div className="flex items-center gap-3 mb-4">
+               <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded flex items-center justify-center text-blue-600 font-bold">
+                 {order.customer_name?.charAt(0)}
+               </div>
+               <div className="flex-1 min-w-0">
+                  <h3 className="font-bold text-gray-900 dark:text-white truncate">{order.customer_name}</h3>
+                  <div className="flex items-center gap-1 text-xs text-gray-500">
+                    <LuPhone size={10} /> {order.order_tel}
+                  </div>
+               </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 mb-4 p-2 bg-gray-50 dark:bg-gray-900/50 rounded">
+                <div className="text-center">
+                  <div className="text-sm font-bold text-gray-900 dark:text-white">{order.items?.length || 0}</div>
+                  <div className="text-[10px] text-gray-500 uppercase">{t('items')}</div>
+                </div>
+                <div className="text-center border-l border-gray-200 dark:border-gray-700">
+                  <div className="text-sm font-bold text-green-600">{formatCurrency(order.order_total)}</div>
+                  <div className="text-[10px] text-gray-500 uppercase">{t('total')}</div>
+                </div>
+            </div>
+
+            <div className="space-y-1.5 mb-4 text-xs text-gray-600 dark:text-gray-400">
+               <div className="flex justify-between">
+                  <span>{t('paidAmount')}</span>
+                  <span className="text-blue-600 font-medium">{formatCurrency(order.payment)}</span>
+               </div>
+               <div className="flex justify-between">
+                  <span>{t('balance')}</span>
+                  <span className="text-orange-600 font-medium">{formatCurrency(order.balance)}</span>
+               </div>
+               <div className="flex justify-between pt-1 border-t dark:border-gray-700">
+                  <span>{t('paymentStatus')}</span>
+                  {getPaymentStatusBadge(order.order_payment_status)}
+               </div>
+            </div>
+
+            <div className="flex items-center justify-between pt-3 border-t border-gray-100 dark:border-gray-700">
+               <div className="text-[10px] text-gray-400 flex items-center gap-1">
+                 <LuCalendar size={10} /> {formatDate(order.order_date)}
+               </div>
+               <div className="flex gap-1">
+                  <button onClick={() => order.sale_type === "sale" ? navigate("receipt/" + order.order_id) : navigate("invoice/" + order.order_id)} className="p-1.5 bg-blue-100 dark:bg-blue-900/30 text-blue-600 rounded hover:bg-blue-200"><LuEye size={12} /></button>
+                  {!order.is_cancelled && (
+                    <button onClick={() => navigate("edit/" + order.order_id)} className="p-1.5 bg-green-100 dark:bg-green-900/30 text-green-600 rounded hover:bg-green-200"><LuFileText size={12} /></button>
+                  )}
+                  <button onClick={() => handleDelete(order.order_id)} className="p-1.5 bg-red-100 dark:bg-red-900/30 text-red-600 rounded hover:bg-red-200"><LuTrash2 size={12} /></button>
+               </div>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
 
   return (
     <motion.div
@@ -225,518 +453,130 @@ const OrderList = () => {
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
       transition={{ duration: 0.5 }}
-      className="min-h-screen bg-transparent p-6"
+      className="min-h-screen bg-transparent p-4 md:p-6 view-page"
     >
-      {/* Alert Boxes */}
-      <AlertBox
-        isOpen={alertBox}
-        title={t("deleteOrderTitle")}
-        message={t("deleteOrderMessage")}
-        onConfirm={handleConfirm}
-        onCancel={handleCancel}
-        confirmText={t("delete")}
-        cancelText={t("cancel")}
-        confirmColor="error"
-      />
-      <AlertBox
-        isOpen={alertBoxCancel}
-        title={t("cancelOrderTitle")}
-        message={t("cancelOrderMessage")}
-        onConfirm={handleCancelOrder}
-        onCancel={handleCancel}
-        confirmText={t("cancelOrderAction")}
-        cancelText={t("keepOrder")}
-        confirmColor="warning"
-      />
-      <AlertBox
-        isOpen={alertBoxUncancel}
-        title={t("uncancelOrderTitle")}
-        message={t("uncancelOrderMessage")}
-        onConfirm={handleUncancelOrder}
-        onCancel={handleCancel}
-        confirmText={t("uncancelOrder")}
-        cancelText={t("keepCancelled")}
-        confirmColor="info"
-      />
+      <AlertBox isOpen={alertBox} title={t("deleteOrderTitle")} message={t("deleteOrderMessage")} onConfirm={handleConfirmDelete} onCancel={handleCancel} confirmText={t("delete")} cancelText={t("cancel")} confirmColor="error" />
+      <AlertBox isOpen={alertBoxCancel} title={t("cancelOrderTitle")} message={t("cancelOrderMessage")} onConfirm={handleConfirmCancelOrder} onCancel={handleCancel} confirmText={t("cancelOrderAction")} cancelText={t("keepOrder")} confirmColor="warning" />
+      <AlertBox isOpen={alertBoxUncancel} title={t("uncancelOrderTitle")} message={t("uncancelOrderMessage")} onConfirm={handleConfirmUncancelOrder} onCancel={handleCancel} confirmText={t("uncancelOrder")} cancelText={t("keepCancelled")} confirmColor="info" />
 
-      <div className=" mx-auto">
-        {/* Header Section */}
-        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-8 gap-4">
+      <div className="mx-auto">
+        {/* Header */}
+        <div className="mb-8 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
           <div>
-            <h1 className="text-3xl font-bold text-gray-800 dark:text-white mb-2">{t("orderList")}</h1>
-            <p className="text-gray-600 dark:text-gray-400">{t("manageTrackOrders")}</p>
+            <motion.h1 initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="text-2xl font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-3">
+              <div className="p-3 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-xl shadow-sm">
+                <LuShoppingBag className="text-xl text-white" />
+              </div>
+              {t('orderList')}
+            </motion.h1>
+            <p className="text-gray-600 dark:text-gray-400 text-md">{t('manageTrackOrders')}</p>
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
-            {/* View Mode Toggle */}
-            <div className="flex rounded-lg border border-gray-200 bg-white p-1 dark:border-gray-700 bg-primary">
-              <Tooltip title={t("gridView")}>
-                <button
-                  onClick={() => handleViewModeChange("grid")}
-                  className={`p-2 rounded-md transition-all duration-200 ${viewMode === "grid"
-                    ? "bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-300"
-                    : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-                    }`}
-                >
-                  <IoIosGrid size={20} />
-                </button>
-              </Tooltip>
-              <Tooltip title={t("listView")}>
-                <button
-                  onClick={() => handleViewModeChange("list")}
-                  className={`p-2 rounded-md transition-all duration-200 ${viewMode === "list"
-                    ? "bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-300"
-                    : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-                    }`}
-                >
-                  <IoIosList size={20} />
-                </button>
-              </Tooltip>
-            </div>
-
+          <div className="flex items-center gap-3">
+            <button onClick={() => refetch()} disabled={queryLoading || contextLoading} className="px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-50 flex items-center gap-2 transition-colors shadow-sm">
+              <LuRefreshCw className={queryLoading ? 'animate-spin' : ''} />
+              {t('refresh')}
+            </button>
             <Link to="/orders">
-              <button className="btn btn-success bg-green-600 border-green-600 hover:bg-green-700 text-white font-semibold px-6 py-2 rounded-lg transition-all duration-200">
-                {t("addNewOrder")}
+              <button className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 flex items-center gap-2 transition-colors shadow-md">
+                <LuPlus /> {t('addNewOrder')}
               </button>
             </Link>
           </div>
         </div>
 
-        {/* Search Bar */}
-        <div className="bg-white bg-primary rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-6">
-          <div className="relative max-w-md">
-            <IoIosSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 text-xl" />
-            <input
-              type="text"
-              placeholder={t("searchOrdersPlaceholder")}
-              onChange={onSearch}
-              className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-500 rounded-lg  text-gray-900 dark:text-white dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-            />
-          </div>
+        {/* Statistics Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+          <StatCard title={t('totalSales')} value={formatCurrency(stats.totalSales)} icon={<LuDollarSign className="text-2xl" />} color="green" />
+          <StatCard title={t('totalPaid')} value={formatCurrency(stats.totalPaid)} icon={<LuCreditCard className="text-2xl" />} color="blue" />
+          <StatCard title={t('totalBalance')} value={formatCurrency(stats.totalBalance)} icon={<LuClipboardList className="text-2xl" />} color="orange" />
+          <StatCard title={t('totalOrders')} value={stats.orderCount.toLocaleString()} icon={<LuPackage className="text-2xl" />} color="purple" />
         </div>
 
-        {/* Results Count */}
-        <div className="flex justify-between items-center mb-4">
-          <span className="text-gray-700 dark:text-gray-300 font-medium">
-            {orderItems.length} {t("ordersFound")}
-          </span>
-        </div>
-
-        {orderItems.length > 0 && (
-          <div className="bg-white bg-primary rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-6">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-center">
-              <div>
-                <div className="text-2xl font-bold text-green-600">
-                  ${formatCurrency(totalSum(orderItems, "order_total"))}
-                </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">{t("totalSales")}</div>
-              </div>
-              <div>
-                <div className="text-2xl font-bold text-blue-600">
-                  ${formatCurrency(totalSum(orderItems, "payment"))}
-                </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">{t("totalPaid")}</div>
-              </div>
-              <div>
-                <div className="text-2xl font-bold text-orange-600">
-                  ${formatCurrency(totalSum(orderItems, "balance"))}
-                </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">{t("totalBalance")}</div>
-              </div>
-              <div>
-                <div className="text-2xl font-bold text-purple-600">
-                  {orderItems.length}
-                </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">{t("totalOrders")}</div>
+        {/* Filters and Controls */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border text-sm border-gray-200 dark:border-gray-700 p-4 mb-6 transition-colors">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+            <div className="lg:col-span-8">
+              <div className="relative">
+                <LuSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder={t('searchOrdersPlaceholder')}
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                />
               </div>
             </div>
-          </div>
-        )}
-
-        {/* Grid View */}
-        {viewMode === "grid" && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6">
-            {orderItems.map((order, index) => {
-              const itemsSummary = getItemsSummary(order.items);
-              return (
-                <motion.div
-                  key={order.order_id}
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.3, delay: index * 0.1 }}
+            <div className="lg:col-span-4">
+              <div className="flex items-center gap-2 p-1 bg-gray-100 dark:bg-gray-700 rounded-md border border-gray-300 dark:border-gray-600 transition-colors">
+                <button
+                  onClick={() => { setViewMode('list'); localStorage.setItem("orderViewMode", "list"); }}
+                  className={`flex-1 px-3 py-2 rounded-md flex items-center justify-center gap-2 transition-all ${viewMode === 'list' ? 'bg-white dark:bg-gray-600 shadow-sm text-blue-600 dark:text-blue-400 font-semibold' : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'}`}
                 >
-                  <Card
-                    className={`h-full border rounded-xl shadow-sm hover:shadow-sm transition-all duration-300 overflow-hidden ${order.is_cancelled ? "border-red-200 bg-red-50 dark:!border-red-900 dark:!bg-red-950/30" : "border-gray-200 dark:!border-gray-700 bg-primary"
-                      }`}
-                  >
-                    {/* Header */}
-                    <div className="flex justify-between items-start mb-4">
-                      <div>
-                        <Badge
-                          count={getStatusText(order.online, order.is_cancelled)}
-                          color={getStatusColor(order.online, order.is_cancelled)}
-                          className="mb-2"
-                        />
-                        <h3 className="font-bold text-lg text-gray-800 dark:text-white">{order.order_no}</h3>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">{order.order_date}</p>
-                      </div>
-                      <Tag color={getSaleTypeColor(order.sale_type)}>
-                        {order.sale_type.toUpperCase()}
-                      </Tag>
-                    </div>
-
-                    {/* Customer Info */}
-                    <div className="space-y-2 mb-4">
-                      <div className="flex items-center gap-2">
-                        <FaUser className="text-gray-400 dark:text-gray-500" />
-                        <span className="font-medium text-gray-800 dark:text-gray-100">{order.customer_name}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <FaPhone className="text-gray-400 dark:text-gray-500" />
-                        <span className="text-gray-700 dark:text-gray-300">{order.order_tel}</span>
-                      </div>
-                      {order.order_address && (
-                        <div className="flex items-center gap-2">
-                          <FaMapMarkerAlt className="text-gray-400 dark:text-gray-500" />
-                          <span className="text-sm text-gray-600 dark:text-gray-400 truncate">{order.order_address}</span>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Items Summary */}
-                    <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-3 mb-4">
-                      <div className="flex justify-between items-center text-sm text-gray-700 dark:text-gray-300">
-                        <div className="flex items-center gap-1">
-                          <FaShoppingBag className="text-gray-400 dark:text-gray-500" />
-                          <span>{itemsSummary?.totalItems} {t("itemCount")}</span>
-                        </div>
-                        <span className="font-semibold">${formatCurrency(itemsSummary?.totalValue)}</span>
-                      </div>
-                    </div>
-
-                    {/* Financial Info */}
-                    <div className="space-y-2 mb-4 text-gray-700 dark:text-gray-300">
-                      <div className="flex justify-between text-sm">
-                        <span>{t("subtotalLabel")}:</span>
-                        <span>${formatCurrency(order.order_subtotal)}</span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span>{t("discount")}:</span>
-                        <span className="text-red-600">-${formatCurrency(order.order_discount)}</span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span>{t("delivery")}:</span>
-                        <span>${formatCurrency(order.delivery_fee)}</span>
-                      </div>
-                      <div className="flex justify-between font-semibold border-t border-gray-200 dark:border-gray-700 pt-2">
-                        <span>{t("total")}:</span>
-                        <span className="text-green-600">${formatCurrency(order.order_total)}</span>
-                      </div>
-                    </div>
-
-                    {/* Payment Status */}
-                    <div className="flex justify-between items-center mb-4">
-                      <Tag color={getPaymentStatusColor(order.order_payment_status)}>
-                        {order.order_payment_status.toUpperCase()}
-                      </Tag>
-                      <div className="text-right">
-                        <div className="text-sm text-gray-600 dark:text-gray-400">{t("paidAmount")}: ${formatCurrency(order.payment)}</div>
-                        <div className="text-sm text-gray-600 dark:text-gray-400">{t("remainingBalance")}: ${formatCurrency(order.balance)}</div>
-                      </div>
-                    </div>
-
-                    {/* Action Buttons */}
-                    <div className="flex gap-2">
-                      <Tooltip title={t("details")}>
-                        <button
-                          onClick={() => {
-                            order.sale_type === "sale"
-                              ? navigator("receipt/" + order.order_id)
-                              : navigator("invoice/" + order.order_id);
-                          }}
-                          className="flex-1 bg-blue-500 text-white py-2 px-3 rounded-lg hover:bg-blue-600 transition-colors text-sm flex items-center justify-center gap-1"
-                        >
-                          <FaReceipt />
-                          {t("details")}
-                        </button>
-                      </Tooltip>
-
-                      {!order.is_cancelled && (
-                        <Tooltip title={t("editOrder")}>
-                          <button
-                            onClick={() => navigator("edit/" + order.order_id)}
-                            className="p-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
-                          >
-                            <FaEdit />
-                          </button>
-                        </Tooltip>
-                      )}
-                      {!order.is_cancelled && order.balance > 0 && (
-                        <Tooltip title={t("pay")}>
-                          <button
-                            onClick={() => {
-                              setPaymentAmount(order.balance);
-                              setBalanceAmount({ "pay": order.payment, "balance": order.balance });
-                              setId(order.order_id);
-                              setShowPaymentModal(true);
-                            }}
-                            className="p-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
-                          >
-                            <MdPayment />
-                          </button>
-                        </Tooltip>
-                      )}
-
-                      {!order.is_cancelled ? (
-                        <Tooltip title={t("cancelOrderAction")}>
-                          <button
-                            onClick={() => handleOrderCancel(order.order_id)}
-                            className="p-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
-                          >
-                            <FaBan />
-                          </button>
-                        </Tooltip>
-                      ) : (
-                        <Tooltip title={t("uncancelOrder")}>
-                          <button
-                            onClick={() => handleOrderUncancel(order.order_id)}
-                            className="p-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-                          >
-                            <FaUndo />
-                          </button>
-                        </Tooltip>
-                      )}
-
-                      <Tooltip title={t("deleteOrder")}>
-                        <button
-                          onClick={() => handleDelete(order.order_id)}
-                          className="p-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
-                        >
-                          <FaTrash />
-                        </button>
-                      </Tooltip>
-                    </div>
-                  </Card>
-                </motion.div>
-              );
-            })}
-          </div>
-        )}
-
-
-        {/* List View */}
-        {viewMode === "list" && (
-          <div className="bg-white bg-primary rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
-                  <tr>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t("order")}</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t("customer")}</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t("date")}</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t("items")}</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t("total")}</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t("paymentStatus")}</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t("status")}</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t("actions")}</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                  {orderItems.map((order) => {
-                    const itemsSummary = getItemsSummary(order.items);
-                    return (
-                      <tr key={order.order_id} className="hover:bg-gray-50 dark:hover:bg-gray-900/60 transition-colors">
-                        <td className="px-6 py-4">
-                          <div>
-                            <div className="font-semibold text-gray-900 dark:text-white">{order.order_no}</div>
-                            <Tag color={getSaleTypeColor(order.sale_type)} className="!m-0 mt-1">
-                              {order.sale_type}
-                            </Tag>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div>
-                            <div className="font-medium text-gray-900 dark:text-white">{order.customer_name}</div>
-                            <div className="text-sm text-gray-500 dark:text-gray-400">{order.order_tel}</div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="text-sm text-gray-900 dark:text-gray-200">{order.order_date}</div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="text-sm text-gray-700 dark:text-gray-300">
-                            <div className="font-medium">{itemsSummary.totalItems} {t("itemCount")}</div>
-                            <div className="text-gray-500 dark:text-gray-400">${formatCurrency(itemsSummary.totalValue)}</div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="font-semibold text-green-600">
-                            ${formatCurrency(order.order_total)}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div>
-                            <Tag color={getPaymentStatusColor(order.order_payment_status)}>
-                              {order.order_payment_status}
-                            </Tag>
-                            <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                              {t("paidAmount")}: ${formatCurrency(order.payment)}
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <Badge
-                            status={order.is_cancelled ? "error" : order.online === 1 ? "processing" : "success"}
-                            color={getStatusColor(order.online, order.is_cancelled)}
-                            className="!mr-3"
-                          />
-                          <span>{getStatusText(order.online, order.is_cancelled)}</span>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex gap-2">
-                            <Tooltip title={t("details")}>
-                              <button
-                                onClick={() => {
-                                  order.sale_type === "sale"
-                                    ? navigator("receipt/" + order.order_id)
-                                    : navigator("invoice/" + order.order_id);
-                                }}
-                                className="p-2 text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-950/40 rounded-lg transition-colors"
-                              >
-                                <FaReceipt />
-                              </button>
-                            </Tooltip>
-
-                            {!order.is_cancelled && (
-                              <Tooltip title={t("editOrder")}>
-                                <button
-                                  onClick={() => navigator("edit/" + order.order_id)}
-                                  className="p-2 text-gray-600 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                                >
-                                  <FaEdit />
-                                </button>
-                              </Tooltip>
-                            )}
-                            {!order.is_cancelled && order.balance > 0 && (
-                              <Tooltip title={t("pay")}>
-                                <button
-                                  onClick={() => {
-                                    setPaymentAmount(order.balance);
-                                    setBalanceAmount({ "pay": order.payment, "balance": order.balance });
-                                    setId(order.order_id);
-                                    setShowPaymentModal(true);
-                                  }}
-                                  className="p-2 text-gray-600 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                                >
-                                  <MdPayment />
-                                </button>
-                              </Tooltip>
-                            )}
-
-                            {order?.order_payment_status === 'cod' && (!order.is_cancelled ? (
-                              <Tooltip title={t("cancelOrderAction")}>
-                                <button
-                                  onClick={() => handleOrderCancel(order.order_id)}
-                                  className="p-2 text-orange-600 hover:bg-orange-50 dark:text-orange-400 dark:hover:bg-orange-950/40 rounded-lg transition-colors"
-                                >
-                                  <FaBan />
-                                </button>
-                              </Tooltip>
-                            ) : (
-                              <Tooltip title={t("uncancelOrder")}>
-                                <button
-                                  onClick={() => handleOrderUncancel(order.order_id)}
-                                  className="p-2 text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-950/40 rounded-lg transition-colors"
-                                >
-                                  <FaUndo />
-                                </button>
-                              </Tooltip>
-                            ))}
-
-                            <Tooltip title={t("deleteOrder")}>
-                              <button
-                                onClick={() => handleDelete(order.order_id)}
-                                className="p-2 text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/40 rounded-lg transition-colors"
-                              >
-                                <FaTrash />
-                              </button>
-                            </Tooltip>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+                  <LuList /> <span>{t('table')}</span>
+                </button>
+                <button
+                  onClick={() => { setViewMode('grid'); localStorage.setItem("orderViewMode", "grid"); }}
+                  className={`flex-1 px-3 py-2 rounded-md flex items-center justify-center gap-2 transition-all ${viewMode === 'grid' ? 'bg-white dark:bg-gray-600 shadow-sm text-blue-600 dark:text-blue-400 font-semibold' : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'}`}
+                >
+                  <LuPackage /> <span>{t('grid')}</span>
+                </button>
+              </div>
             </div>
           </div>
-        )}
+        </div>
 
-        {/* Empty State */}
-        {orderItems.length === 0 && !isLoading && (
-          <div className="bg-white bg-primary rounded-xl shadow-sm border flex justify-center border-gray-200 dark:border-gray-700 p-12 text-center">
-            <Empty
-              image="https://gw.alipayobjects.com/zos/antfincdn/ZHrcdLPrvN/empty.svg"
-              description={
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">{t("noOrdersFound")}</h3>
-                  <p className="text-gray-500 dark:text-gray-400">
-                    {data.length === 0 ? t("getStartedByCreatingFirstOrder") : t("noOrdersMatchSearch")}
-                  </p>
-                </div>
-              }
-            >
-              <Link to="/orders">
-                <Button type="primary" size="large" icon={<FaShoppingBag />}>
-                  {t("createFirstOrder")}
-                </Button>
-              </Link>
-            </Empty>
+        {/* Content */}
+        {queryLoading ? (
+          <div className="flex flex-col items-center justify-center py-16">
+            <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-4"></div>
+            <p className="text-gray-600 dark:text-gray-400">{t('loadingOrders')}...</p>
           </div>
+        ) : (orderData?.data || []).length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800/50">
+            <div className="w-20 h-20 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mb-4">
+              <LuShoppingBag className="w-10 h-10 text-blue-400" />
+            </div>
+            <h3 className="text-xl font-semibold text-gray-700 dark:text-white mb-2">{t('noOrdersFound')}</h3>
+            <p className="text-gray-500 dark:text-gray-400 text-center max-w-md mb-6">{t('getStartedByCreatingFirstOrder')}</p>
+            <Link to="/orders">
+              <button className="px-6 py-3 bg-green-600 text-white rounded-md hover:bg-green-700 flex items-center gap-2 transition-colors">
+                <LuPlus /> {t('createFirstOrder')}
+              </button>
+            </Link>
+          </div>
+        ) : (
+          viewMode === 'list' ? <TableView /> : (
+            <>
+              <GridView />
+              <div className="mt-6">
+                <Pagination />
+              </div>
+            </>
+          )
         )}
       </div>
+
       {showPaymentModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="bg-white dark:bg-slate-800 rounded-lg p-6 max-w-md w-full border border-gray-200 dark:border-gray-700 shadow-xl"
-          >
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
+          <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full border border-gray-200 dark:border-gray-700 shadow-xl">
             <h3 className="text-xl font-semibold mb-4 flex items-center gap-2 dark:text-white">
-              <FaMoneyBillWave className="text-green-500" />
-              {t('addPayment')}
+              <LuCreditCard className="text-green-500" /> {t('addPayment')}
             </h3>
-            <div className="flex justify-between py-2">
-              <h1>{t('balance')}: <span className="text-red-500">{parseFloat(balanceAmount?.balance).toFixed(2)}</span></h1>
-              <h1>{t('paid')}: <span className="text-green-500">{parseFloat(balanceAmount?.pay).toFixed(2)}</span></h1>
+            <div className="flex justify-between py-2 border-b dark:border-gray-700 mb-4">
+              <div className="text-xs text-gray-500 uppercase">{t('balance')}: <span className="text-red-500 font-bold ml-1">{formatCurrency(balanceAmount.balance)}</span></div>
+              <div className="text-xs text-gray-500 uppercase">{t('paid')}: <span className="text-green-500 font-bold ml-1">{formatCurrency(balanceAmount.pay)}</span></div>
             </div>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-1">
-                  {t('amount')} <FaDollarSign />
-                </label>
-                <input
-                  type="number"
-                  value={paymentAmount}
-                  onChange={(e) => setPaymentAmount(parseFloat(e.target.value) || 0)}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100"
-                  step="0.01"
-                  min="0"
-                />
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-1">{t('amount')} <LuDollarSign size={14} /></label>
+                <input type="number" value={paymentAmount} onChange={(e) => setPaymentAmount(parseFloat(e.target.value) || 0)} className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-900 text-gray-900 dark:text-white" step="0.01" min="0" />
               </div>
               <div className="flex justify-end gap-3 pt-4">
-                <button
-                  onClick={() => setShowPaymentModal(false)}
-                  className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
-                >
-                  {t('cancel')}
-                </button>
-                <button
-                  onClick={handlePaymentOrder}
-                  disabled={loading}
-                  className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 transition-colors"
-                >
-                  {loading ? t('processing') : t('addPayment')}
+                <button onClick={() => setShowPaymentModal(false)} className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">{t('cancel')}</button>
+                <button onClick={handlePaymentOrder} disabled={contextLoading} className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 transition-colors">
+                  {contextLoading ? t('processing') : t('addPayment')}
                 </button>
               </div>
             </div>

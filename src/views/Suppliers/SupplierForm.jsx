@@ -1,79 +1,95 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate, Link, useParams } from "react-router";
-import { FaSave, FaTimes, FaMapMarkerAlt } from "react-icons/fa";
-import api from "../../services/api";
+import { useNavigate, useParams } from "react-router";
+import { FaSave, FaTimes, FaMapMarkerAlt, FaTruck, FaEnvelope, FaPhone, FaMapMarkedAlt, FaTrash, FaEdit, FaInfoCircle } from "react-icons/fa";
+import { IoMdCloudUpload } from "react-icons/io";
 import { toast } from "react-toastify";
+import { useTranslation } from "react-i18next";
+import { useOutletsContext } from "../../layouts/Management";
 import {
   useGetAllSupplierQuery,
   useGetSupplierByIdQuery,
 } from "../../../app/Features/suppliesSlice";
-import { IoMdCloudUpload } from "react-icons/io";
+import api from "../../services/api";
+import AlertBox from "../../services/AlertBox";
+import Input from "../../utils/Input";
+import RichSearch from "../../utils/RichSearch";
+import Button from "../../utils/Button";
 
 const SupplierForm = () => {
-  const [location, setLocation] = React.useState({
-    latitude: null,
-    longitude: null,
-  });
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+  const { id } = useParams();
+  const token = localStorage.getItem("token");
+  const { setLoading, loading } = useOutletsContext();
+  const isEditMode = Boolean(id);
+
+  // State management
+  const [location, setLocation] = useState({ latitude: null, longitude: null });
   const [viewImage, setViewImage] = useState("");
+  const [imageFile, setImageFile] = useState(null);
   const [provinces, setProvinces] = useState([]);
   const [districts, setDistricts] = useState([]);
   const [communes, setCommunes] = useState([]);
   const [villages, setVillages] = useState([]);
+  const [alertBox, setAlertBox] = useState(false);
   const [initialSupplier, setInitialSupplier] = useState(null);
-  const { id } = useParams();
-  const navigate = useNavigate();
-  const token = localStorage.getItem("token");
-  const isEditMode = !!id;
-  const { data: supplierData, refetch } = useGetAllSupplierQuery(token);
-  const { data: suppliers } = useGetSupplierByIdQuery({ id, token });
 
   const [dataForm, setFormData] = useState({
-    image: null,
     supplier_name: "",
     supplier_address: "",
     supplier_tel: "",
     supplier_email: "",
     description: "",
-    province: null,
+    province: "",
     province_id: null,
-    district: null,
+    district: "",
     district_id: null,
-    commune: null,
+    commune: "",
     commune_id: null,
-    village: null,
+    village: "",
     village_id: null,
   });
-  const [loading, setLoading] = useState(false);
+
   const [errors, setErrors] = useState({});
-  const [fieldErrors, setFieldErrors] = useState({});
 
-  // Fetch supplier data for edit mode
+  const { data: supplierData, refetch } = useGetAllSupplierQuery(token);
+  const { data: supplierDetails } = useGetSupplierByIdQuery({ id, token }, { skip: !isEditMode });
+
+  // Load existing supplier data
   useEffect(() => {
-    if (isEditMode && suppliers?.data) {
-      const supplier = supplierData?.data?.find(s => s.supplier_id == id);
-      console.log(supplier);
-      setViewImage(supplier?.image || "");
-      setInitialSupplier(supplier || null);
-      setFormData({
-        image: null,
-        supplier_name: supplier?.supplier_name || "",
-        supplier_address: supplier?.supplier_address || "",
-        supplier_tel: supplier?.supplier_tel || "",
-        supplier_email: supplier?.supplier_email || "",
-        description: supplier?.description || "",
-        province: supplier?.provinces || null,
-        district: supplier?.districts || null,
-        commune: supplier?.communes || null,
-        village: supplier?.villages || null,
-        province_id: supplier?.province_id || null,
-        district_id: supplier?.district_id || null,
-        commune_id: supplier?.commune_id || null,
-        village_id: supplier?.village_id || null,
-      });
-    }
-  }, [isEditMode, suppliers, supplierData, id]);
+    if (isEditMode && supplierData?.data) {
+      const supplier = supplierData.data.find(s => String(s.supplier_id) === String(id));
+      if (supplier) {
+        setInitialSupplier(supplier);
+        setViewImage(supplier.image || "");
+        setFormData({
+          supplier_name: supplier.supplier_name || "",
+          supplier_address: supplier.supplier_address || "",
+          supplier_tel: supplier.supplier_tel || "",
+          supplier_email: supplier.supplier_email || "",
+          description: supplier.description || "",
+          province: supplier.provinces || "",
+          province_id: supplier.province_id || null,
+          district: supplier.districts || "",
+          district_id: supplier.district_id || null,
+          commune: supplier.communes || "",
+          commune_id: supplier.commune_id || null,
+          village: supplier.villages || "",
+          village_id: supplier.village_id || null,
+        });
 
-  // Load provinces on mount
+        if (supplier.supplier_address && supplier.supplier_address.includes(',')) {
+          const coords = supplier.supplier_address.split(',');
+          setLocation({
+            latitude: coords[0].trim(),
+            longitude: coords[1].trim(),
+          });
+        }
+      }
+    }
+  }, [isEditMode, id, supplierData]);
+
+  // Load provinces
   useEffect(() => {
     const loadProvinces = async () => {
       try {
@@ -81,701 +97,408 @@ const SupplierForm = () => {
           headers: { Authorization: `Bearer ${token}` }
         });
         setProvinces(res?.data?.data || []);
-      } catch (err) {
-        setProvinces([]);
-      }
+      } catch (err) { setProvinces([]); }
     };
     loadProvinces();
   }, [token]);
 
-  // When province changes, fetch districts
+  // Hierarchy loading
   useEffect(() => {
-    const provinceId = dataForm.province_id;
-    if (!provinceId) {
-      setDistricts([]);
-      setCommunes([]);
-      setVillages([]);
+    if (!dataForm.province_id) {
+      setDistricts([]); setCommunes([]); setVillages([]);
       return;
     }
-    const run = async () => {
+    const loadDistricts = async () => {
       try {
-        const res = await api.get(`/districts/${provinceId}`, {
+        const res = await api.get(`/districts/${dataForm.province_id}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         setDistricts(res.data.data || []);
-      } catch (err) {
-        setDistricts([]);
-      }
-
-      if (isEditMode && initialSupplier?.district_id) {
-        setFormData((p) => ({ ...p, district_id: initialSupplier.district_id }));
-      } else {
-        setFormData((p) => ({ ...p, district_id: null, commune_id: null, village_id: null }));
-      }
+      } catch (err) { setDistricts([]); }
     };
-    run();
-  }, [dataForm.province_id, isEditMode, initialSupplier, token]);
+    loadDistricts();
+  }, [dataForm.province_id, token]);
 
-  // When district changes, fetch communes
   useEffect(() => {
-    const districtId = dataForm.district_id;
-    if (!districtId) {
-      setCommunes([]);
-      setVillages([]);
+    if (!dataForm.district_id) {
+      setCommunes([]); setVillages([]);
       return;
     }
-    const run = async () => {
+    const loadCommunes = async () => {
       try {
-        const res = await api.get(`/communes/${districtId}`, {
+        const res = await api.get(`/communes/${dataForm.district_id}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         setCommunes(res.data.data || []);
-      } catch (err) {
-        setCommunes([]);
-      }
-
-      if (isEditMode && initialSupplier?.commune_id) {
-        setFormData((p) => ({ ...p, commune_id: initialSupplier.commune_id }));
-      } else {
-        setFormData((p) => ({ ...p, commune_id: null, village_id: null }));
-      }
+      } catch (err) { setCommunes([]); }
     };
-    run();
-  }, [dataForm.district_id, isEditMode, initialSupplier, token]);
+    loadCommunes();
+  }, [dataForm.district_id, token]);
 
-  // When commune changes, fetch villages
   useEffect(() => {
-    const communeId = dataForm.commune_id;
-    if (!communeId) {
+    if (!dataForm.commune_id) {
       setVillages([]);
       return;
     }
-    const run = async () => {
+    const loadVillages = async () => {
       try {
-        const res = await api.get(`/villages/${communeId}`, {
+        const res = await api.get(`/villages/${dataForm.commune_id}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         setVillages(res.data.data || []);
-      } catch (err) {
-        setVillages([]);
-      }
-
-      if (isEditMode && initialSupplier?.village_id) {
-        setFormData((p) => ({ ...p, village_id: initialSupplier.village_id }));
-      } else {
-        setFormData((p) => ({ ...p, village_id: null }));
-      }
+      } catch (err) { setVillages([]); }
     };
-    run();
-  }, [dataForm.commune_id, isEditMode, initialSupplier, token]);
-
-  // Validation functions
-  const validateField = (name, value) => {
-    const newFieldErrors = { ...fieldErrors };
-
-    switch (name) {
-      case 'supplier_name':
-        if (!value || value.trim() === '') {
-          newFieldErrors.supplier_name = 'Supplier name is required';
-        } else if (value.length < 2) {
-          newFieldErrors.supplier_name = 'Supplier name must be at least 2 characters';
-        } else if (value.length > 100) {
-          newFieldErrors.supplier_name = 'Supplier name must be less than 100 characters';
-        } else {
-          delete newFieldErrors.supplier_name;
-        }
-        break;
-
-
-      case 'supplier_tel':
-        if (value && !/^[\+]?[0-9\s\-\(\)]{8,15}$/.test(value)) {
-          newFieldErrors.supplier_tel = 'Please enter a valid phone number (8-15 digits)';
-        } else {
-          delete newFieldErrors.supplier_tel;
-        }
-        break;
-
-      default:
-        break;
-    }
-
-    setFieldErrors(newFieldErrors);
-  };
+    loadVillages();
+  }, [dataForm.commune_id, token]);
 
   const validateForm = () => {
     const newErrors = {};
-    const newFieldErrors = { ...fieldErrors };
-
-    // Required field validation
     if (!dataForm.supplier_name || dataForm.supplier_name.trim() === '') {
-      newErrors.supplier_name = "Supplier name is required.";
-      newFieldErrors.supplier_name = 'Supplier name is required';
-    } else if (dataForm.supplier_name.length < 2) {
-      newErrors.supplier_name = "Supplier name must be at least 2 characters.";
-      newFieldErrors.supplier_name = 'Supplier name must be at least 2 characters';
+      newErrors.supplier_name = t('supplierNameRequired', 'Supplier name is required');
     }
-
-    // Phone validation
+    if (!dataForm.supplier_address || dataForm.supplier_address.trim() === '') {
+      newErrors.supplier_address = t('supplierAddressRequired', 'Supplier address is required');
+    }
     if (dataForm.supplier_tel && !/^[\+]?[0-9\s\-\(\)]{8,15}$/.test(dataForm.supplier_tel)) {
-      newErrors.supplier_tel = "Please enter a valid phone number (8-15 digits).";
-      newFieldErrors.supplier_tel = 'Please enter a valid phone number (8-15 digits)';
+      newErrors.supplier_tel = t('invalidPhoneFormat', 'Invalid phone format (8-15 digits)');
     }
-
-    setFieldErrors(newFieldErrors);
     setErrors(newErrors);
-
     return Object.keys(newErrors).length === 0;
   };
 
-  const getLocation = () => {
-    if (!navigator.geolocation) {
-      setErrors({ general: "Geolocation is not supported by your browser" });
-      return;
-    }
-
-    setLoading(true);
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const newAddress = `${position.coords.latitude}, ${position.coords.longitude}`;
-        setFormData((prev) => ({
-          ...prev,
-          supplier_address: newAddress,
-        }));
-        setLocation({
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude,
-        });
-        setErrors({});
-        setLoading(false);
-        validateField('supplier_address', newAddress);
-      },
-      (err) => {
-        setErrors({ general: err.message });
-        setLoading(false);
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (file.size > 2 * 1024 * 1024) {
+        toast.error(t('fileTooLarge', 'File too large (Max 2MB)'));
+        return;
       }
-    );
-  };
-
-  const handleInputChange = (e) => {
-
-    const { name, value, title } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-    if (title != '') {
-      const selectedOption = e.target.options[e.target.selectedIndex];
-      setFormData((prev) => ({ ...prev, [title]: selectedOption.dataset.id }));
-    }
-
-    validateField(name, value);
-
-    if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: '' }));
-    }
-
-    if (name === "supplier_address") {
-      setLocation({
-        latitude: value.split(",")[0]?.trim(),
-        longitude: value.split(",")[1]?.trim(),
-      });
+      const reader = new FileReader();
+      reader.onload = (e) => setViewImage(e.target.result);
+      reader.readAsDataURL(file);
+      setImageFile(file);
     }
   };
 
-  const handleSubmit = async (e) => {
+  const removeImage = () => {
+    setViewImage("");
+    setImageFile(null);
+  };
+
+  const handleSubmit = (e) => {
     e.preventDefault();
-
-    if (!validateForm()) {
-      toast.error("Please fix all validation errors before submitting.");
-      const firstErrorField = Object.keys(fieldErrors)[0];
-      if (firstErrorField) {
-        const element = document.querySelector(`[name="${firstErrorField}"]`);
-        if (element) {
-          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          element.focus();
-        }
-      }
-      return;
+    if (validateForm()) {
+      setAlertBox(true);
+    } else {
+      toast.error(t('fixValidationErrors', 'Please fix validation errors'));
     }
+  };
 
+  const handleConfirm = async () => {
     setLoading(true);
+    setAlertBox(false);
 
     try {
       const formData = new FormData();
-      formData.append("supplier_name", dataForm.supplier_name.trim());
-      formData.append("supplier_address", dataForm.supplier_address.trim());
-      formData.append("supplier_tel", dataForm.supplier_tel?.trim() || "");
-      formData.append("supplier_email", dataForm.supplier_email?.trim() || "");
-      formData.append("description", dataForm.description?.trim() || "");
-      formData.append("provinces", dataForm.province ?? "");
-      formData.append("districts", dataForm.district ?? "");
-      formData.append("communes", dataForm.commune ?? "");
-      formData.append("villages", dataForm.village ?? "");
-      formData.append("province_id", dataForm.province_id ?? "");
-      formData.append("district_id", dataForm.district_id ?? "");
-      formData.append("commune_id", dataForm.commune_id ?? "");
-      formData.append("village_id", dataForm.village_id ?? "");
-      if (dataForm.image) {
-        formData.append("image", dataForm.image);
+      Object.keys(dataForm).forEach(key => {
+        formData.append(key, dataForm[key] || "");
+      });
+      if (imageFile) {
+        formData.append("image", imageFile);
       }
 
       if (isEditMode) {
         await api.post(`/suppliers/${id}`, formData, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        toast.success("Supplier updated successfully!");
+        toast.success(t('supplierUpdated', 'Supplier updated successfully!'));
       } else {
         await api.post("/suppliers", formData, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        toast.success("Supplier created successfully!");
+        toast.success(t('supplierCreated', 'Supplier created successfully!'));
       }
       refetch();
       navigate(-1);
     } catch (err) {
-      const errorMessage = err.response?.data?.message ||
-        `Error ${isEditMode ? "updating" : "creating"} supplier.`;
-      setErrors({ general: errorMessage });
-      toast.error(errorMessage);
+      toast.error(err.response?.data?.message || t('operationFailed', 'Operation failed'));
     } finally {
       setLoading(false);
     }
   };
 
-  const changeUpload = (e) => {
-    const fileUpload = e.target.files[0];
-    if (fileUpload) {
-      const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
-      if (!validTypes.includes(fileUpload.type)) {
-        setErrors(prev => ({ ...prev, image: 'Please select a valid image file (JPEG, PNG, GIF, WebP)' }));
-        return;
-      }
-
-      if (fileUpload.size > 2 * 1024 * 1024) {
-        setErrors(prev => ({ ...prev, image: 'Image size must be less than 2MB' }));
-        return;
-      }
-
-      setViewImage(URL.createObjectURL(fileUpload));
-      setFormData((p) => {
-        return { ...p, image: fileUpload };
+  const handleLocationChange = (val) => {
+    setFormData(prev => ({ ...prev, supplier_address: val }));
+    if (val.includes(',')) {
+      const coords = val.split(',');
+      setLocation({
+        latitude: coords[0].trim(),
+        longitude: coords[1].trim(),
       });
-      setErrors(prev => ({ ...prev, image: '' }));
-      setFieldErrors(prev => ({ ...prev, image: '' }));
     }
   };
 
-  const removeImage = () => {
-    setViewImage("");
-    setFormData(p => ({ ...p, image: null }));
-    setErrors(prev => ({ ...prev, image: '' }));
-    setFieldErrors(prev => ({ ...prev, image: '' }));
+  const getCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      toast.error(t('geolocationNotSupported', 'Geolocation not supported'));
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+        const newAddress = `${lat}, ${lng}`;
+        setFormData(prev => ({ ...prev, supplier_address: newAddress }));
+        setLocation({ latitude: lat, longitude: lng });
+      },
+      (err) => toast.error(err.message)
+    );
   };
 
-  // Helper function to get input classes with error styling
-  const getInputClass = (fieldName) => {
-    const baseClass = "w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200";
-    return fieldErrors[fieldName]
-      ? `${baseClass} border-red-500 bg-red-50`
-      : `${baseClass} border-gray-300 hover:border-gray-400`;
-  };
-
-  const getSelectClass = (fieldName) => {
-    const baseClass = "w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white";
-    return fieldErrors[fieldName]
-      ? `${baseClass} border-red-500 bg-red-50`
-      : `${baseClass} border-gray-300 hover:border-gray-400`;
-  };
+  const textareaClasses = "w-full px-4 py-2 bg-transparent text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-400 rounded-sm outline-none transition-all focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 min-h-[100px]";
 
   return (
-    <div className="view-page min-h-screen bg-transparent py-8">
-      <div className=" mx-auto px-2">
+    <div className="bg-transparent py-8">
+      <div className="mx-auto px-2">
+        <AlertBox
+          isOpen={alertBox}
+          title={t('confirm', "Confirmation")}
+          message={isEditMode ? t('confirmUpdateSupplier', 'Update this supplier?') : t('confirmCreateSupplier', 'Create this supplier?')}
+          onConfirm={handleConfirm}
+          onCancel={() => setAlertBox(false)}
+          confirmText={isEditMode ? t('update') : t('create')}
+          cancelText={t('cancel')}
+        />
+
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            {isEditMode ? "Edit Supplier" : "Create New Supplier"}
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+            {isEditMode ? t('editSupplier') : t('createNewSupplier')}
           </h1>
-          <p className="text-gray-600">
-            {isEditMode
-              ? "Update supplier information and details"
-              : "Add a new supplier to your system"
-            }
+          <p className="text-gray-600 dark:text-gray-400">
+            {isEditMode ? t('updateSupplierInfo') : t('addNewSupplierSystem')}
           </p>
         </div>
 
-        <form
-          onSubmit={handleSubmit}
-          className="bg-transparent p-4"
-        >
-          {/* Validation Summary */}
-          {(Object.keys(errors).length > 0 || Object.keys(fieldErrors).length > 0) && (
-            <div className="mb-8 p-6 bg-red-50 border border-red-200 rounded-xl">
-              <div className="flex items-center mb-2">
-                <div className="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center mr-3">
-                  <span className="text-white text-sm font-bold">!</span>
-                </div>
-                <h3 className="text-red-800 font-semibold text-lg">Please fix the following errors:</h3>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Left Column: Image & Location */}
+          <div className="lg:col-span-1 space-y-6">
+            {/* Image Upload */}
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold text-gray-800 dark:text-white">{t('supplierImage')}</h2>
+                {viewImage && (
+                  <button type="button" onClick={removeImage} className="text-red-500 hover:text-red-600 transition-colors">
+                    <FaTrash />
+                  </button>
+                )}
               </div>
-              <ul className="list-disc list-inside text-red-700 text-sm space-y-1">
-                {Object.values(errors).map((error, index) => (
-                  error && <li key={index} className="ml-4">{error}</li>
-                ))}
-                {Object.values(fieldErrors).map((error, index) => (
-                  error && <li key={`field-${index}`} className="ml-4">{error}</li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* Left Column - Image Upload & Location */}
-            <div className="space-y-8">
-              {/* Image Upload Section */}
-              <div className="bg-gray-50 rounded-xl p-6 border-2 border-dashed border-gray-300">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-lg font-semibold text-gray-800">
-                    Supplier Image
-                  </h2>
-                  {viewImage && (
-                    <button
-                      type="button"
-                      onClick={removeImage}
-                      className="px-3 py-1 text-sm bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors flex items-center gap-2"
-                    >
-                      <FaTimes className="text-xs" />
-                      Remove
-                    </button>
+              
+              <label htmlFor="image-upload" className="block cursor-pointer">
+                <div className={`w-full flex justify-center items-center p-4 border-2 border-dashed rounded-lg transition-all duration-200 ${
+                  viewImage ? 'border-blue-300 dark:border-blue-500/50 bg-blue-50/30' : 'border-gray-300 dark:border-gray-600 hover:border-blue-400'
+                }`}>
+                  {viewImage ? (
+                    <img src={viewImage} alt="Preview" className="max-h-64 rounded-lg object-contain mx-auto" />
+                  ) : (
+                    <div className="text-center py-8">
+                      <IoMdCloudUpload className="text-5xl text-blue-400 mx-auto mb-4" />
+                      <p className="text-gray-500 dark:text-gray-400">{t('clickToUpload', 'Click to upload image')}</p>
+                    </div>
                   )}
                 </div>
-
-                <label
-                  htmlFor="up-image-item"
-                  className={`block cursor-pointer transition-all duration-200 ${fieldErrors.image ? 'ring-2 ring-red-500 ring-offset-2 rounded-lg' : ''
-                    }`}
-                >
-                  <div className={`w-full flex justify-center items-center p-4 border-2 border-dashed rounded-lg transition-all duration-200 ${fieldErrors.image
-                    ? 'border-red-500 bg-red-25'
-                    : viewImage
-                      ? 'border-blue-300 bg-blue-25'
-                      : 'border-gray-400 hover:border-blue-400 hover:bg-blue-25'
-                    }`}>
-                    {viewImage ? (
-                      <div className="text-center">
-                        <img
-                          className="h-48 w-48 object-cover rounded-lg shadow-md mx-auto"
-                          src={viewImage}
-                          alt="Supplier preview"
-                        />
-                        <p className="text-sm text-gray-600 mt-3">Click to change image</p>
-                      </div>
-                    ) : (
-                      <div className="text-center py-8">
-                        <IoMdCloudUpload className="text-5xl text-blue-400 mx-auto mb-4" />
-                        <h3 className="text-lg font-medium text-gray-700 mb-2">Upload supplier image</h3>
-                        <p className="text-sm text-gray-500 mb-4">Drag and drop or click to browse</p>
-                        <div className="px-6 py-2 bg-blue-500 text-white rounded-lg inline-flex items-center gap-2 hover:bg-blue-600 transition-colors">
-                          Browse files
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </label>
-
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={changeUpload}
-                  id="up-image-item"
-                  hidden
-                  name="up-image-item"
-                />
-
-                {fieldErrors.image && (
-                  <div className="flex items-center gap-2 text-red-500 text-sm mt-3">
-                    <span className="w-2 h-2 bg-red-500 rounded-full"></span>
-                    {fieldErrors.image}
-                  </div>
-                )}
-
-                <p className="text-xs text-gray-500 mt-3 text-center">
-                  Max size 2MB • JPEG, PNG, GIF, WebP
-                </p>
-              </div>
-
-              {/* Location Section */}
-              <div className="bg-gray-50 rounded-xl p-6 border border-gray-200">
-                <div className="flex items-center gap-3 mb-4">
-                  <FaMapMarkerAlt className="text-blue-500 text-xl" />
-                  <h2 className="text-lg font-semibold text-gray-800">Location Services</h2>
-                </div>
-
-                {/* <button
-                  type="button"
-                  onClick={getLocation}
-                  disabled={loading}
-                  className={`w-full px-4 py-3 rounded-lg font-semibold transition-all duration-200 flex items-center justify-center gap-3 ${loading
-                    ? "bg-gray-400 cursor-not-allowed text-gray-700"
-                    : "bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-lg hover:shadow-xl"
-                    }`}
-                >
-                  <FaMapMarkerAlt className="text-lg" />
-                  {loading ? "Fetching Location..." : "Get My Current Location"}
-                </button> */}
-
-                {errors.general && (
-                  <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-                    <div className="flex items-center gap-2 text-red-700">
-                      <span className="w-2 h-2 bg-red-500 rounded-full"></span>
-                      {errors.general}
-                    </div>
-                  </div>
-                )}
-
-                {location.latitude && location.longitude && (
-                  <div className="mt-6">
-                    <h3 className="text-md font-semibold text-gray-700 mb-3">Location Preview:</h3>
-                    <div className="bg-white p-4 rounded-lg border border-gray-200">
-                      <iframe
-                        src={`https://www.google.com/maps?q=${location.latitude},${location.longitude}&hl=es;z=14&output=embed`}
-                        width="100%"
-                        height="200"
-                        className="rounded-lg border-0"
-                        loading="lazy"
-                        title="Supplier location map"
-                      ></iframe>
-                      <div className="text-sm text-gray-600 mt-3 p-3 bg-gray-50 rounded-lg">
-                        <span className="font-medium">Coordinates:</span> {location.latitude}, {location.longitude}
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
+              </label>
+              <input type="file" id="image-upload" hidden accept="image/*" onChange={handleImageChange} />
             </div>
 
-            {/* Right Column - Form Fields */}
-            <div className="space-y-6">
-              {/* Basic Information */}
-              <div className="bg-gray-50 rounded-xl p-6 border border-gray-200">
-                <h2 className="text-lg font-semibold text-gray-800 mb-4">Basic Information</h2>
+            
+          </div>
 
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Supplier Name <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      name="supplier_name"
-                      value={dataForm.supplier_name}
-                      onChange={handleInputChange}
-                      className={getInputClass('supplier_name')}
-                      required
-                      maxLength={100}
-                      placeholder="Enter supplier full name"
-                    />
-                    {fieldErrors.supplier_name && (
-                      <div className="flex items-center gap-2 text-red-500 text-sm mt-2">
-                        <span className="w-2 h-2 bg-red-500 rounded-full"></span>
-                        {fieldErrors.supplier_name}
-                      </div>
-                    )}
-                    <div className="text-xs text-gray-500 mt-2 flex justify-between">
-                      <span>Required field</span>
-                      <span>{dataForm.supplier_name.length}/100 characters</span>
-                    </div>
-                  </div>
+          {/* Right Column: Form Fields */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Basic Info */}
+            <div>
+              <div className="flex items-center gap-3 mb-6">
+                <FaTruck className="text-blue-500 text-xl" />
+                <h2 className="text-lg font-semibold text-gray-800 dark:text-white">{t('basicInformation')}</h2>
+              </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Supplier Address <span className="text-red-500">*</span>
-                    </label>
-                    <textarea
-                      name="supplier_address"
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('supplierName')} <span className="text-red-500">*</span></label>
+                  <Input
+                    value={dataForm.supplier_name}
+                    onChange={(val) => setFormData(p => ({ ...p, supplier_name: val }))}
+                    placeholder={t('enterSupplierName')}
+                  />
+                  {errors.supplier_name && <p className="text-red-500 text-xs">{errors.supplier_name}</p>}
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('phoneNumber')}</label>
+                  <Input
+                    value={dataForm.supplier_tel}
+                    onChange={(val) => setFormData(p => ({ ...p, supplier_tel: val }))}
+                    placeholder="+1234567890"
+                  />
+                  {errors.supplier_tel && <p className="text-red-500 text-xs">{errors.supplier_tel}</p>}
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('emailAddress')}</label>
+                  <Input
+                    type="email"
+                    value={dataForm.supplier_email}
+                    onChange={(val) => setFormData(p => ({ ...p, supplier_email: val }))}
+                    placeholder="supplier@example.com"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('supplierAddress')} <span className="text-red-500">*</span></label>
+                  <div className="flex gap-2">
+                    <Input
                       value={dataForm.supplier_address}
-                      onChange={handleInputChange}
-                      className={`${getInputClass('supplier_address')} resize-none`}
-                      rows={3}
-                      placeholder="Enter complete supplier address or use location service"
+                      onChange={handleLocationChange}
+                      placeholder="Address or lat, lng"
                     />
-                    {fieldErrors.supplier_address && (
-                      <div className="flex items-center gap-2 text-red-500 text-sm mt-2">
-                        <span className="w-2 h-2 bg-red-500 rounded-full"></span>
-                        {fieldErrors.supplier_address}
-                      </div>
-                    )}
+                    <button type="button" onClick={getCurrentLocation} className="p-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 rounded-lg hover:bg-blue-200 transition-colors">
+                      <FaMapMarkerAlt />
+                    </button>
                   </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Phone Number
-                      </label>
-                      <input
-                        type="text"
-                        name="supplier_tel"
-                        value={dataForm.supplier_tel}
-                        onChange={handleInputChange}
-                        className={getInputClass('supplier_tel')}
-                        placeholder="+1234567890"
-                        maxLength={15}
-                      />
-                      {fieldErrors.supplier_tel && (
-                        <div className="flex items-center gap-2 text-red-500 text-sm mt-2">
-                          <span className="w-2 h-2 bg-red-500 rounded-full"></span>
-                          {fieldErrors.supplier_tel}
-                        </div>
-                      )}
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Email Address
-                      </label>
-                      <input
-                        type="email"
-                        name="supplier_email"
-                        value={dataForm.supplier_email}
-                        onChange={handleInputChange}
-                        className={getInputClass('supplier_email')}
-                        placeholder="supplier@example.com"
-                      />
-                      {fieldErrors.supplier_email && (
-                        <div className="flex items-center gap-2 text-red-500 text-sm mt-2">
-                          <span className="w-2 h-2 bg-red-500 rounded-full"></span>
-                          {fieldErrors.supplier_email}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Description
-                    </label>
-                    <textarea
-                      name="description"
-                      value={dataForm.description}
-                      onChange={handleInputChange}
-                      className={getInputClass('description')}
-                      rows={2}
-                      maxLength={255}
-                      placeholder="Add a brief description about the supplier"
-                    />
-                    <div className="text-xs text-gray-500 mt-2 flex justify-end">
-                      <span>{dataForm.description?.length || 0}/255 characters</span>
-                    </div>
-                  </div>
+                  {errors.supplier_address && <p className="text-red-500 text-xs">{errors.supplier_address}</p>}
                 </div>
-              </div>
 
-              {/* Location Hierarchy */}
-              <div className="bg-gray-50 rounded-xl p-6 border border-gray-200">
-                <h2 className="text-lg font-semibold text-gray-800 mb-4">Geographical Location</h2>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Province</label>
-                    <select
-                      name="province"
-                      title="province_id"
-                      id={dataForm.province_id ?? ""}
-                      value={dataForm.province ?? ""}
-                      onChange={handleInputChange}
-                      className={getSelectClass('province')}
-                    >
-                      <option value="">Select Province</option>
-                      {provinces?.map((p) => (
-                        <option key={p.id || p.province_id} value={p.khmer_name ?? p.name} data-id={p.id || p.province_id}>
-                          {p.khmer_name} - {p.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">District</label>
-                    <select
-                      name="district"
-                      title="district_id"
-                      id={dataForm.district_id ?? ""}
-                      value={dataForm.district ?? ""}
-                      onChange={handleInputChange}
-                      className={getSelectClass('district')}
-                      disabled={!districts.length}
-                    >
-                      <option value="">Select District</option>
-                      {districts.map((d) => (
-                        <option key={d.id || d.district_id} value={d.khmer_name ?? d.name} data-id={d.id || d.district_id}>
-                          {d.khmer_name} - {d.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Commune</label>
-                    <select
-                      name="commune"
-                      title="commune_id"
-                      id={dataForm.commune_id ?? ""}
-                      value={dataForm.commune ?? ""}
-                      onChange={handleInputChange}
-                      className={getSelectClass('commune')}
-                      disabled={!communes.length}
-                    >
-                      <option value="">Select Commune</option>
-                      {communes.map((c) => (
-                        <option key={c.id || c.commune_id} value={c.khmer_name ?? c.name} data-id={c.id || c.commune_id}>
-                          {c.khmer_name} - {c.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Village</label>
-                    <select
-                      name="village"
-                      title="village_id"
-                      id={dataForm.village_id ?? ""}
-                      value={dataForm.village ?? ""}
-                      onChange={handleInputChange}
-                      className={getSelectClass('village')}
-                      disabled={!villages.length}
-                    >
-                      <option value="">Select Village</option>
-                      {villages.map((v) => (
-                        <option key={v.id || v.village_id} value={v.khmer_name ?? v.name} data-id={v.id || v.village_id}>
-                          {v.khmer_name} - {v.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                <div className="md:col-span-2 space-y-2">
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('description')}</label>
+                  <textarea
+                    className={textareaClasses}
+                    value={dataForm.description}
+                    onChange={(e) => setFormData(p => ({ ...p, description: e.target.value }))}
+                    placeholder={t('addSupplierDescription', 'Add a brief description about the supplier')}
+                  />
                 </div>
               </div>
             </div>
-          </div>
 
-          {/* Action Buttons */}
-          <div className="flex justify-end space-x-4 pt-8 mt-8 border-t border-gray-200">
-            <Link
-              to={-1}
-              className="px-6 py-3 border border-gray-300 flex gap-2 items-center text-gray-700 rounded-lg hover:bg-gray-50 transition-all duration-200 cursor-pointer font-medium"
-            >
-              <FaTimes />
-              Cancel
-            </Link>
-            <button
-              type="submit"
-              disabled={loading}
-              className="px-8 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 gap-3 flex items-center space-x-2 disabled:opacity-50 transition-all duration-200 cursor-pointer font-medium shadow-lg hover:shadow-xl"
-            >
-              <FaSave className="text-lg" />
-              {loading
-                ? "Saving..."
-                : isEditMode
-                  ? "Update Supplier"
-                  : "Create Supplier"}
-            </button>
+            {/* Geographical Location */}
+            <div>
+              <div className="flex items-center gap-3 mb-6">
+                <FaMapMarkedAlt className="text-emerald-500 text-xl" />
+                <h2 className="text-lg font-semibold text-gray-800 dark:text-white">{t('geographicalLocation')}</h2>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('province')}</label>
+                  <RichSearch
+                    data={provinces}
+                    value={dataForm.province_id}
+                    onSelected={(id) => {
+                      const p = provinces.find(x => x.id === id || x.province_id === id);
+                      setFormData(prev => ({ 
+                        ...prev, province_id: id, province: p?.khmer_name || p?.name || "",
+                        district_id: null, commune_id: null, village_id: null 
+                      }));
+                    }}
+                    keyFields={{ id: 'id', title: 'khmer_name', subtitle: 'name' }}
+                    placeholder={t('selectProvince')}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('district')}</label>
+                  <RichSearch
+                    data={districts}
+                    value={dataForm.district_id}
+                    onSelected={(id) => {
+                      const d = districts.find(x => x.id === id || x.district_id === id);
+                      setFormData(prev => ({ 
+                        ...prev, district_id: id, district: d?.khmer_name || d?.name || "",
+                        commune_id: null, village_id: null 
+                      }));
+                    }}
+                    keyFields={{ id: 'id', title: 'khmer_name', subtitle: 'name' }}
+                    placeholder={t('selectDistrict')}
+                    disabled={!districts.length}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('commune')}</label>
+                  <RichSearch
+                    data={communes}
+                    value={dataForm.commune_id}
+                    onSelected={(id) => {
+                      const c = communes.find(x => x.id === id || x.commune_id === id);
+                      setFormData(prev => ({ 
+                        ...prev, commune_id: id, commune: c?.khmer_name || c?.name || "",
+                        village_id: null 
+                      }));
+                    }}
+                    keyFields={{ id: 'id', title: 'khmer_name', subtitle: 'name' }}
+                    placeholder={t('selectCommune')}
+                    disabled={!communes.length}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('village')}</label>
+                  <RichSearch
+                    data={villages}
+                    value={dataForm.village_id}
+                    onSelected={(id) => {
+                      const v = villages.find(x => x.id === id || x.village_id === id);
+                      setFormData(prev => ({ 
+                        ...prev, village_id: id, village: v?.khmer_name || v?.name || ""
+                      }));
+                    }}
+                    keyFields={{ id: 'id', title: 'khmer_name', subtitle: 'name' }}
+                    placeholder={t('selectVillage')}
+                    disabled={!villages.length}
+                  />
+                </div>
+              </div>
+            </div>
+            {/* Location Preview */}
+            <div className="bg-primary p-4 rounded-sm">
+              <div className="flex items-center gap-3 mb-4">
+                <FaMapMarkedAlt className="text-blue-500 text-xl" />
+                <h2 className="text-lg font-semibold text-gray-800 dark:text-white">{t('locationPreview')}</h2>
+              </div>
+              
+              {location.latitude && location.longitude ? (
+                <div className="space-y-4">
+                  <div className="rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 h-48">
+                    <iframe
+                      src={`https://www.google.com/maps?q=${location.latitude},${location.longitude}&z=15&output=embed`}
+                      width="100%" height="100%" style={{ border: 0 }} loading="lazy" title="Location Map"
+                    ></iframe>
+                  </div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
+                    {location.latitude}, {location.longitude}
+                  </p>
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-400">
+                  <FaMapMarkerAlt className="text-3xl mx-auto mb-2 opacity-50" />
+                  <p>{t('noLocationSet', 'No location coordinates set')}</p>
+                </div>
+              )}
+            </div>
+
+            {/* Actions */}
+            <div className="flex justify-end gap-4 pt-6 mt-6 border-t border-gray-200 dark:border-gray-700">
+              <Button variant="danger" outline onClick={() => navigate(-1)} disabled={loading}>
+                <FaTimes /> {t('cancel')}
+              </Button>
+              <Button onClick={handleSubmit} disabled={loading}>
+                {isEditMode ? <FaEdit /> : <FaSave />}
+                {loading ? t('saving') : isEditMode ? t('updateSupplier') : t('createSupplier')}
+              </Button>
+            </div>
           </div>
-        </form>
+        </div>
       </div>
     </div>
   );

@@ -76,7 +76,7 @@ const ShoppingCart = () => {
     }
 
     return (
-        <div className="min-h-screen py-8 px-4 -mt-8 -mx-4">
+        <div className="min-h-screen py-8 px-4 -mt-8 text-gray-800 -mx-4">
             <div className="max-w-7xl mx-auto flex flex-col lg:flex-row gap-6">
 
                 {/* Cart Items List */}

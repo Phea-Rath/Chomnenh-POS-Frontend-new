@@ -1235,7 +1235,15 @@ const resources = {
       of: "of",
       // Items
       WholePrice: "Wholesale Price",
-      new: "New"
+      new: "New",
+      add: "Add",
+      notFound: "Not Found",
+      rawMaterials: "Raw Materials",
+      noRawMaterials: "No Raw Materials",
+      addRawMaterial: "Add Raw Material",
+      invoiceId: "Invoice ID",
+      invoiceNumber: "Invoice Number",
+      supplierName: "Supplier Name",
     }
   },
   kh: {
@@ -2470,7 +2478,15 @@ const resources = {
       of: "នៃ",
       // Items
       WholePrice: "តម្លៃលក់ដុំ",
-      new: "ថ្មី"
+      new: "ថ្មី",
+      add: "បន្ថែម",
+      notFound: "រកមិនឃើញទេ",
+      rawMaterials: "វត្ថុធាតុដើម",
+      noRawMaterials: "មិនមានវត្ថុធាតុដើមទេ",
+      addRawMaterial: "បន្ថែមវត្ថុធាតុដើម",
+      invoiceId: "លេខវិក្កយបត្រ",
+      invoiceNumber: "លេខវិក្កយបត្រ",
+      supplierName: "ឈ្មោះអ្នកផ្គត់ផ្គង់",
     }
   }
 };

@@ -543,13 +543,13 @@ const ItemForm = () => {
                 {existingImages.length > 0 && (
                   <div className="mb-4">
                     <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('existingImages')}</h3>
-                    <div className="grid grid-cols-2 gap-3 mb-4">
+                    <div className="flex flex-wrap gap-3 mb-4">
                       {existingImages.map((image, index) => (
                         <div key={index} className="relative group">
                           <img
                             src={image.image}
                             alt={`Existing item ${index + 1}`}
-                            className="w-full h-24 object-cover rounded-lg shadow-sm"
+                            className="w-24 h-24 object-contain rounded-sm shadow-sm"
                           />
                           <button
                             type="button"
@@ -568,13 +568,13 @@ const ItemForm = () => {
                 {viewImages.length > 0 && (
                   <div className="mb-4">
                     <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('newImages')}</h3>
-                    <div className="grid grid-cols-2 gap-3 mb-4">
+                    <div className="flex flex-wrap gap-3 mb-4">
                       {viewImages.map((image, index) => (
                         <div key={index} className="relative group">
                           <img
                             src={image}
                             alt={`New item preview ${index + 1}`}
-                            className="w-full h-24 object-cover rounded-lg shadow-sm"
+                            className="h-24 w-24 object-contain rounded-sm"
                           />
                           <button
                             type="button"

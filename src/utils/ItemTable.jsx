@@ -1,6 +1,7 @@
 import { FaTrash } from "react-icons/fa";
+import Input from "./Input";
 
-const ItemTable = ({ data, t, onDelete, onQtyChange ,haedTitle    }) => {
+const ItemTable = ({ data, t, onDelete, onQtyChange, onCostChange ,haedTitle    }) => {
     
     return (
         <div className="overflow-hidden  border border-gray-200 dark:border-gray-800">
@@ -26,20 +27,32 @@ const ItemTable = ({ data, t, onDelete, onQtyChange ,haedTitle    }) => {
                             </td>
                             <td className="px-6 py-4">
                                 <div className="flex justify-center">
-                                    <input
+                                    <Input
                                         type="number"
                                         name="quantity"
                                         value={item?.quantity}
                                         id="quantity"
                                         placeholder="0"
-                                        onChange={(e) => onQtyChange(index, Number(e.target.value))}
+                                        onChange={(value) => onQtyChange(index, Number(value))}
                                         className="w-20 rounded-lg border border-gray-300 bg-white px-2 py-1 text-center transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
                                         onWheel={(e) => e.target.blur()}
                                     />
                                 </div>
                             </td>
                             <td className="px-6 py-4 text-right tabular-nums text-gray-600 dark:text-gray-400">
-                                ${item.item_cost.toLocaleString()}
+                                {/* ${item.item_cost.toLocaleString()} */}
+                                <div className="flex items-center">
+                                    <Input
+                                        type="number"
+                                        name="item_cost"
+                                        value={item?.item_cost}
+                                        id="item_cost"
+                                        placeholder="0"
+                                        onChange={(value) => onCostChange(index, Number(value))}
+                                        className="w-20 rounded-lg border border-gray-300 bg-white px-2 py-1 text-center transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                                        onWheel={(e) => e.target.blur()}
+                                    />
+                                </div>
                             </td>
                             <td className="px-6 py-4 text-right font-semibold tabular-nums text-blue-600 dark:text-blue-400">
                                 ${(item.quantity * item.item_cost).toLocaleString()}

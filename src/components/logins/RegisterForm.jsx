@@ -176,7 +176,7 @@ const RegisterForm = () => {
           <p className="text-gray-600 dark:text-gray-400 mt-2">{t('createNewUserSubtitle')}</p>
         </div>
 
-        <Card className={`shadow-lg border-0 dark:!bg-gray-800 dark:!border-gray-600`}>
+        <div>
           <div className="p-6">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
@@ -359,7 +359,7 @@ const RegisterForm = () => {
               </div>
             </div>
           </div>
-        </Card>
+        </div>
 
         <div className="mt-6 text-sm text-gray-500 dark:text-gray-400">
           <p className="flex items-center gap-2"><span className="text-red-500">*</span>{t('requiredFields')}</p>

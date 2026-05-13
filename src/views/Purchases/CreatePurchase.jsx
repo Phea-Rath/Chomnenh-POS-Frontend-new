@@ -15,7 +15,11 @@ import {
   FaTag,
   FaReceipt,
   FaEdit,
-  FaLayerGroup
+  FaLayerGroup,
+  FaIdBadge,
+  FaIdCard,
+  FaFileInvoice,
+  FaFileExcel
 } from "react-icons/fa";
 import axios from "axios";
 import { useGetAllItemsQuery } from "../../../app/Features/itemsSlice";
@@ -36,6 +40,10 @@ import ItemTable from "../../utils/ItemTable";
 import RichSearch from "../../utils/RichSearch";
 import Input from "../../utils/Input";
 import Button from "../../utils/Button";
+import * as XLSX from 'xlsx';
+import { BiImport } from "react-icons/bi";
+import readFormFile from "../../services/readFormFile";
+import ImportItemInList from "../../utils/ImportItemInList";
 
 const CreatePurchase = () => {
   const { t } = useTranslation();
@@ -54,6 +62,7 @@ const CreatePurchase = () => {
     tax_amount: 0,
     shipping_fee: 0,
     exchange_rate: 0,
+    invoice_number: '',
     total_amount: 0,
     total_paid: 0,
     balance: 0,
@@ -61,6 +70,7 @@ const CreatePurchase = () => {
     items: [],
     payments: [],
   });
+  const targetFields = ["code", "quantity", "cost"];
 
   const navigator = useNavigate();
   const token = localStorage.getItem("token");
@@ -82,8 +92,8 @@ const CreatePurchase = () => {
   const [debouncedSearch] = useDebounce(searchTerm, 500);
   const [currentPage, setCurrentPage] = useState(1);
   const [limit, setLimit] = useState(10);
-  const { data: itemData } = useGetAllItemsQuery({ token, limit, page: currentPage, search: debouncedSearch });
-  const { data: rawData } = useGetAllRawMaterialQuery({ token, limit, page: currentPage, search: debouncedSearch });
+  const { data: itemData, isFetching: itemLoading } = useGetAllItemsQuery({ token, limit, page: currentPage, search: debouncedSearch }, { skip: itemType != 0 });
+  const { data: rawData, isFetching: rawLoading } = useGetAllRawMaterialQuery({ token, limit, page: currentPage, search: debouncedSearch }, { skip: itemType != 1 });
   const { data: supplierData } = useGetAllSupplierQuery(token);
   const [paymentDate, setPaymentDate] = useState(
     new Date().toISOString().split("T")[0]
@@ -146,6 +156,7 @@ const CreatePurchase = () => {
             total_paid: parseFloat(purchase.total_paid) || 0,
             balance: parseFloat(purchase.balance) || 0,
             exchange_rate: parseFloat(purchase.exchange_rate) || 0,
+            invoice_number: purchase.invoice_number || '',
             status: purchase.status === 1 ? 'Completed' : purchase.status === 2 ? 'Cancelled' : 'Pending',
             items: purchase.details.map((detail) => ({
               item_id: detail.item_id,
@@ -191,6 +202,7 @@ const CreatePurchase = () => {
             total_paid: parseFloat(purchase.total_paid) || 0,
             balance: parseFloat(purchase.balance) || 0,
             exchange_rate: parseFloat(purchase.exchange_rate) || 0,
+            invoice_number: purchase.invoice_number || '',
             status: purchase.status === 1 ? 'Completed' : purchase.status === 2 ? 'Cancelled' : 'Pending',
             items: purchase.details.map((detail) => ({
               item_id: detail.id,
@@ -316,30 +328,30 @@ const CreatePurchase = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const addItemToPurchase = () => {
-    if (!selectedItem) {
+  const addItemToPurchase = (id) => {
+    console.log(id);
+    let item = null;
+    if (itemType == 0) {
+      item = items.find((item) => item.id == id);
+    } else {
+      item = rawMaterials.find((item) => item.id == id);
+    }
+    if (!item) {
       setErrors({ itemModal: t('selectItem') });
       return;
     }
 
-    if (quantity <= 0) {
-      setErrors({ itemModal: t('invalidQuantity') });
-      return;
-    }
-
-    if (itemCost <= 0) {
-      setErrors({ itemModal: t('invalidUnitPrice') });
-      return;
-    }
+    
+    
 
     const newItem = {
-      item_id: itemType == 0 ? selectedItem.id : selectedItem.id,
-      quantity,
-      item_cost: itemCost,
+      item_id: itemType == 0 ? item.id : item.id,
+      quantity: 1,
+      item_cost: 0,
       attributes,
-      name: itemType == 0 ? selectedItem.name : selectedItem.material_name,
-      code: itemType == 0 ? selectedItem.code : selectedItem.material_code,
-      image: itemType == 0 ? selectedItem.image : selectedItem.material_image,
+      name: itemType == 0 ? item.name : item.material_name,
+      code: itemType == 0 ? item.code : item.material_code,
+      image: itemType == 0 ? item.image : item.material_image,
     };
 
     setFormData((prev) => ({
@@ -366,6 +378,8 @@ const CreatePurchase = () => {
   };
 
   const handleQtyChange = (index, newQty) => {
+    console.log(newQty);
+    
     if (newQty <= 0) {
       setErrors({ items: t('invalidQuantity') });
       return;
@@ -385,26 +399,28 @@ const CreatePurchase = () => {
     });
   };
 
-  const addPayment = () => {
-    if (paymentAmount <= 0) {
-      setErrors({ paymentModal: t('invalidPaymentAmount') });
+  const handleCostChange = (index, newCost) => {
+    if (newCost <= 0) {
+      setErrors({ items: t('invalidCost') });
       return;
     }
 
-    if (!paymentDate) {
-      setErrors({ paymentModal: t('selectPaymentDate') });
-      return;
-    }
+    setFormData((prev) => {
+      const updatedItems = [...prev.items];
+      updatedItems[index].item_cost = newCost;
+      updatedItems[index].total_amount = newCost * updatedItems[index].quantity;
+      const total = updatedItems.reduce((sum, item) => sum + item.total_amount, 0);
+      return {
+        ...prev,
+        items: updatedItems,
+        total_amount: total,
+        balance: total - prev.total_paid,
+      };
+    });
+  };
 
-    if (Number(paymentAmount.toFixed(0)) > Number(formData.balance.toFixed(0))) {
-      setErrors({ paymentModal: t('paymentExceedBalance') });
-      return;
-    }
-
-    const newPayment = {
-      amount: paymentAmount,
-      paid_at: paymentDate,
-    };
+  const onAddPayment = async (value) => {
+    setPaymentAmount(value)
 
     setFormData((prev) => ({
       ...prev,
@@ -413,10 +429,7 @@ const CreatePurchase = () => {
       balance: prev.total_amount - (prev.total_paid + paymentAmount),
     }));
 
-    setPaymentAmount(0);
-    setPaymentDate(new Date().toISOString().split("T")[0]);
-    setShowPaymentModal(false);
-    setErrors({});
+    
   };
 
   const removePayment = (index) => {
@@ -476,10 +489,138 @@ const CreatePurchase = () => {
       setErrors(prev => ({ ...prev, [name]: '' }));
     }
   };
+  const downloadTemplate = (targetFields, title) => {
+    const normalizedFields = Array.isArray(targetFields?.[0])
+      ? targetFields[0]
+      : targetFields;
+      
+    const headerRow = Array.isArray(normalizedFields) ? normalizedFields : [];
+    const worksheet = XLSX.utils.aoa_to_sheet([headerRow]);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Template");
+    XLSX.writeFile(workbook, `${title.replace(/\s+/g, '_')}_Template.xlsx`);
+  };
+
+  const handleImportItems = async (event) => {
+      event.preventDefault();
+      const file = event.target.files?.[0];
+
+      if (!file) {
+        return;
+      }
+
+      try {
+        const importedRows = await readFormFile(file, targetFields);
+        const res = await api.post(`/import-items-by-code/${itemType?'material':'items'}`, {data: importedRows,  }, {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`
+          },
+        });
+        if (res.status === 200) {
+          const sourceItems = res.data.data;
+          const importedItems = importedRows
+            .map((row) => {
+              // const rowName = String(row.name || "").trim().toLowerCase();
+              const rowCode = String(row.code || "").trim().toLowerCase();
+              const matchedItem = sourceItems.find((sourceItem) => {
+                // const sourceName = String(itemType === 1 ? sourceItem.material_name : sourceItem.name || "").trim().toLowerCase();
+                const sourceCode = String(itemType === 1 ? sourceItem.material_code : sourceItem.code || "").trim().toLowerCase();
+  
+                return (rowCode && sourceCode === rowCode);
+              });
+  
+              if (!matchedItem) {
+                return null;
+              }
+  
+              const quantity = Math.max(1, Number(row.quantity ?? row.stock) || 1);
+              const itemCost = Number(row.cost ?? row.price) || 0;
+  
+              return {
+                item_id: matchedItem.id,
+                quantity,
+                item_cost: itemCost,
+                total_amount: quantity * itemCost,
+                attributes: [],
+                name: itemType === 1 ? matchedItem.material_name : matchedItem.name,
+                code: itemType === 1 ? matchedItem.material_code : matchedItem.code,
+                image: itemType === 1 ? matchedItem.material_image : matchedItem.image,
+              };
+            })
+            .filter(Boolean);
+            if (importedItems.length === 0) {
+              toast.error("No matching items found in the import file.");
+              setErrors(prev => ({ ...prev, items: `Codes [${res.data.missing_codes}] are not found.` }));
+              return;
+            }
+            setFormData((prev) => {
+            const mergedItems = [...prev.items];
+
+            importedItems.forEach((importedItem) => {
+              const existingIndex = mergedItems.findIndex(
+                (item) => Number(item.item_id) === Number(importedItem.item_id)
+              );
+
+              if (existingIndex >= 0) {
+                mergedItems[existingIndex] = {
+                  ...mergedItems[existingIndex],
+                  quantity: Number(mergedItems[existingIndex].quantity || 0) + importedItem.quantity,
+                  item_cost: importedItem.item_cost || mergedItems[existingIndex].item_cost,
+                };
+                return;
+              }
+
+              mergedItems.push(importedItem);
+            });
+
+            return {
+              ...prev,
+              items: mergedItems,
+            };
+          });
+
+          if(res.data.missing_codes){
+            setErrors(prev => ({ ...prev, items: `Codes [${res.data.missing_codes}] are not found.` }));
+            toast.warning(`Codes ${res.data.missing_codes} are not found.`);
+          }
+
+          // setErrors((prev) => ({ ...prev, items: null }));
+          toast.success(`Imported ${importedItems.length} item(s).`);
+        }
+        
+
+
+        
+      } catch (error) {
+        console.error(error);
+        toast.error("Failed to import file. please check your file and try again.");
+        setErrors(prev => ({ ...prev, file: "Failed to import file. please check your file and try again." }));
+      } finally {
+        event.target.value = "";
+      }
+    // };
+
+    // input.click();
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    if (paymentAmount < 0) {
+      setErrors({ paymentModal: t('invalidPaymentAmount') });
+      return;
+    }
+
+    if (!paymentDate) {
+      setErrors({ paymentModal: t('selectPaymentDate') });
+      return;
+    }
+
+    if (Number(paymentAmount.toFixed(0)) > Number(formData.balance.toFixed(0))) {
+      setErrors({ paymentModal: t('paymentExceedBalance') });
+      return;
+    }
     if (!validateForm()) {
       toast.error(t('pleaseFixErrors'));
       const firstErrorField = Object.keys(fieldErrors)[0];
@@ -509,6 +650,7 @@ const CreatePurchase = () => {
         purchase_type: itemType,
         balance: parseFloat(formData.balance) || 0,
         exchange_rate: parseFloat(formData.exchange_rate) || 0,
+        invoice_number: formData.invoice_number || '',
         status: formData.status === 'Completed' ? 1 : formData.status === 'Cancelled' ? 2 : 0,
         items: formData.items.map((item) => ({
           item_id: parseInt(item.item_id),
@@ -516,10 +658,12 @@ const CreatePurchase = () => {
           attributes: item.attributes,
           item_cost: parseFloat(item.item_cost),
         })),
-        payments: formData.payments.map((p) => ({
-          amount: parseFloat(p.amount),
-          paid_at: p.paid_at,
-        })),
+        payments: [
+          {
+            amount: paymentAmount,
+            paid_at: paymentDate,
+          }
+        ]
       };
 
       if (isEditMode) {
@@ -564,11 +708,18 @@ const CreatePurchase = () => {
 
   const onScrollFetch = (e) => {
     const target = e.target;
+    
     const nearBottom = target.scrollHeight - target.scrollTop - target.clientHeight < 100;
     const total = itemType == 0 ? itemData?.pagination?.total : rawData?.pagination?.total;
     const currentLength = itemType == 0 ? items?.length : rawMaterials?.length;
+    console.log(nearBottom, total, currentLength);
     if (nearBottom && total > currentLength) {
-      setLimit(prev => prev + 10);
+      if(itemType == 0 && !itemLoading){
+        setLimit(prev => prev + 10);
+      }
+      if(itemType == 1 && !rawLoading){
+        setLimit(prev => prev + 10);
+      }
     }
   };
 
@@ -663,6 +814,8 @@ const CreatePurchase = () => {
                       </label>
                       <RichSearch
                         data={suppliers}
+                        value={formData.supplier_id}
+                        placeholder={t('selectSupplier')}
                         keyFields={{
                           id: 'supplier_id',
                           title: 'supplier_name',
@@ -706,27 +859,47 @@ const CreatePurchase = () => {
                       <FaBox className="text-blue-500" />
                       <h2 className="text-lg font-bold text-gray-800 dark:!text-gray-100">{t('purchaseItems')}</h2>
                     </div>
-                    <Button
-                      type="button"
-                      onClick={() => setShowItemModal(true)}
-                      variant='success'
-                      outline={false}
-                    >
-                      <FaPlus /> {t('addItem')}
-                    </Button>
+                    
+                    <div className="flex items-center gap-2">
+                      <RichSearch
+                        data={itemType==1? rawMaterials:items}
+                        placeholder={t('addItem')}
+                        keyFields={{
+                          id: itemType==1?'id':'id',
+                          title: itemType==1?'material_name':'name',
+                          image: itemType==1?'material_image':'image',
+                          subtitle: itemType==1?'material_code':'code',
+                        }}
+                        onSelected={(value) => addItemToPurchase(value)}
+                        onSearch={(value)=>setSearchTerm(value)}
+                        onScrollReader={onScrollFetch}
+                      />
+                       <ImportItemInList
+                        onSelected={handleImportItems}
+                      />
+                    </div>
+                    
                   </div>
+
+                  
 
                   {formData.items.length === 0 ? (
                     <div className="text-center py-12 bg-gray-50 dark:!bg-blue-900/50 rounded-lg border-2 border-dashed border-gray-300 dark:!border-gray-700">
                       <FaBox className="text-gray-400 dark:!text-gray-400 text-4xl mx-auto mb-4" />
                       <p className="text-gray-500 dark:!text-gray-400 mb-4">{t('noItemsAdded')}</p>
-                      <button
-                        type="button"
-                        onClick={() => setShowItemModal(true)}
-                        className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-                      >
-                        {t('addFirstItem')}
-                      </button>
+                      <div className="flex items-center justify-center gap-4">
+                        <Button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            downloadTemplate(targetFields, itemType==1?"Import Raw Materials":"Import Items");
+                          }}
+                          className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
+                        >
+                          <FaFileExcel className="text-white" size={18} />
+                          <span>{t('downloadTemplate')}</span>
+                        </Button>
+                        
+                      </div>
                     </div>
                   ) : (
                     <ItemTable
@@ -734,6 +907,7 @@ const CreatePurchase = () => {
                     data={formData.items} 
                     onDelete={removeItem} 
                     onQtyChange={handleQtyChange} 
+                    onCostChange={handleCostChange}
                     haedTitle={[{title: t('item'), key: 'item'}, {title: t('quantity'), key: 'quantity'}, {title: t('price'), key: 'price'}, {title: t('total'), key: 'total'}, {title: '', key: 'action'}]}
                     />
                   )}
@@ -757,44 +931,50 @@ const CreatePurchase = () => {
                       <FaDollarSign className="text-green-500" />
                       <h2 className="text-lg font-bold text-gray-800 dark:!text-gray-100">{t('paymentInformation')}</h2>
                     </div>
-                    <Button
-                      type="button"
-                      onClick={() => setShowPaymentModal(true)}
-                      disabled={formData.balance <= 0}
-                      variant='success'
-                      outline={false}
-                    >
-                      <FaPlus /> {t('addPayment')}
-                    </Button>
                   </div>
+                  <div className="p-6 space-y-6 flex gap-3 flex-wrap">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:!text-gray-300 mb-2">
+                        {t('paymentAmount')}
+                      </label>
+                      <Input
+                        type="number"
+                        value={paymentAmount}
+                        onChange={(value) => {
+                          setPaymentAmount(parseFloat(value) || 0);
+                          setFormData(prev => {
+                            return {
+                              ...prev,
+                              total_paid: value
+                            }
+                          })
+                        }}
+                        size="large"
+                        min="0"
+                        max={formData.balance}
+                        step="1"
+                        placeholder={t('enterAmount')}
+                        prefix={<FaDollarSign className="text-gray-400" />}
+                        className="dark:!bg-gray-700 dark:!text-gray-200 dark:!border-gray-600"
+                      />
+                      <div className="text-sm text-gray-500 dark:!text-gray-400 mt-2">
+                        {t('remainingBalance')}: <span className="font-bold dark:!text-gray-200">${formData.balance.toFixed(2)}</span>
+                      </div>
+                    </div>
 
-                  {formData.payments.length === 0 ? (
-                    <div className="text-center py-8 bg-gray-50 dark:!bg-blue-900/50 rounded-lg border-2 border-dashed border-gray-300 dark:!border-gray-700">
-                      <FaDollarSign className="text-gray-400 dark:!text-gray-400 text-3xl mx-auto mb-3" />
-                      <p className="text-gray-500 dark:!text-gray-400">{t('noPaymentsRecorded')}</p>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:!text-gray-300 mb-2">
+                        {t('paymentDate')}
+                      </label>
+                      <DatePicker
+                        value={paymentDate ? dayjs(paymentDate) : null}
+                        onChange={(date, dateString) => setPaymentDate(dateString)}
+                        className="date-picker"
+                        size="large"
+                        format="YYYY-MM-DD"
+                      />
                     </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {formData.payments.map((payment, index) => (
-                        <div
-                          key={index}
-                          className="flex items-center justify-between p-4 bg-green-50 dark:!bg-green-900/10 rounded-lg border border-green-200 dark:!border-green-800"
-                        >
-                          <div>
-                            <div className="font-bold text-gray-800 dark:!text-gray-100">${payment.amount.toFixed(2)}</div>
-                            <div className="text-sm text-gray-600 dark:!text-gray-400">{t('paidOn')} {payment.paid_at}</div>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => removePayment(index)}
-                            className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                          >
-                            <FaTrash />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                  </div>   
                   {errors.payments && (
                     <div className="text-red-500 text-sm mt-2 p-3 bg-red-50 dark:!bg-red-900/10 rounded-lg">
                       {errors.payments}
@@ -892,6 +1072,27 @@ const CreatePurchase = () => {
                           <div className="text-red-500 text-sm mt-1">{fieldErrors.exchange_rate}</div>
                         )}
                       </div>
+                      <div className=" grow">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-gray-600 dark:!text-gray-400 flex items-center gap-2">
+                            <FaFileInvoice className="text-gray-400" />
+                            {t('invoiceId')}
+                          </span>
+                          {/* <span className="font-bold text-gray-800 dark:!text-gray-100">៛{parseFloat(formData.exchange_rate).toFixed(2)}</span> */}
+                        </div>
+                        <Input
+                          type="text"
+                          name="invoice_number"
+                          value={formData.invoice_number}
+                          onChange={(value) => handleInputChange('invoice_number', value)}
+                          placeholder={t('invoiceId')}
+                          className={`w-full ${fieldErrors.invoice_number ? 'border-red-500' : ''} dark:!bg-gray-700 dark:!text-gray-200 dark:!border-gray-600`}
+
+                        />
+                        {fieldErrors.invoice_number && (
+                          <div className="text-red-500 text-sm mt-1">{fieldErrors.exchange_rate}</div>
+                        )}
+                      </div>
                     </div>
 
                     <Divider className="my-4 dark:!border-gray-700" />
@@ -956,319 +1157,7 @@ const CreatePurchase = () => {
         </form>
       </div>
 
-      {/* Add Item Modal */}
-      {showItemModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="bg-white dark:!bg-gray-800 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden transition-colors"
-          >
-            <div className="p-6 border-b border-gray-200 dark:!border-gray-700">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xl font-bold text-gray-800 dark:!text-gray-100 flex items-center gap-2">
-                  <FaBox className="text-blue-500" />
-                  {t('addItemToPurchase')}
-                </h3>
-                <button
-                  onClick={() => {
-                    setShowItemModal(false);
-                    setErrors({});
-                    setSelectedItem(null);
-                  }}
-                  className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                >
-                  <FaTimes className="text-gray-500 dark:!text-gray-400" />
-                </button>
-              </div>
-            </div>
-
-            {errors.itemModal && (
-              <div className="mx-6 mt-4 p-3 bg-red-50 dark:!bg-red-900/10 border border-red-200 dark:!border-red-800 rounded-lg">
-                <div className="flex items-center gap-2 text-red-700 dark:!text-red-400">
-                  <FaExclamationTriangle />
-                  <span>{errors.itemModal}</span>
-                </div>
-              </div>
-            )}
-
-            <div className="p-6 overflow-y-auto max-h-[60vh]">
-              <div className="mb-6">
-                <div className="relative">
-                  <FaSearch className="absolute left-4 top-4 text-gray-400" />
-                  <input
-                    type="text"
-                    placeholder={t('searchItemsPlaceholder')}
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-12 pr-4 py-3 border border-gray-300 dark:!border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:!bg-gray-700 dark:!text-gray-200 transition-colors"
-                  />
-                </div>
-              </div>
-
-              <div className="mb-6">
-                {itemType == 0 ? <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-60 overflow-y-auto p-2" onScroll={onScrollFetch}>
-                  {filteredItems.map((item) => (
-                    <div
-                      key={item.id}
-                      onClick={() => {
-                        setSelectedItem(item);
-                        setItemCost(item.price || 0);
-                        setErrors({});
-                      }}
-                      className={`p-4 border rounded-xl cursor-pointer transition-all ${selectedItem?.id === item.id
-                        ? "border-blue-500 bg-blue-50 ring-2 ring-blue-200 dark:!bg-blue-900/20 dark:ring-blue-800"
-                        : "border-gray-200 dark:!border-gray-700 hover:border-blue-300 dark:!hover:bg-gray-700 dark:!hover:border-blue-500 hover:bg-gray-50 dark:!hover:bg-gray-700/50"
-                        }`}
-                    >
-                      <div className="flex items-start gap-3">
-                        <div className="h-16 w-16 rounded-lg border border-gray-300 dark:!border-gray-600 overflow-hidden bg-white dark:!bg-gray-800 flex-shrink-0">
-                          {item.image ? (
-                            <img
-                              src={item.image}
-                              alt={item.name}
-                              className="h-full w-full object-contain p-2"
-                            />
-                          ) : (
-                            <div className="h-full w-full flex items-center justify-center bg-gray-100 dark:!bg-gray-700">
-                              <FaBox className="text-gray-400 dark:!text-gray-500" />
-                            </div>
-                          )}
-                        </div>
-                        <div>
-                          <div className="font-bold text-gray-800 dark:!text-gray-100">{item.name}</div>
-                          <div className="text-sm text-gray-600 dark:!text-gray-400 mb-1">{item.code}</div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm font-medium text-green-600 dark:!text-green-400">
-                              ${item.price}
-                            </span>
-                            {item.discount > 0 && (
-                              <Tag color="green" className="text-xs">
-                                {item.discount}% off
-                              </Tag>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div> : <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-60 overflow-y-auto p-2" onScroll={onScrollFetch}>
-                  {filteredRaw.map((item) => (
-                    <div
-                      key={item.id}
-                      onClick={() => {
-                        setSelectedItem(item);
-                        setItemCost(item.price || 0);
-                        setErrors({});
-                      }}
-                      className={`p-4 border rounded-xl cursor-pointer transition-all ${selectedItem?.id === item.id
-                        ? "border-blue-500 bg-blue-50 ring-2 ring-blue-200 dark:!bg-blue-900/20 dark:ring-blue-800"
-                        : "border-gray-200 dark:!border-gray-700 hover:border-blue-300 dark:!hover:bg-gray-700 dark:!hover:border-blue-500 hover:bg-gray-50 dark:!hover:bg-gray-700/50"
-                        }`}
-                    >
-                      <div className="flex items-start gap-3">
-                        <div className="h-16 w-16 rounded-lg border border-gray-300 dark:!border-gray-600 overflow-hidden bg-white dark:!bg-gray-800 flex-shrink-0">
-                          {item.material_image ? (
-                            <img
-                              src={item.material_image}
-                              alt={item.material_name}
-                              className="h-full w-full object-contain p-2"
-                            />
-                          ) : (
-                            <div className="h-full w-full flex items-center justify-center bg-gray-100 dark:!bg-gray-700">
-                              <FaBox className="text-gray-400 dark:!text-gray-500" />
-                            </div>
-                          )}
-                        </div>
-                        <div>
-                          <div className="font-bold text-gray-800 dark:!text-gray-100">{item.material_name}</div>
-                          <div className="text-sm text-gray-600 dark:!text-gray-400 mb-1">{item.material_code}</div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>}
-              </div>
-
-              {selectedItem && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  className="space-y-6"
-                >
-                  <Divider className="dark:!border-gray-700"><span className="dark:!text-gray-300">{t('itemDetails')}</span></Divider>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:!text-gray-300 mb-2">
-                        {t('quantity')}
-                      </label>
-                      <Input
-                        type="number"
-                        value={quantity}
-                        onWheel={(e) => e.target.blur()}
-                        onChange={(value) => setQuantity(parseInt(value) || 1)}
-                        size="large"
-                        placeholder={t('enterQuantity')}
-                        className="dark:!bg-gray-700 dark:!text-gray-200 dark:!border-gray-600"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:!text-gray-300 mb-2">
-                        {t('unitCost')} ($)
-                      </label>
-                      <Input
-                        type="number"
-                        value={itemCost}
-                        onWheel={(e) => e.target.blur()}
-                        onChange={(value) => setItemCost(parseFloat(value) || 0)}
-                        size="large"
-                        min="0"
-                        step="0.1"
-                        placeholder={t('enterCost')}
-                        className="dark:!bg-gray-700 dark:!text-gray-200 dark:!border-gray-600"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Attributes Preview */}
-                  {selectedItem?.attributes?.length > 0 && (
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:!text-gray-300 mb-3">
-                        {t('availableAttributes')}
-                      </label>
-                      <div className="flex flex-wrap gap-2">
-                        {selectedItem.attributes.map((attr, index) => (
-                          attr.type === 'select' && (
-                            <div key={index} className="mb-3">
-                              <div className="text-sm font-medium text-gray-600 dark:!text-gray-400 mb-2">{attr.name}</div>
-                              <div className="flex flex-wrap gap-2">
-                                {attr.value?.map((val, vIdx) => (
-                                  <div
-                                    key={vIdx}
-                                    className={` border dark:!border-gray-600 rounded-lg text-sm ${attr.name === 'colors'
-                                      ? 'w-8 h-8 rounded-full border px-3 py-2'
-                                      : 'bg-gray-100 dark:!bg-gray-700 text-gray-700 dark:!text-gray-200 px-1'
-                                      }`}
-                                    style={attr.name === 'colors' ? { backgroundColor: val.value } : {}}
-                                    title={val.value}
-                                  >{attr.name !== 'colors' && val.value}</div>
-                                ))}
-                              </div>
-                            </div>
-                          )
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="flex justify-end gap-3 pt-4 border-t dark:!border-gray-700">
-                    <button
-                      onClick={() => {
-                        setSelectedItem(null);
-                        setQuantity(1);
-                        setItemCost(0);
-                      }}
-                      className="px-5 py-2.5 border border-gray-300 dark:!border-gray-600 text-gray-700 dark:!text-gray-300 rounded-lg hover:bg-gray-50 dark:!hover:bg-gray-700/50 transition-colors"
-                    >
-                      {t('changeItem')}
-                    </button>
-                    <button
-                      onClick={addItemToPurchase}
-                      className="px-5 py-2.5 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all flex items-center gap-2"
-                    >
-                      <FaPlus />
-                      {t('addToPurchase')}
-                    </button>
-                  </div>
-                </motion.div>
-              )}
-            </div>
-          </motion.div>
-        </div>
-      )}
-
-      {/* Add Payment Modal */}
-      {showPaymentModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="bg-white dark:!bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full transition-colors"
-          >
-            <div className="p-6 border-b border-gray-200 dark:!border-gray-700">
-              <h3 className="text-xl font-bold text-gray-800 dark:!text-gray-100 flex items-center gap-2">
-                <FaDollarSign className="text-green-500" />
-                {t('addPayment')}
-              </h3>
-            </div>
-
-            {errors.paymentModal && (
-              <div className="mx-6 mt-4 p-3 bg-red-50 dark:!bg-red-900/10 border border-red-200 dark:!border-red-800 rounded-lg">
-                <div className="flex items-center gap-2 text-red-700 dark:!text-red-400">
-                  <FaExclamationTriangle />
-                  <span>{errors.paymentModal}</span>
-                </div>
-              </div>
-            )}
-
-            <div className="p-6 space-y-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:!text-gray-300 mb-2">
-                  {t('paymentAmount')}
-                </label>
-                <Input
-                  type="number"
-                  value={paymentAmount}
-                  onChange={(value) => setPaymentAmount(parseFloat(value) || 0)}
-                  size="large"
-                  min="0"
-                  max={formData.balance}
-                  step="1"
-                  placeholder={t('enterAmount')}
-                  prefix={<FaDollarSign className="text-gray-400" />}
-                  className="dark:!bg-gray-700 dark:!text-gray-200 dark:!border-gray-600"
-                />
-                <div className="text-sm text-gray-500 dark:!text-gray-400 mt-2">
-                  {t('remainingBalance')}: <span className="font-bold dark:!text-gray-200">${formData.balance.toFixed(2)}</span>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:!text-gray-300 mb-2">
-                  {t('paymentDate')}
-                </label>
-                <DatePicker
-                  value={paymentDate ? dayjs(paymentDate) : null}
-                  onChange={(date, dateString) => setPaymentDate(dateString)}
-                  className="date-picker"
-                  size="large"
-                  format="YYYY-MM-DD"
-                />
-              </div>
-
-              <div className="flex justify-end gap-3 pt-4 border-t dark:!border-gray-700">
-                <button
-                  onClick={() => {
-                    setShowPaymentModal(false);
-                    setErrors({});
-                  }}
-                  className="px-5 py-2.5 border border-gray-300 dark:!border-gray-600 text-gray-700 dark:!text-gray-300 rounded-lg hover:bg-gray-50 dark:!hover:bg-gray-700/50 transition-colors"
-                >
-                  {t('cancel')}
-                </button>
-                <button
-                  onClick={addPayment}
-                  className="px-5 py-2.5 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg hover:from-green-600 hover:to-green-700 transition-all flex items-center gap-2"
-                >
-                  <FaPlus />
-                  {t('addPayment')}
-                </button>
-              </div>
-            </div>
-          </motion.div>
-        </div>
-      )}
+      
     </div>
   );
 };

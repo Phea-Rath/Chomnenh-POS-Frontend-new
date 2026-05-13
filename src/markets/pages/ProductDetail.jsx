@@ -168,7 +168,7 @@ const ProductDetail = () => {
     }
 
     return (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 text-gray-800 lg:px-8 py-5">
             <nav className="hidden sm:flex items-center space-x-2 text-sm text-gray-500 mb-6 lg:mb-8">
                 <span className="cursor-pointer hover:underline" onClick={() => navigate('/market')}>Home</span>
                 <span>/</span>

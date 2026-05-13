@@ -227,9 +227,7 @@ const DeliverForm = () => {
                 </div>
 
                 <form
-                    onSubmit={handleSubmit}
-                    className={`${darkMode ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"} shadow-xl rounded-2xl p-4 border`}
-                >
+                    onSubmit={handleSubmit}>
                     {/* Validation Summary */}
                     {(Object.keys(errors).length > 0 || Object.keys(fieldErrors).length > 0) && (
                         <div className={`mb-8 p-6 border rounded-xl ${darkMode ? "bg-red-900/20 border-red-800" : "bg-red-50 border-red-200"}`}>
