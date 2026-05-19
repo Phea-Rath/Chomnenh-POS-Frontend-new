@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 
 const DatePicker = ({ label = "Select Date", onChange }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -6,10 +7,15 @@ const DatePicker = ({ label = "Select Date", onChange }) => {
   const [viewDate, setViewDate] = useState(new Date()); 
   const [selectedDate, setSelectedDate] = useState(null); 
   const containerRef = useRef(null);
+  const calendarRef = useRef(null);
+  const [calendarPosition, setCalendarPosition] = useState({ top: 0, left: 0, width: 288 });
 
   useEffect(() => {
     const handleClick = (e) => {
-      if (containerRef.current && !containerRef.current.contains(e.target)) {
+      const clickedInput = containerRef.current?.contains(e.target);
+      const clickedCalendar = calendarRef.current?.contains(e.target);
+
+      if (!clickedInput && !clickedCalendar) {
         setIsOpen(false);
         setIsYearMode(false);
       }
@@ -17,6 +23,35 @@ const DatePicker = ({ label = "Select Date", onChange }) => {
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
+
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+
+    const updateCalendarPosition = () => {
+      const rect = containerRef.current?.getBoundingClientRect();
+
+      if (!rect) {
+        return;
+      }
+
+      setCalendarPosition({
+        top: rect.bottom + 8,
+        left: rect.left,
+        width: Math.max(rect.width, 288),
+      });
+    };
+
+    updateCalendarPosition();
+    window.addEventListener("resize", updateCalendarPosition);
+    window.addEventListener("scroll", updateCalendarPosition, true);
+
+    return () => {
+      window.removeEventListener("resize", updateCalendarPosition);
+      window.removeEventListener("scroll", updateCalendarPosition, true);
+    };
+  }, [isOpen]);
 
   const year = viewDate.getFullYear();
   const month = viewDate.getMonth();
@@ -47,10 +82,8 @@ const DatePicker = ({ label = "Select Date", onChange }) => {
   };
 
   return (
-    <div className="relative w-full max-w-[280px" ref={containerRef}>
-      {/* <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5 ml-1">
-        {label}
-      </label> */}
+    <>
+    <div className="relative w-full max-w-[280px]" ref={containerRef}>
 
       <div onClick={() => setIsOpen(!isOpen)} className="group relative flex items-center cursor-pointer">
         <div className="absolute left-3 text-gray-400 group-hover:text-blue-500 transition-colors">
@@ -66,13 +99,19 @@ const DatePicker = ({ label = "Select Date", onChange }) => {
           className="w-full pl-10 pr-4 py-2.5 min-w-[150px] bg-transparent border border-gray-300 dark:border-gray-700 rounded-sm text-sm focus:ring-4 focus:ring-blue-500/10 outline-none cursor-pointer dark:text-white"
         />
       </div>
+    </div>
 
-      {isOpen && (
+      {isOpen && createPortal(
         <div
-        style={{ zIndex: 9999 }}
-        className="absolute top-full left-0 mt-2 z-[999] w-72 bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-2xl overflow-hidden">
-          
-          {/* Header */}
+        ref={calendarRef}
+        style={{
+          position: "fixed",
+          top: `${calendarPosition.top}px`,
+          left: `${calendarPosition.left}px`,
+          width: `${calendarPosition.width}px`,
+          zIndex: 9999,
+        }}
+        className="rounded-2xl border border-gray-200 bg-white shadow-2xl overflow-hidden dark:border-gray-800 dark:bg-gray-900">
           <div className="flex items-center justify-between px-4 py-3 border-b border-gray-50 dark:border-gray-800">
             <button 
               onClick={(e) =>{ e.preventDefault(); setViewDate(new Date(year, isYearMode ? month - 144 : month - 1, 1))}}
@@ -151,9 +190,10 @@ const DatePicker = ({ label = "Select Date", onChange }) => {
               Clear
             </button>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
-    </div>
+    </>
   );
 };
 

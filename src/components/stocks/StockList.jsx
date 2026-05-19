@@ -54,8 +54,8 @@ const formatDateTime = (date) =>
         year: 'numeric',
         month: 'short',
         day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
+        // hour: '2-digit',
+        // minute: '2-digit',
     });
 
 const Badge = ({ children, color }) => {
@@ -236,7 +236,7 @@ const StockList = ({
                 <div className="text-xs text-gray-500 dark:text-gray-400">
                     <div className="flex items-center gap-1.5">
                         <FaCalendarAlt size={12} />
-                        {formatDateTime(stock.created_at)}
+                        {formatDateTime(stock.stock_date)}
                     </div>
                 </div>
             </td>

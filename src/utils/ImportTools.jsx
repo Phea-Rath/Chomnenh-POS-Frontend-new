@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { Upload, Button, Table, Modal, Select, Space, Card, Typography, message, Tooltip, Popconfirm, Input, Switch, Divider } from 'antd';
-import { 
-    UploadOutlined, 
-    CloudUploadOutlined, 
-    SettingOutlined, 
-    DeleteOutlined, 
-    ImportOutlined, 
+import { Upload, Button, Table, Modal, Select, Space, Card, Typography, message, Tooltip, Popconfirm, Input, Switch, Divider, Tag, Checkbox } from 'antd';
+import {
+    UploadOutlined,
+    CloudUploadOutlined,
+    SettingOutlined,
+    DeleteOutlined,
+    ImportOutlined,
     DownloadOutlined,
     ExclamationCircleOutlined,
     LinkOutlined
@@ -13,8 +13,42 @@ import {
 import * as XLSX from 'xlsx';
 import apiService from '../../app/apiService';
 import api from '../services/api';
-
+import { LuFolderUp } from "react-icons/lu";
+import baseUrl from '../services/baseUrl';
 const { Text, Title } = Typography;
+const importOptions = [
+    {
+        label: 'customers',
+        keys: [
+            'name',
+            'email',
+            'phone_number',
+            'address',
+        ],
+        path:"/import/customers",
+    },
+    {
+        label: 'suppliers',
+        keys: [
+            'name',
+            'email',
+            'phone_number',
+            'address',
+        ],
+        path:"/import/suppliers",
+    },
+    {
+        label: 'Products',
+        keys: [
+            'name',
+            'price',
+            'description',
+            'category',
+            'stock'
+        ],
+        path: "/import/products"
+    }
+]
 
 /**
  * ImportTools Component
@@ -27,9 +61,9 @@ const { Text, Title } = Typography;
  * @param {function} transformData - Optional function to transform data before posting.
  * @param {string} title - Custom title for the card.
  */
-const ImportTools = ({ 
-    targetFields = [], 
-    apiPath: initialApiPath = '', 
+const ImportTools = ({
+    targetFields = [],
+    apiPath: initialApiPath = '',
     onSuccess,
     token = localStorage.getItem('token'),
     transformData,
@@ -39,11 +73,13 @@ const ImportTools = ({
     const [headers, setHeaders] = useState([]);
     const [fieldConfig, setFieldConfig] = useState([]); // [{ header: string, key: string, enabled: boolean, label: string, required: boolean }]
     const [previewData, setPreviewData] = useState([]);
-    const [activeColumns, setActiveColumns] = useState([]); 
+    const [activeColumns, setActiveColumns] = useState([]);
     const [isMappingVisible, setIsMappingVisible] = useState(false);
     const [loading, setLoading] = useState(false);
     const [fileName, setFileName] = useState('');
     const [apiPath, setApiPath] = useState(initialApiPath);
+    const [apiType, setApiType] = useState();
+    const [typeOfImport, setTypeOfImport] = useState(false);
 
     const handleFileUpload = (file) => {
         const reader = new FileReader();
@@ -60,13 +96,13 @@ const ImportTools = ({
                     setHeaders(excelHeaders);
                     setFileData(jsonData.slice(1));
                     setFileName(file.name);
-                    
+
                     const initialConfig = excelHeaders.map((h, index) => {
-                        const targetMatch = targetFields.find(f => 
-                            f.label.toLowerCase() === h.toLowerCase() || 
+                        const targetMatch = targetFields.find(f =>
+                            f.label.toLowerCase() === h.toLowerCase() ||
                             f.key.toLowerCase() === h.toLowerCase()
                         );
-                        
+
                         return {
                             header: h,
                             headerIndex: index,
@@ -77,7 +113,7 @@ const ImportTools = ({
                             required: targetMatch ? targetMatch.required : false
                         };
                     });
-                    
+
                     setFieldConfig(initialConfig);
                     setIsMappingVisible(true);
                 } else {
@@ -102,7 +138,7 @@ const ImportTools = ({
 
     const applyMapping = () => {
         const enabledFields = fieldConfig.filter(f => f.enabled);
-        
+
         if (enabledFields.length === 0) {
             message.warning("Please enable at least one column to import.");
             return;
@@ -114,10 +150,10 @@ const ImportTools = ({
             return;
         }
 
-        const missingRequired = targetFields.filter(tf => 
+        const missingRequired = targetFields.filter(tf =>
             tf.required && !enabledFields.some(ef => ef.key === tf.key)
         );
-        
+
         if (missingRequired.length > 0) {
             message.warning(`Missing required fields: ${missingRequired.map(f => f.label).join(', ')}`);
             return;
@@ -127,7 +163,7 @@ const ImportTools = ({
             const item = { key: `row-${index}-${Date.now()}` };
             enabledFields.forEach(field => {
                 let val = row[field.headerIndex];
-                
+
                 if (val !== undefined && val !== null && val !== '') {
                     if (field.type === 'number') {
                         const num = Number(val);
@@ -138,7 +174,7 @@ const ImportTools = ({
                 } else {
                     val = null;
                 }
-                
+
                 item[field.key] = val;
             });
             return item;
@@ -157,10 +193,10 @@ const ImportTools = ({
     };
 
     const handleImport = async () => {
-        if (!apiPath) {
-            message.error("API path is not configured.");
-            return;
-        }
+        // if (!apiPath) {
+        //     message.error("API path is not configured.");
+        //     return;
+        // }
 
         if (previewData.length === 0) {
             message.warning("No data to import.");
@@ -170,13 +206,14 @@ const ImportTools = ({
         setLoading(true);
         try {
             let dataToPost = previewData.map(({ key, ...rest }) => rest);
-            
+
             if (transformData) {
                 dataToPost = transformData(dataToPost);
             }
-            console.log("dataToPost : ",dataToPost);
-            
-            await api.post(apiPath, {'data' : dataToPost},
+            console.log("dataToPost : ", dataToPost);
+            const path = typeOfImport ? apiPath: `${baseUrl}${apiType}`
+            console.log("path : ", path);
+            await api.post(path, { 'data': dataToPost },
                 {
                     headers: {
                         "Content-Type": "application/json",
@@ -184,7 +221,7 @@ const ImportTools = ({
                     }
                 }
             );
-            
+
             message.success(`${previewData.length} records imported successfully!`);
             reset();
             if (onSuccess) onSuccess();
@@ -217,8 +254,9 @@ const ImportTools = ({
         ...activeColumns.map(field => ({
             title: field.label,
             dataIndex: field.key,
+            width: '200px',
             key: field.key,
-            render: (text) => (text === null || text === undefined || text === '') ? 
+            render: (text) => (text === null || text === undefined || text === '') ?
                 <Text type="secondary"><i>N/A</i></Text> : text
         })),
         {
@@ -228,11 +266,11 @@ const ImportTools = ({
             width: 80,
             render: (_, record) => (
                 <Tooltip title="Remove row">
-                    <Button 
-                        type="text" 
-                        danger 
-                        icon={<DeleteOutlined />} 
-                        onClick={() => handleDeleteRow(record.key)} 
+                    <Button
+                        type="text"
+                        danger
+                        icon={<DeleteOutlined />}
+                        onClick={() => handleDeleteRow(record.key)}
                     />
                 </Tooltip>
             ),
@@ -240,7 +278,7 @@ const ImportTools = ({
     ];
 
     return (
-        <Card 
+        <Card
             title={
                 <Space>
                     <ImportOutlined style={{ color: '#1890ff' }} />
@@ -262,9 +300,9 @@ const ImportTools = ({
                             <Button icon={<DeleteOutlined />} danger disabled={loading}>Clear All</Button>
                         </Popconfirm>
                     )}
-                    <Upload 
-                        beforeUpload={handleFileUpload} 
-                        showUploadList={false} 
+                    <Upload
+                        beforeUpload={handleFileUpload}
+                        showUploadList={false}
                         accept=".xlsx,.xls,.csv"
                     >
                         <Button icon={<UploadOutlined />} type={previewData.length === 0 ? "primary" : "default"}>
@@ -276,12 +314,12 @@ const ImportTools = ({
         >
             {previewData.length > 0 ? (
                 <Space direction="vertical" style={{ width: '100%' }} size="middle">
-                    <div style={{ 
-                        display: 'flex', 
-                        justifyContent: 'space-between', 
-                        alignItems: 'center', 
-                        background: '#e6f7ff', 
-                        padding: '12px 16px', 
+                    <div style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        background: '#e6f7ff',
+                        padding: '12px 16px',
                         borderRadius: '8px',
                         border: '1px solid #91d5ff'
                     }}>
@@ -303,9 +341,9 @@ const ImportTools = ({
                                 cancelText="Cancel"
                                 disabled={loading}
                             >
-                                <Button 
-                                    type="primary" 
-                                    icon={<CloudUploadOutlined />} 
+                                <Button
+                                    type="primary"
+                                    icon={<CloudUploadOutlined />}
                                     loading={loading}
                                     style={{ background: '#52c41a', borderColor: '#52c41a' }}
                                 >
@@ -316,33 +354,59 @@ const ImportTools = ({
                     </div>
 
                     <div style={{ background: '#fafafa', padding: '12px', borderRadius: '8px', border: '1px solid #f0f0f0' }}>
-                        <Space align="center">
-                            <LinkOutlined style={{ color: '#8c8c8c' }} />
-                            <Text strong>API Path:</Text>
-                            <Input 
-                                placeholder="e.g., products/bulk" 
-                                value={apiPath} 
-                                onChange={(e) => setApiPath(e.target.value)}
-                                style={{ width: '300px' }}
-                                addonBefore="http://.../api/"
-                            />
-                        </Space>
+                        <Checkbox checked={typeOfImport} onChange={(e) => setTypeOfImport(e.target.checked)}>Use API Path</Checkbox>
+                        <div className='flex gap-2 flex-wrap'>
+                            {typeOfImport&& <Space align="center">
+                                <LinkOutlined style={{ color: '#8c8c8c' }} />
+                                <Text strong>API Path(optional):</Text>
+                                <Input
+                                    placeholder="e.g., products/bulk"
+                                    value={apiPath}
+                                    onChange={(e) => setApiPath(e.target.value)}
+                                    style={{ width: '300px' }}
+                                    addonBefore="http://.../api/"
+                                />
+                            </Space>}
+                            {!typeOfImport&&<Space align="center">
+                                <LuFolderUp style={{ color: '#8c8c8c' }} />
+                                <Text strong>Choose options:</Text>
+                                <Select
+                                    placeholder="Select Resource Type"
+                                    value={apiType}
+                                    onChange={(value) => setApiType(value)}
+                                    style={{ width: '250px' }}
+                                >
+                                    {
+                                        importOptions.map((option) => (
+                                            <Option key={option.label} value={option.path}>
+                                                {option.label}
+                                            </Option>
+                                        ))
+                                    }
+                                </Select>
+                            </Space>}
+                        </div>
+                        {!typeOfImport && <div className='flex gap-3 mt-2 flex-wrap'>
+                            {apiType && importOptions.find(option => option.path == apiType).keys.map((key) => (
+                                <Tag key={key}>{key}</Tag>
+                            ))}
+                        </div>}
                     </div>
-                    
-                    <Table 
-                        dataSource={previewData} 
-                        columns={columns} 
-                        size="small" 
+
+                    <Table
+                        dataSource={previewData}
+                        columns={columns}
+                        size="small"
                         pagination={{ pageSize: 10, showSizeChanger: true }}
                         scroll={{ x: 'max-content', y: 500 }}
                         bordered
                     />
                 </Space>
             ) : (
-                <div style={{ 
-                    textAlign: 'center', 
-                    padding: '80px 20px', 
-                    border: '2px dashed #d9d9d9', 
+                <div style={{
+                    textAlign: 'center',
+                    padding: '80px 20px',
+                    border: '2px dashed #d9d9d9',
                     borderRadius: '8px',
                     background: '#fafafa'
                 }}>
@@ -382,23 +446,52 @@ const ImportTools = ({
                         Below are all columns found in your file. Use the <strong>API Key</strong> field to customize the property name sent to the server.
                     </Text>
                 </div>
-
                 <div style={{ background: '#f0f2f5', padding: '12px', borderRadius: '8px', marginBottom: '20px' }}>
-                    <Space align="center" style={{ width: '100%', justifyContent: 'space-between' }}>
+                <Checkbox checked={typeOfImport} onChange={(e) => setTypeOfImport(e.target.checked)}>Use API Path</Checkbox>
+                    {typeOfImport && <Space align="center" style={{ width: '100%', justifyContent: 'space-between' }}>
                         <Space>
                             <LinkOutlined />
                             <Text strong>Destination API Path:</Text>
-                            <Input 
-                                placeholder="api/path/here" 
-                                value={apiPath} 
+                            <Input
+                                placeholder="api/path/here"
+                                value={apiPath}
                                 onChange={(e) => setApiPath(e.target.value)}
                                 style={{ width: '250px' }}
                             />
                         </Space>
                         <Text type="secondary" style={{ fontSize: '12px' }}>This path will be used for the POST request.</Text>
-                    </Space>
+                    </Space>}
+                    {!typeOfImport && <div>
+                        <Space align="center" style={{ width: '100%', justifyContent: 'space-between' }}>
+                            <Space>
+                                <LuFolderUp />
+                                <Text strong>Choose option:</Text>
+                                <Select
+                                    placeholder="Select Resource Type"
+                                    value={apiType}
+                                    onChange={(value) => setApiType(value)}
+                                    style={{ width: '250px' }}
+                                >
+                                    {
+                                        importOptions.map((option) => (
+                                            <Option key={option.label} value={option.path}>
+                                                {option.label}
+                                            </Option>
+                                        ))
+                                    }
+                                </Select>
+                            </Space>
+                            <Text type="secondary" style={{ fontSize: '12px' }}>This key will be used for the POST request.</Text>
+                        </Space>
+                        <div className='flex gap-3 mt-2 flex-wrap'>
+                            {apiType && importOptions.find(option => option.path == apiType).keys.map((key) => (
+                                <Tag key={key}>{key}</Tag>
+                            ))}
+                        </div>
+                    </div>}
                 </div>
-                
+
+
                 <div style={{ maxHeight: '50vh', overflowY: 'auto', paddingRight: '8px' }}>
                     <div style={{ display: 'flex', marginBottom: '12px', padding: '0 12px', color: '#8c8c8c', fontSize: '11px', fontWeight: 'bold' }}>
                         <div style={{ width: '10%', textAlign: 'center' }}>IMPORT</div>
@@ -406,25 +499,25 @@ const ImportTools = ({
                         <div style={{ width: '40%' }}>API KEY</div>
                         <div style={{ width: '20%' }}>DATA TYPE</div>
                     </div>
-                    
+
                     <Divider style={{ margin: '8px 0' }} />
 
                     {fieldConfig.map((field, index) => (
-                        <div key={`config-${index}`} style={{ 
-                            display: 'flex', 
-                            alignItems: 'center', 
-                            marginBottom: '8px', 
-                            padding: '8px 12px', 
-                            background: field.enabled ? '#fff' : '#fafafa', 
+                        <div key={`config-${index}`} style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            marginBottom: '8px',
+                            padding: '8px 12px',
+                            background: field.enabled ? '#fff' : '#fafafa',
                             borderRadius: '6px',
                             border: field.enabled ? '1px solid #d9d9d9' : '1px solid #f0f0f0',
                             opacity: field.enabled ? 1 : 0.6
                         }}>
                             <div style={{ width: '10%', textAlign: 'center' }}>
-                                <Switch 
-                                    size="small" 
-                                    checked={field.enabled} 
-                                    onChange={(checked) => updateField(index, { enabled: checked })} 
+                                <Switch
+                                    size="small"
+                                    checked={field.enabled}
+                                    onChange={(checked) => updateField(index, { enabled: checked })}
                                 />
                             </div>
                             <div style={{ width: '30%', paddingRight: '16px' }}>
@@ -433,10 +526,10 @@ const ImportTools = ({
                                 <div style={{ fontSize: '10px', color: '#bfbfbf' }}>Index: {field.headerIndex}</div>
                             </div>
                             <div style={{ width: '40%', paddingRight: '8px' }}>
-                                <Input 
+                                <Input
                                     size="small"
-                                    placeholder="Enter API key" 
-                                    value={field.key} 
+                                    placeholder="Enter API key"
+                                    value={field.key}
                                     disabled={!field.enabled}
                                     onChange={(e) => updateField(index, { key: e.target.value, label: e.target.value })}
                                     style={{ borderRadius: '4px' }}

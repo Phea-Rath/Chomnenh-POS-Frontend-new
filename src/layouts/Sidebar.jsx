@@ -75,7 +75,7 @@ const Sidebar = ({ darkMode }) => {
             ? 'bg-[#1e3a5f] text-white shadow-lg'
             : 'text-[#93c5fd] hover:bg-[#1e3a5f]/40 hover:text-white'}`}
       >
-        <div className={`p-2 rounded-xl white-icon-sidebar transition-all duration-300
+        <div className={`white-icon-sidebar transition-all duration-300
           `}>
           {item?.menu_icon && <img className={item?.menu_icon ? 'w-5 h-5' : ''} src={item?.menu_icon} alt="" />}
         </div>

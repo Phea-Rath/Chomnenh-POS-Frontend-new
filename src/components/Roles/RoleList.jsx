@@ -30,7 +30,7 @@ const RoleList = () => {
     }
   }, [users]);
 
-  const rolesWithUsers = ({ data, role_id }) => data.filter((u) => u.role_id == role_id).map((u) => ({ img: u.image, id: u.id }));
+  const rolesWithUsers = ({ data, role_id }) => data?.filter((u) => u.role_id == role_id).map((u) => ({ img: u.image, id: u.id }));
 
   const { data, isLoading } = useGetAllRoleQuery(token);
 

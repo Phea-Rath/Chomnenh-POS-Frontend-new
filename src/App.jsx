@@ -113,6 +113,8 @@ import CompanyStore from "./markets/CompanyStore";
 import ShoppingCart from "./markets/ShoppingCart";
 import WhiteBoard from "./utils/WhiteBoard";
 import ImportTools from "./utils/ImportTools";
+import OrderInvoiceForm from "./components/orders/OrderInvoiceForm";
+import OrderInvoiceList from "./components/orders/OrderInvoiceList";
 
 
 function ProtectedRoute({ children }) {
@@ -571,6 +573,22 @@ const router = createBrowserRouter([
       {
         path: "/inventories/production/view/:id",
         element: <ProductionDetail />,
+      },
+      {
+        path: "/home/order-invoice",
+        element: <OrderInvoiceList />
+      },
+      {
+        path: "/home/order-invoice/create",
+        element: <OrderInvoiceForm />
+      },
+      {
+        path: "/home/order-invoice/update/:id",
+        element: <OrderInvoiceForm />
+      },
+      {
+        path: "/home/order-invoice/",
+        element: <OrderInvoiceList />
       },
       {
         path: 'aba',

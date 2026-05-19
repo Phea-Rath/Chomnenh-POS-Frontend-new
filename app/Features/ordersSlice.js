@@ -19,6 +19,37 @@ export const ordersApi = createApi({
       query: ({token, limit, page, search}) => queryData(`/order_masters?limit=${limit}&page=${page}&search=${search}`, token),
     }),
 
+    getOrderInvoice: builder.query({
+      query: ({ token, limit = 10, page = 1, search = "", created_by = "", customer_id = "", item_for = "", start_date = "", end_date = "" }) => {
+        const params = new URLSearchParams({
+          limit: String(limit),
+          page: String(page),
+          search: search ?? "",
+        });
+
+        if (created_by !== "" && created_by !== null && created_by !== undefined) {
+          params.append("created_by", String(created_by));
+        }
+
+        if (customer_id !== "" && customer_id !== null && customer_id !== undefined) {
+          params.append("customer_id", String(customer_id));
+        }
+
+        if (item_for !== "" && item_for !== null && item_for !== undefined) {
+          params.append("item_for", String(item_for));
+        }
+
+        if (start_date) {
+          params.append("start_date", start_date);
+        }
+
+        if (end_date) {
+          params.append("end_date", end_date);
+        }
+
+        return queryData(`/order_invoices?${params.toString()}`, token);
+      },
+    }),
     getAllOrderTransection: builder.query({
       query: ({ token, limit, page, search }) => queryData(`/order_transection?limit=${limit}&page=${page}&search=${search}`, token),
     }),
@@ -98,4 +129,5 @@ export const {
   useGetPopularOrderQuery,
   useGetPersentOrderMonthlyQuery,
   useGetAllDeliveryTrackingQuery,
+  useGetOrderInvoiceQuery,
 } = ordersApi;

@@ -226,13 +226,13 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="p-8 space-y-8 bg-transparent min-h-screen">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+    <div className="p-2 space-y-2 bg-transparent min-h-screen">
+      <div className="flex flex-col gap-4 mb-8 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t("dashboard")}</h1>
           <p className="text-sm text-gray-500 dark:text-gray-400">{t("performanceInsights")}</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           
           <RefreshButton onRefresh={() => {saleQuery.refetch();purchaseQuery.refetch();expenseQuery.refetch();profitQuery.refetch();}} />
 
@@ -273,15 +273,15 @@ const Dashboard = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
         <MetricCard title={t("revenue")} value={sales.thisPeriod} persent={sales.persent} isLoss={sales.thisPeriod < sales.lastPeriod} icon={RiShoppingCartFill} colorClass="bg-indigo-50 text-indigo-600" chartData={revenueChart} chartColor="#6366f1" loading={saleQuery.isFetching || previousSaleQuery.isFetching} />
         <MetricCard title={t("purchases")} value={purchases.thisPeriod} persent={purchases.persent} isLoss={purchases.thisPeriod > purchases.lastPeriod} icon={FaWarehouse} colorClass="bg-amber-50 text-amber-600" chartData={purchaseChart} chartColor="#f59e0b" loading={purchaseQuery.isFetching || previousPurchaseQuery.isFetching} />
         <MetricCard title={t("expenses")} value={expenses.thisPeriod} persent={expenses.persent} isLoss={expenses.thisPeriod > expenses.lastPeriod} icon={RiMoneyDollarCircleFill} colorClass="bg-rose-50 text-rose-600" chartData={expenseChart} chartColor="#f43f5e" loading={expenseQuery.isFetching || previousExpenseQuery.isFetching} />
         <MetricCard title={t("netProfit")} value={profit.thisPeriod} persent={profit.persent} isLoss={profit.thisPeriod < profit.lastPeriod} icon={FaMoneyBillTrendUp} colorClass="bg-emerald-50 text-emerald-600" chartData={profitChart} chartColor="#10b981" loading={profitQuery.isFetching || previousProfitQuery.isFetching} />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 space-y-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-2">
+        <div className="lg:col-span-2 space-y-2">
           <ChartArea title={t("profitAnalytics")} loading={profitQuery.isFetching}>
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={profitChart}>
@@ -309,7 +309,7 @@ const Dashboard = () => {
           </ChartArea>
         </div>
 
-        <div className="space-y-8">
+        <div className="space-y-2">
           <div className="bg-white bg-primary p-6 rounded-sm shadow-sm border border-gray-100 dark:border-gray-700">
             <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6">{t("topSellingItems")}</h3>
             <div className="space-y-6">
@@ -353,7 +353,7 @@ const Dashboard = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-2">
         <div className="lg:col-span-2  relative">
           <ChartArea title={t("purchaseInventory")} loading={purchaseQuery.isFetching}>
             <ResponsiveContainer width="100%" height="100%">
@@ -387,7 +387,7 @@ const Dashboard = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-2">
         <div className=" relative">
           <ChartArea title={t("expenseAnalysis")} loading={expenseQuery.isFetching}>
             <ResponsiveContainer width="100%" height="100%">

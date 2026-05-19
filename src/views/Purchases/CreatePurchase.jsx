@@ -903,6 +903,7 @@ const CreatePurchase = () => {
                     </div>
                   ) : (
                     <ItemTable
+                    priceLabel='item_cost'
                     t={t} 
                     data={formData.items} 
                     onDelete={removeItem} 
