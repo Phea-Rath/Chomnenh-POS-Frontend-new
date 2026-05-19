@@ -7,6 +7,7 @@ import { useGetUserProfileQuery } from "../../app/Features/usersSlice";
 import { useGetMenuSidebarQuery } from "../../app/Features/permissionSlice";
 import { useTranslation } from "react-i18next";
 import logo from "../assets/logo.jpg";
+import orderInvoice from "../assets/order-invoice.png";
 
 const Sidebar = ({ darkMode }) => {
   const { setSidebar, sidebar } = useOutletsContext();
@@ -20,6 +21,19 @@ const Sidebar = ({ darkMode }) => {
   const collapsed = !sidebar;
   const sidebarWidth = collapsed && !isMobile ? "w-20" : "w-[250px]";
   const menuContentPadding = collapsed ? "px-2" : "";
+
+  const newMenus = [
+    {
+      menu_id: 1,
+      menu_name: "Order Invoice",
+      menu_icon: orderInvoice,
+      menu_path: "/home/order-invoice",
+      menu_group: "home",
+      active: 1,
+      created_at: "",
+      updated_at: "",
+    }
+  ]
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(max-width: 1023px)");
@@ -57,7 +71,8 @@ const Sidebar = ({ darkMode }) => {
 
     if (menuData?.length) {
       const perms = menuData.filter(i => i.active === 1);
-      setMenu(perms);
+      const newMenu = [...perms, ...newMenus];
+      setMenu(newMenu);
     }
   }, [permData]);
 

@@ -91,8 +91,8 @@ const createInitialFormData = () => ({
   sub_total: 0,
   sale_type: "wholesale",
   created_by: "",
-  order_tel: "",
-  order_address: "",
+  // order_tel: "",
+  // order_address: "",
   discount_total: 0,
   total_amount: 0,
   balance: 0,
@@ -228,8 +228,8 @@ const OrderInvoiceForm = () => {
         sub_total: toNumber(order.order_subtotal ?? order.sub_total),
         discount_total: toNumber(order.order_discount),
         created_by: order.created_by || "",
-        order_tel: order.order_tel || "",
-        order_address: order.order_address || "",
+        // order_tel: order.order_tel || "",
+        // order_address: order.order_address || "",
         sale_type: order.sale_type || "wholesale",
         total_amount: toNumber(order.order_total ?? order.total_amount),
         balance: toNumber(order.balance),
@@ -348,7 +348,7 @@ const OrderInvoiceForm = () => {
       };
     });
 
-    setErrors((prev) => ({ ...prev, itemModal: "", items: "" }));
+    // setErrors((prev) => ({ ...prev, itemModal: "", items: "" }));
     setSearchTerm("");
   };
 
@@ -539,8 +539,8 @@ const OrderInvoiceForm = () => {
       const payload = {
         status: Number(formData.status),
         order_customer_id: formData.order_customer_id ? Number(formData.order_customer_id) : null,
-        order_tel: formData.order_tel || "",
-        order_address: formData.order_address || "",
+        order_tel: null,
+        order_address: null,
         deliver_id: formData.deliver_id ? Number(formData.deliver_id) : null,
         delivery_fee: toNumber(formData.delivery_fee),
         order_tax: toNumber(formData.order_tax),
@@ -574,7 +574,7 @@ const OrderInvoiceForm = () => {
         toast.success(t("createOrderSuccess"));
       }
 
-      // navigator(-1);
+      navigator(-1);
     } catch (err) {
       const serverErrors = err.response?.data?.errors;
       const errorMessage = err.response?.data?.message || t("errorProcessingOrder");
@@ -618,7 +618,7 @@ const OrderInvoiceForm = () => {
 
   return (
     <div className="view-page bg-transparent py-8 transition-colors">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div className=" px-4 sm:px-6 lg:px-8">
         <div className="mb-8">
           <div className="mb-4 flex items-center justify-between">
             <div>
@@ -772,7 +772,7 @@ const OrderInvoiceForm = () => {
 
               <div>
                 <div>
-                  <div className="mb-6 flex items-center justify-between">
+                  <div className="mb-6 flex items-center gap-2 justify-between">
                     <div className="flex items-center gap-2">
                       <FaBox className="text-blue-500" />
                       <h2 className="text-lg font-bold text-gray-800 dark:!text-gray-100">
@@ -780,7 +780,7 @@ const OrderInvoiceForm = () => {
                       </h2>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-1 items-center gap-2">
                       <RichSearch
                         data={items}
                         placeholder={t("addItem")}

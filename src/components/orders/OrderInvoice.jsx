@@ -7,7 +7,7 @@ import { useNavigate, useParams } from "react-router";
 import { motion } from "framer-motion";
 import handleDownload from "../../services/imageDowload";
 import { useGetOrderByIdQuery } from "../../../app/Features/ordersSlice";
-import { useGetUserProfileQuery } from "../../../app/Features/usersSlice";
+import { useGetAllUserQuery, useGetUserProfileQuery } from "../../../app/Features/usersSlice";
 import { useTranslation } from "react-i18next";
 
 const OrderInvoice = () => {
@@ -15,6 +15,7 @@ const OrderInvoice = () => {
   const navigator = useNavigate();
   const { id } = useParams();
   const token = localStorage.getItem("token");
+  const {data:users}=useGetAllUserQuery(token);
   const profileId = Number(localStorage.getItem("profileId") || localStorage.getItem("prifileId"));
   const invoiceRef = useRef(null);
   const [data, setData] = useState({});
@@ -46,6 +47,7 @@ const OrderInvoice = () => {
   };
 
   const exchangeRate = Number(data?.exchange_rate || 4000);
+  const sellerName = users?.data.find((user) => user.id === Number(data?.created_by))?.username || "N/A";
   const customerName = data?.customer_name || data?.customer?.customer_name || t("walkInCustomer");
   const customerPhone = data?.order_tel || data?.customer?.customer_tel || "N/A";
   const customerAddress = data?.order_address || data?.customer?.customer_address || "N/A";
@@ -297,7 +299,7 @@ const OrderInvoice = () => {
                 <div>
                   <p className="mb-16 font-medium">{t("seller")}</p>
                   <div className="pt-3">
-                    <p className="font-semibold">Admin</p>
+                    <p className="font-semibold">{sellerName}</p>
                   </div>
                 </div>
               </div>

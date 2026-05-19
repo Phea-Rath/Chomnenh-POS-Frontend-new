@@ -372,6 +372,7 @@ const OrderInvoiceList = () => {
             <tr>
               <th className="p-3 text-left font-semibold text-gray-700 dark:text-gray-200">Invoice</th>
               <th className="p-3 text-left font-semibold text-gray-700 dark:text-gray-200">Customer</th>
+              <th className="p-3 text-left font-semibold text-gray-700 dark:text-gray-200">Seller</th>
               <th className="p-3 text-left font-semibold text-gray-700 dark:text-gray-200">Date</th>
               <th className="p-3 text-left font-semibold text-gray-700 dark:text-gray-200">Reference</th>
               <th className="p-3 text-right font-semibold text-gray-700 dark:text-gray-200">{t("total")}</th>
@@ -390,6 +391,9 @@ const OrderInvoiceList = () => {
                 <td className="p-3">
                   <div className="font-medium text-gray-900 dark:text-white">{order.customer_name || "-"}</div>
                   <div className="text-xs text-gray-500">{order.customer_email || order.order_tel || "-"}</div>
+                </td>
+                <td className="p-3">
+                  <div className="font-medium text-gray-900 dark:text-white">{order.created_by_name || "-"}</div>
                 </td>
                 <td className="p-3">
                   <div className="text-gray-900 dark:text-gray-200">{formatDate(order.order_date)}</div>
@@ -455,6 +459,10 @@ const OrderInvoiceList = () => {
               <div className="flex justify-between">
                 <span>Delivery</span>
                 <span className="font-medium">{order.deliver_name || "-"}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Seller</span>
+                <span className="font-medium">{order.created_by_name || "-"}</span>
               </div>
               <div className="flex justify-between border-t pt-1 dark:border-gray-700">
                 <span>{t("paymentStatus")}</span>
