@@ -10,7 +10,7 @@ export default function ImportItemInList({ onSelected }) {
             onChange={onSelected}
             ref={inputRef}
             />
-            <button type="button" className="flex items-center outline-none gap-2 border border-gray-300 px-2 text-gray-600 py-2 rounded-md hover:bg-green-600 hover:text-white transition-colors" onClick={() => { inputRef.current.click() }}>
+            <button type="button" className="flex items-center outline-none gap-2 border border-gray-400 text-gray-600 dark:text-gray-50 p-2 rounded-none hover:bg-green-600 hover:text-white text-xl transition-colors" onClick={() => { inputRef.current.click() }}>
                 <BiImport />
             </button>
         </>

@@ -1,7 +1,9 @@
 import React, { useEffect, useMemo, useState } from "react";
 import {
+  LuBadge,
   LuBan,
   LuCalendar,
+  LuCheck,
   LuChevronLeft,
   LuChevronRight,
   LuChevronsLeft,
@@ -13,6 +15,7 @@ import {
   LuFileText,
   LuList,
   LuPackage,
+  LuPencil,
   LuPlus,
   LuRefreshCw,
   LuRotateCcw,
@@ -24,6 +27,7 @@ import {
 import { motion } from "framer-motion";
 import { Link, useNavigate } from "react-router";
 import { useDebounce } from "use-debounce";
+import { DatePicker } from "antd";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import { toast } from "react-toastify";
@@ -32,6 +36,7 @@ import AlertBox from "../../services/AlertBox";
 import api from "../../services/api";
 import { totalSum } from "../../services/serviceFunction";
 import { useOutletsContext } from "../../layouts/Management";
+import RichSearch from "../../utils/RichSearch";
 import {
   useCancelOrderMutation,
   useDeleteOrderMutation,
@@ -40,6 +45,10 @@ import {
 } from "../../../app/Features/ordersSlice";
 import { useGetAllUserQuery } from "../../../app/Features/usersSlice";
 import { useGetAllCustomerQuery } from "../../../app/Features/customersSlice";
+import RefreshButton from "../../utils/RefreshButton";
+import Button from "../../utils/Button";
+import { IoWarning } from "react-icons/io5";
+import timeAgo from "../../services/timeAgo";
 
 dayjs.extend(relativeTime);
 
@@ -57,6 +66,11 @@ const itemForOptions = [
   { value: "sample", label: "Sample" },
   { value: "free", label: "Free" },
 ];
+
+const itemForSearchOptions = itemForOptions.map((option) => ({
+  id: option.value,
+  title: option.label,
+}));
 
 const OrderInvoiceList = () => {
   const { t } = useTranslation();
@@ -107,6 +121,8 @@ const OrderInvoiceList = () => {
   const invoices = invoiceData?.data || [];
   const users = usersData?.data || [];
   const customers = customersData?.data || [];
+  const userFilterOptions = [{ id: "", username: "All Users" }, ...users];
+  const customerFilterOptions = [{ customer_id: "", customer_name: "All Customers" }, ...customers];
 
   useEffect(() => {
     if (invoiceData?.pagination) {
@@ -120,11 +136,6 @@ const OrderInvoiceList = () => {
   useEffect(() => {
     setPagination((prev) => ({ ...prev, current: 1 }));
   }, [debouncedSearch, filters.created_by, filters.customer_id, filters.item_for, filters.start_date, filters.end_date]);
-
-  const handleFilterChange = (event) => {
-    const { name, value } = event.target;
-    setFilters((prev) => ({ ...prev, [name]: value }));
-  };
 
   const handleResetFilters = () => {
     setSearchTerm("");
@@ -221,6 +232,23 @@ const OrderInvoiceList = () => {
     }
   };
 
+  const handleConfirmOrder = async (orderId) => {
+    try {
+      setLoading(true);
+      const response = await api.put(`status_order/${orderId}/6`, {}, {
+                    headers: { Authorization: `Bearer ${token}` }
+      });
+      if (response?.data?.status === 200) {
+        refetch();
+        toast.success(response.data.message || t("orderConfirmedSuccessfully"));
+      }
+    } catch (error) {
+      toast.error(error.message || t("orderConfirmFailed"));
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const formatCurrency = (amount) =>
     new Intl.NumberFormat("en-US", {
       style: "currency",
@@ -240,10 +268,33 @@ const OrderInvoiceList = () => {
   }, [invoices, pagination.total]);
 
   const getStatusBadge = (order) => {
-    if (order.is_cancelled) {
-      return <span className="inline-flex items-center rounded-full bg-red-100 px-2 py-1 text-xs font-medium text-red-800 dark:bg-red-900/30 dark:text-red-400">{t("cancelled")}</span>;
-    }
-    return <span className="inline-flex items-center rounded-full bg-blue-100 px-2 py-1 text-xs font-medium text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">Invoice</span>;
+    return <div>
+      {order.is_cancelled &&
+         <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-1 text-[10px] font-medium text-amber-800 dark:bg-amber-900/30 dark:text-amber-400">{t("cancelled")}</span>
+      
+        }
+      {dayjs(order.due_date).format('YYYY-MM-DD') ==
+          dayjs().format('YYYY-MM-DD')  && order.balance > 0 &&(
+         <span className="inline-flex items-center rounded-full bg-yellow-100 px-2 py-1 text-[10px] font-medium text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400">{t("due")}</span>
+      
+        )}
+      {dayjs(order.due_date).format('YYYY-MM-DD') <
+        dayjs().format('YYYY-MM-DD') && order.balance > 0 &&(
+         <pre><span className="inline-flex items-center rounded-full bg-orange-100 px-2 py-1 text-[10px] font-medium text-orange-800 dark:bg-orange-900/30 dark:text-orange-400"><IoWarning />{t("late")} { order.due_date ? timeAgo(order.due_date) : "-"}</span></pre>
+      
+        )}
+      {dayjs(order.due_date).format('YYYY-MM-DD') >
+        dayjs().format('YYYY-MM-DD') && order.balance > 0 &&(
+         <pre><span className="inline-flex items-center rounded-full bg-blue-100 px-2 py-1 text-[10px] font-medium text-blue-800 dark:bg-blue-900/30 dark:text-blue-400"> {order.due_date ? timeAgo(order.due_date) : "-"}</span></pre>
+      
+        )}
+       
+        {/* {order.balance > 0 && (
+          <span className="inline-flex items-center rounded-full bg-orange-100 px-2 py-1 text-[10px] font-medium text-orange-800 dark:bg-orange-900/30 dark:text-orange-400">{t("unpaid")}</span>
+        )
+      } */}
+      {/* <span className="inline-flex items-center rounded-full bg-blue-100 px-2 py-1 text-[10px] font-medium text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">{t("invoice")}</span> */}
+    </div>;
   };
 
   const getPaymentStatusBadge = (status) => {
@@ -303,31 +354,24 @@ const OrderInvoiceList = () => {
 
   const ActionButtons = ({ order }) => (
     <div className="flex justify-center gap-2">
-      <button
-        onClick={() => navigate(`/order-list/invoice/${order.order_id}`)}
-        className="rounded bg-blue-100 p-2 text-blue-600 transition-colors hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-400"
-        title={t("view")}
-      >
-        <LuEye size={14} />
-      </button>
 
-      {!order.is_cancelled && (
+      {order.status == 1 && (
         <button
-          onClick={() => navigate(`/home/order-invoice/update/${order.order_id}`)}
+        onClick={() => handleConfirmOrder(order.order_id)}
           className="rounded bg-green-100 p-2 text-green-600 transition-colors hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400"
-          title={t("edit")}
+          title={t("confirm")}
         >
-          <LuFileText size={14} />
+          <LuCheck size={14} />
         </button>
       )}
 
       {!order.is_cancelled && Number(order.balance) > 0 && (
         <button
-          onClick={() => {
-            setPaymentAmount(Number(order.balance) || 0);
-            setBalanceAmount({ pay: Number(order.payment) || 0, balance: Number(order.balance) || 0 });
-            setId(order.order_id);
-            setShowPaymentModal(true);
+        onClick={() => {
+          setPaymentAmount(Number(order.balance) || 0);
+          setBalanceAmount({ pay: Number(order.payment) || 0, balance: Number(order.balance) || 0 });
+          setId(order.order_id);
+          setShowPaymentModal(true);
           }}
           className="rounded bg-purple-100 p-2 text-purple-600 transition-colors hover:bg-purple-200 dark:bg-purple-900/30 dark:text-purple-400"
           title={t("pay")}
@@ -338,19 +382,37 @@ const OrderInvoiceList = () => {
 
       {!order.is_cancelled ? (
         <button
-          onClick={() => handleOrderCancel(order.order_id)}
+        onClick={() => handleOrderCancel(order.order_id)}
           className="rounded bg-orange-100 p-2 text-orange-600 transition-colors hover:bg-orange-200 dark:bg-orange-900/30 dark:text-orange-400"
           title={t("cancel")}
-        >
+          >
           <LuBan size={14} />
         </button>
       ) : (
         <button
-          onClick={() => handleOrderUncancel(order.order_id)}
-          className="rounded bg-blue-100 p-2 text-blue-600 transition-colors hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-400"
-          title={t("uncancel")}
+        onClick={() => handleOrderUncancel(order.order_id)}
+        className="rounded bg-blue-100 p-2 text-blue-600 transition-colors hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-400"
+        title={t("uncancel")}
         >
           <LuRotateCcw size={14} />
+        </button>
+      )}
+
+      <button
+        onClick={() => navigate(`/order-list/invoice/${order.order_id}`)}
+        className="rounded bg-blue-100 p-2 text-blue-600 transition-colors hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-400"
+        title={t("view")}
+      >
+        <LuFileText size={14} />
+      </button>
+
+      {!order.is_cancelled && (
+        <button
+          onClick={() => navigate(`/home/order-invoice/update/${order.order_id}`)}
+          className="rounded bg-yellow-100 p-2 text-yellow-600 transition-colors hover:bg-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-400"
+          title={t("edit")}
+        >
+          <LuPencil size={14} />
         </button>
       )}
 
@@ -365,9 +427,9 @@ const OrderInvoiceList = () => {
   );
 
   const TableView = () => (
-    <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
+    <div className="overflow-hidden text-xs rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
       <div className="overflow-x-auto">
-        <table className="w-full border-collapse text-sm">
+        <table className="w-full border-collapse text-xs">
           <thead className="border-b border-gray-300 bg-gray-100 dark:border-gray-600 dark:bg-gray-700">
             <tr>
               <th className="p-3 text-left font-semibold text-gray-700 dark:text-gray-200">Invoice</th>
@@ -450,7 +512,7 @@ const OrderInvoiceList = () => {
                 <div className="text-[10px] uppercase text-gray-500">{t("balance")}</div>
               </div>
             </div>
-
+ 
             <div className="mb-4 space-y-1.5 text-xs text-gray-600 dark:text-gray-400">
               <div className="flex justify-between">
                 <span>{t("paidAmount")}</span>
@@ -468,12 +530,12 @@ const OrderInvoiceList = () => {
                 <span>{t("paymentStatus")}</span>
                 {getPaymentStatusBadge(order.order_payment_status)}
               </div>
-            </div>
-
-            <div className="flex items-center justify-between border-t border-gray-100 pt-3 dark:border-gray-700">
-              <div className="flex items-center gap-1 text-[10px] text-gray-400">
+              <div className="flex items-center gap-1 justify-end text-[10px] text-gray-400">
                 <LuCalendar size={10} /> {formatDate(order.order_date)}
               </div>
+            </div>
+
+            <div className="flex items-center justify-center border-t border-gray-100 pt-3 dark:border-gray-700">
               <ActionButtons order={order} />
             </div>
           </div>
@@ -507,14 +569,14 @@ const OrderInvoiceList = () => {
           </div>
 
           <div className="flex items-center gap-3">
-            <button onClick={() => refetch()} disabled={queryLoading || contextLoading} className="flex items-center gap-2 rounded-md border border-gray-300 bg-white px-4 py-2 text-gray-700 shadow-sm transition-colors hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200">
-              <LuRefreshCw className={queryLoading ? "animate-spin" : ""} />
-              {t("refresh")}
-            </button>
+            <RefreshButton onRefresh={refetch} />
             <Link to="/home/order-invoice/create">
-              <button className="flex items-center gap-2 rounded-md bg-green-600 px-4 py-2 text-white shadow-md transition-colors hover:bg-green-700">
-                <LuPlus /> Create Invoice
-              </button>
+              <Button
+                variant="success"
+              >
+                <LuPlus className="mr-2" />
+                {t("new")}
+              </Button>
             </Link>
           </div>
         </div>
@@ -527,8 +589,8 @@ const OrderInvoiceList = () => {
         </div>
 
         <div className="mb-6 rounded-lg border border-gray-200 bg-white p-4 text-sm shadow-sm transition-colors dark:border-gray-700 dark:bg-gray-800">
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
-            <div className="lg:col-span-4">
+          <div className="flex flex-wrap text-sm items-center gap-4">
+            <div className="lg:col-span-4 grow">
               <div className="relative">
                 <LuSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                 <input
@@ -536,69 +598,65 @@ const OrderInvoiceList = () => {
                   placeholder="Search invoices..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full rounded-md border border-gray-300 bg-white py-2 pl-10 pr-4 text-gray-900 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-900 dark:text-white"
+                  className="w-full border border-gray-400 bg-white py-2 pl-10 pr-4 text-gray-900 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-900 dark:text-white"
                 />
               </div>
             </div>
-
             <div className="lg:col-span-2">
-              <select
-                name="created_by"
+              <RichSearch
+                data={userFilterOptions}
+                keyFields={{ id: "id", title: "username", image:'image' }}
                 value={filters.created_by}
-                onChange={handleFilterChange}
-                className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-900 dark:text-white"
-              >
-                <option value="">All Users</option>
-                {users.map((user) => (
-                  <option key={user.id} value={user.id}>{user.username}</option>
-                ))}
-              </select>
+                onSelected={(id) =>
+                  setFilters((prev) => ({ ...prev, created_by: id }))
+                }
+                placeholder="All Users"
+              />
             </div>
-
             <div className="lg:col-span-2">
-              <select
-                name="customer_id"
+              <RichSearch
+                data={customerFilterOptions}
+                keyFields={{ id: "customer_id", title: "customer_name", image:'customer_image' }}
                 value={filters.customer_id}
-                onChange={handleFilterChange}
-                className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-900 dark:text-white"
-              >
-                <option value="">All Customers</option>
-                {customers.map((customer) => (
-                  <option key={customer.customer_id} value={customer.customer_id}>{customer.customer_name}</option>
-                ))}
-              </select>
+                onSelected={(id) =>
+                  setFilters((prev) => ({ ...prev, customer_id: id }))
+                }
+                placeholder="All Customers"
+              />
             </div>
 
             <div className="lg:col-span-2">
-              <select
-                name="item_for"
+              <RichSearch
+                data={itemForSearchOptions}
+                keyFields={{ id: "id", title: "title" }}
                 value={filters.item_for}
-                onChange={handleFilterChange}
-                className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-900 dark:text-white"
-              >
-                {itemForOptions.map((option) => (
-                  <option key={option.value} value={option.value}>{option.label}</option>
-                ))}
-              </select>
+                onSelected={(id) =>
+                  setFilters((prev) => ({ ...prev, item_for: id }))
+                }
+                placeholder="All Types"
+              />
             </div>
-
             <div className="lg:col-span-1">
-              <input
-                type="date"
-                name="start_date"
-                value={filters.start_date}
-                onChange={handleFilterChange}
-                className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-900 dark:text-white"
+              <DatePicker
+                value={filters.start_date ? dayjs(filters.start_date) : null}
+                onChange={(_, dateString) =>
+                  setFilters((prev) => ({ ...prev, start_date: dateString || "" }))
+                }
+                format="YYYY-MM-DD"
+                className="date-picker w-full"
+                placeholder="Start Date"
               />
             </div>
 
             <div className="lg:col-span-1">
-              <input
-                type="date"
-                name="end_date"
-                value={filters.end_date}
-                onChange={handleFilterChange}
-                className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-900 dark:text-white"
+              <DatePicker
+                value={filters.end_date ? dayjs(filters.end_date) : null}
+                onChange={(_, dateString) =>
+                  setFilters((prev) => ({ ...prev, end_date: dateString || "" }))
+                }
+                format="YYYY-MM-DD"
+                className="date-picker w-full"
+                placeholder="End Date"
               />
             </div>
 

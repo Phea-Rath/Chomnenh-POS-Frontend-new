@@ -33,18 +33,18 @@ export default function RichSearch({ data = [], keyFields={}, onScrollReader, on
     const [query, setQuery] = useState(null);
     const [selectId, setSelectId] = useState(value);
     const [isOpen, setIsOpen] = useState(false);
-    const [newData, setNewData] = useState([]);
+    // const [newData, setNewData] = useState([]);
     const containerRef = useRef(null);
+    const [filteredItems, setFilteredItems] = useState([]);
     const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
 
-    const filteredItems = newData?.filter((item) =>
-        item?.title?.toLowerCase().includes(query?.toLowerCase())
-    );
-
+    
     useEffect(() => {
         if(keyFields && Object.keys(keyFields).length > 0){
             const convertedData = convertDataForRichSearch(data, keyFields);
-            setNewData(convertedData);
+            setFilteredItems(convertedData.filter((item) =>
+                item?.title?.toLowerCase().includes(query?.toLowerCase())
+            ));
             setSelectId(value);
             let dataValue;
             if(query == null){
@@ -59,7 +59,8 @@ export default function RichSearch({ data = [], keyFields={}, onScrollReader, on
             }
         }
     }, [data, value, keyFields, isOpen]);
-
+    
+    
     useEffect(() => {
         const handleClickOutside = (event) => {
             const clickedInput = containerRef.current?.contains(event.target);
@@ -72,7 +73,7 @@ export default function RichSearch({ data = [], keyFields={}, onScrollReader, on
                     inputRef.current.placeholder = query;
                 }else{
                     setQuery(inputRef.current.placeholder);
-                    console.log(query);
+                    // console.log(query);
                     inputRef.current.value = inputRef.current.placeholder;
                 }
             }
@@ -146,8 +147,8 @@ export default function RichSearch({ data = [], keyFields={}, onScrollReader, on
                     ref={inputRef}
                     className={`w-full px-4 pr-10 py-2 bg-transparent 
                     text-gray-900 dark:border-gray-400 dark:text-gray-100
-                    border border-gray-200 min-w-30 ${onSearch?'cursor-text':'cursor-pointer'}
-                    rounded-sm transition-all outline-none
+                    border border-gray-400 min-w-30 ${onSearch?'cursor-text':'cursor-pointer'}
+                     transition-all outline-none
                     focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500`}
                     onFocus={onFocusHandler}
                     onChange={(e) => {
@@ -172,7 +173,7 @@ export default function RichSearch({ data = [], keyFields={}, onScrollReader, on
                         left: `${dropdownPosition.left}px`,
                         width: `${dropdownPosition.width}px`,
                     }}
-                    className="z-[9999] max-h-60 overflow-auto rounded-sm border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-900"
+                    className=" max-h-60 overflow-auto rounded-sm border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-900"
                 >
                     {filteredItems.length > 0 ? filteredItems.map((item, idx) => (
                         <li

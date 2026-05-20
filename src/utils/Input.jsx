@@ -76,7 +76,7 @@ const Input = ({
   };
 
   return (
-    <div className="w-full min-w-20 border rounded-sm border-gray-200 dark:border-gray-400 flex justify-center items-center">
+    <div className="w-full min-w-20 border border-gray-400 dark:border-gray-400 flex justify-center items-center">
       <div className="relative group w-full">
         <input
           type={type === "number" ? "text" : type}

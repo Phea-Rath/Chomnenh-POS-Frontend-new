@@ -130,7 +130,7 @@ const UserProfilePage = () => {
             <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     <div className="lg:col-span-1">
-                        <Card className="shadow-lg">
+                        <Card className="">
                             <div className="flex flex-col items-center p-6">
                                 <Skeleton.Avatar active size={160} />
                                 <Skeleton.Input active className="mt-4 w-3/4" />
@@ -140,7 +140,7 @@ const UserProfilePage = () => {
                         </Card>
                     </div>
                     <div className="lg:col-span-2">
-                        <Card className="shadow-lg">
+                        <Card className="">
                             <div className="space-y-6">
                                 <Skeleton.Input active size="large" block />
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -182,16 +182,16 @@ const UserProfilePage = () => {
                     )}
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-2">
                     {/* Left — Profile Card */}
                     <div className="lg:col-span-1">
                         <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5 }}>
-                            <Card className={`shadow-lg border-0 overflow-hidden mb-3 dark:!bg-gray-800 dark:!border-gray-600`}>
+                            <Card className={` border-0 !rounded-none overflow-hidden mb-3 dark:!bg-gray-800 dark:!border-gray-600`}>
                                 {/* Avatar */}
-                                <div className="relative bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 p-6">
+                                <div className="relative bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 p-4 rounded-xl">
                                     <div className="flex flex-col items-center">
                                         <div className="relative group">
-                                            <div className="w-40 h-40 rounded-full border-4 border-white dark:border-gray-700 shadow-lg overflow-hidden bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-blue-900/40 dark:to-indigo-900/40">
+                                            <div className="w-40 h-40 rounded-full border-4 border-white dark:border-gray-700  overflow-hidden bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-blue-900/40 dark:to-indigo-900/40">
                                                 {selectedImage || user?.image ? (
                                                     <img src={selectedImage || user?.image} alt="Profile" className="w-full h-full object-cover" />
                                                 ) : (
@@ -201,15 +201,15 @@ const UserProfilePage = () => {
                                                 )}
                                             </div>
                                             {!editing.image ? (
-                                                <label htmlFor="profile-image" className="absolute bottom-2 right-2 w-10 h-10 bg-[#1e3a5f] rounded-full flex items-center justify-center text-white shadow-lg cursor-pointer hover:bg-[#163057] transition-colors">
+                                                <label htmlFor="profile-image" className="absolute bottom-2 right-2 w-10 h-10 bg-[#1e3a5f] rounded-full flex items-center justify-center text-white  cursor-pointer hover:bg-[#163057] transition-colors">
                                                     <FiCamera className="h-5 w-5" />
                                                     <input type="file" id="profile-image" className="hidden" accept="image/*" onChange={handleImageChange} />
                                                 </label>
                                             ) : (
                                                 <AnimatePresence>
                                                     <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="absolute bottom-0 right-0 flex gap-2">
-                                                        <button onClick={saveImage} disabled={isSaving} className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center text-white shadow-lg hover:bg-green-600 transition-colors disabled:opacity-50"><FiCheck className="h-5 w-5" /></button>
-                                                        <button onClick={() => { setEditing({ ...editing, image: false }); setSelectedImage(null); }} className="w-10 h-10 bg-red-500 rounded-full flex items-center justify-center text-white shadow-lg hover:bg-red-600 transition-colors"><FiX className="h-5 w-5" /></button>
+                                                        <button onClick={saveImage} disabled={isSaving} className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center text-white  hover:bg-green-600 transition-colors disabled:opacity-50"><FiCheck className="h-5 w-5" /></button>
+                                                        <button onClick={() => { setEditing({ ...editing, image: false }); setSelectedImage(null); }} className="w-10 h-10 bg-red-500 rounded-full flex items-center justify-center text-white  hover:bg-red-600 transition-colors"><FiX className="h-5 w-5" /></button>
                                                     </motion.div>
                                                 </AnimatePresence>
                                             )}
@@ -240,7 +240,7 @@ const UserProfilePage = () => {
 
                             {/* Related users */}
                             {filteredUsers?.data?.length > 0 && (
-                                <Card className={`shadow-lg border-0 overflow-hidden dark:!bg-gray-800 dark:!border-gray-600`}>
+                                <Card className={` border-0 overflow-hidden dark:!bg-gray-800 dark:!border-gray-600`}>
                                     <div className="px-6">
                                         {filteredUsers?.data?.filter(e => e.role_name != 'guest')?.map((employee) => employee?.id != id && (
                                             <div key={employee.id} className="flex items-center p-4 transition-all duration-200 border-b border-gray-100 dark:border-gray-700 last:border-b-0 hover:bg-gray-50 dark:hover:bg-gray-700/50">
@@ -267,8 +267,8 @@ const UserProfilePage = () => {
                     {/* Right — Details */}
                     <div className="lg:col-span-2">
                         <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5, delay: 0.2 }}>
-                            <Card className={`shadow-lg border-0 dark:!bg-gray-800 dark:!border-gray-600`}>
-                                <div className="p-6">
+                            <Card className={` border-0 !rounded-none dark:!bg-gray-800 dark:!border-gray-600`}>
+                                <div>
                                     <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-6 pb-4 border-b border-gray-100 dark:border-gray-700">{t('userInformation')}</h2>
 
                                     <div className="space-y-6">

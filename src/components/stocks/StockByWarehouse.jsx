@@ -164,7 +164,7 @@ const StockByWarehouse = () => {
         }
     };
 
-    const ProductImage = ({ src, alt, className = 'h-14 w-14 rounded-xl' }) => {
+    const ProductImage = ({ src, alt, className = 'h-14 w-14 ' }) => {
         const [hasError, setHasError] = useState(false);
 
         if (!src || hasError) {
@@ -186,19 +186,19 @@ const StockByWarehouse = () => {
     };
 
     const StatCard = ({ title, value, icon, color }) => (
-        <div className={`rounded-xl border border-gray-200 dark:border-slate-700 bg-gradient-to-r ${color} p-4 shadow-sm transition-all duration-300`}>
+        <div className={` border border-gray-200 dark:border-slate-700 bg-gradient-to-r ${color} p-4 shadow-xs transition-all duration-300`}>
             <div className="flex items-center justify-between">
                 <div>
                     <p className="text-sm text-gray-600 dark:text-slate-400">{title}</p>
                     <p className="text-2xl font-bold text-gray-900 dark:text-white">{value}</p>
                 </div>
-                <div className="rounded-full bg-white dark:bg-slate-800 p-3 shadow-sm">{icon}</div>
+                <div className="rounded-full bg-white dark:bg-slate-800 p-3 shadow-xs">{icon}</div>
             </div>
         </div>
     );
 
     const EmptyState = () => (
-        <div className="rounded-2xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-12 text-center shadow-sm">
+        <div className=" border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-12 text-center shadow-xs">
             <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/30">
                 <FaWarehouse className="text-3xl text-blue-600 dark:text-blue-400" />
             </div>
@@ -212,7 +212,7 @@ const StockByWarehouse = () => {
     );
 
     const LoadingState = () => (
-        <div className="rounded-2xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-12 text-center shadow-sm">
+        <div className=" border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-12 text-center shadow-xs">
             <div className="mx-auto mb-6 h-14 w-14 animate-spin rounded-full border-b-2 border-blue-600 dark:border-blue-400" />
             <p className="text-lg font-medium text-gray-700 dark:text-slate-300">{t('loadingWarehouseStock', 'Loading warehouse stock...')}</p>
             <p className="mt-2 text-sm text-gray-500 dark:text-slate-500">{t('fetchingItemBalances', 'Fetching item balances for the selected warehouse')}</p>
@@ -224,7 +224,7 @@ const StockByWarehouse = () => {
             initial={{ opacity: 0, scale: 0.96 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.25 }}
-            className="overflow-hidden rounded-[26px] border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-[0_18px_50px_-28px_rgba(15,23,42,0.15)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_22px_60px_-30px_rgba(37,99,235,0.25)]"
+            className="overflow-hidden border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-[0_18px_50px_-28px_rgba(15,23,42,0.15)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_22px_60px_-30px_rgba(37,99,235,0.25)]"
         >
             <div className="relative h-52 overflow-hidden bg-slate-900">
                 <ProductImage
@@ -235,10 +235,10 @@ const StockByWarehouse = () => {
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-900/70 via-slate-900/20 to-transparent" />
                 <div className="absolute bottom-4 left-4 right-4 flex items-end justify-between gap-3">
                     <div className="min-w-0">
-                        <p className="mb-1 inline-flex rounded-full bg-white/16 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-white backdrop-blur-sm">
+                        <p className="inline-flex rounded-full bg-white/16 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-white backdrop-blur-sm">
                             {item.category_name || t('stockItem')}
                         </p>
-                        <p className="truncate text-lg font-bold text-white">{item.item_name}</p>
+                        {/* <p className="truncate text-lg font-bold text-white">{item.item_name}</p> */}
                     </div>
                     <div className="rounded-full bg-white/15 px-3 py-1 text-xs font-medium text-white backdrop-blur-sm">
                         {item.brand_name || 'N/A'}
@@ -246,13 +246,13 @@ const StockByWarehouse = () => {
                 </div>
             </div>
 
-            <div className="space-y-4 p-5">
+            <div className="space-y-2 p-5">
                 <div>
-                    <h3 className="text-[1.55rem] font-bold tracking-tight text-slate-900 dark:text-white leading-tight">{item.item_name}</h3>
-                    <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                    <h3 className="text-lg font-bold tracking-tight text-slate-900 dark:text-white leading-tight">{item.item_name}</h3>
+                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
                         {item.item_code || 'N/A'} {item.barcode ? `| ${item.barcode}` : ''}
                     </p>
-                    <p className="mt-2 text-[15px] text-slate-600 dark:text-slate-300">
+                    <p className="mt-2 text-xs text-slate-600 dark:text-slate-300">
                         {t('price')}: <span className="font-semibold text-slate-800 dark:text-slate-100">${formatNumber(item.item_price)}</span> | {t('wholesale')}: <span className="font-semibold text-slate-800 dark:text-slate-100">${formatNumber(item.wholesale_price)}</span>
                     </p>
                 </div>
@@ -283,9 +283,9 @@ const StockByWarehouse = () => {
                     </div>
                 </div>
 
-                <div className="rounded-[20px] border border-blue-100 dark:border-blue-900/30 bg-gradient-to-b from-sky-50 to-blue-50 dark:from-slate-800/50 dark:to-blue-900/10 px-5 py-6 text-center">
-                    <p className="text-sm font-semibold text-blue-600 dark:text-blue-400">{t('availableStock')}</p>
-                    <p className="mt-2 text-xl font-black tracking-tight text-slate-900 dark:text-white">{formatNumber(getNetAvailable(item))}</p>
+                <div className="rounded-sm border border-blue-100 dark:border-blue-900/30 bg-gradient-to-b from-sky-50 to-blue-50 dark:from-slate-800/50 dark:to-blue-900/10 px-5 py-2 text-center">
+                    <p className="text-xs font-semibold text-gray-600 dark:text-gray-400">{t('availableStock')}</p>
+                    <p className="mt-2 text-xl font-black tracking-tight text-blue-500 dark:text-blue-600">{getNetAvailable(item)}</p>
                     <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
                         {t('costValue')}: <span className="font-semibold text-slate-700 dark:text-slate-200">${formatNumber(Number(item.item_cost || 0) * getNetAvailable(item))}</span>
                     </p>
@@ -293,7 +293,7 @@ const StockByWarehouse = () => {
 
                 {/* <button
                     type="button"
-                    className="flex w-full items-center justify-center gap-2 rounded-xl border border-blue-500 bg-white dark:bg-slate-700 px-4 py-3 text-sm font-semibold text-blue-600 dark:text-blue-300 transition-colors hover:bg-blue-50 dark:hover:bg-slate-600"
+                    className="flex w-full items-center justify-center gap-2  border border-blue-500 bg-white dark:bg-slate-700 px-4 py-3 text-sm font-semibold text-blue-600 dark:text-blue-300 transition-colors hover:bg-blue-50 dark:hover:bg-slate-600"
                 >
                     <FaListUl className="text-base" />
                     {t('viewStockDetails', 'View Stock Details')}
@@ -308,24 +308,24 @@ const StockByWarehouse = () => {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.4 }}
-            className={`min-h-screen bg-transparent p-4 md:p-6 ${isKhmer ? 'font-khmer' : ''}`}
+            className={`min-h-screen bg-transparent p-2 md:p-2 ${isKhmer ? 'font-khmer' : ''}`}
         >
             <div className="mx-auto">
-                <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                <div className="mb-2 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                     <div>
                         <h1 className="mb-2 text-3xl font-bold text-gray-900 dark:text-white">
                             {t('stockBy')} <span className="text-blue-600 dark:text-blue-400">{t('warehouse')}</span>
                         </h1>
                         <p className="text-gray-600 dark:text-slate-400">{t('stockByWarehouseDesc', 'Select a warehouse to view item stock balances and all stock movement totals.')}</p>
-                        {responseMessage && <p className="mt-2 text-sm font-medium text-green-600 dark:text-green-400">{responseMessage}</p>}
+                        {/* {responseMessage && <p className="mt-2 text-sm font-medium text-green-600 dark:text-green-400">{responseMessage}</p>} */}
                     </div>
 
                     <div className="flex flex-wrap items-center gap-3">
-                        <div className="flex rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-1 shadow-sm">
+                        <div className="flex  border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-1 shadow-xs">
                             <button
                                 type="button"
                                 onClick={() => handleViewModeChange('table')}
-                                className={`rounded-md p-2 transition-all ${viewMode === 'table' ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200'}`}
+                                className={` p-2 transition-all ${viewMode === 'table' ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200'}`}
                                 title={t('tableView')}
                             >
                                 <IoIosList size={22} />
@@ -333,7 +333,7 @@ const StockByWarehouse = () => {
                             <button
                                 type="button"
                                 onClick={() => handleViewModeChange('grid')}
-                                className={`rounded-md p-2 transition-all ${viewMode === 'grid' ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200'}`}
+                                className={` p-2 transition-all ${viewMode === 'grid' ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200'}`}
                                 title={t('gridView')}
                             >
                                 <IoIosGrid size={22} />
@@ -346,7 +346,7 @@ const StockByWarehouse = () => {
                             type="button"
                             onClick={exportToExcel}
                             disabled={exportLoading || filteredStocks.length === 0}
-                            className="inline-flex items-center gap-2 rounded-lg border border-blue-200 dark:border-blue-900/50 bg-white dark:bg-slate-800 px-4 py-2 text-sm font-medium text-blue-600 dark:text-blue-400 shadow-sm hover:bg-blue-50 dark:hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-60"
+                            className="inline-flex items-center gap-2  border border-blue-200 dark:border-blue-900/50 bg-white dark:bg-slate-800 px-4 py-2 text-sm font-medium text-blue-600 dark:text-blue-400 shadow-xs hover:bg-blue-50 dark:hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-60"
                         >
                             <FaFileExport />
                             {exportLoading ? t('exporting') : t('exportExcel')}
@@ -354,7 +354,7 @@ const StockByWarehouse = () => {
                     </div>
                 </div>
 
-                <div className="mb-6 rounded-2xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4 shadow-sm">
+                <div className="mb-2  border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4 shadow-xs">
                     <div className="flex flex-col gap-4 md:flex-row md:items-end">
                         <div className="flex-1">
                             <label className="mb-2 block text-sm font-semibold text-gray-700 dark:text-slate-300">{t('warehouse')}</label>
@@ -364,7 +364,7 @@ const StockByWarehouse = () => {
                                     value={selectedWarehouse}
                                     onChange={(e) => setSelectedWarehouse(e.target.value)}
                                     disabled={warehouseLoading}
-                                    className="w-full rounded-xl border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 py-3 pl-12 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white"
+                                    className="w-full  border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 py-3 pl-12 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white"
                                 >
                                     <option value="">{t('selectWarehouse', 'Select warehouse')}</option>
                                     {warehouses.map((warehouse) => (
@@ -385,7 +385,7 @@ const StockByWarehouse = () => {
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
                                     placeholder={t('searchStockPlaceholder', 'Search by item name, code, barcode...')}
-                                    className="w-full rounded-xl border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 py-3 pl-12 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white"
+                                    className="w-full  border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 py-3 pl-12 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white"
                                 />
                             </div>
                         </div>
@@ -394,7 +394,7 @@ const StockByWarehouse = () => {
                             <button
                                 type="button"
                                 onClick={() => setSearchTerm('')}
-                                className="w-full rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-700 px-4 py-3 text-sm font-medium text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-600 lg:w-auto"
+                                className="w-full  border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-700 px-4 py-3 text-sm font-medium text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-600 lg:w-auto"
                             >
                                 {t('clearSearch')}
                             </button>
@@ -402,7 +402,7 @@ const StockByWarehouse = () => {
                     </div>
                 </div>
 
-                <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+                <div className="mb-2 grid grid-cols-2 gap-2 md:grid-cols-2 xl:grid-cols-4">
                     <StatCard
                         title={t('selectedWarehouse')}
                         value={selectedWarehouseName}
@@ -429,9 +429,9 @@ const StockByWarehouse = () => {
                     />
                 </div>
 
-                <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-6">
+                <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
                     {STOCK_FIELDS.map((field) => (
-                        <div key={field.key} className="rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4 shadow-sm">
+                        <div key={field.key} className=" border grow border-gray-200 rounded-lg dark:border-slate-700 bg-white dark:bg-slate-800 p-5 shadow-xs">
                             <p className="text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider">{isKhmer ? field.kh : field.label}</p>
                             <p className="mt-2 text-2xl font-bold text-gray-900 dark:text-white leading-none">{totals[field.key]}</p>
                         </div>
@@ -443,13 +443,13 @@ const StockByWarehouse = () => {
                 ) : filteredStocks.length === 0 ? (
                     <EmptyState />
                 ) : viewMode === 'grid' ? (
-                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-4">
                         {filteredStocks.map((item) => (
                             <GridItem key={item.item_id} item={item} />
                         ))}
                     </div>
                 ) : (
-                    <div className="overflow-hidden rounded-2xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm">
+                    <div className="overflow-hidden border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-xs">
                         <div className="overflow-x-auto">
                             <table className="w-full min-w-[1200px]">
                                 <thead className="border-b border-gray-200 dark:border-slate-700 bg-gradient-to-r from-gray-50 to-blue-50 dark:from-slate-900 dark:to-slate-800">
@@ -468,7 +468,7 @@ const StockByWarehouse = () => {
                                         ))}
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-gray-100 dark:divide-slate-700">
+                                <tbody className="divide-y divide-gray-100 text-xs dark:divide-slate-700">
                                     {filteredStocks.map((item) => (
                                         <tr key={item.item_id} className="hover:bg-blue-50/40 dark:hover:bg-blue-900/10 transition-colors">
                                             <td className="px-4 py-4">

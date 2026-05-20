@@ -9,7 +9,7 @@ const Button = ({
 }) => {
   
   // Base styles for all buttons
-  const baseStyles = "px-5 py-2.5 rounded-sm box-border font-semibold text-sm transition-all duration-200 flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50 disabled:pointer-events-none";
+  const baseStyles = "px-5 py-2.5 text-xs box-border font-semibold text-sm transition-all duration-200 flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50 disabled:pointer-events-none";
 
   // Configuration for different action types
   const variants = {

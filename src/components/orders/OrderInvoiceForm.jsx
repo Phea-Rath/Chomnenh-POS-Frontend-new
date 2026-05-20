@@ -32,7 +32,7 @@ import { useGetAllCustomerQuery } from "../../../app/Features/customersSlice";
 import { useGetAllSaleQuery } from "../../../app/Features/salesSlice";
 import { useGetAllDeliverQuery } from "../../../app/Features/deliversSlice";
 import { useGetAllUserQuery } from "../../../app/Features/usersSlice";
-import { useGetOrderByIdQuery } from "../../../app/Features/ordersSlice";
+import { useGetOrderByIdQuery, useGetOrderInvoiceQuery } from "../../../app/Features/ordersSlice";
 
 const DEFAULT_STATUS = 0;
 const ITEM_FOR_OPTIONS = [
@@ -68,6 +68,11 @@ const PAYMENT_METHOD_SEARCH_OPTIONS = PAYMENT_METHOD_OPTIONS.map((option) => ({
   title: option.label,
 }));
 
+const VAT_OPTIONS = [
+  { value: 0, label: "Tax exclusive" },
+  { value: 10, label: "Tax inclusive" },
+];
+
 const ORDER_PAYMENT_STATUS_SEARCH_OPTIONS = ORDER_PAYMENT_STATUS_OPTIONS.map((option) => ({
   ...option,
   id: option.value,
@@ -81,10 +86,11 @@ const createInitialFormData = () => ({
   order_customer_id: "",
   deliver_id: "",
   delivery_fee: 0,
+  due_date: "",
   order_tax: 0,
   payment: 0,
-  order_payment_status: "paid",
-  order_payment_method: "cash",
+  order_payment_status: "",
+  order_payment_method: "",
   order_date: today,
   exchange_rate: 0,
   reference_no: "",
@@ -102,7 +108,9 @@ const createInitialFormData = () => ({
 const toNumber = (value) => {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : 0;
-};
+};//e.g undefined or null = 0, 1.245678 = 1.25
+
+
 
 const OrderInvoiceForm = () => {
   const { t } = useTranslation();
@@ -119,12 +127,25 @@ const OrderInvoiceForm = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearch] = useDebounce(searchTerm, 500);
   const [limit, setLimit] = useState(10);
+  const [paymentStatus, setPaymentStatus] = useState("");
   const [currentPage] = useState(1);
   const {data:users} = useGetAllUserQuery(token)
-  const { data: orderByIdData, isFetching: orderByIdLoading } = useGetOrderByIdQuery(
+  const { data: orderByIdData, isFetching: orderByIdLoading, refetch } = useGetOrderByIdQuery(
     { id: orderId, token },
     { skip: !isEditMode || !orderId || !token }
   );
+
+  const {
+      refetch: refetchInvoice,
+    } = useGetOrderInvoiceQuery(
+      {
+        token,
+        limit: 10,
+        page: 1,
+        search: '',
+      },
+      { skip: !token }
+    );
 
   const { data: customerData } = useGetAllCustomerQuery(token);
   const { data: deliverData } = useGetAllDeliverQuery(token);
@@ -139,14 +160,14 @@ const OrderInvoiceForm = () => {
   const customers = customerData?.data || [];
   const delivers = deliverData?.data || [];
   const items = useMemo(() => itemInStock?.data ?? [], [itemInStock?.data]);
-  const targetFields = ["code", "quantity", "cost"];
+  const targetFields = ["code", 'for', "quantity", "price", "discount"];
 
   const itemLookup = useMemo(() => {
     return new Map(items.map((item) => [Number(item.id), item]));
   }, [items]);
 
   const getDefaultItemPrice = (item) => {
-    return toNumber(item.wholesale_price);
+    return toNumber(item.price);
   };
 
   const buildOrderItem = (item, overrides = {}) => ({
@@ -183,7 +204,6 @@ const OrderInvoiceForm = () => {
       discount_total: discountTotal,
       total_amount: totalAmount,
       balance,
-      order_payment_status: balance <= 0 && totalAmount > 0 ? "paid" : formData.order_payment_status,
     };
   };
 
@@ -193,13 +213,18 @@ const OrderInvoiceForm = () => {
       return calculateTotals(next);
     });
   };
+  
 
   useEffect(() => {
     if (!isEditMode || !orderByIdData?.data) {
       return;
     }
-
+    
     const order = orderByIdData.data;
+    // if(order.order_id != Number(orderId)){
+      refetch();
+    // }
+    
     const normalizedItems = (order.items || order.details || []).map((detail) => ({
       item_id: Number(detail.item_id),
       item_name: detail.item_name || detail.name || "",
@@ -218,9 +243,10 @@ const OrderInvoiceForm = () => {
         order_customer_id: order.order_customer_id || order.customer_id || "",
         deliver_id: order.deliver_id || "",
         delivery_fee: toNumber(order.delivery_fee),
-        order_tax: toNumber(order.order_tax ?? order.tax_amount),
+        order_tax: toNumber(order.order_tax||0),
         payment: toNumber(order.payment),
-        order_payment_status: order.order_payment_status || "paid",
+        order_payment_status: order.order_payment_status,
+        due_date: order.due_date || "",
         order_payment_method: order.order_payment_method || "cash",
         order_date: order.order_date || today,
         exchange_rate: toNumber(order.exchange_rate),
@@ -237,6 +263,7 @@ const OrderInvoiceForm = () => {
       })
     );
   }, [isEditMode, orderByIdData]);
+  
 
   const validateField = (name, value) => {
     const nextFieldErrors = { ...fieldErrors };
@@ -402,12 +429,21 @@ const OrderInvoiceForm = () => {
   };
 
   const handleItemForChange = (index, itemFor) => {
-    updateFormData((prev) => ({
-      ...prev,
-      items: prev.items.map((item, itemIndex) =>
-        itemIndex === index ? { ...item, item_for: itemFor } : item
-      ),
-    }));
+    if (itemFor === "sample" || itemFor === "free") {
+      updateFormData((prev) => ({
+        ...prev,
+        items: prev.items.map((item, itemIndex) =>
+          itemIndex === index ? { ...item, item_for: itemFor, discount: 0, item_price: 0 } : item
+        ),
+      }));
+    }else{
+      updateFormData((prev) => ({
+        ...prev,
+        items: prev.items.map((item, itemIndex) =>
+          itemIndex === index ? { ...item, item_for: itemFor } : item
+        ),
+      }));
+    }
   };
 
   const downloadTemplate = (fields, title) => {
@@ -428,7 +464,7 @@ const OrderInvoiceForm = () => {
     try {
       const importedRows = await readFormFile(file, targetFields);
       const res = await api.post(
-        "/import-items-by-code/items",
+        "/import-items-by-code",
         { data: importedRows },
         {
           headers: {
@@ -445,6 +481,8 @@ const OrderInvoiceForm = () => {
         .map((row) => {
           const rowCode = String(row.code || "").trim().toLowerCase();
           const matchedItem = sourceLookup.get(rowCode);
+          console.log(matchedItem);
+          
 
           if (!matchedItem) {
             return null;
@@ -456,10 +494,10 @@ const OrderInvoiceForm = () => {
             name: matchedItem.name || "",
             code: matchedItem.code || "",
             image: matchedItem.image || null,
-            item_for: "sale",
-            quantity: Math.max(1, Number(row.quantity) || 1),
+            item_for: row.for || "sale",
+            quantity: matchedItem.quantity,
             item_price: getDefaultItemPrice(matchedItem),
-            discount: 0,
+            discount: row.discount ?? 0,
           };
         })
         .filter(Boolean);
@@ -503,7 +541,7 @@ const OrderInvoiceForm = () => {
         toast.warning(`Codes ${res.data.missing_codes} are not found.`);
       }
 
-      toast.success(`Imported ${importedItems.length} item(s).`);
+      // toast.success(`Imported ${importedItems.length} item(s).`);
     } catch {
       toast.error("Failed to import file. please check your file and try again.");
       setErrors((prev) => ({
@@ -544,11 +582,12 @@ const OrderInvoiceForm = () => {
         deliver_id: formData.deliver_id ? Number(formData.deliver_id) : null,
         delivery_fee: toNumber(formData.delivery_fee),
         order_tax: toNumber(formData.order_tax),
+        due_date: formData.due_date || null,
         payment: toNumber(formData.payment),
         created_by: formData.created_by || null,
         sale_type: formData.sale_type || null,
         reference_no: formData.reference_no || null,
-        order_payment_status: formData.order_payment_status,
+        order_payment_status: formData.order_payment_status || paymentStatus,
         order_payment_method: formData.order_payment_method,
         order_date: formData.order_date,
         items: formData.items.map((item) => ({
@@ -558,7 +597,7 @@ const OrderInvoiceForm = () => {
           item_price: toNumber(item.item_price),
           unit_price: toNumber(item.item_price),
           quantity: Number(item.quantity),
-          discount: toNumber(item.discount),
+          discount: toNumber(item.discount).toFixed(2),
         })),
       };
 
@@ -574,6 +613,7 @@ const OrderInvoiceForm = () => {
         toast.success(t("createOrderSuccess"));
       }
 
+      refetchInvoice();
       navigator(-1);
     } catch (err) {
       const serverErrors = err.response?.data?.errors;
@@ -609,7 +649,9 @@ const OrderInvoiceForm = () => {
   };
 
   const handlePaymentStatusSelect = (value) => {
+    setPaymentStatus(value);
     handleInputChange("order_payment_status", value || "");
+
   };
 
   const handlePaymentMethodSelect = (value) => {
@@ -617,30 +659,18 @@ const OrderInvoiceForm = () => {
   };
 
   return (
-    <div className="view-page bg-transparent py-8 transition-colors">
-      <div className=" px-4 sm:px-6 lg:px-8">
+    <div className=" bg-transparent py-2 transition-colors">
+      <div className="px-2">
         <div className="mb-8">
           <div className="mb-4 flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-gray-800 dark:!text-gray-100">
-                {isEditMode ? t("editOrderOrder") : t("createNewOrder")}
+              <h1 className="text-2xl font-bold text-gray-800 dark:!text-gray-100">
+                {isEditMode ? t("editSaleInvoice") : t("createSaleInvoice")}
               </h1>
               <p className="mt-2 text-gray-600 dark:!text-gray-400">
-                {isEditMode ? t("updateOrderOrderDetails") : t("addNewOrderToSystem")}
+                {isEditMode ? t("updateSaleInvoiceDetails") : t("addNewSaleInvoiceToSystem")}
               </p>
             </div>
-            <Badge
-              count={isEditMode ? t("editMode") : t("new")}
-              className="bg-gradient-to-r from-blue-500 to-indigo-600"
-              style={{
-                backgroundColor: isEditMode ? "#3b82f6" : "#10b981",
-                color: "white",
-                padding: "6px 16px",
-                borderRadius: "20px",
-                fontWeight: "600",
-                fontSize: "12px",
-              }}
-            />
           </div>
 
           {Object.keys(errors).length > 0 && (
@@ -669,17 +699,17 @@ const OrderInvoiceForm = () => {
         <form onSubmit={handleSubmit}>
           <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
             <div className="space-y-6 lg:col-span-2">
-              <div>
+              <div className="!text-sm">
                 <div>
                   <div className="mb-4 flex items-center gap-2">
                     <FaWarehouse className="text-blue-500" />
-                    <h2 className="text-lg font-bold text-gray-800 dark:!text-gray-100">
+                    <h2 className="text-sm font-bold text-gray-800 dark:!text-gray-100">
                       {t("customerInformation")}
                     </h2>
                   </div>
 
-                  <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                    <div>
+                  <div className="flex flex-wrap gap-4">
+                    <div className="grow">
                       <label className="mb-2 block text-sm font-medium text-gray-700 dark:!text-gray-300">
                         <span className="flex items-center gap-2">
                           <FaUser className="text-gray-400" />
@@ -709,7 +739,7 @@ const OrderInvoiceForm = () => {
                       </label>
                       <DatePicker
                         className="date-picker w-full"
-                        size="large"
+                        size="middle"
                         value={formData.order_date ? dayjs(formData.order_date) : null}
                         onChange={(_, dateString) => handleInputChange("order_date", dateString)}
                       />
@@ -739,12 +769,12 @@ const OrderInvoiceForm = () => {
                         {t("status")} <span className="text-red-500">*</span>
                       </label>
                       <RichSearch
-                        data={ORDER_PAYMENT_STATUS_SEARCH_OPTIONS}
+                        data={ORDER_PAYMENT_STATUS_OPTIONS}
                         value={formData.order_payment_status}
                         placeholder={t("status")}
                         keyFields={{
-                          id: "id",
-                          title: "title",
+                          id: "value",
+                          title: "label",
                         }}
                         onSelected={handlePaymentStatusSelect}
                       />
@@ -765,7 +795,20 @@ const OrderInvoiceForm = () => {
                         onSelected={handlePaymentMethodSelect}
                       />
                     </div>
-
+                    {formData.order_payment_status != 'paid' && <div>
+                      <label className="mb-2 block text-sm font-medium text-gray-700 dark:!text-gray-300">
+                        <span className="flex items-center gap-2">
+                          <FaCalendarAlt className="text-gray-400" />
+                          {t("DueDate")}
+                        </span>
+                      </label>
+                      <DatePicker
+                        className="date-picker w-full"
+                        size="middle"
+                        value={formData.due_date ? dayjs(formData.due_date) : null}
+                        onChange={(_, dateString) => handleInputChange("due_date", dateString)}
+                      />
+                    </div>}
                   </div>
                 </div>
               </div>
@@ -775,12 +818,12 @@ const OrderInvoiceForm = () => {
                   <div className="mb-6 flex items-center gap-2 justify-between">
                     <div className="flex items-center gap-2">
                       <FaBox className="text-blue-500" />
-                      <h2 className="text-lg font-bold text-gray-800 dark:!text-gray-100">
+                      <h2 className="text-sm font-bold text-gray-800 dark:!text-gray-100">
                         {t("OrderItems")}
                       </h2>
                     </div>
 
-                    <div className="flex flex-1 items-center gap-2">
+                    <div className="flex flex-1 text-sm items-center gap-2">
                       <RichSearch
                         data={items}
                         placeholder={t("addItem")}
@@ -810,7 +853,7 @@ const OrderInvoiceForm = () => {
                             e.preventDefault();
                             downloadTemplate(targetFields, "Import Items");
                           }}
-                          className="flex items-center gap-2 rounded-lg bg-green-500 px-4 py-2 text-white transition-colors hover:bg-green-600"
+                          variant="success"
                         >
                           <FaFileInvoice className="text-white" size={18} />
                           <span>{t("downloadTemplate")}</span>
@@ -852,12 +895,12 @@ const OrderInvoiceForm = () => {
               </div>
             </div>
 
-            <div className="space-y-6">
+            <div className="space-y-6 text-sm">
               <div>
                 <div>
-                  <h2 className="mb-6 flex items-center gap-2 text-lg font-bold text-gray-800 dark:!text-gray-100">
+                  <h2 className="mb-6 flex items-center gap-2 text-sm font-bold text-gray-800 dark:!text-gray-100">
                     <FaLayerGroup className="text-blue-500" />
-                    {t("OrderSummary")}
+                    {t("summary")}
                   </h2>
 
                   <div className="space-y-4">
@@ -875,7 +918,7 @@ const OrderInvoiceForm = () => {
                       </span>
                     </div>
 
-                    <div className="grid grid-cols-1 gap-3">
+                    <div className="grid text-sm grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
                         <div className="mb-2 flex items-center justify-between">
                           <span className="flex items-center gap-2 text-gray-600 dark:!text-gray-400">
@@ -883,15 +926,15 @@ const OrderInvoiceForm = () => {
                             {t("tax")}
                           </span>
                         </div>
-                        <Input
-                          type="number"
-                          name="order_tax"
+                        <RichSearch
+                          data={VAT_OPTIONS}
                           value={formData.order_tax}
-                          onChange={(value) => handleInputChange("order_tax", value)}
                           placeholder={t("tax")}
-                          className="w-full dark:!bg-gray-700 dark:!text-gray-200 dark:!border-gray-600"
-                          min="0"
-                          step="0.01"
+                          keyFields={{
+                            id: "value",
+                            title: "label",
+                          }}
+                          onSelected={(value) => handleInputChange("order_tax", value ? Number(value) : 0)}
                         />
                       </div>
 
@@ -954,30 +997,30 @@ const OrderInvoiceForm = () => {
                           className="w-full dark:!bg-gray-700 dark:!text-gray-200 dark:!border-gray-600"
                         />
                       </div>
-                      <div>
-                      <label className="mb-2 block text-sm font-medium text-gray-700 dark:!text-gray-300">
-                        <span className="flex items-center gap-2">
-                          <FaUser className="text-gray-400" />
-                          {t("createdBy")}
-                        </span>
-                      </label>
-                      <RichSearch
-                        data={createUser}
-                        value={formData.created_by}
-                        placeholder={t("selectcreatedBy")}
-                        keyFields={{
-                          id: "id",
-                          title: "username",
-                          image: "image",
-                        }}
-                        onSelected={handleUserSelect}
-                      />
-                    </div>
+                      <div className="sm:col-span-2">
+                        <label className="mb-2 block text-sm font-medium text-gray-700 dark:!text-gray-300">
+                          <span className="flex items-center gap-2">
+                            <FaUser className="text-gray-400" />
+                            {t("createdBy")}
+                          </span>
+                        </label>
+                        <RichSearch
+                          data={createUser}
+                          value={formData.created_by}
+                          placeholder={t("selectcreatedBy")}
+                          keyFields={{
+                            id: "id",
+                            title: "username",
+                            image: "image",
+                          }}
+                          onSelected={handleUserSelect}
+                        />
+                      </div>
                     </div>
 
                     <Divider className="my-4 dark:!border-gray-700" />
 
-                    <div className="flex justify-between text-lg font-bold">
+                    <div className="flex justify-between text-sm font-bold">
                       <span className="text-gray-700 dark:!text-gray-200">{t("totalAmount")}</span>
                       <span className="text-blue-600 dark:!text-blue-400">
                         ${Number(formData.total_amount).toFixed(2)}
@@ -1009,13 +1052,13 @@ const OrderInvoiceForm = () => {
                     <div className="grid grid-cols-2 gap-4">
                       <div className="rounded-lg bg-blue-50 p-3 text-center dark:!bg-blue-900/20">
                         <div className="text-sm text-gray-600 dark:!text-gray-400">{t("items")}</div>
-                        <div className="text-xl font-bold text-gray-800 dark:!text-gray-100">
+                        <div className="text-sm font-bold text-gray-800 dark:!text-gray-100">
                           {formData.items.length}
                         </div>
                       </div>
                       <div className="rounded-lg bg-green-50 p-3 text-center dark:!bg-green-900/20">
                         <div className="text-sm text-gray-600 dark:!text-gray-400">{t("status")}</div>
-                        <div className="text-xl font-bold text-gray-800 dark:!text-gray-100">
+                        <div className="text-sm font-bold text-gray-800 dark:!text-gray-100">
                           {STATUS_OPTIONS.find((option) => option.value === Number(formData.status))?.label || "-"}
                         </div>
                       </div>

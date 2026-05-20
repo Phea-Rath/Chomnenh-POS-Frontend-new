@@ -112,13 +112,13 @@ const ItemTable = ({
                             key={index}
                             className="group transition-colors hover:bg-blue-50/50 dark:hover:bg-blue-900/10"
                         >
-                            <td className="px-6 py-4">
+                            <td className="px-2">
                                 <span className="font-medium text-gray-900 dark:text-gray-100">
                                     {item.name}
                                 </span>
                             </td>
                             {showSelectField && (
-                            <td className="px-6 py-4">
+                            <td className="px-1 py-2">
                                 <div className="inline-flex">
                                     <button
                                         type="button"
@@ -144,7 +144,7 @@ const ItemTable = ({
                                             });
                                             setOpenSelectIndex((prev) => (prev === index ? null : index));
                                         }}
-                                        className={`inline-flex min-w-24 items-center justify-center rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-wide transition-all ${
+                                        className={`inline-flex items-center justify-center rounded-full border px-2 py-1 text-[10px] font-semibold uppercase tracking-wide transition-all ${
                                             getSelectOptionMeta(item?.[selectLable] || selectOptions?.[0]?.value || "").className
                                         }`}
                                     >
@@ -153,7 +153,7 @@ const ItemTable = ({
                                 </div>
                             </td>
                             )}
-                            <td className="px-6 py-4">
+                            <td className="px-1 py-2">
                                 <div className="flex justify-center">
                                     <input
                                         type="number"
@@ -167,7 +167,7 @@ const ItemTable = ({
                                     />
                                 </div>
                             </td>
-                            <td className="px-6 py-4 text-right tabular-nums text-gray-600 dark:text-gray-400">
+                            <td className="px-1 py-2 text-right tabular-nums text-gray-600 dark:text-gray-400">
                                 {/* ${item.price.toLocaleString()} */}
                                 <div className="flex items-center">
                                     <input
@@ -177,19 +177,33 @@ const ItemTable = ({
                                         id="price"
                                         placeholder="0"
                                         onChange={(e) => onCostChange(index, Number(e.target.value))}
-                                        className="w-20 rounded-sm hover:border hover:border-gray-300 px-2 py-1 text-center hover:transition-all outline-0  dark:text-white"
+                                        className="w-20 no-spinner rounded-sm hover:border hover:border-gray-300 px-2 py-1 text-center hover:transition-all outline-0  dark:text-white"
                                         onWheel={(e) => e.target.blur()}
                                     />
                                 </div>
                             </td>
                             {showDiscountField && (
-                            <td className="px-6 py-4 text-right tabular-nums text-gray-600 dark:text-gray-400">
+                            <td className="px-1 py-2 text-right tabular-nums text-gray-600 dark:text-gray-400">
                                 <div className="flex items-center justify-end gap-1">
+                                    <input
+                                        type="number"
+                                        step='any'
+                                        name={discountLabel}
+                                        value={item?.[discountLabel] || ''}
+                                        placeholder="0"
+                                        onChange={(e) => onDiscountChange(index, Number(e.target.value))}
+                                        className="w-20 no-spinner rounded-sm hover:border hover:border-gray-300 px-2 py-1 text-center hover:transition-all outline-0  dark:text-white"
+                                        onWheel={(e) => e.target.blur()}
+                                        // min="0"
+                                        max="100"
+                                        />
+                                    <span>%</span>
+                                        <span>=</span>
                                     <span>$</span>
                                     <input
                                         type="number"
                                         name={`${discountLabel}_amount`}
-                                        value={Number(discountAmount.toFixed(2))}
+                                        value={discountAmount || ''}
                                         placeholder="0"
                                         step='any'
                                         onChange={(e) => {
@@ -197,34 +211,21 @@ const ItemTable = ({
                                             const nextPercent = lineSubtotal > 0
                                                 ? (nextAmount / lineSubtotal) * 100
                                                 : 0;
-                                            onDiscountChange(index, Number(nextPercent.toFixed(2)));
+                                            onDiscountChange(index, Number(nextPercent));
                                         }}
-                                        className="w-20 rounded-sm hover:border hover:border-gray-300 px-2 py-1 text-center hover:transition-all outline-0  dark:text-white"
+                                        className="w-20 no-spinner rounded-sm hover:border hover:border-gray-300 px-2 py-1 text-center hover:transition-all outline-0  dark:text-white"
                                         onWheel={(e) => e.target.blur()}
-                                        min="0"
+                                        // min="0"
                                         max={lineSubtotal}
                                     />
-                                    <span>=</span>
-                                    <input
-                                        type="number"
-                                        step='any'
-                                        name={discountLabel}
-                                        value={item?.[discountLabel] ?? 0}
-                                        placeholder="0"
-                                        onChange={(e) => onDiscountChange(index, Number(e.target.value))}
-                                        className="w-20 rounded-sm hover:border hover:border-gray-300 px-2 py-1 text-center hover:transition-all outline-0  dark:text-white"
-                                        onWheel={(e) => e.target.blur()}
-                                        min="0"
-                                        max="100"
-                                    />
-                                    <span>%</span>
+                                    
                                 </div>
                             </td>
                             )}
-                            <td className="px-6 py-4 text-right font-semibold tabular-nums text-blue-600 dark:text-blue-400">
+                            <td className="px-1 py-2 text-right font-semibold tabular-nums text-blue-600 dark:text-blue-400">
                                 ${lineTotal.toLocaleString()}
                             </td>
-                            <td className="px-6 py-4 text-right">
+                            <td className="px-1 py-2 text-right">
                                 <button
                                     onClick={() => onDelete(index)}
                                     className="p-2 text-red-600 hover:bg-red-100 dark:hover:bg-red-900/20 rounded-lg transition-colors"

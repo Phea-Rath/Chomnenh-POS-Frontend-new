@@ -10,7 +10,7 @@
   }
 
   .date-picker {
-    @apply !p-2 min-w-35 !rounded-sm !bg-transparent dark:!border-gray-400 dark:!text-white dark:[&_.ant-picker-input>input::placeholder]:!text-gray-400 dark:[&_.ant-picker-suffix]:!text-white;
+    @apply !p-2 min-w-35 !text-sm !rounded-none !bg-transparent !border-gray-400 dark:!text-white dark:[&_.ant-picker-input>input::placeholder]:!text-gray-400 dark:[&_.ant-picker-suffix]:!text-white;
   }
 
   .textarea-input {
@@ -133,6 +133,44 @@
     }
 
   }
+
+  /* hide scrollbar */
+  .hide-menu-bar::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  /* scrollbar to small and change color to blue */
+  /* .main-scrollbar::-webkit-scrollbar {
+    width:  8px !important;
+    scrollbar-color: hotpink blue !important;
+    &::-webkit-scrollbar-thumb {
+      background: #888 !important;
+      border-radius: 4px !important;
+      width: 4px !important;
+    }
+
+  } */
+
+  /* width */
+.main-scrollbar::-webkit-scrollbar {
+  width: 10px;
+}
+
+/* Track */
+.main-scrollbar::-webkit-scrollbar-track {
+  background: #f1f1f1; 
+}
+ 
+/* Handle */
+.main-scrollbar::-webkit-scrollbar-thumb {
+  background: #888; 
+}
+
+/* Handle on hover */
+.main-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #555; 
+}
+
 
   .no-spinner::-webkit-outer-spin-button,
   .no-spinner::-webkit-inner-spin-button {
