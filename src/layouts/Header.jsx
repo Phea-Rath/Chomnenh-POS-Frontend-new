@@ -20,7 +20,7 @@ const Header = ({ darkMode, setDarkMode }) => {
 
   const handleClearTelegramSession = () => {
     // 1. Wipe your own application's local tokens and user metadata
-      localStorage.removeItem('authToken');
+      localStorage.removeItem('token');
       sessionStorage.clear();
 
       // 2. Clear your local domain's cookies just to be thorough
@@ -38,7 +38,7 @@ const Header = ({ darkMode, setDarkMode }) => {
       window.location.href = `https://oauth.telegram.org/logout?returnurl=${returnUrl}`;
   };
 
-  const logout = () => {
+  const logout = async () => {
     try {
       const res = await api.post('/logout',{}, {
         headers: {

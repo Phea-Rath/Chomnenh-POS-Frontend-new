@@ -57,7 +57,32 @@ const LoginForm = () => {
 
       const data = await response.json();
 
+      const {
+        user: { profile_id, id },
+      } = data;
       if (data.success) {
+        refetchSidebar();
+        refetch();
+        refetchHome();
+        refetchReport();
+        refetchSetting();
+        const res = await api.get(`/permission/${id}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setId(id);
+        localStorage.setItem("profileId", profile_id);
+        localStorage.setItem("userId", id);
+        // localStorage.setItem("token", token);
+        if (res.status == 200) {
+          localStorage.setItem("menus", JSON.stringify(res?.data.data));
+          localStorage.setItem("menus-sidebar", JSON.stringify(sidebar?.data));
+          localStorage.setItem("menus-home", JSON.stringify(home?.data));
+          localStorage.setItem("menus-report", JSON.stringify(report?.data));
+          localStorage.setItem("menus-setting", JSON.stringify(setting?.data));
+          toast.success("Login successful");
+          id == 1 ? navigate("/dashboard") : navigate("/dashboard");
+        }
+      
         // Save the Bearer/Sanctum token in local storage
         localStorage.setItem('token', data.access_token);
         
@@ -72,6 +97,7 @@ const LoginForm = () => {
       alert('Could not connect to the authentication server.');
     } finally {
       setIsLoading(false);
+      navigate("/dashboard");
     }
   };
 
