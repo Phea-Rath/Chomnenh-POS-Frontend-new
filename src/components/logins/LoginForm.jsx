@@ -60,6 +60,8 @@ const LoginForm = () => {
       const {
         user: { profile_id, id },
       } = data;
+      
+      console.log(profile_id, id);
       if (data.success) {
         refetchSidebar();
         refetch();
@@ -72,7 +74,7 @@ const LoginForm = () => {
         setId(id);
         localStorage.setItem("profileId", profile_id);
         localStorage.setItem("userId", id);
-        // localStorage.setItem("token", token);
+        localStorage.setItem('token', data.access_token);
         if (res.status == 200) {
           localStorage.setItem("menus", JSON.stringify(res?.data.data));
           localStorage.setItem("menus-sidebar", JSON.stringify(sidebar?.data));
@@ -80,15 +82,13 @@ const LoginForm = () => {
           localStorage.setItem("menus-report", JSON.stringify(report?.data));
           localStorage.setItem("menus-setting", JSON.stringify(setting?.data));
           toast.success("Login successful");
-          id == 1 ? navigate("/dashboard") : navigate("/dashboard");
         }
       
         // Save the Bearer/Sanctum token in local storage
-        localStorage.setItem('token', data.access_token);
-        
-        alert(`Successfully logged in as ${data.user.name}`);
-        // Redirect user to their dashboard or panel home
         navigate("/dashboard");
+        
+        // Redirect user to their dashboard or panel home
+        alert(`Successfully logged in as ${data.user.name}`);
       } else {
         alert(`Authentication Error: ${data.message}`);
       }
@@ -97,7 +97,6 @@ const LoginForm = () => {
       alert('Could not connect to the authentication server.');
     } finally {
       setIsLoading(false);
-      navigate("/dashboard");
     }
   };
 
