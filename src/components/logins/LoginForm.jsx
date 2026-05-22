@@ -1,18 +1,9 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import OtpInput from "./opt-input";
 import api from "../../services/api";
 import { Link, useNavigate } from "react-router";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { useGetUserLoginQuery } from "../../../app/Features/usersSlice";
-import { useGetAllMenuQuery } from "../../../app/Features/menusSlice";
-import {
-  useGetMenuHomeQuery,
-  useGetMenuReportQuery,
-  useGetMenuSettingQuery,
-  useGetMenuSidebarQuery,
-  useGetPermissionByIdQuery,
-} from "../../../app/Features/permissionSlice";
 import logo from "../../assets/logo.jpg";
 import TelegramLogin from "./TelegramLogin";
 
@@ -21,47 +12,48 @@ const LoginForm = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [Id, setId] = useState(0);
-  const { refetch } = useGetUserLoginQuery(
-    localStorage.getItem("token"),{ skip: localStorage.getItem("token") === null }
-  );
-  const { refetch: refetchSidebar, data: sidebar } = useGetMenuSidebarQuery(
-    localStorage.getItem("token"),{ skip: localStorage.getItem("token") === null }
-  );
-  const { refetch: refetchSetting, data: setting } = useGetMenuSettingQuery(
-    localStorage.getItem("token"),{ skip: localStorage.getItem("token") === null }
-  );
-  const { refetch: refetchReport, data: report } = useGetMenuReportQuery(
-    localStorage.getItem("token"),{ skip: localStorage.getItem("token") === null }
-  );
-  const { refetch: refetchHome, data: home } = useGetMenuHomeQuery(
-    localStorage.getItem("token"),{ skip: localStorage.getItem("token") === null }
-  );
   const [alert, setAlert] = useState({ message: "", show: false });
   const [login, setLogin] = useState({ phone_number: "", password: "" });
 
   const persistLoginSession = async (token, profileId, userId) => {
-    refetchSidebar();
-    refetch();
-    refetchHome();
-    refetchReport();
-    refetchSetting();
+    const authHeaders = {
+      Authorization: `Bearer ${token}`,
+    };
 
-    const res = await api.get(`/permission/${userId}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    const [permissionRes, sidebarRes, homeRes, reportRes, settingRes] =
+      await Promise.all([
+        api.get(`/permission/${userId}`, { headers: authHeaders }),
+        api.get("/menu-sidebar", { headers: authHeaders }),
+        api.get("/menu-home", { headers: authHeaders }),
+        api.get("/menu-report", { headers: authHeaders }),
+        api.get("/menu-setting", { headers: authHeaders }),
+      ]);
 
-    setId(userId);
     localStorage.setItem("profileId", profileId ?? "");
     localStorage.setItem("userId", userId);
     localStorage.setItem("token", token);
+    localStorage.setItem(
+      "menus",
+      JSON.stringify(permissionRes?.data?.data ?? [])
+    );
+    localStorage.setItem(
+      "menus-sidebar",
+      JSON.stringify(sidebarRes?.data?.data ?? [])
+    );
+    localStorage.setItem(
+      "menus-home",
+      JSON.stringify(homeRes?.data?.data ?? [])
+    );
+    localStorage.setItem(
+      "menus-report",
+      JSON.stringify(reportRes?.data?.data ?? [])
+    );
+    localStorage.setItem(
+      "menus-setting",
+      JSON.stringify(settingRes?.data?.data ?? [])
+    );
 
-    if (res.status === 200) {
-      localStorage.setItem("menus", JSON.stringify(res?.data.data ?? []));
-      localStorage.setItem("menus-sidebar", JSON.stringify(sidebar?.data ?? []));
-      localStorage.setItem("menus-home", JSON.stringify(home?.data ?? []));
-      localStorage.setItem("menus-report", JSON.stringify(report?.data ?? []));
-      localStorage.setItem("menus-setting", JSON.stringify(setting?.data ?? []));
+    if (permissionRes.status === 200) {
       toast.success("Login successful");
       navigate("/dashboard");
     }
