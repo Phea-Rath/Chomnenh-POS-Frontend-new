@@ -129,6 +129,8 @@ const LoginForm = () => {
         localStorage.setItem("profileId", profile_id);
         localStorage.setItem("userId", id);
         localStorage.setItem("token", token);
+        console.log(res);
+        
         if (res.status == 200) {
           localStorage.setItem("menus", JSON.stringify(res?.data.data));
           localStorage.setItem("menus-sidebar", JSON.stringify(sidebar?.data));
@@ -136,7 +138,7 @@ const LoginForm = () => {
           localStorage.setItem("menus-report", JSON.stringify(report?.data));
           localStorage.setItem("menus-setting", JSON.stringify(setting?.data));
           toast.success("Login successful");
-          id == 1 ? navigate("/dashboard") : navigate("/dashboard");
+          navigate("/dashboard");
         }
       }
     } catch (err) {
@@ -304,9 +306,10 @@ const LoginForm = () => {
               <input
                 type="tel"
                 value={login.phone_number}
-                onChange={(e) =>
-                  setLogin({ ...login, phone_number: e.target.value })
-                }
+                onChange={(e) =>{
+                  e.preventDefault();
+                  setLogin({ ...login, phone_number: e.target.value });
+                }}
                 placeholder="e.g. 012 345 678"
                 style={{
                   width: "100%",
@@ -343,9 +346,10 @@ const LoginForm = () => {
               <input
                 type="password"
                 value={login.password}
-                onChange={(e) =>
-                  setLogin({ ...login, password: e.target.value })
-                }
+                onChange={(e) =>{
+                  e.preventDefault();
+                  setLogin({ ...login, password: e.target.value });
+                }}
                 placeholder="Enter your password"
                 style={{
                   width: "100%",
