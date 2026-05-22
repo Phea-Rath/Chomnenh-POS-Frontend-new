@@ -82,13 +82,8 @@ const LoginForm = () => {
           localStorage.setItem("menus-report", JSON.stringify(report?.data));
           localStorage.setItem("menus-setting", JSON.stringify(setting?.data));
           toast.success("Login successful");
+          navigate("/dashboard");
         }
-      
-        // Save the Bearer/Sanctum token in local storage
-        navigate("/dashboard");
-        
-        // Redirect user to their dashboard or panel home
-        alert(`Successfully logged in as ${data.user.name}`);
       } else {
         alert(`Authentication Error: ${data.message}`);
       }
