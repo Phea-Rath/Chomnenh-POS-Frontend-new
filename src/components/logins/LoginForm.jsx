@@ -287,7 +287,7 @@ const LoginForm = () => {
           )}
 
           {/* Form */}
-          <form onSubmit={handleLogin} style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
             {/* Phone */}
             <div>
               <label
@@ -389,7 +389,8 @@ const LoginForm = () => {
 
             {/* Submit button */}
             <button
-              type="submit"
+              type="button"
+              onClick={handleLogin}
               disabled={loading}
               style={{
                 width: "100%",
@@ -443,7 +444,7 @@ const LoginForm = () => {
                 "Sign In"
               )}
             </button>
-          </form>
+          </div>
         </div>
 
         {/* Footer */}
