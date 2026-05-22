@@ -671,6 +671,21 @@ const OrderInvoiceForm = () => {
                 {isEditMode ? t("updateSaleInvoiceDetails") : t("addNewSaleInvoiceToSystem")}
               </p>
             </div>
+            <div className="mt-6 flex items-center justify-center gap-2">
+                      <Button type="button"  onClick={handleSubmit} disabled={loading || orderByIdLoading} variant="primary" outline={false}>
+                        <FaSave />
+                        Save
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="danger"
+                        outline={true}
+                        onClick={() => window.history.back()}
+                      >
+                        <FaTimes />
+                        Back
+                      </Button>
+                    </div>
           </div>
 
           {Object.keys(errors).length > 0 && (
@@ -696,7 +711,7 @@ const OrderInvoiceForm = () => {
           )}
         </div>
 
-        <form onSubmit={handleSubmit}>
+        <form>
           <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
             <div className="space-y-6 lg:col-span-2">
               <div className="!text-sm">
@@ -1064,21 +1079,7 @@ const OrderInvoiceForm = () => {
                       </div>
                     </div>
 
-                    <div className="mt-6 flex items-center justify-center gap-2">
-                      <Button type="submit" disabled={loading || orderByIdLoading} variant="primary" outline={false}>
-                        <FaSave />
-                        Save
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="danger"
-                        outline={true}
-                        onClick={() => window.history.back()}
-                      >
-                        <FaTimes />
-                        Back
-                      </Button>
-                    </div>
+                    
                   </div>
                 </div>
               </div>

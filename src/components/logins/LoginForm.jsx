@@ -14,6 +14,7 @@ import {
   useGetPermissionByIdQuery,
 } from "../../../app/Features/permissionSlice";
 import logo from "../../assets/logo.jpg";
+import TelegramLogin from "./TelegramLogin";
 
 const LoginForm = () => {
   const [showOtpInput, setShowOtpInput] = useState(false);
@@ -37,6 +38,41 @@ const LoginForm = () => {
   );
   const [alert, setAlert] = useState({ message: "", show: false });
   const [login, setLogin] = useState({ phone_number: "", password: "" });
+
+
+  const handleTelegramData = async (telegramUser) => {
+    setIsLoading(true);
+    
+    try {
+      // Forward the full object (id, first_name, username, auth_date, hash) to Laravel
+      const response = await fetch('https://api.chomnenhapp.com/api/telegram-login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify(telegramUser),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Save the Bearer/Sanctum token in local storage
+        localStorage.setItem('authToken', data.access_token);
+        
+        alert(`Successfully logged in as ${data.user.name}`);
+        // Redirect user to their dashboard or panel home
+        window.location.href = '/dashboard';
+      } else {
+        alert(`Authentication Error: ${data.message}`);
+      }
+    } catch (error) {
+      console.error('Network or Backend Server Error:', error);
+      alert('Could not connect to the authentication server.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const onOtpSubmit = (otp) => {
     console.log("Login Successful", otp);
@@ -319,6 +355,10 @@ const LoginForm = () => {
                 Forgot password?
               </Link>
             </div>
+            <TelegramLogin 
+              botUsername="chomnenh_bot" 
+              onAuthSuccess={handleTelegramData} 
+            />
 
             {/* Submit button */}
             <button

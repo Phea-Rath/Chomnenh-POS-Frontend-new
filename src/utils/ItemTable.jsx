@@ -22,6 +22,13 @@ const ItemTable = ({
     const menuRef = useRef(null);
     const triggerRefs = useRef({});
 
+    const toSafeNumber = (value) => {
+        const parsed = Number(value);
+        return Number.isFinite(parsed) ? parsed : 0;
+    };
+
+    const roundToTwo = (value) => Math.round((value + Number.EPSILON) * 100) / 100;
+
     const getSelectOptionMeta = (value) => {
         const selectedOption = selectOptions.find((option) => option.value === value) || selectOptions[0];
         const normalizedValue = String(selectedOption?.value || "").toLowerCase();
@@ -98,11 +105,9 @@ const ItemTable = ({
                 </thead>
                 <tbody className="divide-y divide-gray-200 bg-white dark:divide-gray-800 dark:bg-transparent">
                     {data?.map((item, index) => {
-                        const lineSubtotal = Number(item?.quantity || 0) * Number(item?.[priceLabel] || 0);
-                        const discountPercent = Number(item?.[discountLabel] || 0);
-                        const discountAmount = lineSubtotal > 0
-                            ? (lineSubtotal * discountPercent) / 100
-                            : 0;
+                        const lineSubtotal = toSafeNumber(item?.quantity) * toSafeNumber(item?.[priceLabel]);
+                        const discountPercent = toSafeNumber(item?.[discountLabel]);
+                        const discountAmount = roundToTwo((lineSubtotal * discountPercent) / 100);
                         const lineTotal = showDiscountField
                             ? lineSubtotal - discountAmount
                             : lineSubtotal;
@@ -189,9 +194,12 @@ const ItemTable = ({
                                         type="number"
                                         step='any'
                                         name={discountLabel}
-                                        value={item?.[discountLabel] || ''}
+                                        value={item?.[discountLabel] || ""}
                                         placeholder="0"
-                                        onChange={(e) => onDiscountChange(index, Number(e.target.value))}
+                                        onChange={(e) => {
+                                            const nextPercent = toSafeNumber(e.target.value);
+                                            onDiscountChange(index, nextPercent);
+                                        }}
                                         className="w-20 no-spinner rounded-sm hover:border hover:border-gray-300 px-2 py-1 text-center hover:transition-all outline-0  dark:text-white"
                                         onWheel={(e) => e.target.blur()}
                                         // min="0"
@@ -203,15 +211,15 @@ const ItemTable = ({
                                     <input
                                         type="number"
                                         name={`${discountLabel}_amount`}
-                                        value={discountAmount || ''}
+                                        value={lineSubtotal > 0 || discountAmount > 0 ? discountAmount : ""}
                                         placeholder="0"
                                         step='any'
                                         onChange={(e) => {
-                                            const nextAmount = Number(e.target.value);
+                                            const nextAmount = toSafeNumber(e.target.value);
                                             const nextPercent = lineSubtotal > 0
-                                                ? (nextAmount / lineSubtotal) * 100
+                                                ? roundToTwo((nextAmount / lineSubtotal) * 100)
                                                 : 0;
-                                            onDiscountChange(index, Number(nextPercent));
+                                            onDiscountChange(index, nextPercent);
                                         }}
                                         className="w-20 no-spinner rounded-sm hover:border hover:border-gray-300 px-2 py-1 text-center hover:transition-all outline-0  dark:text-white"
                                         onWheel={(e) => e.target.blur()}
