@@ -20,6 +20,7 @@ const LoginForm = () => {
   const [showOtpInput, setShowOtpInput] = useState(false);
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [Id, setId] = useState(0);
   const { refetch, isLoading } = useGetUserLoginQuery(
     localStorage.getItem("token")
