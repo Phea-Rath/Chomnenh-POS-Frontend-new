@@ -40,58 +40,66 @@ const LoginForm = () => {
   const [alert, setAlert] = useState({ message: "", show: false });
   const [login, setLogin] = useState({ phone_number: "", password: "" });
 
+  const persistLoginSession = async (token, profileId, userId) => {
+    refetchSidebar();
+    refetch();
+    refetchHome();
+    refetchReport();
+    refetchSetting();
+
+    const res = await api.get(`/permission/${userId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    setId(userId);
+    localStorage.setItem("profileId", profileId ?? "");
+    localStorage.setItem("userId", userId);
+    localStorage.setItem("token", token);
+
+    if (res.status === 200) {
+      localStorage.setItem("menus", JSON.stringify(res?.data.data ?? []));
+      localStorage.setItem("menus-sidebar", JSON.stringify(sidebar?.data ?? []));
+      localStorage.setItem("menus-home", JSON.stringify(home?.data ?? []));
+      localStorage.setItem("menus-report", JSON.stringify(report?.data ?? []));
+      localStorage.setItem("menus-setting", JSON.stringify(setting?.data ?? []));
+      toast.success("Login successful");
+      navigate("/dashboard");
+    }
+  };
 
   const handleTelegramData = async (telegramUser) => {
-    event.preventDefault();
     setIsLoading(true);
-    
+
     try {
-      // Forward the full object (id, first_name, username, auth_date, hash) to Laravel
-      const response = await fetch('https://api.chomnenhapp.com/api/telegram-login', {
-        method: 'POST',
+      const response = await api.post("/telegram-login", telegramUser, {
         headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
+          Accept: "application/json",
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify(telegramUser),
       });
 
-      const data = await response.json();
+      const data = response.data;
 
       const {
         access_token: token,
         user: { profile_id, id },
       } = data;
-      
-      console.log(profile_id, id);
+
       if (data.success) {
-        refetchSidebar();
-        refetch();
-        refetchHome();
-        refetchReport();
-        refetchSetting();
-        const res = await api.get(`/permission/${id}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setId(id);
-        localStorage.setItem("profileId", profile_id);
-        localStorage.setItem("userId", id);
-        localStorage.setItem('token', token);
-        if (res.status == 200) {
-          localStorage.setItem("menus", JSON.stringify(res?.data.data));
-          localStorage.setItem("menus-sidebar", JSON.stringify(sidebar?.data));
-          localStorage.setItem("menus-home", JSON.stringify(home?.data));
-          localStorage.setItem("menus-report", JSON.stringify(report?.data));
-          localStorage.setItem("menus-setting", JSON.stringify(setting?.data));
-          toast.success("Login successful");
-          navigate("/dashboard");
-        }
+        await persistLoginSession(token, profile_id, id);
       } else {
-        alert(`Authentication Error: ${data.message}`);
+        setAlert({
+          message: data.message || "Telegram authentication failed",
+          show: true,
+        });
       }
     } catch (error) {
-      console.error('Network or Backend Server Error:', error);
-      alert('Could not connect to the authentication server.');
+      console.error("Network or Backend Server Error:", error);
+      const message =
+        error?.response?.data?.message ||
+        "Could not connect to the authentication server.";
+      toast.error(message);
+      setAlert({ message, show: true });
     } finally {
       setIsLoading(false);
     }
@@ -117,29 +125,7 @@ const LoginForm = () => {
       } = response.data;
 
       if (response.status === 200) {
-        refetchSidebar();
-        refetch();
-        refetchHome();
-        refetchReport();
-        refetchSetting();
-        const res = await api.get(`/permission/${id}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setId(id);
-        localStorage.setItem("profileId", profile_id);
-        localStorage.setItem("userId", id);
-        localStorage.setItem("token", token);
-        console.log(res);
-        
-        if (res.status == 200) {
-          localStorage.setItem("menus", JSON.stringify(res?.data.data));
-          localStorage.setItem("menus-sidebar", JSON.stringify(sidebar?.data));
-          localStorage.setItem("menus-home", JSON.stringify(home?.data));
-          localStorage.setItem("menus-report", JSON.stringify(report?.data));
-          localStorage.setItem("menus-setting", JSON.stringify(setting?.data));
-          toast.success("Login successful");
-          navigate("/dashboard");
-        }
+        await persistLoginSession(token, profile_id, id);
       }
     } catch (err) {
       toast.error(
@@ -386,6 +372,19 @@ const LoginForm = () => {
               botUsername="chomnenh_bot" 
               onAuthSuccess={handleTelegramData} 
             />
+
+            {isLoading && (
+              <p
+                style={{
+                  margin: 0,
+                  fontSize: "11px",
+                  color: "#1e3a5f",
+                  textAlign: "center",
+                }}
+              >
+                Verifying Telegram login...
+              </p>
+            )}
 
             {/* Submit button */}
             <button
