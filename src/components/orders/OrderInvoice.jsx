@@ -9,6 +9,8 @@ import handleDownload from "../../services/imageDowload";
 import { useGetOrderByIdQuery } from "../../../app/Features/ordersSlice";
 import { useGetAllUserQuery, useGetUserProfileQuery } from "../../../app/Features/usersSlice";
 import { useTranslation } from "react-i18next";
+import timeAgo from "../../services/timeAgo";
+import Button from "../../utils/Button";
 
 const OrderInvoice = () => {
   const { t } = useTranslation();
@@ -46,11 +48,14 @@ const OrderInvoice = () => {
     });
   };
 
+  console.log(data);
+  
   const exchangeRate = Number(data?.exchange_rate || 4000);
-  const sellerName = users?.data.find((user) => user.id === Number(data?.created_by))?.username || "N/A";
+  const sellerName = data?.created_by_name || "N/A";
   const customerName = data?.customer_name || data?.customer?.customer_name || t("walkInCustomer");
   const customerPhone = data?.order_tel || data?.customer?.customer_tel || "N/A";
   const customerAddress = data?.order_address || data?.customer?.customer_address || "N/A";
+  const deliverName = data?.deliver_name || "N/A";
   const paymentMethod = data?.order_payment_method || "cash";
   const paymentStatus = data?.order_payment_status || (Number(data?.balance || 0) > 0 ? "partial" : "paid");
   const qrValue = useMemo(() => {
@@ -85,7 +90,7 @@ const OrderInvoice = () => {
   }
 
   return (
-    <div className="view-page bg-transparent px-4 py-8 min-h-screen">
+    <div className="bg-transparent px-4 py-8 min-h-screen">
       <div className="mx-auto max-w-5xl">
         <button
           onClick={() => navigator(-1)}
@@ -96,30 +101,30 @@ const OrderInvoice = () => {
         </button>
 
         <div className="mb-6 flex flex-wrap justify-end gap-3 print:hidden">
-          <button
+          <Button
             onClick={handlePrint}
             className="flex items-center rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
           >
             <FaPrint className="mr-2" /> {t("print")}
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={() => handleDownload(invoiceRef, "pdf", "invoice", data?.order_no || id)}
             className="flex items-center rounded-lg bg-green-600 px-4 py-2 text-white hover:bg-green-700"
           >
             <FaDownload className="mr-2" /> {t("downloadPDF")}
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={() => handleDownload(invoiceRef, "png", "invoice", data?.order_no || id)}
             className="flex items-center rounded-lg bg-purple-600 px-4 py-2 text-white hover:bg-purple-700"
           >
             <FaDownload className="mr-2" /> {t("downloadPNG")}
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={() => handleDownload(invoiceRef, "jpg", "invoice", data?.order_no || id)}
             className="flex items-center rounded-lg bg-teal-600 px-4 py-2 text-white hover:bg-teal-700"
           >
             <FaDownload className="mr-2" /> {t("downloadJPG")}
-          </button>
+          </Button>
         </div>
 
         <motion.div
@@ -129,73 +134,89 @@ const OrderInvoice = () => {
         >
           <div
             ref={invoiceRef}
-            className="mx-auto overflow-hidden rounded-[28px] border border-gray-200 bg-white px-6 py-8 shadow-[0_20px_60px_-28px_rgba(15,23,42,0.35)] dark:border-gray-700 dark:bg-gray-800 print:rounded-none print:border-0 print:shadow-none sm:px-10"
+            className="mx-auto overflow-hidden border border-gray-200 dark:border-0 px-6 py-8 bg-primary dark:bg-gray-800 print:rounded-none print:border-0 print:shadow-none sm:px-10"
           >
             <div className="mx-auto max-w-4xl">
-              <div className="border-b-2 border-gray-800 dark:border-gray-600 pb-7 text-center">
-                {profileData?.data?.image ? (
-                  <img
-                    src={profileData.data.image}
-                    alt={profileData?.data?.profile_name || "Business logo"}
-                    className="mx-auto mb-3 h-20 w-20 object-contain"
-                  />
-                ) : null}
-                <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-3xl">
-                  {profileData?.data?.profile_name || t("company")}
-                </h1>
-                <p className="mt-2 text-sm text-gray-600 dark:text-gray-400 sm:text-base">
-                  {profileData?.data?.address || t("address")}
-                </p>
-                <p className="text-sm text-gray-600 dark:text-gray-400 sm:text-base">
-                  {t("tel")}: {profileData?.data?.telephone || "N/A"}
-                </p>
-                <h2 className="mt-6 text-3xl font-bold tracking-[0.08em] text-gray-700 dark:text-gray-200 uppercase">{t("invoice")}</h2>
-              </div>
-
-              <div className="mt-6 grid grid-cols-1 gap-8 text-[15px] leading-7 text-gray-800 dark:text-gray-200 md:grid-cols-2">
-                <div className="space-y-2">
-                  <div className="flex gap-3">
-                    <span className="min-w-[130px] font-semibold text-gray-600 dark:text-gray-400">{t("invoiceNo")}:</span>
-                    <span className="font-medium">{data?.order_no || "N/A"}</span>
-                  </div>
-                  <div className="flex gap-3">
-                    <span className="min-w-[130px] font-semibold text-gray-600 dark:text-gray-400">{t("invoiceDate")}:</span>
-                    <span>{formatDate(data?.order_date)}</span>
-                  </div>
+              <div className="border-b-2 border-blue-800 flex justify-between pb-2 text-center">
+                <div>
+                  {profileData?.data?.image ? (
+                    <img
+                      src={profileData.data.image}
+                      alt={profileData?.data?.profile_name || "Business logo"}
+                      className="mx-auto mb-3 h-20 w-20 object-contain"
+                    />
+                  ) : null}
                 </div>
-                <div className="space-y-2">
-                  <div className="flex gap-3">
-                    <span className="min-w-[130px] font-semibold text-gray-600 dark:text-gray-400">{t("customer")}:</span>
-                    <span>{customerName}</span>
-                  </div>
-                  <div className="flex gap-3">
-                    <span className="min-w-[130px] font-semibold text-gray-600 dark:text-gray-400">{t("tel")}:</span>
-                    <span>{customerPhone}</span>
-                  </div>
-                  <div className="flex gap-3">
-                    <span className="min-w-[130px] font-semibold text-gray-600 dark:text-gray-400">{t("address")}:</span>
-                    <span>{customerAddress}</span>
-                  </div>
-                  <div className="flex gap-3">
-                    <span className="min-w-[130px] font-semibold text-gray-600 dark:text-gray-400">{t("payment")}:</span>
-                    <span className="capitalize">{t(paymentMethod)}</span>
-                  </div>
-                  <div className="flex gap-3">
-                    <span className="min-w-[130px] font-semibold text-gray-600 dark:text-gray-400">{t("exchangeRate")}:</span>
-                    <span>1$ = {money(exchangeRate)} ៛</span>
-                  </div>
+                
+                <div>
+                  <h2 className="mt-6 text-3xl font-bold tracking-[0.08em] text-blue-500 uppercase">{t("invoice")}</h2>
                 </div>
               </div>
+              <div className="flex justify-between py-2">
+                <div>
+                  <h1 className="font-bold text-red-700 dark:text-red-400">No: {data?.order_no || "N/A"}</h1>
+                  <div className="text-xs  text-gray-700 dark:text-gray-400">
+                    <p>{t("exchangeRate")}: <span className="font-semibold">1$ = {exchangeRate} ៛</span></p>
+                    <p>{t("status")}: <span className={`${data?.order_payment_status == "paid"? "text-green-600": "text-orange-600 dark:text-orange-400"}`}>{data?.order_payment_status}</span></p>
+                  </div>
+                </div>
+                <ul className="text-xs text-blue-600">
+                  <li><span>{t('date')}</span>: {formatDate(data?.order_date)}</li>
+                  <li><span>{t('dueDate')}</span>: {formatDate(data?.due_date)}</li>
+                  <li><span>{t('creditTerm')}</span>: {data?.due_date? timeAgo(data?.due_date): "N/A"}</li>
+                </ul>
+              </div>
 
-              <div className="mt-8 overflow-x-auto">
-                <table className="w-full border-collapse text-[15px]">
-                  <thead>
-                    <tr className="border-b-2 border-gray-700 dark:border-gray-600 bg-gray-100 dark:bg-gray-700">
-                      <th className="px-3 py-3 text-left font-bold text-gray-800 dark:text-gray-100">{t("item")}</th>
-                      <th className="px-3 py-3 text-center font-bold text-gray-800 dark:text-gray-100">{t("quantity")}</th>
-                      <th className="px-3 py-3 text-right font-bold text-gray-800 dark:text-gray-100">{t("price")}</th>
-                      <th className="px-3 py-3 text-right font-bold text-gray-800 dark:text-gray-100">{t("amount")}</th>
-                    </tr>
+              <div className="mt-1 grid !text-xs grid-cols-1 gap-8 text-[15px] leading-7 text-gray-800 dark:text-gray-200 md:grid-cols-2">
+                <div className="flex">
+                  <div className="px-2 font-semibold">
+                    <h1>MAINLING INFO</h1>
+                  </div>
+                  <ul className="border-l-2 border-blue-800 px-2 leading-4.5">
+                    <li className="font-semibold">{profileData?.data?.profile_name || t("company")}</li>
+                    <li>{profileData?.data?.address || t("address")}</li>
+                    <li>{profileData?.data?.telephone || "N/A"}</li>
+                  </ul>
+                </div>
+                <div className="flex">
+                  <div className="px-2 font-semibold">
+                    <h1>BILL TO</h1>
+                  </div>
+                  <ul className="border-l-2 border-blue-800 px-2  leading-4.5">
+                    <li>{t('name')}: <span className="font-semibold">{customerName}</span></li>
+                    <li><span>{t('store')}</span>: {'N/A'}</li>
+                    <li><span>{t('address')}</span>: {customerAddress}</li>
+                    <li><span>{t('tel')}</span>: {customerPhone}</li>
+                  </ul>
+                </div>
+                
+                
+              </div>
+              <div className="w-full text-xs mt-6 text-gray-800 dark:text-gray-300">
+                  <ul className="grid grid-cols-4 font-semibold">
+                    <li>{t("salePerson").toLocaleUpperCase()}</li>
+                    <li>{t("shippingMethod").toLocaleUpperCase()}</li>
+                    <li>{t("deliveryDate").toLocaleUpperCase()}</li>
+                    <li>{t("paymentTime").toLocaleUpperCase()}</li>
+                  </ul>
+                  <hr className="my-1 text-blue-700"/>
+                  <ul className="grid grid-cols-4">
+                    <li>{t("mrms").toLocaleUpperCase()}: <span>{sellerName}</span></li>
+                    <li>{t("trucking-co")}</li>
+                    <li>N/A</li>
+                    <li>{t("mrms")}</li>
+                  </ul>
+                </div>
+
+                <table className="w-full table-auto mt-3 text-xs text-gray-800 border-collapse border border-gray-400">
+                  <thead className=" bg-blue-50 dark:bg-blue-400/50 dark:text-gray-200">
+                    <th className="border !border-blue-800 dark:!border-gray-300 p-1 py-3">{t('no').toLocaleUpperCase()}</th>
+                    <th className="border !border-blue-800 dark:!border-gray-300 p-1 py-3">{t('description').toLocaleUpperCase()}</th>
+                    <th className="border !border-blue-800 dark:!border-gray-300 p-1 py-3">{t('code').toLocaleUpperCase()}</th>
+                    <th className="border !border-blue-800 dark:!border-gray-300 p-1 py-3">{t('qty').toLocaleUpperCase()}</th>
+                    <th className="border !border-blue-800 dark:!border-gray-300 p-1 py-3">{t('unitPrice').toLocaleUpperCase()}</th>
+                    <th className="border !border-blue-800 dark:!border-gray-300 p-1 py-3">{t('discount').toLocaleUpperCase()}</th>
+                    <th className="border !border-blue-800 dark:!border-gray-300 p-1 py-3">{t('amount').toLocaleUpperCase()}</th>
                   </thead>
                   <tbody>
                     {itemRows.map((item, index) => {
@@ -205,101 +226,90 @@ const OrderInvoice = () => {
 
 
                       return (
-                        <tr key={item.id || index} className="border-b border-gray-100 dark:border-gray-700 align-top">
-                          <td className="px-3 py-4">
-                            <div className="font-semibold text-gray-900 dark:text-white">{item.item_name}</div>
-                            <div className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                              {item.item_code || "N/A"}
-                              {item.size_name ? ` | ${item.size_name}` : ""}
-                            </div>
+                        <tr key={item.id || index} className="border-b dark:text-gray-200 border-gray-100 dark:border-gray-700 align-top">
+                          <td className="border !border-x-blue-800 dark:!border-gray-400 !border-y-gray-300 p-1 py-2 text-center">{index + 1}</td>
+                          <td className="border !border-x-blue-800 dark:!border-gray-400 !border-y-gray-300 p-1 py-2">
+                            {item.item_name}
+                            
                           </td>
-                          <td className="px-3 py-4 text-center dark:text-gray-200">
+                          <td className="border !border-x-blue-800 dark:!border-gray-400 !border-y-gray-300 p-1 py-2">{item.item_code}</td>
+                          <td className="border !border-x-blue-800 dark:!border-gray-400 !border-y-gray-300 p-1 py-2 text-center">
                             {qty} {item.scale_name || ""}
                           </td>
-                          <td className="px-3 py-4 text-right dark:text-gray-200">{money(price * exchangeRate)} ៛</td>
-                          <td className="px-3 py-4 text-right font-medium dark:text-gray-200">{money(rowTotal * exchangeRate)} ៛</td>
+                          <td className="border !border-x-blue-800 dark:!border-gray-400 !border-y-gray-300 p-1 py-2 text-end">{money(price)}$</td>
+                          <td className="border !border-x-blue-800 dark:!border-gray-400 !border-y-gray-300 p-1 py-2 text-end">{item.discount}</td>
+                          <td className="border !border-x-blue-800 dark:!border-gray-400 !border-y-gray-300 p-1 py-2 text-end">{money(rowTotal)}$ </td>
                         </tr>
                       );
                     })}
+                    <tr className="bg-blue-50  dark:bg-blue-400/50 dark:text-gray-200">
+                      <td colSpan={6} className="border !border-blue-800 dark:!border-gray-300 text-end p-1 py-2 font-semibold">SUBTOTAL AMOUNT</td>
+                      <td className="p-1 text-end !border-blue-800 dark:!border-gray-300 font-semibold border">{money(totals.subtotal)} $</td>
+                    </tr>
+                    <tr className="bg-blue-50  dark:bg-blue-400/50 dark:text-gray-200">
+                      <td colSpan={6} className="border !border-blue-800 dark:!border-gray-300 text-end p-1 py-2 font-semibold">DISCOUNT TOTAL</td>
+                      <td className="p-1 text-end text-red-600 dark:text-red-300 font-semibold !border-blue-800 dark:!border-gray-300 border">-{money(totals.discount)} $</td>
+                    </tr>
+                    <tr className="bg-blue-50  dark:bg-blue-400/50 dark:text-gray-200">
+                      <td colSpan={6} className="border !border-blue-800 dark:!border-gray-300 text-end p-1 py-2 font-semibold">PAID</td>
+                      <td className="p-1 text-green-600 font-semibold text-end !border-blue-800 dark:!border-gray-300 border">{money(totals.paid)} $</td>
+                    </tr>
+                    <tr className="bg-blue-50  dark:bg-blue-400/50 dark:text-gray-200">
+                      <td colSpan={6} className="border !border-blue-800 dark:!border-gray-300 text-end p-1 py-2 font-semibold">TOTAL AMOUNT($)</td>
+                      <td className="p-1 text-end !border-blue-800 dark:!border-gray-300 font-semibold border">{money(totals.total)} $</td>
+                    </tr>
+                    <tr className="bg-blue-50  dark:bg-blue-400/50 dark:text-gray-200">
+                      <td colSpan={6} className="border !border-blue-800 dark:!border-gray-300 text-end p-1 py-2 font-semibold">TOTAL AMOUNT(៛)</td>
+                      <td className="p-1 text-end !border-blue-800 dark:!border-gray-300 font-semibold border">{money(totals.total * exchangeRate)} ៛</td>
+                    </tr>
+                    <tr className="bg-blue-50  dark:bg-blue-400/50 dark:text-gray-200">
+                      <td colSpan={6} className="border !border-blue-800 dark:!border-gray-300 text-end p-1 py-2 font-semibold">BALANCE($)</td>
+                      <td className="p-1 text-red-600 dark:text-red-300 font-semibold text-end !border-blue-800 dark:!border-gray-300 border">{money(totals.balance)} $</td>
+                    </tr>
+                    <tr className="bg-blue-50  dark:bg-blue-400/50 dark:text-gray-200">
+                      <td colSpan={6} className="border !border-blue-800 dark:!border-gray-300 text-end p-1 py-2 font-semibold">BALANCE(៛)</td>
+                      <td className="p-1 text-red-600 dark:text-red-300 font-semibold text-end !border-blue-800 dark:!border-gray-300 border">{money(totals.balance * exchangeRate)} ៛</td>
+                    </tr>
+                    
                   </tbody>
                 </table>
-              </div>
 
               <div className="mt-6 grid grid-cols-1 gap-8 md:grid-cols-[180px,1fr]">
-                <div className="flex justify-center md:justify-start">
+                {/* <div className="flex justify-center md:justify-start">
                   <div className="rounded-sm border border-gray-300 dark:border-gray-600 bg-white p-3">
-                    {/* <QRCodeCanvas value={qrValue} size={120} level="H" /> */}
                     <img src={profileData?.data?.qr_code} width={200} height={120} alt="" />
                     <p className="mt-2 text-center text-xs font-semibold text-gray-700 dark:text-gray-300">
                       {profileData?.data?.profile_name || t("invoice")}
                     </p>
                   </div>
-                </div>
+                </div> */}
 
-                <div className="flex justify-end">
-                  <div className="w-full max-w-[340px]">
-                    <div className="space-y-2 text-[15px] text-gray-700 dark:text-gray-200">
-                      <div className="flex items-baseline justify-between gap-4">
-                        <span className="font-medium">{t("subtotal")}:</span>
-                        <span>{money(totals.subtotal * exchangeRate)} ៛</span>
-                      </div>
-                      <div className="flex items-baseline justify-between gap-4">
-                        <span className="font-medium">{t("discount")}:</span>
-                        <span>- {money(totals.discount * exchangeRate)} ៛</span>
-                      </div>
-                      <div className="flex items-baseline justify-between gap-4">
-                        <span className="font-medium">{t("deliveryFee")}:</span>
-                        <span>+ {money(totals.delivery * exchangeRate)} ៛</span>
-                      </div>
-                      <div className="flex items-baseline justify-between gap-4 border-b border-gray-300 dark:border-gray-600 pb-3">
-                        <span className="font-medium">{t("tax")}:</span>
-                        <span>+ {money(totals.tax * exchangeRate)} ៛</span>
-                      </div>
-                      <div className="flex items-baseline justify-between gap-4 pt-1 text-lg font-bold text-gray-900 dark:text-white">
-                        <span>{t("grandTotal")}:</span>
-                        <span>{money(totals.total * exchangeRate)} ៛</span>
-                      </div>
-                      <div className="flex items-baseline justify-between gap-4 text-lg font-bold text-gray-700 dark:text-gray-300">
-                        <span>{t("usdTotal")}:</span>
-                        <span>$ {money(totals.total)}</span>
-                      </div>
-                    </div>
-
-                    <div className="mt-5 border-t border-dashed border-gray-300 dark:border-gray-600 pt-4 text-[15px]">
-                      <div className="mb-2 flex items-baseline justify-between gap-4 text-green-700 dark:text-green-400">
-                        <span className="font-semibold text-gray-700 dark:text-gray-300">{t("paid")}:</span>
-                        <span className="font-bold">{money(totals.paid * exchangeRate)} ៛</span>
-                      </div>
-                      <div className="mb-2 flex items-baseline justify-between gap-4 text-gray-900 dark:text-white">
-                        <span className="font-semibold">{t("balance")}:</span>
-                        <span className="font-bold">{money(totals.balance * exchangeRate)} ៛</span>
-                      </div>
-                      <div className="flex items-baseline justify-between gap-4">
-                        <span className="font-semibold text-gray-700 dark:text-gray-300">{t("status")}:</span>
-                        <span className="font-medium capitalize dark:text-gray-200">{t(paymentStatus)}</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                
               </div>
 
-              <div className="mt-16 grid grid-cols-3 gap-8 text-center text-[15px] text-gray-700 dark:text-gray-200">
+              <div className=" grid grid-cols-4 gap-8 text-center text-xs text-gray-700 dark:text-gray-200">
                 <div>
-                  <p className="mb-16 font-medium">{t("customer")}</p>
+                  <p className="mb-16 font-medium">{t("customer").toLocaleUpperCase()}</p>
                   <div className="pt-3">
-                    <p className="font-semibold">{customerName}</p>
+                    <p className="font-semibold">{t("mrms")}: {customerName != 'N/A'? customerName: '. . . . . . . .'}</p>
                   </div>
                 </div>
                 <div>
-                  <p className="mb-16 font-medium">{t("verifiedBy")}</p>
-                  <div className="mx-auto w-28 border-t border-gray-400 dark:border-gray-600 pt-3">
-                    <p className="font-semibold">&nbsp;</p>
+                  <p className="mb-16 font-medium">{t("deliver").toLocaleUpperCase()}</p>
+                  <div className="pt-3">
+                    <p className="font-semibold">{t("mrms")}: {deliverName != 'N/A'? deliverName: '. . . . . . . .'}</p>
                   </div>
                 </div>
                 <div>
-                  <p className="mb-16 font-medium">{t("seller")}</p>
+                  <p className="mb-16 font-medium">{t("stock").toLocaleUpperCase()}</p>
                   <div className="pt-3">
-                    <p className="font-semibold">{sellerName}</p>
+                    <p className="font-semibold">{t("mrms")}: . . . . . . . .</p>
+                  </div>
+                </div>
+                <div>
+                  <p className="mb-16 font-medium">{t("seller").toLocaleUpperCase()}</p>
+                  <div className="pt-3">
+                    <p className="font-semibold">{t("mrms")}: {sellerName != 'N/A'? sellerName: '. . . . . . . .'}</p>
                   </div>
                 </div>
               </div>

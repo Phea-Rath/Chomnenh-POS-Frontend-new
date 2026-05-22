@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { useEffect, useState } from "react"
 import { useGetMenuInventoryQuery } from "../../app/Features/permissionSlice";
 import { useTranslation } from "react-i18next";
+import icon from "../assets/stock.png"
 
 const colors = [
     { iconBg: "bg-blue-50 dark:bg-blue-900/30", hoverBorder: "hover:border-blue-200 dark:hover:border-blue-700" },
@@ -66,7 +67,7 @@ const Inventories = () => {
                                     to={perm?.menu_path}
                                     className={`
                                         group flex flex-col items-center justify-center p-6 border-gradient-gold
-                                        rounded-sm border border-gray-100 dark:border-gray-700 shadow-sm
+                                         border border-gray-100 dark:border-gray-700
                                         hover:shadow-xl hover:shadow-gray-200/50 dark:hover:shadow-black/20 transition-all duration-300
                                         w-full min-h-[160px] text-center space-y-4
                                         ${color.hoverBorder}
@@ -75,11 +76,12 @@ const Inventories = () => {
                                     <div className={`p-2 rounded-sm ${color.iconBg} transition-transform group-hover:scale-110 duration-300`}>
                                         <img
                                             className="w-10 h-10 white-icon object-contain"
-                                            src={perm?.menu_icon}
+                                            src={perm?.menu_icon ?? icon}
                                             alt={perm?.menu_name}
+                                            onError={(e) => e.target.src = icon}
                                         />
                                     </div>
-                                    <h2 className="font-semibold text-gray-700 dark:text-gray-200 group-hover:text-gray-900 dark:group-hover:text-white transition-colors">
+                                    <h2 className="font-semibold text-gray-500 dark:text-gray-200 group-hover:text-gray-900 dark:group-hover:text-white transition-colors">
                                         {perm?.menu_name}
                                     </h2>
                                 </Link>

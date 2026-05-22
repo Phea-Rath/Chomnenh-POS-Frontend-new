@@ -701,7 +701,7 @@ const ProductionForm = () => {
                     title: 'material_name',
                     subtitle: 'material_code',
                     image: 'material_image',
-                    quantity: 'in_stock'
+                    quantity: 'stock'
                   }}
                   value={modalForm.raw_material_id}
                   onSelected={handleRawMaterialSelect}

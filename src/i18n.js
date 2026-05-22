@@ -1,6 +1,7 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
+import { List } from 'antd';
 
 const resources = {
   en: {
@@ -1259,10 +1260,33 @@ const resources = {
       totalInStock: 'Total in Stock',
       selectedWarehouse: 'Selected Warehouse',
       downloadTemplate: 'Download Template',
+      mrms: 'Mr/Ms',
+      deliver: 'Deliver',
+      type: 'Type',
+      name: 'Name',
+      profile: 'Profile',
+      logout: 'Logout',
+      dashboard: 'Dashboard',
+      home: 'Home',
+      settings: 'Settings',
+      notifications: 'Notifications',
+      store: 'Store',
+      no: 'No.',
+      itemsCount: 'Items Count',
+      list: 'List',
     }
   },
   kh: {
     translation: {
+      itemsCount: "ចំនួនទំនិញ",
+      list: "បញ្ជី",
+      name: "ឈ្មោះ",
+      profile: "ប្រវត្តិរូប",
+      store: "ហាង",
+      no: "លេខ",
+      deliver: "អ្នកដឹកជញ្ជូន",
+      type: "ប្រភេទ",
+      mrms: "លោក/លោកស្រី",
       profile: "ព័ត៌មានផ្ទាល់ខ្លួន",
       logout: "ចាកចេញ",
       dashboard: "ផ្ទាំងគ្រប់គ្រង",

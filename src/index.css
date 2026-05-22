@@ -91,7 +91,7 @@
     border: 2px solid transparent;
     background-origin: border-box;
     background-clip: padding-box, border-box;
-    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+    /* box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); */
     color: #1E293B;
     background-image:
       linear-gradient(to right, white, #ffffff),

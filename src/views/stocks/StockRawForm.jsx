@@ -463,7 +463,21 @@ const StockRawForm = () => {
                                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                                             <span className="text-red-500">*</span> {t('searchRawMaterials')}
                                         </label>
-                                        <RichSearch data={fieldMaterials} keyFields={{id: 'id', title: 'material_name', subtitle: 'material_code', image: 'material_image', price: 'material_cost', quantity: 'stock'}} onScrollReader={onScrollFetch} onSelected={onSelectMaterial} onSearch={setSearchMaterial} placeholder={t('searchRawMaterialsPlaceholder')}/>
+                                        <RichSearch 
+                                            data={fieldMaterials} 
+                                            keyFields={{
+                                                id: 'id', 
+                                                title: 'material_name', 
+                                                subtitle: 'material_code', 
+                                                image: 'material_image', 
+                                                price: 'material_cost', 
+                                                // quantity: 'stock'
+                                            }} 
+                                            onScrollReader={onScrollFetch} 
+                                            onSelected={onSelectMaterial} 
+                                            onSearch={setSearchMaterial} 
+                                            placeholder={t('searchRawMaterialsPlaceholder')}
+                                        />
                                     </div>      
 
                                     {/* Stock Details Card */}

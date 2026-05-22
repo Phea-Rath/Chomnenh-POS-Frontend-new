@@ -33,14 +33,15 @@ import {
   FaClock,
   FaCheck,
 } from "react-icons/fa";
-import { LuRefreshCw } from "react-icons/lu";
+import { LuCalendar, LuRefreshCw } from "react-icons/lu";
 import { FaXmark } from "react-icons/fa6";
 import dayjs from "dayjs";
 import api from "../../services/api";
 import ExportExcel from "../../services/ExportExcel";
 import { BiEdit, BiTrash } from "react-icons/bi";
 import { useTranslation } from "react-i18next";
-import { set } from "date-fns";
+import RichSearch from "../../utils/RichSearch";
+import { DatePicker } from "antd";
 import { MdPayment } from "react-icons/md";
 import RefreshButton from "../../utils/RefreshButton";
 
@@ -80,6 +81,12 @@ const Purchases = () => {
   const [cancelPurchase] = useCancelPurchaseMutation();
   const [uncancelPurchase] = useUncancelPurchaseMutation();
   const [confirmPurchase] = useConfirmPurchaseMutation();
+  const statusOptions = [
+    { id: "all", title: t("allStatus") },
+    { id: "0", title: t("pending") },
+    { id: "1", title: t("completed") },
+    { id: "2", title: t("cancelled") },
+  ];
 
   useEffect(() => {
     const items = data?.data || [];
@@ -107,7 +114,7 @@ const Purchases = () => {
       const end = dayjs(dateRange.end);
       result = result.filter((purchase) => {
         const purchaseDate = dayjs(purchase.purchase_date);
-        return purchaseDate.isAfter(start) && purchaseDate.isBefore(end.add(1, 'day'));
+        return !purchaseDate.isBefore(start, "day") && !purchaseDate.isAfter(end, "day");
       });
     }
 
@@ -316,26 +323,6 @@ const Purchases = () => {
     );
   };
 
-  const DateRangePicker = ({ value, onChange }) => {
-    return (
-      <div className="flex items-center gap-2">
-        <input
-          type="date"
-          value={value.start ? dayjs(value.start).format("YYYY-MM-DD") : ""}
-          onChange={(e) => onChange({ ...value, start: e.target.value ? dayjs(e.target.value) : null })}
-          className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100"
-        />
-        <span className="text-gray-500">-</span>
-        <input
-          type="date"
-          value={value.end ? dayjs(value.end).format("YYYY-MM-DD") : ""}
-          onChange={(e) => onChange({ ...value, end: e.target.value ? dayjs(e.target.value) : null })}
-          className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100"
-        />
-      </div>
-    );
-  };
-
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -390,7 +377,7 @@ const Purchases = () => {
                     }`}
                 >
                   <IoIosList className="text-lg" />
-                  <span>{t('listView')}</span>
+                  <span>{t('list')}</span>
                 </button>
                 <button
                   onClick={() => setViewMode("grid")}
@@ -398,7 +385,7 @@ const Purchases = () => {
                     }`}
                 >
                   <IoIosGrid className="text-lg" />
-                  <span>{t('gridView')}</span>
+                  <span>{t('grid')}</span>
                 </button>
               </div>
 
@@ -417,18 +404,35 @@ const Purchases = () => {
             </div>
 
             <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100"
-              >
-                <option value="all">{t('allStatus')}</option>
-                <option value="0">{t('pending')}</option>
-                <option value="1">{t('completed')}</option>
-                <option value="2">{t('cancelled')}</option>
-              </select>
+              <div className="min-w-40">
+                <RichSearch
+                  data={statusOptions}
+                  keyFields={{ id: "id", title: "title" }}
+                  value={statusFilter}
+                  onSelected={setStatusFilter}
+                  placeholder={t("allStatus")}
+                />
+              </div>
 
-              <DateRangePicker value={dateRange} onChange={setDateRange} />
+              <DatePicker
+                value={dateRange.start ? dayjs(dateRange.start) : null}
+                onChange={(_, dateString) =>
+                  setDateRange((prev) => ({ ...prev, start: dateString || null }))
+                }
+                format="YYYY-MM-DD"
+                className="date-picker"
+                placeholder={t("startDate")}
+              />
+
+              <DatePicker
+                value={dateRange.end ? dayjs(dateRange.end) : null}
+                onChange={(_, dateString) =>
+                  setDateRange((prev) => ({ ...prev, end: dateString || null }))
+                }
+                format="YYYY-MM-DD"
+                className="date-picker"
+                placeholder={t("endDate")}
+              />
             </div>
           </div>
         </div>
@@ -472,7 +476,7 @@ const Purchases = () => {
 
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
           {viewMode === "list" && (
-            <div className="bg-white dark:bg-slate-800/50 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+            <div className="bg-white dark:bg-slate-800/50 border border-gray-200 dark:border-gray-700 overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full border-collapse text-sm">
                   <thead className="bg-gray-100 dark:bg-slate-800 border-b border-gray-300 dark:border-gray-700">
@@ -490,14 +494,14 @@ const Purchases = () => {
                   <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                     {filteredPurchases.map((item) => (
                       <tr key={item.purchase_id} className="hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors">
-                        <td className="px-6 py-4 font-medium text-blue-600 dark:text-blue-400">{item.purchase_no}</td>
+                        <td className="px-6 py-4 font-medium text-blue-600 dark:text-blue-400"><pre>{item.purchase_no}</pre></td>
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-2 dark:text-gray-200">
                             <FaUser className="text-gray-400 w-4 h-4" />
                             <span>{item.supplier_name}</span>
                           </div>
                         </td>
-                        <td className="px-6 py-4 text-gray-600 dark:text-gray-400">{item.purchase_date}</td>
+                        <td className="px-6 py-4 text-gray-600 dark:text-gray-400"><pre className="flex items-center gap-2"><LuCalendar size={15} />{dayjs(item.purchase_date).format('MMM DD, YYYY')}</pre></td>
                         <td className="px-6 py-4 text-right font-semibold dark:text-gray-200">${formatCurrency(item.total_amount)}</td>
                         <td
                           className={`px-6 py-4 text-right font-semibold ${item.balance > 0 ? "text-red-600 dark:text-red-400" : "text-green-600 dark:text-green-400"
@@ -589,7 +593,7 @@ const Purchases = () => {
           )}
 
           {viewMode === "grid" && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
               {filteredPurchases.map((item) => {
                 const statusInfo = getStatusInfo(item.status);
                 const borderColor = {
@@ -603,13 +607,13 @@ const Purchases = () => {
                     key={item.purchase_id}
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    className={`bg-white dark:bg-slate-800 rounded-lg border-2 ${borderColor} shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden`}
+                    className={`bg-white dark:bg-slate-800 border-2 ${borderColor} hover:shadow-md transition-all duration-300 overflow-hidden`}
                   >
                     <div className="p-6">
-                      <div className="flex justify-between items-start mb-4 border-b border-b-gray-400 dark:border-b-gray-600 pb-2">
+                      <div className="flex justify-between items-start mb-4 border-b border-b-gray-300 dark:border-b-gray-600 pb-2">
                         <div>
-                          <h3 className="font-bold text-lg text-blue-600 dark:text-blue-400">{item.purchase_no}</h3>
-                          <p className="text-sm text-gray-500 dark:text-gray-400">{item.purchase_date}</p>
+                          <h3 className="font-bold text-sm text-blue-600 dark:text-blue-400">{item.purchase_no}</h3>
+                          <p className="text-sm text-gray-500 dark:text-gray-400"><pre className="flex items-center gap-2"><LuCalendar size={15} />{dayjs(item.purchase_date).format('MMM DD, YYYY')}</pre></p>
                         </div>
                         <Badge status={item.status} />
                       </div>
@@ -638,7 +642,7 @@ const Purchases = () => {
 
                       <div className="text-sm text-gray-500 dark:text-gray-400 mb-4">{t('createdBy')}: {item.created_by_name}</div>
 
-                      <div className="flex flex-wrap justify-start gap-2 border-t dark:border-gray-700 pt-2">
+                      <div className="flex flex-wrap justify-start gap-2 border-t border-gray-300 dark:border-gray-700 pt-2">
                         {item.status === 0 && (
                           <>
                             <button

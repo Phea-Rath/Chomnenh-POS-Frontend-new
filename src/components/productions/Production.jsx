@@ -20,7 +20,8 @@ import {
     LuChevronRight,
     LuChevronsLeft,
     LuChevronsRight,
-    LuX
+    LuX,
+    LuCheck
 } from 'react-icons/lu';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router';
@@ -34,6 +35,8 @@ import { useDebounce } from 'use-debounce';
 import api from '../../services/api';
 import { toast } from 'react-toastify';
 import { useTranslation } from 'react-i18next';
+import AlertMessage from '../../services/AlertMessage';
+import AlertBox from '../../services/AlertBox';
 
 dayjs.extend(relativeTime);
 
@@ -59,6 +62,8 @@ const Production = () => {
     const [expandedRows, setExpandedRows] = useState({}); // for expandable materials in table
     const [deleteConfirmId, setDeleteConfirmId] = useState(null); // for custom delete confirmation
     const [debouncedSearch] = useDebounce(searchTerm, 500);
+    const [id, setId] = useState(null);
+    const [isOpen, setIsOpen] = useState(false);
     const { data, refetch, isLoading: queryLoading } = useGetAllProductionQuery({
         limit: pagination.pageSize,
         page: pagination.current,
@@ -184,6 +189,12 @@ const Production = () => {
         }
     };
 
+    const handleSubmit = async (id) => {
+        event.preventDefault();
+        setId(id);
+        setIsOpen(true);
+    }
+
     const handleSort = (field) => {
         let order = 'asc';
         if (sortConfig.field === field && sortConfig.order === 'asc') {
@@ -205,6 +216,25 @@ const Production = () => {
 
     const toggleExpandRow = (id) => {
         setExpandedRows(prev => ({ ...prev, [id]: !prev[id] }));
+    };
+
+    const handleConfirm = async (id) => {
+        setId(id);
+        event.preventDefault();
+        try {            
+            setLoading(true);
+            const res = await api.put(`/confirm_production/${id}`, {}, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            if (res.status === 200) {
+                toast.success(t('productionConfirmed'));
+                refetch();
+            }
+        } catch (error) {
+            toast.error(t('confirmFailed'));
+        } finally {
+            setLoading(false);
+        }
     };
 
     // Custom delete confirmation modal
@@ -419,6 +449,14 @@ const Production = () => {
                                             <td className="p-3"><Badge isDeleted={item.is_deleted} /></td>
                                             <td className="p-3">
                                                 <div className="flex justify-center gap-2">
+                                                    {item.status !== 'confirmed' && (
+                                                        <button
+                                                            onClick={() => handleSubmit(item.id)}
+                                                            className="p-2 bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 rounded hover:bg-amber-200 dark:hover:bg-amber-900/50 transition-colors"
+                                                            title={t('confirm')}
+                                                        >
+                                                            <LuCheck size={14} />
+                                                    </button>)}
                                                     <button
                                                         onClick={() => navigate(`view/${item.id}`)}
                                                         className="p-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors"
@@ -428,7 +466,7 @@ const Production = () => {
                                                     </button>
                                                     <button
                                                         onClick={() => navigate(`/inventories/production/edit/${item.id}`)}
-                                                        disabled={item.is_deleted === 1}
+                                                        disabled={item.status === 'confirmed'}
                                                         className={`p-2 rounded transition-colors ${item.is_deleted === 1 ? 'bg-gray-100 text-gray-400 dark:bg-gray-700 dark:text-gray-600 cursor-not-allowed' : 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/50'}`}
                                                         title={t('edit')}
                                                     >
@@ -559,6 +597,14 @@ const Production = () => {
                                     <span className="text-gray-600 dark:text-gray-400">{t('by')} {item.created_by_name}</span>
                                 </div>
                                 <div className="flex items-center justify-between pt-3 border-t border-gray-100 dark:border-gray-700 transition-colors">
+                                    {item.status !== 'confirmed' && (
+                                        <button
+                                            onClick={() => handleSubmit(item.id)}
+                                            className="p-2 bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 rounded hover:bg-amber-200 dark:hover:bg-amber-900/50 transition-colors"
+                                            title={t('confirm')}
+                                        >
+                                            <LuCheck size={14} />
+                                    </button>)}
                                     <button
                                         onClick={() => navigate(`view/${item.id}`)}
                                         className="p-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors"
@@ -568,7 +614,7 @@ const Production = () => {
                                     </button>
                                     <button
                                         onClick={() => navigate(`/inventories/production/edit/${item.id}`)}
-                                        disabled={item.is_deleted === 1}
+                                        disabled={item.status === 'confirmed'}
                                         className={`p-2 rounded transition-colors ${item.is_deleted === 1 ? 'bg-gray-100 text-gray-400 dark:bg-gray-700 dark:text-gray-600 cursor-not-allowed' : 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/50'}`}
                                         title={t('edit')}
                                     >
@@ -599,6 +645,15 @@ const Production = () => {
             className="min-h-screen bg-transparent p-4 md:p-6 view-page"
         >
             <DeleteConfirmModal />
+            <AlertBox
+                message={'Are you sure that you want confirm and add to stock'}
+                isOpen={isOpen}
+                onCancel={() => setIsOpen(false)}
+                title={'Confirm Production'}
+                confirmText='Confirm'
+                cancelText='No'
+                onConfirm={handleConfirm}
+             />
 
             <div className="mx-auto">
                 {/* Header */}
@@ -688,9 +743,9 @@ const Production = () => {
 
                 {/* Filters and Controls */}
                 <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border text-sm border-gray-200 dark:border-gray-700 p-4 mb-3 transition-colors">
-                    <div className="grid grid-cols-1 lg:grid-cols-8 gap-4">
+                    <div className="flex flex-wrap items-center gap-4">
                         {/* Search */}
-                        <div className="lg:col-span-4">
+                        <div className="lg:col-span-4 grow">
                             <div className="relative">
                                 <LuSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                                 <input

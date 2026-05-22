@@ -115,6 +115,7 @@ import WhiteBoard from "./utils/WhiteBoard";
 import ImportTools from "./utils/ImportTools";
 import OrderInvoiceForm from "./components/orders/OrderInvoiceForm";
 import OrderInvoiceList from "./components/orders/OrderInvoiceList";
+import StockInvoice from "./components/stocks/StockInvoice";
 
 
 function ProtectedRoute({ children }) {
@@ -334,6 +335,10 @@ const router = createBrowserRouter([
       {
         path: "/home/record-stock",
         element: <RecordStock />,
+      },
+      {
+        path: "/stock-invoice/:id",
+        element: <StockInvoice />,
       },
       {
         path: "/home/record-stock-sale",

@@ -8,6 +8,7 @@ import { useGetMenuSidebarQuery } from "../../app/Features/permissionSlice";
 import { useTranslation } from "react-i18next";
 import logo from "../assets/logo.jpg";
 import orderInvoice from "../assets/order-invoice.png";
+import icon from "../assets/stock.png"
 
 const Sidebar = ({ darkMode }) => {
   const { setSidebar, sidebar } = useOutletsContext();
@@ -92,7 +93,7 @@ const Sidebar = ({ darkMode }) => {
       >
         <div className={`white-icon-sidebar transition-all duration-300
           `}>
-          {item?.menu_icon && <img className={item?.menu_icon ? 'w-5 h-5' : ''} src={item?.menu_icon} alt="" />}
+          {item?.menu_icon && <img className={item?.menu_icon ? 'w-5 h-5' : ''} src={item?.menu_icon} onError={(e)=>e.target.src=icon} alt="" />}
         </div>
 
         <span className={`font-semibold text-[14px] tracking-tight ${collapsed && !isMobile ? 'hidden' : 'flex-1'}`}>

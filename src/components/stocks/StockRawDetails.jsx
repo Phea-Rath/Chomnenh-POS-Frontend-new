@@ -34,7 +34,6 @@ const StockRawDetail = () => {
   const { data: profile } = useGetCurrentProfileQuery(token);
 
   const stock = data?.data || {};
-  console.log(profile);
 
 
   // Format dates
@@ -124,7 +123,7 @@ const StockRawDetail = () => {
         <div className="flex gap-2">
           <Tooltip title={t('print')}>
             <button
-              onClick={() => window.print()}
+              onClick={() => navigator('/stock-invoice'+`/${id}`)}
               className="p-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all shadow-sm"
             >
               <FaPrint className="w-4 h-4" />

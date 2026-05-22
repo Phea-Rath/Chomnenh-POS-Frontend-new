@@ -343,25 +343,24 @@ const RawMaterials = () => {
                                                 </div>
                                             </div>
                                         </td>
-                                        <td className="p-3">
+                                        <td className="p-3 text-center">
+                                            <LuScale className="text-gray-500 dark:text-gray-400" />
                                             <div className="flex items-center gap-1 text-sm dark:text-gray-300">
-                                                <LuScale className="text-gray-500 dark:text-gray-400" />
-                                                <span>{item.primary_unit}</span>
+                                                {/* <span>{item.primary_unit.toUpperCase()}</span> */}
                                                 {item.secondary_unit && (
                                                     <>
-                                                        <span>→</span>
-                                                        <span>{item.secondary_unit}</span>
+                                                        
                                                         {item.conversion_value && (
-                                                            <span className="text-xs text-gray-500 dark:text-gray-400 ml-1">
-                                                                (1 {item.primary_unit} = {item.conversion_value} {item.secondary_unit})
-                                                            </span>
+                                                            <pre className="text-xs text-gray-500 dark:text-gray-400 ml-1">
+                                                                1 {item.primary_unit.toUpperCase()} = {item.conversion_value} {item.secondary_unit.toUpperCase()}
+                                                            </pre>
                                                         )}
                                                     </>
                                                 )}
                                             </div>
                                         </td>
                                         <td className="p-3">
-                                            <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+                                            <div className="grid grid-cols-1 gap-x-4 gap-y-1 text-xs">
                                                 {stockFields.map(({ key, label }) => (
                                                     <div key={key} className="flex items-center justify-between gap-2">
                                                         <span className="text-gray-500 dark:text-gray-400">{label}:</span>
@@ -428,7 +427,7 @@ const RawMaterials = () => {
                             key={item.id}
                             initial={{ opacity: 0, scale: 0.9 }}
                             animate={{ opacity: 1, scale: 1 }}
-                            className="overflow-hidden rounded-[24px] border border-slate-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-[0_18px_50px_-28px_rgba(15,23,42,0.35)] dark:shadow-none transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_20px_55px_-28px_rgba(37,99,235,0.35)]"
+                            className="overflow-hidden border border-slate-200 dark:border-gray-700 bg-white dark:bg-gray-800 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_20px_55px_-28px_rgba(37,99,235,0.35)]"
                         >
                             <div className="relative h-44 overflow-hidden bg-slate-900">
                                 <Avatar
@@ -443,9 +442,9 @@ const RawMaterials = () => {
                                     <h3 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white truncate">{item.material_name}</h3>
                                     <p className="mt-1 text-sm text-slate-500 dark:text-gray-400">{item.material_code}</p>
                                     <p className="mt-2 text-[15px] text-slate-600 dark:text-gray-300">
-                                        {t('unit')}: <span className="font-semibold text-slate-800 dark:text-gray-100">{item.primary_unit}</span>
+                                        {t('unit')}: <span className="font-semibold text-slate-800 dark:text-gray-100">{item.primary_unit.toUpperCase()}</span>
                                         {item.secondary_unit && (
-                                            <span className="text-slate-500 dark:text-gray-400"> | 1 {item.primary_unit} = {item.conversion_value} {item.secondary_unit}</span>
+                                            <span className="text-slate-500 dark:text-gray-400"> | 1 {item.primary_unit.toUpperCase()} = {item.conversion_value} {item.secondary_unit.toUpperCase()}</span>
                                         )}
                                     </p>
                                 </div>
@@ -466,7 +465,7 @@ const RawMaterials = () => {
                                 <div className="rounded-[20px] border border-blue-100 dark:border-blue-900/30 bg-gradient-to-b from-sky-50 to-blue-50 dark:from-blue-900/20 dark:to-blue-800/10 px-4 py-2 text-center transition-colors">
                                     <p className="text-sm font-semibold text-blue-600 dark:text-blue-400">{t('availableStock')}</p>
                                     <p className="mt-2 text-xl font-black tracking-tight text-slate-900 dark:text-white">
-                                        {formatQuantity(getStockValue(item, 'in_stock'))} {item.primary_unit}
+                                        {formatQuantity(getStockValue(item, 'in_stock'))} {item.primary_unit.toUpperCase()}
                                     </p>
                                     <p className="mt-2 text-sm text-slate-500 dark:text-gray-400">
                                         {t('cost')}: <span className="font-semibold text-slate-700 dark:text-gray-200">{formatCurrency(item.material_cost * getStockValue(item, 'in_stock'))}</span>

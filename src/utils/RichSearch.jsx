@@ -42,9 +42,14 @@ export default function RichSearch({ data = [], keyFields={}, onScrollReader, on
     useEffect(() => {
         if(keyFields && Object.keys(keyFields).length > 0){
             const convertedData = convertDataForRichSearch(data, keyFields);
-            setFilteredItems(convertedData.filter((item) =>
-                item?.title?.toLowerCase().includes(query?.toLowerCase())
-            ));
+            const normalizedQuery = typeof query === "string" ? query.trim().toLowerCase() : "";
+            const nextItems = !normalizedQuery
+                ? convertedData
+                : convertedData.filter((item) =>
+                    item?.title?.toLowerCase().includes(normalizedQuery)
+                );
+
+            setFilteredItems(nextItems);
             setSelectId(value);
             let dataValue;
             if(query == null){
@@ -58,7 +63,7 @@ export default function RichSearch({ data = [], keyFields={}, onScrollReader, on
                 }
             }
         }
-    }, [data, value, keyFields, isOpen]);
+    }, [data, value, keyFields, query, isOpen]);
     
     
     useEffect(() => {
@@ -118,6 +123,8 @@ export default function RichSearch({ data = [], keyFields={}, onScrollReader, on
             setQuery('');
             inputRef.current.value = '';
             inputRef.current.placeholder = query;
+        }else{
+            setQuery('');
         }
     }
 
@@ -173,7 +180,7 @@ export default function RichSearch({ data = [], keyFields={}, onScrollReader, on
                         left: `${dropdownPosition.left}px`,
                         width: `${dropdownPosition.width}px`,
                     }}
-                    className=" max-h-60 overflow-auto rounded-sm border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-900"
+                    className="absolute max-h-60 z-[9999] overflow-auto rounded-sm border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-900"
                 >
                     {filteredItems.length > 0 ? filteredItems.map((item, idx) => (
                         <li

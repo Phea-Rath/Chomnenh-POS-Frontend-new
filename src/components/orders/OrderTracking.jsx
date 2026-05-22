@@ -9,7 +9,6 @@ import {
     FaChevronLeft,
     FaChevronRight,
     FaClock,
-    FaEdit,
     FaEye,
     FaExclamationCircle,
     FaMapMarkerAlt,
@@ -21,6 +20,7 @@ import {
     FaTimes,
     FaTruck,
     FaUser,
+    FaEdit,
 } from 'react-icons/fa';
 import { TbPackage } from 'react-icons/tb';
 import { toast } from 'react-toastify';
@@ -32,6 +32,8 @@ import { useGetAllUserQuery } from '../../../app/Features/usersSlice';
 import { useGetAllWasteQuery } from '../../../app/Features/notificationSlice';
 import { useTranslation } from 'react-i18next';
 import RefreshButton from '../../utils/RefreshButton';
+import EnumSelect from '../../utils/EnumSelect';
+import RichSearch from '../../utils/RichSearch';
 
 const statusOptions = [
     { id: 1, label: 'Pending', icon: FaClock, color: 'bg-yellow-100 text-yellow-800 border-yellow-200' },
@@ -41,6 +43,12 @@ const statusOptions = [
     { id: 6, label: 'Completed', icon: FaCheckCircle, color: 'bg-green-100 text-green-800 border-green-200' },
     { id: 7, label: 'Cancelled', icon: FaExclamationCircle, color: 'bg-red-100 text-red-800 border-red-200' },
 ];
+const trackingStatusSelectOptions = statusOptions.map((status) => ({
+    value: status.id,
+    label: status.label,
+    icon: status.icon,
+    color: status.color,
+}));
 
 const PAGE_SIZE = 10;
 
@@ -50,6 +58,7 @@ const OrderTracking = () => {
     const token = localStorage.getItem('token');
     const [orders, setOrders] = useState([]);
     const [editingOrder, setEditingOrder] = useState(null);
+    const [statusUpdatingOrderId, setStatusUpdatingOrderId] = useState(null);
     const [editingField, setEditingField] = useState({});
     const [tempValues, setTempValues] = useState({});
     const [showItemsModal, setShowItemsModal] = useState(false);
@@ -81,6 +90,23 @@ const OrderTracking = () => {
         deliver_id: filters.deliver_id,
         user_id: filters.user_id,
     });
+    const deliverFilterOptions = useMemo(
+        () =>
+            (delivers?.data || []).map((service) => ({
+                deliver_id: service.deliver_id,
+                deliver_name: service.deliver_name,
+            })),
+        [delivers?.data]
+    );
+    const userFilterOptions = useMemo(
+        () =>
+            (usersData?.data || []).map((user) => ({
+                id: user.id,
+                username: user.username,
+                image: user.image,
+            })),
+        [usersData?.data]
+    );
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -101,11 +127,6 @@ const OrderTracking = () => {
     const pagination = deliveryTrackingData?.pagination || {};
     const totalOrders = pagination.total || orders.length || 0;
     const totalPages = pagination.last_page || 1;
-
-    const getStatusIcon = (statusId) => {
-        const statusObj = statusOptions.find((status) => status.id === Number(statusId));
-        return statusObj ? React.createElement(statusObj.icon, { className: 'w-4 h-4' }) : null;
-    };
 
     const getStatusMeta = (statusId) => {
         return statusOptions.find((status) => status.id === Number(statusId)) || statusOptions[0];
@@ -167,11 +188,21 @@ const OrderTracking = () => {
             return;
         }
 
+        const previousStatus = order.status;
+
         try {
             setEditingOrder(orderId);
 
             let response;
             if (field === 'status') {
+                setStatusUpdatingOrderId(orderId);
+                setOrders((prev) =>
+                    prev.map((item) =>
+                        item.order_id === orderId
+                            ? { ...item, status: Number(status) }
+                            : item
+                    )
+                );
                 response = await api.put(`status_order/${orderId}/${status}`, {}, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
@@ -206,9 +237,21 @@ const OrderTracking = () => {
                 toast.error(t('failedToUpdateOrder'));
             }
         } catch (error) {
+            if (field === 'status') {
+                setOrders((prev) =>
+                    prev.map((item) =>
+                        item.order_id === orderId
+                            ? { ...item, status: previousStatus }
+                            : item
+                    )
+                );
+            }
             console.error('Error updating order:', error);
             toast.error(error?.response?.data?.message || t('errorUpdatingOrder'));
         } finally {
+            if (field === 'status') {
+                setStatusUpdatingOrderId(null);
+            }
             setEditingOrder(null);
         }
     };
@@ -239,22 +282,22 @@ const OrderTracking = () => {
     return (
         <div className="component-page min-h-screen bg-transparent">
             <div className="mx-auto space-y-4">
-                <div className="rounded-sm border border-slate-200 bg-white p-4 ">
+                <div className="rounded-sm dark:text-white p-4 ">
                     <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                         <div className="flex items-center gap-3">
                             <div className="flex h-10 w-10 items-center justify-center rounded-sm bg-blue-50 text-blue-600">
                                 <FaTruck className="h-4 w-4" />
                             </div>
                             <div>
-                                <h1 className="text-lg font-semibold text-slate-900">{t('orderTracking')}</h1>
-                                <p className="text-xs text-slate-500">{totalOrders} order{totalOrders !== 1 ? 's' : ''}</p>
+                                <h1 className="text-lg font-semibold">{t('orderTracking')}</h1>
+                                <p className="text-xs text-slate-400">{totalOrders} order{totalOrders !== 1 ? 's' : ''}</p>
                             </div>
                         </div>
 
                         <RefreshButton onRefresh={refetch} />
                     </div>
 
-                    <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1.4fr_0.8fr_0.8fr_auto]">
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1.4fr_0.8fr_0.8fr_auto]">
                         <div>
                             <div className="relative">
                                 <FaSearch className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
@@ -263,39 +306,29 @@ const OrderTracking = () => {
                                     value={filters.search}
                                     onChange={(event) => handleFilterChange('search', event.target.value)}
                                     placeholder={t('searchOrderTracking')}
-                                    className="w-full rounded-sm border border-slate-200 bg-slate-50 py-2.5 pl-9 pr-4 text-sm text-slate-800 outline-none transition focus:border-blue-500 focus:bg-white"
+                                    className="w-full rounded-sm bg-transparent border border-slate-400  py-2.5 pl-9 pr-4 text-sm text-slate-800 dark:text-gray-200 outline-none transition "
                                 />
                             </div>
                         </div>
 
                         <div>
-                            <select
+                            <RichSearch
+                                data={deliverFilterOptions}
+                                keyFields={{ id: 'deliver_id', title: 'deliver_name' }}
                                 value={filters.deliver_id}
-                                onChange={(event) => handleFilterChange('deliver_id', event.target.value)}
-                                className="w-full rounded-sm border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-800 outline-none transition focus:border-blue-500 focus:bg-white"
-                            >
-                                <option value="">{t('allDelivery')}</option>
-                                {delivers?.data?.map((service) => (
-                                    <option key={service.deliver_id} value={service.deliver_id}>
-                                        {service.deliver_name}
-                                    </option>
-                                ))}
-                            </select>
+                                onSelected={(id) => handleFilterChange('deliver_id', id || '')}
+                                placeholder={t('allDelivery')}
+                            />
                         </div>
 
                         <div>
-                            <select
+                            <RichSearch
+                                data={userFilterOptions}
+                                keyFields={{ id: 'id', title: 'username', image: 'image' }}
                                 value={filters.user_id}
-                                onChange={(event) => handleFilterChange('user_id', event.target.value)}
-                                className="w-full rounded-sm border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-800 outline-none transition focus:border-blue-500 focus:bg-white"
-                            >
-                                <option value="">{t('allUsers')}</option>
-                                {usersData?.data?.map((user) => (
-                                    <option key={user.id} value={user.id}>
-                                        {user.username}
-                                    </option>
-                                ))}
-                            </select>
+                                onSelected={(id) => handleFilterChange('user_id', id || '')}
+                                placeholder={t('allUsers')}
+                            />
                         </div>
 
                         <div className="flex items-center justify-end">
@@ -341,20 +374,20 @@ const OrderTracking = () => {
                     </div>
                 ) : (
                     <>
-                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+                        <div className="grid grid-cols-2 gap-4 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
                             {orders.map((order) => {
                                 const statusMeta = getStatusMeta(order.status);
 
                                 return (
                                     <div
                                         key={order.order_id}
-                                        className="overflow-hidden rounded-sm border border-slate-200 bg-white  transition hover:shadow-md"
+                                        className={`overflow-hidden rounded-sm border border-blue-200  transition hover:shadow-md ${statusMeta.color}`}
                                     >
-                                        <div className="border-b border-slate-100 p-4">
+                                        <div className="border-b border-slate-100 p-4 text-gray-50 bg-chomnenh-dark">
                                             <div className="mb-3 flex items-start justify-between gap-3">
-                                                <div>
-                                                    <h3 className="text-sm font-semibold text-slate-900">{order.order_no}</h3>
-                                                    <div className="mt-1 flex items-center gap-1.5 text-[11px] text-slate-500">
+                                                <div onClick={() => handleViewItems(order)} className="cursor-pointer">
+                                                    <h3 className="text-xs font-semibold">{order.order_no}</h3>
+                                                    <pre className="mt-1 flex items-center gap-1.5 text-[11px] text-slate-400">
                                                         <FaCalendarAlt className="h-3 w-3" />
                                                         {new Date(order.order_date).toLocaleDateString('en-US', {
                                                             weekday: 'short',
@@ -362,97 +395,68 @@ const OrderTracking = () => {
                                                             month: 'short',
                                                             day: 'numeric'
                                                         })}
-                                                    </div>
+                                                    </pre>
                                                 </div>
-
                                                 <div className="flex items-start gap-2">
-                                                    <div className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium ${statusMeta.color}`}>
-                                                        {getStatusIcon(order.status)}
-                                                        <span>{statusMeta.label}</span>
-                                                    </div>
-                                                    <button
-                                                        onClick={() => handleEditClick(order.order_id, 'status', order.status)}
-                                                        className="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-blue-600"
-                                                        title={t('editStatus')}
-                                                    >
-                                                        <FaEdit className="h-3.5 w-3.5" />
-                                                    </button>
-                                                    <button
+                                                    <EnumSelect
+                                                        value={Number(order.status)}
+                                                        selectOptions={trackingStatusSelectOptions}
+                                                        loading={statusUpdatingOrderId === order.order_id}
+                                                        disabled={statusUpdatingOrderId === order.order_id}
+                                                        onChange={async (value) => {
+                                                            if (Number(value) === Number(order.status)) {
+                                                                return;
+                                                            }
+
+                                                            localStorage.setItem('guestId', order.created_by);
+                                                            await handleSaveField(order.order_id, 'status', value, value);
+                                                        }}
+                                                    />
+                                                    {/* <button
                                                         onClick={() => handleViewItems(order)}
                                                         title={t('viewDetails')}
                                                         className="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-blue-600"
                                                     >
                                                         <FaEye className="h-4 w-4" />
-                                                    </button>
+                                                    </button> */}
                                                 </div>
                                             </div>
 
-                                            {isEditing(order.order_id, 'status') && (
-                                                <div className="mb-3 rounded-sm border border-blue-100 bg-blue-50 p-2.5">
-                                                    <div className="mb-2 flex items-center justify-between">
-                                                        <span className="text-xs font-semibold uppercase tracking-wide text-slate-600">{t('updateStatus')}</span>
-                                                        <button
-                                                            onClick={handleCancelEdit}
-                                                            className="rounded-md p-1 text-red-600 transition hover:bg-red-100"
-                                                        >
-                                                            <FaTimes className="h-3.5 w-3.5" />
-                                                        </button>
-                                                    </div>
-                                                    <div className="grid grid-cols-2 gap-1.5">
-                                                        {statusOptions.map((option) => (
-                                                            <button
-                                                                key={option.id}
-                                                                onClick={async () => {
-                                                                    localStorage.setItem('guestId', order.created_by);
-                                                                    handleInputChange(order.order_id, 'status', option.id);
-                                                                    await handleSaveField(order.order_id, 'status', option.id, option.id);
-                                                                }}
-                                                                className={`flex items-center gap-1.5 rounded-lg px-2.5 py-2 text-left text-[11px] ${option.color}`}
-                                                                disabled={editingOrder === order.order_id}
-                                                            >
-                                                                {React.createElement(option.icon, { className: 'h-4 w-4' })}
-                                                                <span>{option.label}</span>
-                                                            </button>
-                                                        ))}
-                                                    </div>
-                                                </div>
-                                            )}
-
                                             <div className="space-y-2">
-                                                <div className="flex items-center gap-2 rounded-sm bg-slate-50 p-2.5">
+                                                <div className="flex items-center gap-2 rounded-sm  bg-chomnenh-light p-2.5">
                                                     <div className="rounded-lg bg-blue-100 p-1.5 text-blue-600">
                                                         <FaPhone className="h-3.5 w-3.5" />
                                                     </div>
                                                     <div>
-                                                        <div className="text-[11px] text-slate-500">Phone</div>
-                                                        <div className="text-xs font-medium text-slate-800">{order.order_tel}</div>
+                                                        <div className="text-[11px] text-slate-400">Phone</div>
+                                                        <div className="text-xs font-medium">{order.order_tel}</div>
                                                     </div>
                                                 </div>
 
-                                                <div className="flex items-center gap-2 rounded-sm bg-slate-50 p-2.5">
+                                                <div className="flex items-center gap-2 rounded-sm  bg-chomnenh-light p-2.5">
                                                     <div className="rounded-lg bg-emerald-100 p-1.5 text-emerald-600">
                                                         <FaMapMarkerAlt className="h-3.5 w-3.5" />
                                                     </div>
                                                     <div className="min-w-0">
-                                                        <div className="text-[11px] text-slate-500">Address</div>
-                                                        <div className="truncate text-xs font-medium text-slate-800">{order.order_address}</div>
+                                                        <div className="text-[11px] text-slate-400">Address</div>
+                                                        <div className="truncate text-xs font-medium">{order.order_address}</div>
                                                     </div>
                                                 </div>
 
                                                 <div className="grid grid-cols-2 gap-2">
-                                                    <div className="rounded-sm bg-slate-50 p-2.5">
-                                                        <div className="mb-1 flex items-center gap-1.5 text-[11px] text-slate-500">
+                                                    <div className="rounded-sm  bg-chomnenh-light p-2.5">
+                                                        <div className="mb-1 flex items-center gap-1.5 text-[11px] text-slate-400">
                                                             <FaTruck className="h-3 w-3" />
                                                             Delivery
                                                         </div>
-                                                        <div className="truncate text-xs font-medium text-slate-800">{order.deliver_name || 'Unknown'}</div>
+                                                        <div className="truncate text-xs font-medium">{order.deliver_name || 'Unknown'}</div>
                                                     </div>
-                                                    <div className="rounded-sm bg-slate-50 p-2.5">
-                                                        <div className="mb-1 flex items-center gap-1.5 text-[11px] text-slate-500">
+                                                    <div className="rounded-sm  bg-chomnenh-light p-2.5">
+                                                        <div className="mb-1 flex items-center gap-1.5 text-[11px] text-slate-400">
                                                             <FaUser className="h-3 w-3" />
                                                             User ID
                                                         </div>
-                                                        <div className="text-xs font-medium text-slate-800">{order.created_by}</div>
+                                                        <div className="text-xs font-medium">{order.created_by}</div>
                                                     </div>
                                                 </div>
                                             </div>
@@ -537,18 +541,20 @@ const OrderTracking = () => {
 
                                                     {isFieldVisible(order.order_id, 'deliver_id') ? (
                                                         <div className="flex items-center gap-2">
-                                                            <select
-                                                                value={tempValues[order.order_id]?.deliver_id ?? order.deliver_id ?? ''}
-                                                                onChange={(event) => handleInputChange(order.order_id, 'deliver_id', event.target.value)}
-                                                                className="flex-1 rounded-sm border border-slate-200 bg-white px-3 py-2 text-sm outline-none transition focus:border-blue-500"
-                                                            >
-                                                                <option value="">{t('deliveryService')}</option>
-                                                                {delivers?.data?.map((service) => (
-                                                                    <option key={service.deliver_id} value={service.deliver_id}>
-                                                                        {service.deliver_name}
-                                                                    </option>
-                                                                ))}
-                                                            </select>
+                                                            <div className="flex-1">
+                                                                <RichSearch
+                                                                    data={deliverFilterOptions}
+                                                                    className='w-full px-4 pr-10 py-2 bg-transparent 
+                                                                        text-gray-900 dark:border-gray-400
+                                                                        border border-gray-400 min-w-30 $
+                                                                        transition-all outline-none
+                                                                        focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500'
+                                                                    keyFields={{ id: 'deliver_id', title: 'deliver_name' }}
+                                                                    value={tempValues[order.order_id]?.deliver_id ?? order.deliver_id ?? ''}
+                                                                    onSelected={(id) => handleInputChange(order.order_id, 'deliver_id', id || '')}
+                                                                    placeholder={t('deliveryService')}
+                                                                />
+                                                            </div>
                                                             <button
                                                                 onClick={() => handleSaveField(order.order_id, 'deliver_id')}
                                                                 className="rounded-sm bg-green-50 p-2.5 text-green-700 transition hover:bg-green-100"

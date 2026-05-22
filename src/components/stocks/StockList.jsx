@@ -21,6 +21,7 @@ import {
 } from 'react-icons/fa';
 import AlertBox from '../../services/AlertBox';
 import RichSearch from '../../utils/RichSearch';
+import { FiFileText } from 'react-icons/fi';
 
 const getStockTypeColor = (type) => {
     const colors = {
@@ -142,7 +143,7 @@ const StockList = ({
                         <Badge color={getStockTypeColor(stock.stock_type_name)}>
                             {getTypeLabel(stock.stock_type_name)}
                         </Badge>
-                        <h3 className="font-bold text-lg text-gray-800 dark:text-white mt-2">{stock.stock_no}</h3>
+                        <h3 className="font-bold text-sm text-gray-800 dark:text-white mt-2">{stock.stock_no}</h3>
                         <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
                             <FaCalendarAlt className="text-gray-400" />
                             <span>{formatDate(stock.stock_date)}</span>
@@ -195,7 +196,7 @@ const StockList = ({
                 <div className="flex items-center gap-3">
                     <div className="text-xl shrink-0">{getStockTypeIcon(stock.stock_type_name)}</div>
                     <div>
-                        <div className="font-bold text-gray-900 dark:text-white">{stock.stock_no}</div>
+                        <div className="font-bold text-xs text-gray-900 dark:text-white">{stock.stock_no}</div>
                         <Badge color={getStockTypeColor(stock.stock_type_name)}>
                             {getTypeLabel(stock.stock_type_name)}
                         </Badge>
@@ -244,6 +245,9 @@ const StockList = ({
                 <div className="flex gap-2">
                     <Link to={`detail/${stock.stock_id}`} className="p-2 bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/50">
                         <FaEye />
+                    </Link>
+                    <Link to={`/stock-invoice/${stock.stock_id}`} className="p-2 bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/50">
+                        <FiFileText />
                     </Link>
                     <Link to={`update/${stock.stock_id}`} className="p-2 bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400 rounded-lg hover:bg-green-200 dark:hover:bg-green-900/50">
                         <FaEdit />

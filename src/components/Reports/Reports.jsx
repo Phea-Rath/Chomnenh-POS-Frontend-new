@@ -66,13 +66,13 @@ const Reports = () => {
                   to={perm?.menu_path}
                   className={`
                     group flex flex-col items-center justify-center p-6 border-gradient-gold
-                    rounded-sm border border-gray-100 dark:border-gray-700 shadow-sm
+                    border border-gray-100 dark:border-gray-700
                     hover:shadow-xl hover:shadow-gray-200/50 dark:hover:shadow-black/20 transition-all duration-300
                     w-full min-h-[160px] text-center space-y-4
                     ${color.hoverBorder}
                   `}
                 >
-                  <div className={`p-4 rounded-2xl ${color.iconBg} transition-transform group-hover:scale-110 duration-300`}>
+                  <div className={`p-4 rounded-sm ${color.iconBg} transition-transform group-hover:scale-110 duration-300`}>
                     <img
                       className="w-10 h-10 object-contain white-icon"
                       src={perm?.menu_icon}

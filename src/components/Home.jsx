@@ -96,7 +96,7 @@ const Home = () => {
                 className={`${isWide ? "md:col-span-2" : "md:col-span-1"}`}
               >
                 <Link to={perm?.menu_path} className="h-full block">
-                  <div className={`h-full group relative overflow-hidden rounded-sm border shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07),0_10px_20px_-2px_rgba(0,0,0,0.04)] transition-all duration-300 border-gradient-gold  border-slate-200 dark:border-gray-700 hover:shadow-blue-500/10 dark:hover:shadow-xl ${isWide ? "dark:shadow-blue-900/20" : ""} ${color.border} p-8 flex flex-col justify-between`}>
+                  <div className={`h-full group relative overflow-hidden border transition-all duration-300 border-gradient-gold  border-slate-200 dark:border-gray-700 hover:shadow-blue-500/10 dark:hover:shadow-xl ${isWide ? "dark:shadow-blue-900/20" : ""} ${color.border} p-8 flex flex-col justify-between`}>
 
                     {/* Icon Section */}
                     <div className="flex justify-between items-start">

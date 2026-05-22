@@ -625,37 +625,72 @@ const StockTransferList = () => {
         {!isMobile && (
           <div className="mb-3">
             <div className="flex flex-wrap text-sm items-center gap-4">
-              <div className="flex-1 min-w-[200px] grow">
-                <div className="relative">
-                  <LuSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                  <input
-                    type="text"
-                    placeholder={t('searchTransfers')}
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-400 text-gray-900 dark:text-white rounded-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
-                  />
+              <div className="flex gap-2">
+                <div className="flex-1 min-w-[200px] grow">
+                  <div className="relative">
+                    <LuSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                    <input
+                      type="text"
+                      placeholder={t('searchTransfers')}
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-400 text-gray-900 dark:text-white rounded-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                    />
+                  </div>
                 </div>
+                {/* <select
+                  value={selectedWarehouse}
+                  onChange={(e) => setSelectedWarehouse(e.target.value)}
+                  className="px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                >
+                  <option value="all">{t('allWarehouses')}</option>
+                  {warehouses.map(w => (
+                    <option key={w.value} value={w.value}>{w.label}</option>
+                  ))}
+                </select> */}
+                <RichSearch
+                  data={warehouses}
+                  placeholder={t('selectWarehouse')}
+                  value={selectedWarehouse}
+                  keyFields={{
+                    id: "value",
+                    title: "label",
+                  }}
+                  onSelected={(value) => setSelectedWarehouse(value)}
+                />
+                <RichSearch
+                            data={[
+                {
+                  id: 10,
+                  label: '10 show'
+                },
+                {
+                  id: 25,
+                  label: '25 show'
+                },
+                {
+                  id: 50,
+                  label: '50 show'
+                },
+                {
+                  id: 100,
+                  label: '100 show'
+                }
+                            ]}
+                            keyFields={{
+                id: "id",
+                title: "label",
+                            }}
+                            value={tableParams.pagination.pageSize}
+                            onSelected={handlePageSizeChange}
+                          />
+                <button
+                  onClick={resetFilters}
+                  className="px-4 py-2 border border-gray-300 dark:border-gray-400 rounded-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                >
+                  {t('reset')}
+                </button>
               </div>
-              {/* <select
-                value={selectedWarehouse}
-                onChange={(e) => setSelectedWarehouse(e.target.value)}
-                className="px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
-              >
-                <option value="all">{t('allWarehouses')}</option>
-                {warehouses.map(w => (
-                  <option key={w.value} value={w.value}>{w.label}</option>
-                ))}
-              </select> */}
-              <RichSearch
-                data={warehouses}
-                value={selectedWarehouse}
-                keyFields={{
-                  id: "value",
-                  title: "label",
-                }}
-                onSelected={(value) => setSelectedWarehouse(value)}
-              />
               {/* <input
                 type="date"
                 value={dateRange.start ? dayjs(dateRange.start).format('YYYY-MM-DD') : ''}
@@ -699,38 +734,7 @@ const StockTransferList = () => {
               </div>
             )}
             
-          <RichSearch
-            data={[
-              {
-                id: 10,
-                label: '10 show'
-              },
-              {
-                id: 25,
-                label: '25 show'
-              },
-              {
-                id: 50,
-                label: '50 show'
-              },
-              {
-                id: 100,
-                label: '100 show'
-              }
-            ]}
-            keyFields={{
-              id: "id",
-              title: "label",
-            }}
-            value={tableParams.pagination.pageSize}
-            onSelected={handlePageSizeChange}
-          />
-              <button
-                onClick={resetFilters}
-                className="px-4 py-2 border border-gray-300 dark:border-gray-400 rounded-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-              >
-                {t('reset')}
-              </button>
+          
             </div>
           </div>
         )}

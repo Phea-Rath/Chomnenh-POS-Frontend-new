@@ -31,11 +31,12 @@ const StockTransfer = () => {
   const [toWarehouseSelect, settoWarehouseSelect] = useState([]);
   const { setLoading, setAlert, setMessage, loading, setAlertStatus } = useOutletsContext();
   const token = localStorage.getItem('token');
+  const [limit, setLimit] = useState(10);
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearch] = useDebounce(searchTerm, 500);
-  const { refetch } = useGetAllStockQuery(token);
+  const { refetch } = useGetAllStockQuery({ limit, page: 1, search: debouncedSearch, token });
   const stockRes = useGetAllStockTypesQuery(token);
-  const itemsRes = useGetItemsByStockQuery({ token, limit: 10, page: 1, search: debouncedSearch });
+  const itemsRes = useGetItemsByStockQuery({ token, limit: limit, page: 1, search: debouncedSearch });
   const warehouseRes = useGetAllWarehousesQuery(token);
   const [createStock] = useCreateStockMutation(token);
 
@@ -75,6 +76,7 @@ const StockTransfer = () => {
 
   // Populate form and items when loading in update mode
   useEffect(() => {
+    id && stockByIdRes.refetch();
     const stock = stockByIdRes.data?.data;
     if (stock) {
       setIsUpdate(true);
@@ -206,11 +208,21 @@ const StockTransfer = () => {
     }
   }
 
+  const onScrollFetch = (e) => {
+        const target = e.target;
+        const nearBottom = target.scrollHeight - target.scrollTop - target.clientHeight < 100;
+        if (!itemsRes.isFetching && nearBottom && itemsRes?.data?.pagination?.total > itemsRes?.data?.data?.length) {
+            setLimit(prev => prev + 10);
+        }
+    }
+
   function handleCancel() {
     setAlertBox(false);
   }
 
   function handleSubmit(e) {
+    console.log(selectItems);
+    
     
     e.preventDefault();
     if(form.from_warehouse == form.warehouse_id){
@@ -377,12 +389,12 @@ const StockTransfer = () => {
                                        placeholder="0"
                                        onWheel={(e) => e.target.blur()}
                                        name="quantity"
-                                       onChange={(e) => {
-                                         if (Number(item.stock.in_stock) < Number(e.target.value)) {
+                                       onChange={(value) => {
+                                         if (Number(item.stock.in_stock) < Number(value)) {
                                            toast.warning(`${t('only')} ${item.stock.in_stock} ${t('itemsAvailableInStock')}`);
                                            return;
                                          }
-                                         handleChange(index, 'quantity', e.target.value)
+                                         handleChange(index, 'quantity', value)
                                        }}
                                        value={item.quantity ?? 1}
                                        required
@@ -462,6 +474,7 @@ const StockTransfer = () => {
                       }}
                       placeholder={t('searchItems')}
                       onSelected={onSelectItem}
+                      onScrollReader={onScrollFetch}
                       onSearch={(value) => setSearchTerm(value)}
                     />
                   </div>
@@ -491,6 +504,7 @@ const StockTransfer = () => {
                       </select> */}
                       <RichSearch
                         data={warehousesSelect}
+                        value={form.from_warehouse || null}
                         keyFields={{
                           id: 'warehouse_id',
                           title: 'warehouse_name'
