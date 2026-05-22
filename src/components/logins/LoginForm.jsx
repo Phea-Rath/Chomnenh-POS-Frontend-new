@@ -42,6 +42,7 @@ const LoginForm = () => {
 
 
   const handleTelegramData = async (telegramUser) => {
+    event.preventDefault();
     setIsLoading(true);
     
     try {
