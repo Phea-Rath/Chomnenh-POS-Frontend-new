@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import { Badge, Space } from "antd";
 import logo from "../assets/logo.jpg";
 import { useTranslation } from "react-i18next";
+import api from "../services/api";
 
 const Header = ({ darkMode, setDarkMode }) => {
   const { t, i18n } = useTranslation();
@@ -16,6 +17,48 @@ const Header = ({ darkMode, setDarkMode }) => {
   const uId = localStorage.getItem("userId");
   const { data } = useGetUserLoginQuery(token);
   const [profile, setProfile] = useState();
+
+  const handleClearTelegramSession = () => {
+    // 1. Wipe your own application's local tokens and user metadata
+      localStorage.removeItem('authToken');
+      sessionStorage.clear();
+
+      // 2. Clear your local domain's cookies just to be thorough
+      const cookies = document.cookie.split(";");
+      for (let i = 0; i < cookies.length; i++) {
+          const cookie = cookies[i];
+          const eqPos = cookie.indexOf("=");
+          const name = eqPos > -1 ? cookie.substr(0, eqPos) : cookie;
+          document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/";
+      }
+
+      // 3. Force Telegram to drop its widget cookie session
+      // This logs them out of oauth.telegram.org and returns them right back to your page cleanly
+      const returnUrl = encodeURIComponent(window.location.href);
+      window.location.href = `https://oauth.telegram.org/logout?returnurl=${returnUrl}`;
+  };
+
+  const logout = () => {
+    try {
+      const res = await api.post('/logout',{}, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+      if(res.data.status === 200) {
+        localStorage.clear();
+        handleClearTelegramSession();
+      } else {
+        alert("Logout failed: " + res.data.message);
+      }
+    } catch (error) {
+      alert("An error occurred during logout");
+    
+    }
+    
+  }
+
+  
 
   useEffect(() => {
     setProfile(data?.data);
@@ -158,6 +201,7 @@ const Header = ({ darkMode, setDarkMode }) => {
               <li>
                 <a
                   href="/"
+                  onClick={logout}
                   className={`flex items-center gap-2 px-3 py-2 rounded-md transition-colors ${darkMode ? "hover:bg-gray-700 text-gray-200" : "hover:bg-gray-100 text-gray-700"}`}
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -63,7 +63,7 @@ const LoginForm = () => {
         
         alert(`Successfully logged in as ${data.user.name}`);
         // Redirect user to their dashboard or panel home
-        window.location.href = '/dashboard';
+        navigate("/dashboard");
       } else {
         alert(`Authentication Error: ${data.message}`);
       }
