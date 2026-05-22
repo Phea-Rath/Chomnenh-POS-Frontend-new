@@ -23,19 +23,19 @@ const LoginForm = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [Id, setId] = useState(0);
   const { refetch } = useGetUserLoginQuery(
-    localStorage.getItem("token")
+    localStorage.getItem("token"),{ skip: localStorage.getItem("token") === null }
   );
   const { refetch: refetchSidebar, data: sidebar } = useGetMenuSidebarQuery(
-    localStorage.getItem("token")
+    localStorage.getItem("token"),{ skip: localStorage.getItem("token") === null }
   );
   const { refetch: refetchSetting, data: setting } = useGetMenuSettingQuery(
-    localStorage.getItem("token")
+    localStorage.getItem("token"),{ skip: localStorage.getItem("token") === null }
   );
   const { refetch: refetchReport, data: report } = useGetMenuReportQuery(
-    localStorage.getItem("token")
+    localStorage.getItem("token"),{ skip: localStorage.getItem("token") === null }
   );
   const { refetch: refetchHome, data: home } = useGetMenuHomeQuery(
-    localStorage.getItem("token")
+    localStorage.getItem("token"),{ skip: localStorage.getItem("token") === null }
   );
   const [alert, setAlert] = useState({ message: "", show: false });
   const [login, setLogin] = useState({ phone_number: "", password: "" });
@@ -58,6 +58,7 @@ const LoginForm = () => {
       const data = await response.json();
 
       const {
+        access_token: token,
         user: { profile_id, id },
       } = data;
       
@@ -74,7 +75,7 @@ const LoginForm = () => {
         setId(id);
         localStorage.setItem("profileId", profile_id);
         localStorage.setItem("userId", id);
-        localStorage.setItem('token', data.access_token);
+        localStorage.setItem('token', token);
         if (res.status == 200) {
           localStorage.setItem("menus", JSON.stringify(res?.data.data));
           localStorage.setItem("menus-sidebar", JSON.stringify(sidebar?.data));
