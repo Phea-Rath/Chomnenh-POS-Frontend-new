@@ -22,7 +22,7 @@ const LoginForm = () => {
   const [loading, setLoading] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [Id, setId] = useState(0);
-  const { refetch, isLoading } = useGetUserLoginQuery(
+  const { refetch } = useGetUserLoginQuery(
     localStorage.getItem("token")
   );
   const { refetch: refetchSidebar, data: sidebar } = useGetMenuSidebarQuery(
@@ -59,7 +59,7 @@ const LoginForm = () => {
 
       if (data.success) {
         // Save the Bearer/Sanctum token in local storage
-        localStorage.setItem('authToken', data.access_token);
+        localStorage.setItem('token', data.access_token);
         
         alert(`Successfully logged in as ${data.user.name}`);
         // Redirect user to their dashboard or panel home
