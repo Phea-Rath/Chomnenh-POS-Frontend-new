@@ -199,9 +199,11 @@ export default function RichSearch({ data = [], keyFields={}, onScrollReader, on
                                 </div>
                                 <div className="mt-0.5 flex items-center justify-between">
                                     {item.subtitle && <p className="truncate text-xs text-gray-500 dark:text-gray-400">{item.subtitle}</p>}
-                                    {item.quantity && <span className="rounded bg-gray-100 px-1.5 py-0.5 text-[10px] font-medium uppercase text-gray-600 dark:bg-gray-800 dark:text-gray-400">
-                                        Qty: {item.quantity}
-                                    </span>}
+                                    {typeof item?.quantity != 'object'&& item?.quantity && typeof item?.quantity != 'undefined' && (
+                                        <span className="rounded bg-gray-100 px-1.5 py-0.5 text-[10px] font-medium uppercase text-gray-600 dark:bg-gray-800 dark:text-gray-400">
+                                            Qty: {item.quantity}
+                                        </span>
+                                    )}
                                 </div>
                             </div>
                         </li>

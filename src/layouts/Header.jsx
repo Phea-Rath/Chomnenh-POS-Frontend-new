@@ -169,6 +169,7 @@ const Header = ({ darkMode, setDarkMode }) => {
                     src={profile?.image}
                     className="w-8 h-8 rounded-full object-cover border border-gray-300"
                     alt="Profile"
+                    onError={(e)=>e.target.src = import.meta.env.VITE_DEFAULT_PROFILE}
                   />
                 )}
                 <div className="hidden sm:block text-left">
