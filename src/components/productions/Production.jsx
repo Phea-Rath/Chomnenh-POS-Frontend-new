@@ -218,7 +218,7 @@ const Production = () => {
         setExpandedRows(prev => ({ ...prev, [id]: !prev[id] }));
     };
 
-    const handleConfirm = async (id) => {
+    const handleConfirm = async () => {
         setId(id);
         event.preventDefault();
         try {            
