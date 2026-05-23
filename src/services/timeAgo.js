@@ -1,11 +1,15 @@
 // id="zkn2zt"
 import dayjs from "dayjs";
-import { useTranslation } from "react-i18next";
+import i18n from "../i18n";
 
 function timeAgo(date) {
-    const {t} = useTranslation();
+    const t = i18n.t.bind(i18n);
+    if (!date) return t("today");
+
     const target = dayjs(date).startOf("day");
     const today = dayjs().startOf("day");
+
+    if (!target.isValid()) return "";
 
     const years = today.diff(target, "year");
 

@@ -67,6 +67,7 @@ const StockRaws = () => {
             highlightedTitle={t('inventory')}
             subtitle={t('trackManageRawMovements')}
             stocks={stocks}
+            isRaw={true}
             isLoading={isLoading}
             searchTerm={searchTerm}
             onSearchChange={(value) => {

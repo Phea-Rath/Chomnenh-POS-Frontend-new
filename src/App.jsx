@@ -269,16 +269,8 @@ const router = createBrowserRouter([
         element: <UpdateOrders />,
       },
       {
-        path: "/order-list/receipt/:id",
-        element: <OrderReceipt />,
-      },
-      {
         path: "/order-list/detail/:id",
         element: <OrderDetail />,
-      },
-      {
-        path: "/order-list/invoice/:id",
-        element: <OrderInvoice />,
       },
       {
         path: "/order-list",
@@ -335,10 +327,6 @@ const router = createBrowserRouter([
       {
         path: "/home/record-stock",
         element: <RecordStock />,
-      },
-      {
-        path: "/stock-invoice/:id",
-        element: <StockInvoice />,
       },
       {
         path: "/home/record-stock-sale",
@@ -658,6 +646,24 @@ const router = createBrowserRouter([
     path: "/white-board",
     element: <WhiteBoard />,
   },
+  {
+    path: "/stock-invoice/:id",
+    element: <StockInvoice />,
+  },
+  {
+    path: "/stock-raw-invoice/:id",
+    element: <StockInvoice />,
+  },
+
+  {
+    path: "/invoice/:id",
+    element: <OrderInvoice />,
+  },
+  
+      {
+        path: "/receipt/:id",
+        element: <OrderReceipt />,
+      },
 ]
 );
 

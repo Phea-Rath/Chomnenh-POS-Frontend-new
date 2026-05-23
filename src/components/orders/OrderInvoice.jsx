@@ -3,7 +3,7 @@ import { FaDownload, FaPrint } from "react-icons/fa";
 import { IoArrowBackCircle } from "react-icons/io5";
 import { useReactToPrint } from "react-to-print";
 import { QRCodeCanvas } from "qrcode.react";
-import { useNavigate, useParams } from "react-router";
+import { useLocation, useNavigate, useParams } from "react-router";
 import { motion } from "framer-motion";
 import handleDownload from "../../services/imageDowload";
 import { useGetOrderByIdQuery } from "../../../app/Features/ordersSlice";
@@ -11,9 +11,11 @@ import { useGetAllUserQuery, useGetUserProfileQuery } from "../../../app/Feature
 import { useTranslation } from "react-i18next";
 import timeAgo from "../../services/timeAgo";
 import Button from "../../utils/Button";
+import { currencyFormat } from "../../services/serviceFunction";
 
 const OrderInvoice = () => {
   const { t } = useTranslation();
+  const path = useLocation().pathname;
   const navigator = useNavigate();
   const { id } = useParams();
   const token = localStorage.getItem("token");
@@ -56,6 +58,7 @@ const OrderInvoice = () => {
   const customerPhone = data?.order_tel || data?.customer?.customer_tel || "N/A";
   const customerAddress = data?.order_address || data?.customer?.customer_address || "N/A";
   const deliverName = data?.deliver_name || "N/A";
+  const deliverFee = Number(data?.delivery_fee || 0);
   const paymentMethod = data?.order_payment_method || "cash";
   const paymentStatus = data?.order_payment_status || (Number(data?.balance || 0) > 0 ? "partial" : "paid");
   const qrValue = useMemo(() => {
@@ -197,14 +200,14 @@ const OrderInvoice = () => {
                     <li>{t("salePerson").toLocaleUpperCase()}</li>
                     <li>{t("shippingMethod").toLocaleUpperCase()}</li>
                     <li>{t("deliveryDate").toLocaleUpperCase()}</li>
-                    <li>{t("paymentTime").toLocaleUpperCase()}</li>
+                    <li>{t("deliverFee").toLocaleUpperCase()}</li>
                   </ul>
                   <hr className="my-1 text-blue-700"/>
                   <ul className="grid grid-cols-4">
                     <li>{t("mrms").toLocaleUpperCase()}: <span>{sellerName}</span></li>
-                    <li>{t("trucking-co")}</li>
+                    <li>{deliverName}</li>
                     <li>N/A</li>
-                    <li>{t("mrms")}</li>
+                    <li>{currencyFormat(deliverFee)}</li>
                   </ul>
                 </div>
 

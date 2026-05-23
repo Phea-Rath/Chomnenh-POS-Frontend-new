@@ -150,6 +150,7 @@ const Stocks = () => {
             highlightedTitle={t('inventory')}
             subtitle={t('trackInventoryMovements')}
             stocks={stocks}
+            isRaw={false}
             isLoading={isLoading}
             searchTerm={searchTerm}
             onSearchChange={(value) => {

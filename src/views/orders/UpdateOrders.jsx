@@ -28,7 +28,18 @@ import { MdDeleteSweep } from "react-icons/md";
 import Input from "../../utils/Input";
 import dayjs from "dayjs";
 import Button from "../../utils/Button";
+const PAYMENT_METHODS = [
+  { value: "cash", label: "Cash" },
+  { value: "aba", label: "ABA" },
+  { value: "ac", label: "Aclida" },
+  { value: "bakong", label: "Bakong" },
+];
 
+const PAYMENT_STATUS = [
+  { value: "paid", label: "Paid" },
+  { value: "credit", label: "Credit" },
+  { value: "cod", label: "COD" },
+];  
 const UpdateOrders = () => {
   const { t } = useTranslation();
   const navigator = useNavigate();
@@ -67,8 +78,10 @@ const UpdateOrders = () => {
     order_tel: "",
     order_email: "",
     delivery_fee: 0,
+    due_date: "",
     sale_type: "sale",
     order_payment_method: "cash",
+    order_payment_status: "paid",
     order_date: "",
     order_address: "",
     order_subtotal: 0,
@@ -170,9 +183,11 @@ const UpdateOrders = () => {
         delivery_fee: order.delivery_fee || 0,
         sale_type: order.sale_type || "sale",
         order_payment_method: order.order_payment_method || "cash",
+        order_payment_status: order.order_payment_status || "paid",
         order_address: order.order_address || "",
         order_subtotal: order.order_subtotal || 0,
         order_total: order.order_total || 0,
+        due_date: order.due_date || "",
         order_tax: order.order_tax || 0,
         order_date: order.order_date || "",
         balance: order.balance || 0,
@@ -736,18 +751,16 @@ const UpdateOrders = () => {
                               </td>
                               <td className="px-4 py-4">
                                 <div className={`font-medium ${darkMode ? "text-gray-300" : "text-gray-900"}`}>
-                                  ${form.sale_type === "sale"
-                                    ? Number(item.price_per_unit || item.item_price || 0).toFixed(2)
-                                    : Number(item.item_wholesale_price || 0).toFixed(2)}
+                                  {
+                                    Number(item.price_per_unit || item.item_price || 0).toFixed(2)}
                                 </div>
                               </td>
                               <td className="px-4 py-4">
                                 <div className={`font-bold ${darkMode ? "text-white" : "text-gray-900"}`}>
-                                  ${Number(
-                                    form.sale_type === "sale"
-                                      ? (Number(item.price_per_unit || item.item_price || 0) * Number(item.quantity || 0))
-                                      : (Number(item.item_wholesale_price || 0) * Number(item.quantity || 0))
-                                  ).toFixed(2)}
+                                  ${
+                                    
+                                       (Number(item.price_per_unit || item.item_price || 0) * Number(item.quantity || 0))
+                                  }
                                 </div>
                               </td>
                               <td className="px-4 py-4">
@@ -826,6 +839,20 @@ const UpdateOrders = () => {
                         }}
                       />
                     </div>
+                    <div className="grow" >
+                      <label className={`block text-sm font-medium mb-2 ${darkMode ? "text-gray-400" : "text-gray-700"}`}>
+                        {t("paymentStatus")}
+                      </label>
+                      <RichSearch
+                        data={PAYMENT_STATUS}
+                        keyFields={{
+                          id: 'value',
+                          title: 'label',
+                        }}
+                        onSelected={handleFormChange}
+                        value={form.order_payment_status}
+                      />
+                    </div>
 
                     {/* Contact Information */}
                     <div className={form.sale_type === "sale" ? "block" : "hidden"}>
@@ -857,6 +884,18 @@ const UpdateOrders = () => {
                         className="date-picker"
                       />
                     </div>
+                    {form.due_date&&<div>
+                      <label className={`block text-sm font-medium mb-2 ${darkMode ? "text-gray-400" : "text-gray-700"}`}>
+                        {t("dueDate")}
+                      </label>
+                      <DatePicker
+                        type="date"
+                        name="due_date"
+                        value={form.due_date?dayjs(form.due_date):''}
+                        onChange={handleFormChange}
+                        className="date-picker"
+                      />
+                    </div>}
                     {/* Address */}
                     <div>
                       <label className={`block text-sm font-medium mb-2 ${darkMode ? "text-gray-400" : "text-gray-700"}`}>
@@ -886,16 +925,7 @@ const UpdateOrders = () => {
                         {t("paymentMethod")}
                       </label>
                       <RichSearch
-                        data={[
-                          {
-                            value: "cash",
-                            label: "Cash",
-                          },
-                          {
-                            value: "bank",
-                            label: "Bank",
-                          }
-                        ]}
+                        data={PAYMENT_METHODS}
                         keyFields={{
                           id: 'value',
                           title: 'label',

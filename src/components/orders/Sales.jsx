@@ -18,6 +18,7 @@ import {
   Typography,
   Pagination,
   Modal,
+  DatePicker,
 } from "antd";
 import { PiShoppingCartBold } from "react-icons/pi";
 import { motion } from "framer-motion";
@@ -44,6 +45,7 @@ import bakong from "../../assets/bakong.png"
 import handleDownload from "../../services/imageDowload";
 import * as qrService from "../../services/qrPaymentService";
 import { useTranslation } from "react-i18next";
+import dayjs from "dayjs";
 
 
 // const { Option } = Select;
@@ -55,6 +57,7 @@ const initialOrder = {
   order_total: 0,
   order_customer_id: 1,
   online: 0,
+  due_date: null,
   status: 6,
   deliver_id: 1,
   sale_type: "sale",
@@ -67,6 +70,13 @@ const initialOrder = {
   payment: 0,
   items: [],
 };
+
+const PAYMENT_METHODS = [
+  { value: "cash", label: "Cash" },
+  { value: "aba", label: "ABA" },
+  { value: "ac", label: "Aclida" },
+  { value: "bakong", label: "Bakong" },
+];
 
 const Sales = () => {
   const { t } = useTranslation();
@@ -883,10 +893,10 @@ const Sales = () => {
       const amount = rate ? Math.round(rawAmount * rate) : rawAmount;
       const currency = rate ? "KHR" : "USD";
 
-      if (!amount || amount <= 0) {
-        toast.warning("Payment amount must be greater than 0 for QR payment");
-        return;
-      }
+      // if (!amount || amount <= 0) {
+      //   toast.warning("Payment amount must be greater than 0 for QR payment");
+      //   return;
+      // }
 
       const res = await api.get("/get-qrcode", {
         params: { amount, currency },
@@ -913,6 +923,11 @@ const Sales = () => {
   async function handleSubmit() {
     if (orders.items.length === 0) {
       toast.error("Cart is empty");
+      return;
+    }
+
+    if(orders.sale_type === "wholesale" && !orders.order_customer_id){
+      toast.error("Please select a customer for wholesale orders");
       return;
     }
 
@@ -1047,6 +1062,7 @@ const Sales = () => {
       const results = {
         ...prev,
         items: updatedItems,
+        due_date: newSaleType === "sale" ? null : prev.due_date,
         sale_type: newSaleType,
         order_customer_id: newSaleType === "sale" ? 1 : 0,
         order_subtotal: totals.subtotal,
@@ -1340,7 +1356,7 @@ const Sales = () => {
                 <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-2">{t("noProductsFound")}</h3>
                 <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">{t("tryAdjustingSearch")}</p>
                 <button
-                  onClick={() => navigate("/add-to-stock")}
+                  onClick={() => navigate("/inventories/stock-list/add")}
                   className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm font-medium"
                 >
                   {t("addProductsToStock")}
@@ -1674,6 +1690,7 @@ const Sales = () => {
                             const results = {
                               ...orders,
                               order_payment_status: value,
+                              due_date: value === "paid" ? null : orders.due_date,
                               balance: value === "paid" ? 0 : orders.order_total,
                               payment: value === "paid" ? orders.order_total : 0,
                             };
@@ -1683,9 +1700,11 @@ const Sales = () => {
                           }}
                           className="px-2 py-1 border rounded text-sm border-gray-300 text-gray-900 bg-transparent dark:border-gray-400 dark:text-white"
                         >
-                          <option className="dark:bg-gray-700" value="paid">{t("paid")}</option>
-                          <option className="dark:bg-gray-700" value="cod">{t("cod")}</option>
-                          <option className="dark:bg-gray-700" value="credit">{t("credit")}</option>
+                          {PAYMENT_METHODS.map((method) => (
+                            <option key={method.value} className="dark:bg-gray-700" value={method.value}>
+                              {method.label}
+                            </option>
+                          ))}
                         </select>
                       </div>
 
@@ -1727,6 +1746,25 @@ const Sales = () => {
                               ...orders,
                               payment: paymentAmount,
                               balance: orders.order_total - paymentAmount,
+                            };
+                            localStorage.setItem("orderItems", JSON.stringify(results));
+                            setOrders(results);
+                          }}
+                          className="w-24 px-2 py-1 border rounded text-right text-sm border-gray-300 text-gray-900 !bg-transparent dark:border-gray-400 dark:text-white"
+                          placeholder="0.00"
+                          min="0"
+                          step="0.01"
+                        />
+                      </div>
+                      <div className={`flex justify-between items-center ${payment === "paid" ? "hidden" : ""}`}>
+                        <label className="text-sm text-gray-600 dark:text-gray-300">{t("pay")}</label>
+                        <DatePicker
+                          type="number"
+                          value={orders?.due_date? dayjs(orders.due_date): ""}
+                          onChange={(date, dateString) => {
+                            const results = {
+                              ...orders,
+                              due_date: dateString,
                             };
                             localStorage.setItem("orderItems", JSON.stringify(results));
                             setOrders(results);
@@ -1804,7 +1842,6 @@ const Sales = () => {
                           setOrders(initialOrder);
                           localStorage.setItem("orderItems", JSON.stringify(initialOrder));
                           setOrderCount(0);
-                          toast.success(`${t("clearCart")} ${t("successfully")}`);
                         }}
                         className="w-full py-2 border rounded text-sm transition-colors border-gray-300 text-gray-700 hover:border-red-300 hover:text-red-600 dark:border-gray-400 bg-transparent dark:text-gray-400 dark:hover:border-red-500 dark:hover:text-red-500"
                       >

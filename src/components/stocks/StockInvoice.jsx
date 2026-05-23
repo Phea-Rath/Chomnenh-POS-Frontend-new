@@ -2,10 +2,10 @@ import React, { useMemo, useRef } from "react";
 import { FaDownload, FaPrint } from "react-icons/fa";
 import { IoArrowBackCircle } from "react-icons/io5";
 import { useReactToPrint } from "react-to-print";
-import { useNavigate, useParams } from "react-router";
+import { useLocation, useNavigate, useParams } from "react-router";
 import { useTranslation } from "react-i18next";
 import handleDownload from "../../services/imageDowload";
-import { useGetStockByIdQuery } from "../../../app/Features/stocksSlice";
+import { useGetStockByIdQuery, useGetStockRawByIdQuery } from "../../../app/Features/stocksSlice";
 import Button from "../../utils/Button";
 
 const EMPTY_ROWS = 8;
@@ -13,13 +13,17 @@ const EMPTY_ROWS = 8;
 const StockInvoice = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const pathname = useLocation();
+  console.log(pathname);
+  
   const { id } = useParams();
   const token = localStorage.getItem("token");
   const invoiceRef = useRef(null);
 
-  const { data: stockResponse, isLoading } = useGetStockByIdQuery({ id, token }, { skip: !id });
+  const { data: stockResponse, isFetching: isStockFetching } = useGetStockByIdQuery({ id, token }, { skip: !id ||  pathname == `/stock-invoice/${id}` });
+  const { data: stockRawResponse, isFetching: isStockRawFetching } = useGetStockRawByIdQuery({ id, token }, { skip: !id ||  pathname == `/stock-raw-invoice/${id}` });
 
-  const stock = stockResponse?.data || {};
+  const stock = stockResponse?.data || stockRawResponse?.data || {};
   const items = useMemo(() => (Array.isArray(stock?.items) ? stock.items : []), [stock?.items]);
 
   const money = (value) =>
@@ -64,7 +68,7 @@ const StockInvoice = () => {
     rows.push(null);
   }
 
-  if (isLoading) {
+  if (isStockFetching || isStockRawFetching) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-transparent px-4 py-8">
         <div className="text-center">

@@ -44,6 +44,8 @@ import api from "../../services/api";
 import { useDebounce } from 'use-debounce';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
+import { LiaUserEditSolid } from "react-icons/lia";
+import { BiEdit } from "react-icons/bi";
 
 dayjs.extend(relativeTime);
 
@@ -321,18 +323,19 @@ const OrderList = () => {
                 </td>
                 <td className="p-3">
                   <div className="flex justify-center gap-2">
-                    <button
-                      onClick={() => order.sale_type === "sale" ? navigate("receipt/" + order.order_id) : navigate("invoice/" + order.order_id)}
-                      className="p-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded hover:bg-blue-200 transition-colors"
+                    <Link
+                      to={order.sale_type === "sale" ? `/receipt/${order.order_id}` : `/invoice/${order.order_id}`}
+                      target="_blank"
+                      className="p-2 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded hover:bg-green-200 transition-colors"
                       title={t('view')}
-                    ><LuEye size={14} /></button>
+                    ><LuFileText size={14} /></Link>
                     
                     {!order.is_cancelled && (
                       <button
                         onClick={() => navigate("edit/" + order.order_id)}
-                        className="p-2 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded hover:bg-green-200 transition-colors"
+                        className="p-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded hover:bg-blue-200 transition-colors"
                         title={t('edit')}
-                      ><LuFileText size={14} /></button>
+                      ><BiEdit size={14} /></button>
                     )}
 
                     {!order.is_cancelled && order.balance > 0 && (
@@ -435,18 +438,19 @@ const OrderList = () => {
                </div>
                <div className="flex gap-1">
                   <div className="flex justify-center gap-2">
-                    <button
-                      onClick={() => order.sale_type === "sale" ? navigate("receipt/" + order.order_id) : navigate("invoice/" + order.order_id)}
-                      className="p-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded hover:bg-blue-200 transition-colors"
+                    <Link
+                      to={order.sale_type === "sale" ? `/receipt/${order.order_id}` : `/invoice/${order.order_id}`}
+                      target="_blank"
+                      className="p-2 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded hover:bg-green-200 transition-colors"
                       title={t('view')}
-                    ><LuEye size={14} /></button>
+                    ><LuFileText size={14} /></Link>
                     
                     {!order.is_cancelled && (
                       <button
                         onClick={() => navigate("edit/" + order.order_id)}
-                        className="p-2 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded hover:bg-green-200 transition-colors"
+                        className="p-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded hover:bg-blue-200 transition-colors"
                         title={t('edit')}
-                      ><LuFileText size={14} /></button>
+                      ><BiEdit size={14} /></button>
                     )}
 
                     {!order.is_cancelled && order.balance > 0 && (

@@ -398,13 +398,14 @@ const OrderInvoiceList = () => {
         </button>
       )}
 
-      <button
-        onClick={() => navigate(`/order-list/invoice/${order.order_id}`)}
+      <a
+        href={`/invoice/${order.order_id}`}
+        target="_blank"
         className="rounded bg-blue-100 p-2 text-blue-600 transition-colors hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-400"
         title={t("view")}
       >
         <LuFileText size={14} />
-      </button>
+      </a>
 
       {!order.is_cancelled && (
         <button
