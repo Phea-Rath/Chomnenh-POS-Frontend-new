@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { useTranslation } from "react-i18next";
 import { FaTrash } from "react-icons/fa";
 
 const ItemTable = ({
@@ -20,6 +21,7 @@ const ItemTable = ({
     const [openSelectIndex, setOpenSelectIndex] = useState(null);
     const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0, width: 0 });
     const menuRef = useRef(null);
+    const {t} = useTranslation();
     const triggerRefs = useRef({});
 
     const toSafeNumber = (value) => {
@@ -159,7 +161,7 @@ const ItemTable = ({
                             </td>
                             )}
                             <td className="px-1 py-2">
-                                <div className="flex justify-center">
+                                <div className="flex flex-col items-center">
                                     <input
                                         type="number"
                                         name="quantity"
@@ -169,7 +171,13 @@ const ItemTable = ({
                                         onChange={(e) => onQtyChange(index, Number(e.target.value))}
                                         className="w-20 rounded-sm hover:border hover:border-gray-300 px-2 py-1 text-center hover:transition-all outline-0  dark:text-white"
                                         onWheel={(e) => e.target.blur()}
+                                        max={item.in_stock}
                                     />
+                                    {item.hasOwnProperty('in_stock') && (
+                                        <span className="text-[10px] text-gray-400 mt-1">
+                                            {t ? t("stock") : "Stock"}: {item.in_stock}
+                                        </span>
+                                    )}
                                 </div>
                             </td>
                             <td className="px-1 py-2 text-right tabular-nums text-gray-600 dark:text-gray-400">

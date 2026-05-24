@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import {
   FaBox,
   FaCalendarAlt,
+  FaCloudUploadAlt,
   FaDollarSign,
   FaExclamationTriangle,
   FaFileInvoice,
@@ -17,7 +18,7 @@ import {
 import api from "../../services/api";
 import { toast } from "react-toastify";
 import { useNavigate, useParams } from "react-router";
-import { Badge, Divider, DatePicker } from "antd";
+import { Badge, Divider, DatePicker, Checkbox } from "antd";
 import dayjs from "dayjs";
 import { useDebounce } from "use-debounce";
 import { useTranslation } from "react-i18next";
@@ -33,6 +34,8 @@ import { useGetAllSaleQuery } from "../../../app/Features/salesSlice";
 import { useGetAllDeliverQuery } from "../../../app/Features/deliversSlice";
 import { useGetAllUserQuery } from "../../../app/Features/usersSlice";
 import { useGetOrderByIdQuery, useGetOrderInvoiceQuery } from "../../../app/Features/ordersSlice";
+import Modal from "../../utils/Modal";
+import { LuSearch } from "react-icons/lu";
 
 const DEFAULT_STATUS = 0;
 const ITEM_FOR_OPTIONS = [
@@ -61,6 +64,14 @@ const STATUS_OPTIONS = [
   { value: 6, label: "Completed" },
   { value: 7, label: "Cancelled" },
 ];
+
+const DEFAULT_FILTERS = {
+  created_by: "",
+  customer_id: "",
+  item_for: "",
+  start_date: "",
+  end_date: "",
+};
 
 const PAYMENT_METHOD_SEARCH_OPTIONS = PAYMENT_METHOD_OPTIONS.map((option) => ({
   ...option,
@@ -97,6 +108,7 @@ const createInitialFormData = () => ({
   sub_total: 0,
   sale_type: "wholesale",
   created_by: "",
+  term: 0,
   // order_tel: "",
   // order_address: "",
   discount_total: 0,
@@ -119,7 +131,7 @@ const OrderInvoiceForm = () => {
   const token = localStorage.getItem("token");
 
   const navigator = useNavigate();
-
+  
   const [formData, setFormData] = useState(() => createInitialFormData());
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
@@ -129,6 +141,93 @@ const OrderInvoiceForm = () => {
   const [limit, setLimit] = useState(10);
   const [paymentStatus, setPaymentStatus] = useState("");
   const [currentPage] = useState(1);
+  const [showModal, setShowModal] = useState(false);
+  const [selectedInvoiceIds, setSelectedInvoiceIds] = useState([]);
+
+  const toggleSelectInvoice = (id) => {
+    setSelectedInvoiceIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
+  };
+
+  const toggleSelectAllOnPage = () => {
+    const pageIds = invoices.map((inv) => inv.order_id || inv.id);
+    const allSelected = pageIds.every((id) => selectedInvoiceIds.includes(id));
+
+    if (allSelected) {
+      setSelectedInvoiceIds((prev) => prev.filter((id) => !pageIds.includes(id)));
+    } else {
+      setSelectedInvoiceIds((prev) => [...new Set([...prev, ...pageIds])]);
+    }
+  };
+
+  const handleImportTemplates = async () => {
+    if (selectedInvoiceIds.length === 0) return;
+    setLoading(true);
+    try {
+      const allItems = [];
+      let lastOrderData = null;
+
+      for (const orderId of selectedInvoiceIds) {
+        const response = await api.get(`/order_masters/${orderId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const order = response.data.data;
+        lastOrderData = order;
+
+        const items = (order.items || order.details || []).map((detail) => {
+          const currentItem = itemLookup.get(Number(detail.item_id));
+          return {
+            item_id: Number(detail.item_id),
+            item_name: detail.item_name || detail.name || "",
+            name: detail.item_name || detail.name || "",
+            code: detail.item_code || detail.code || "",
+            image: detail.images?.[0]?.image || detail.image || null,
+            item_for: detail.item_for || "sale",
+            item_price: toNumber(detail.item_price ?? detail.unit_price),
+            quantity: toNumber(detail.quantity),
+            discount: toNumber(detail.discount),
+            in_stock: currentItem ? toNumber(currentItem.in_stock) : toNumber(detail.in_stock || 0),
+          };
+        });
+        allItems.push(...items);
+      }
+
+      updateFormData((prev) => {
+        const nextItems = [...prev.items];
+        
+        allItems.forEach((newItem) => {
+          const existingIndex = nextItems.findIndex(
+            (item) => item.item_id === newItem.item_id && item.item_for === newItem.item_for
+          );
+          if (existingIndex >= 0) {
+            nextItems[existingIndex] = {
+              ...nextItems[existingIndex],
+              quantity: nextItems[existingIndex].quantity + newItem.quantity,
+            };
+          } else {
+            nextItems.push(newItem);
+          }
+        });
+
+        return {
+          ...prev,
+          order_customer_id: prev.order_customer_id || lastOrderData?.customer_id || "",
+          items: nextItems,
+        };
+      });
+
+      setSelectedInvoiceIds([]);
+      setShowModal(false);
+      toast.success(t("templatesImported") || "Items imported successfully");
+    } catch (error) {
+      console.error("Error importing templates:", error);
+      toast.error(t("errorImportingTemplates") || "Failed to import templates");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const {data:users} = useGetAllUserQuery(token)
   const { data: orderByIdData, isFetching: orderByIdLoading, refetch } = useGetOrderByIdQuery(
     { id: orderId, token },
@@ -155,6 +254,30 @@ const OrderInvoiceForm = () => {
     page: currentPage,
     search: debouncedSearch,
   });
+  const [filters, setFilters] = useState(DEFAULT_FILTERS);
+  const [pagination, setPagination] = useState({
+    current: 1,
+    pageSize: 10,
+    total: 0,
+    pageSizeOptions: [10, 20, 50, 100],
+  });
+
+  const { data: usersData } = useGetAllUserQuery(token, { skip: !token });
+    const { data: customersData } = useGetAllCustomerQuery(token, { skip: !token });
+    const {
+      data: invoiceData,
+      isLoading: queryLoading,
+      refetch: refetchInvoices,
+    } = useGetOrderInvoiceQuery(
+      {
+        token,
+        limit: pagination.pageSize,
+        page: pagination.current,
+        search: debouncedSearch,
+        ...filters,
+      },
+      { skip: !token }
+    );
 
   const createUser = users?.data?.filter((user) => user.role_id !== 1 && user.role_id !== 2) || [];
   const customers = customerData?.data || [];
@@ -170,6 +293,30 @@ const OrderInvoiceForm = () => {
     return toNumber(item.price);
   };
 
+  const invoices = invoiceData?.data || [];
+    const userFilterOptions = [{ id: "", username: "All Users" }, ...createUser];
+    const customerFilterOptions = [{ customer_id: "", customer_name: "All Customers" }, ...customers];
+  
+    useEffect(() => {
+      if (invoiceData?.pagination) {
+        setPagination((prev) => ({
+          ...prev,
+          total: invoiceData.pagination.total,
+        }));
+      }
+    }, [invoiceData]);
+  
+    useEffect(() => {
+      setPagination((prev) => ({ ...prev, current: 1 }));
+    }, [debouncedSearch, filters.created_by, filters.customer_id, filters.item_for, filters.start_date, filters.end_date]);
+  
+    const handleResetFilters = () => {
+      setSearchTerm("");
+      setFilters(DEFAULT_FILTERS);
+      setPagination((prev) => ({ ...prev, current: 1 }));
+    };
+  
+
   const buildOrderItem = (item, overrides = {}) => ({
     item_id: Number(item.id),
     item_name: item.name || overrides.item_name || "",
@@ -180,6 +327,7 @@ const OrderInvoiceForm = () => {
     item_price: overrides.item_price ?? getDefaultItemPrice(item),
     quantity: overrides.quantity ?? 1,
     discount: overrides.discount ?? 0,
+    in_stock: toNumber(item.in_stock || overrides.in_stock || 0),
   });
 
   const calculateTotals = (nextFormData) => {
@@ -225,17 +373,21 @@ const OrderInvoiceForm = () => {
       refetch();
     // }
     
-    const normalizedItems = (order.items || order.details || []).map((detail) => ({
-      item_id: Number(detail.item_id),
-      item_name: detail.item_name || detail.name || "",
-      name: detail.item_name || detail.name || "",
-      code: detail.item_code || detail.code || "",
-      image: detail.images?.[0]?.image || detail.image || null,
-      item_for: detail.item_for || "sale",
-      item_price: toNumber(detail.item_price ?? detail.unit_price),
-      quantity: toNumber(detail.quantity),
-      discount: toNumber(detail.discount),
-    }));
+    const normalizedItems = (order.items || order.details || []).map((detail) => {
+      const currentItem = itemLookup.get(Number(detail.item_id));
+      return {
+        item_id: Number(detail.item_id),
+        item_name: detail.item_name || detail.name || "",
+        name: detail.item_name || detail.name || "",
+        code: detail.item_code || detail.code || "",
+        image: detail.images?.[0]?.image || detail.image || null,
+        item_for: detail.item_for || "sale",
+        item_price: toNumber(detail.item_price ?? detail.unit_price),
+        quantity: toNumber(detail.quantity),
+        discount: toNumber(detail.discount),
+        in_stock: currentItem ? toNumber(currentItem.in_stock) : toNumber(detail.in_stock || 0),
+      };
+    });
 
     setFormData(
       calculateTotals({
@@ -253,6 +405,7 @@ const OrderInvoiceForm = () => {
         reference_no: order.reference_no || order.order_no || "",
         sub_total: toNumber(order.order_subtotal ?? order.sub_total),
         discount_total: toNumber(order.order_discount),
+        term: order.term || 0,
         created_by: order.created_by || "",
         // order_tel: order.order_tel || "",
         // order_address: order.order_address || "",
@@ -362,9 +515,16 @@ const OrderInvoiceForm = () => {
 
       if (existingIndex >= 0) {
         const nextItems = [...prev.items];
+        const newQty = Number(nextItems[existingIndex].quantity) + 1;
+
+        if (newQty > nextItems[existingIndex].in_stock) {
+          toast.warning(`${t("insufficientStock") || "Insufficient stock"}: ${nextItems[existingIndex].in_stock}`);
+          return prev;
+        }
+
         nextItems[existingIndex] = {
           ...nextItems[existingIndex],
-          quantity: Number(nextItems[existingIndex].quantity) + 1,
+          quantity: newQty,
         };
         return { ...prev, items: nextItems };
       }
@@ -387,9 +547,15 @@ const OrderInvoiceForm = () => {
   };
 
   const handleQtyChange = (index, quantity) => {
+    const item = formData.items[index];
     if (quantity <= 0) {
       setErrors((prev) => ({ ...prev, items: t("invalidQuantity") }));
       return;
+    }
+
+    if (quantity > item.in_stock) {
+      toast.warning(`${t("insufficientStock") || "Insufficient stock"}: ${item.in_stock}`);
+      quantity = item.in_stock;
     }
 
     updateFormData((prev) => ({
@@ -498,6 +664,7 @@ const OrderInvoiceForm = () => {
             quantity: matchedItem.quantity,
             item_price: getDefaultItemPrice(matchedItem),
             discount: row.discount ?? 0,
+            in_stock: toNumber(matchedItem.in_stock),
           };
         })
         .filter(Boolean);
@@ -582,8 +749,8 @@ const OrderInvoiceForm = () => {
         deliver_id: formData.deliver_id ? Number(formData.deliver_id) : null,
         delivery_fee: toNumber(formData.delivery_fee),
         order_tax: toNumber(formData.order_tax),
-        due_date: formData.due_date || null,
         payment: toNumber(formData.payment),
+        term: formData.term || 0,
         created_by: formData.created_by || null,
         sale_type: formData.sale_type || null,
         reference_no: formData.reference_no || null,
@@ -658,6 +825,65 @@ const OrderInvoiceForm = () => {
     handleInputChange("order_payment_method", value || "");
   };
 
+  const handleSelectTemplate = async (selectedOrder) => {
+    setLoading(true);
+    try {
+      const orderId = selectedOrder.order_id || selectedOrder.id;
+      const response = await api.get(`/order_masters/${orderId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const order = response.data.data;
+
+      const normalizedItems = (order.items || order.details || []).map((detail) => {
+        const currentItem = itemLookup.get(Number(detail.item_id));
+        return {
+          item_id: Number(detail.item_id),
+          item_name: detail.item_name || detail.name || "",
+          name: detail.item_name || detail.name || "",
+          code: detail.item_code || detail.code || "",
+          image: detail.images?.[0]?.image || detail.image || null,
+          item_for: detail.item_for || "sale",
+          item_price: toNumber(detail.item_price ?? detail.unit_price),
+          quantity: toNumber(detail.quantity),
+          discount: toNumber(detail.discount),
+          in_stock: currentItem ? toNumber(currentItem.in_stock) : toNumber(detail.in_stock || 0),
+        };
+      });
+
+      setFormData(
+        calculateTotals({
+          status: DEFAULT_STATUS,
+          order_customer_id: order.order_customer_id || order.customer_id || "",
+          deliver_id: order.deliver_id || "",
+          delivery_fee: toNumber(order.delivery_fee),
+          order_tax: toNumber(order.order_tax || 0),
+          payment: 0,
+          order_payment_status: "credit",
+          due_date: "",
+          order_payment_method: "cash",
+          order_date: today,
+          exchange_rate: toNumber(order.exchange_rate),
+          reference_no: "",
+          sub_total: 0,
+          sale_type: order.sale_type || "wholesale",
+          created_by: order.created_by || "",
+          term: order.term || 0,
+          discount_total: 0,
+          total_amount: 0,
+          balance: 0,
+          items: normalizedItems,
+        })
+      );
+      setShowModal(false);
+    } catch (error) {
+      console.error("Error fetching order template:", error);
+      toast.error(t("errorFetchingTemplate") || "Failed to fetch template details");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className=" bg-transparent py-2 transition-colors">
       <div className="px-2">
@@ -672,20 +898,24 @@ const OrderInvoiceForm = () => {
               </p>
             </div>
             <div className="mt-6 flex items-center justify-center gap-2">
-                      <Button type="button"  onClick={handleSubmit} disabled={loading || orderByIdLoading} variant="primary" outline={false}>
-                        <FaSave />
-                        Save
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="danger"
-                        outline={true}
-                        onClick={() => window.history.back()}
-                      >
-                        <FaTimes />
-                        Back
-                      </Button>
-                    </div>
+              {!orderId &&<Button type="button"  onClick={() => setShowModal(true)} disabled={loading || orderByIdLoading} variant="success" outline={false}>
+                <FaCloudUploadAlt className="text-lg" />
+              
+              </Button>}
+              <Button type="button"  onClick={handleSubmit} disabled={loading || orderByIdLoading} variant="primary" outline={false}>
+                <FaSave />
+                {isEditMode ? t("update") : t("create")}
+              </Button>
+              <Button
+                type="button"
+                variant="danger"
+                outline={true}
+                onClick={() => window.history.back()}
+              >
+                <FaTimes />
+                {t("back")}
+              </Button>
+            </div>
           </div>
 
           {Object.keys(errors).length > 0 && (
@@ -814,13 +1044,27 @@ const OrderInvoiceForm = () => {
                       <label className="mb-2 block text-sm font-medium text-gray-700 dark:!text-gray-300">
                         <span className="flex items-center gap-2">
                           <FaCalendarAlt className="text-gray-400" />
-                          {t("DueDate")}
+                          {t("term")}
+                        </span>
+                      </label>
+                      <Input 
+                        type="number"
+                        value={formData.term}
+                        onChange={(value) => handleInputChange("term", value)}
+                      />
+                    </div>}
+                    {formData.order_payment_status != 'paid' && <div>
+                      <label className="mb-2 block text-sm font-medium text-gray-700 dark:!text-gray-300">
+                        <span className="flex items-center gap-2">
+                          <FaCalendarAlt className="text-gray-400" />
+                          {t("dueDate")}
                         </span>
                       </label>
                       <DatePicker
+                        readOnly
                         className="date-picker w-full"
                         size="middle"
-                        value={formData.due_date ? dayjs(formData.due_date) : null}
+                        value={formData.term ? dayjs(formData.order_date).add(formData.term, 'day') : null}
                         onChange={(_, dateString) => handleInputChange("due_date", dateString)}
                       />
                     </div>}
@@ -834,7 +1078,7 @@ const OrderInvoiceForm = () => {
                     <div className="flex items-center gap-2">
                       <FaBox className="text-blue-500" />
                       <h2 className="text-sm font-bold text-gray-800 dark:!text-gray-100">
-                        {t("OrderItems")}
+                        {t("orderItems")}
                       </h2>
                     </div>
 
@@ -1022,7 +1266,7 @@ const OrderInvoiceForm = () => {
                         <RichSearch
                           data={createUser}
                           value={formData.created_by}
-                          placeholder={t("selectcreatedBy")}
+                          placeholder={t("selectCreatedBy")}
                           keyFields={{
                             id: "id",
                             title: "username",
@@ -1087,6 +1331,223 @@ const OrderInvoiceForm = () => {
           </div>
         </form>
       </div>
+      <Modal
+        open={showModal}
+        onClose={() => setShowModal(false)}
+        width={1000}
+      >
+        <div className="flex flex-col max-h-[85vh]">
+          {/* Modal Header */}
+          <div className="p-4 border-b dark:border-gray-700">
+            <h3 className="text-lg font-bold text-gray-800 dark:!text-gray-100">
+              {t("selectOldInvoiceTemplate")}
+            </h3>
+          </div>
+
+          {/* Filters Area */}
+          <div className="p-4 bg-gray-50 dark:bg-gray-800/40 border-b dark:border-gray-700">
+            <div className="grid grid-cols-1 gap-3 lg:grid-cols-12">
+              <div className="lg:col-span-4">
+                <div className="relative">
+                  <LuSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder={t("searchInvoices")}
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full border border-gray-300 bg-white py-1.5 pl-10 pr-4 text-sm text-gray-900 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-900 dark:text-white rounded-md"
+                  />
+                </div>
+              </div>
+              <div className="lg:col-span-2">
+                <RichSearch
+                  data={userFilterOptions}
+                  keyFields={{ id: "id", title: "username", image: 'image' }}
+                  value={filters.created_by}
+                  onSelected={(id) =>
+                    setFilters((prev) => ({ ...prev, created_by: id }))
+                  }
+                  placeholder={t("allUsers")}
+                />
+              </div>
+              <div className="lg:col-span-2">
+                <RichSearch
+                  data={customerFilterOptions}
+                  keyFields={{ id: "customer_id", title: "customer_name", image: 'customer_image' }}
+                  value={filters.customer_id}
+                  onSelected={(id) =>
+                    setFilters((prev) => ({ ...prev, customer_id: id }))
+                  }
+                  placeholder={t("allCustomers")}
+                />
+              </div>
+              <div className="lg:col-span-2">
+                <DatePicker
+                  value={filters.start_date ? dayjs(filters.start_date) : null}
+                  onChange={(_, dateString) =>
+                    setFilters((prev) => ({ ...prev, start_date: dateString || "" }))
+                  }
+                  format="YYYY-MM-DD"
+                  className="date-picker w-full"
+                  placeholder={t("startDate")}
+                />
+              </div>
+              <div className="lg:col-span-2">
+                <DatePicker
+                  value={filters.end_date ? dayjs(filters.end_date) : null}
+                  onChange={(_, dateString) =>
+                    setFilters((prev) => ({ ...prev, end_date: dateString || "" }))
+                  }
+                  format="YYYY-MM-DD"
+                  className="date-picker w-full"
+                  placeholder={t("endDate")}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Selected Invoices Summary */}
+          {selectedInvoiceIds.length > 0 && (
+            <div className="px-4 py-2 bg-blue-50 dark:bg-blue-900/30 border-b dark:border-gray-700 flex justify-between items-center animate-in fade-in slide-in-from-top-2">
+              <div className="flex items-center gap-2 text-sm text-blue-700 dark:text-blue-300">
+                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-600 text-[10px] font-bold text-white">
+                  {selectedInvoiceIds.length}
+                </span>
+                <span>{t("invoicesSelected")}</span>
+              </div>
+              <div className="flex gap-2">
+                <Button 
+                  onClick={() => setSelectedInvoiceIds([])} 
+                  variant="danger" 
+                  outline={true}
+                >
+                  {t("clearAll")}
+                </Button>
+                <Button 
+                  onClick={handleImportTemplates} 
+                  variant="primary"
+                >
+                  <FaCloudUploadAlt />
+                  {t("importItems")}
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Table Area with Fixed Header and Scrollable Body */}
+          <div className="flex-1 overflow-y-auto min-h-[300px]">
+            <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400 border-collapse">
+              <thead className="text-xs text-gray-700 uppercase bg-gray-100 dark:bg-gray-800 dark:text-gray-400 sticky top-0 z-10 shadow-sm">
+                <tr>
+                  <th className="px-4 py-3 bg-gray-100 dark:bg-gray-800 w-12">
+                    <Checkbox 
+                      type="checkbox" 
+                      onChange={toggleSelectAllOnPage}
+                      checked={invoices.length > 0 && invoices.every(inv => selectedInvoiceIds.includes(inv.order_id || inv.id))}
+                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                    />
+                  </th>
+                  <th className="px-4 py-3 bg-gray-100 dark:bg-gray-800">{t("invoiceNo")}</th>
+                  <th className="px-4 py-3 bg-gray-100 dark:bg-gray-800">{t("customer")}</th>
+                  <th className="px-4 py-3 bg-gray-100 dark:bg-gray-800">{t("date")}</th>
+                  <th className="px-4 py-3 bg-gray-100 dark:bg-gray-800">{t("total")}</th>
+                  <th className="px-4 py-3 bg-gray-100 dark:bg-gray-800 text-right">{t("action")}</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                {queryLoading ? (
+                  <tr>
+                    <td colSpan="6" className="px-4 py-10 text-center">
+                      <div className="flex flex-col items-center gap-2">
+                        <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                        <span>{t("loading")}...</span>
+                      </div>
+                    </td>
+                  </tr>
+                ) : invoices.length === 0 ? (
+                  <tr>
+                    <td colSpan="6" className="px-4 py-10 text-center italic text-gray-400">
+                      {t("noInvoicesFound")}
+                    </td>
+                  </tr>
+                ) : (
+                  invoices.map((invoice) => {
+                    const isSelected = selectedInvoiceIds.includes(invoice.order_id || invoice.id);
+                    return (
+                      <tr 
+                        key={invoice.order_id || invoice.id} 
+                        className={`transition-colors group cursor-pointer ${
+                          isSelected 
+                            ? 'bg-blue-50 dark:bg-blue-900/20' 
+                            : 'bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800'
+                        }`}
+                        onClick={() => toggleSelectInvoice(invoice.order_id || invoice.id)}
+                      >
+                        <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                          <Checkbox 
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => toggleSelectInvoice(invoice.order_id || invoice.id)}
+                            className="rounded !bg-transparent border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                          />
+                        </td>
+                        <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">
+                          {invoice.order_no || invoice.reference_no}
+                        </td>
+                        <td className="px-4 py-3">{invoice.customer_name}</td>
+                        <td className="px-4 py-3">{dayjs(invoice.order_date).format("YYYY-MM-DD")}</td>
+                        <td className="px-4 py-3 font-semibold text-gray-700 dark:text-gray-200">
+                          ${toNumber(invoice.order_total || invoice.total_amount).toFixed(2)}
+                        </td>
+                        <td className="px-4 py-3 text-right" onClick={(e) => e.stopPropagation()}>
+                          <Button
+                            onClick={() => handleSelectTemplate(invoice)}
+                            variant="primary"
+                            outline={true}
+                            size="small"
+                          >
+                            {t("useAsBase")}
+                          </Button>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Modal Footer / Pagination */}
+          <div className="p-4 border-t dark:border-gray-700 bg-gray-50 dark:bg-gray-800/40">
+            <div className="flex flex-col sm:flex-row justify-between items-center gap-4 text-sm font-medium">
+              <div className="text-gray-600 dark:text-gray-400">
+                {t("totalRecords")}: <span className="text-gray-900 dark:text-white">{pagination.total}</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <Button
+                  disabled={pagination.current === 1 || queryLoading}
+                  onClick={() => setPagination(p => ({ ...p, current: p.current - 1 }))}
+                  variant="primary"
+                  outline={true}
+                >
+                  {t("previous")}
+                </Button>
+                <div className="px-3 py-1 bg-white dark:bg-gray-700 border dark:border-gray-600 rounded shadow-sm text-gray-700 dark:text-gray-200">
+                  {pagination.current} / {Math.ceil(pagination.total / pagination.pageSize) || 1}
+                </div>
+                <Button
+                  disabled={pagination.current * pagination.pageSize >= pagination.total || queryLoading}
+                  onClick={() => setPagination(p => ({ ...p, current: p.current + 1 }))}
+                  variant="primary"
+                  outline={true}
+                >
+                  {t("next")}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };

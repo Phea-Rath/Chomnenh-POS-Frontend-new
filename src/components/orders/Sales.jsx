@@ -57,6 +57,7 @@ const initialOrder = {
   order_total: 0,
   order_customer_id: 1,
   online: 0,
+  term: 0,
   due_date: null,
   status: 6,
   deliver_id: 1,
@@ -78,6 +79,11 @@ const PAYMENT_METHODS = [
   { value: "bakong", label: "Bakong" },
 ];
 
+const PAYMENT_STATUS = [
+  { value: "paid", label: "Paid" },
+  { value: "cod", label: "COD" },
+  { value: "credit", label: "Credit" },
+]
 const Sales = () => {
   const { t } = useTranslation();
   const proId = localStorage.getItem("profileId");
@@ -129,7 +135,7 @@ const Sales = () => {
     search: debounce
   });
   const categoryContext = useGetAllCategoriesQuery(token);
-  const orderContext = useGetAllOrderQuery(token);
+  const orderContext = useGetAllOrderQuery({  token, limit: 10, page: 1, search: '' });
   const { refetch: refetchWaste } = useGetAllWasteQuery(token);
 
   const items = useMemo(() => saleItemContext?.data?.data || [], [saleItemContext?.data]);
@@ -708,7 +714,7 @@ const Sales = () => {
 
     // Prepare items with attribute selections
     const itemsWithAttributes = orders.items.map(item => {
-      console.log(item);
+  
 
       const attributeData = [];
       if (item.attribute_selections) {
@@ -1510,7 +1516,7 @@ const Sales = () => {
                               className="w-full h-full object-contain"
                               onError={(e) => {
                                 e.target.onerror = null;
-                                e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(item.name)}&background=3b82f6&color=fff&size=128`;
+                                e.target.src = import.meta.env.VITE_INITIAL_IMAGE;
                               }}
                             />
                           </div>
@@ -1676,8 +1682,11 @@ const Sales = () => {
                           }}
                           className="px-2 py-1 border rounded text-sm border-gray-300 text-gray-900 bg-transparent dark:border-gray-400 dark:text-white"
                         >
-                          <option className="dark:bg-gray-700" value="cash">{t("cash")}</option>
-                          <option className="dark:bg-gray-700" value="bank">{t("bank")}</option>
+                          {PAYMENT_METHODS.map((method) => (
+                            <option key={method.value} className="dark:bg-gray-700" value={method.value}>
+                              {method.label}
+                            </option>
+                          ))}
                         </select>
                       </div>
 
@@ -1700,9 +1709,9 @@ const Sales = () => {
                           }}
                           className="px-2 py-1 border rounded text-sm border-gray-300 text-gray-900 bg-transparent dark:border-gray-400 dark:text-white"
                         >
-                          {PAYMENT_METHODS.map((method) => (
-                            <option key={method.value} className="dark:bg-gray-700" value={method.value}>
-                              {method.label}
+                          {PAYMENT_STATUS.map((status) => (
+                            <option key={status.value} className="dark:bg-gray-700" value={status.value}>
+                              {status.label}
                             </option>
                           ))}
                         </select>
@@ -1757,19 +1766,31 @@ const Sales = () => {
                         />
                       </div>
                       <div className={`flex justify-between items-center ${payment === "paid" ? "hidden" : ""}`}>
-                        <label className="text-sm text-gray-600 dark:text-gray-300">{t("pay")}</label>
-                        <DatePicker
+                        <label className="text-sm text-gray-600 dark:text-gray-300">{t("term")}</label>
+                        <input
                           type="number"
-                          value={orders?.due_date? dayjs(orders.due_date): ""}
-                          onChange={(date, dateString) => {
+                          value={orders?.term || ""}
+                          onChange={(e) => {
+                            const term = Number(e.target.value) || 0;
                             const results = {
                               ...orders,
-                              due_date: dateString,
+                              term: term,
                             };
                             localStorage.setItem("orderItems", JSON.stringify(results));
                             setOrders(results);
                           }}
                           className="w-24 px-2 py-1 border rounded text-right text-sm border-gray-300 text-gray-900 !bg-transparent dark:border-gray-400 dark:text-white"
+                          placeholder="0.00"
+                          min="0"
+                          step="0.01"
+                        />
+                      </div>
+                      <div className={`flex justify-between items-center ${payment === "paid" ? "hidden" : ""}`}>
+                        <label className="text-sm text-gray-600 dark:text-gray-300">{t("dueDate")}</label>
+                        <DatePicker
+                          readOnly
+                          value={orders.term ? dayjs(orders.order_date).add(orders.term, 'days') : null}
+                          className="w-35 px-2 py-1 border rounded text-right text-sm border-gray-300 text-gray-900 !bg-transparent dark:border-gray-400 dark:text-white"
                           placeholder="0.00"
                           min="0"
                           step="0.01"

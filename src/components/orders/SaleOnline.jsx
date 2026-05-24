@@ -55,6 +55,8 @@ const initialOrder = {
   deliver_id: 1,
   order_discount: 0,
   order_tax: 0,
+  term: 0,
+  due_date: null,
   balance: 0,
   payment: 0,
   items: [],
@@ -329,7 +331,7 @@ const Sales = () => {
       refetchOnReconnect: true,
     });
   const categoryContext = useGetAllCategoriesQuery(token);
-  const orderContext = useGetAllOrderQuery(token);
+  const orderContext = useGetAllOrderQuery({  token, limit: 10, page: 1, search: '' });
   const { refetch: refetchWaste } = useGetAllWasteQuery(token);
 
   const items = useMemo(() => saleItemContext?.data?.data || [], [saleItemContext?.data]);

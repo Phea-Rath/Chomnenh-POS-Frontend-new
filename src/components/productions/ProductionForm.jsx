@@ -8,6 +8,7 @@ import {
   LuPlus,
   LuRefreshCw,
   LuSave,
+  LuSearch,
   LuTrash2,
   LuX
 } from 'react-icons/lu';
@@ -18,10 +19,12 @@ import dayjs from 'dayjs';
 import { FaBox } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import { useTranslation } from 'react-i18next';
+import { DatePicker, Checkbox } from 'antd';
 import api from '../../services/api';
 import Input from '../../utils/Input';
 import RichSearch from '../../utils/RichSearch';
 import Button from '../../utils/Button';
+import Modal from '../../utils/Modal';
 import { useGetAllItemsQuery } from '../../../app/Features/itemsSlice';
 import { useGetAllRawMaterialQuery } from '../../../app/Features/RawMaterialSlice';
 import { useGetAllProductionQuery } from '../../../app/Features/productSlice';
@@ -68,6 +71,20 @@ const ProductionForm = () => {
   const [modalForm, setModalForm] = useState(defaultModalState);
   const [modalError, setModalError] = useState('');
 
+  const [showTemplateModal, setShowTemplateModal] = useState(false);
+  const [templateSearchTerm, setTemplateSearchTerm] = useState('');
+  const [debouncedTemplateSearch] = useDebounce(templateSearchTerm, 500);
+  const [templateFilters, setTemplateFilters] = useState({
+    start_date: '',
+    end_date: '',
+  });
+  const [templatePagination, setTemplatePagination] = useState({
+    current: 1,
+    pageSize: 10,
+    total: 0,
+  });
+  const [selectedTemplateIds, setSelectedTemplateIds] = useState([]);
+
   const { data: itemData } = useGetAllItemsQuery({
     limit,
     page: currentPage,
@@ -87,13 +104,193 @@ const ProductionForm = () => {
     token
   });
 
+  const {
+    data: productionHistoryData,
+    isLoading: historyLoading,
+  } = useGetAllProductionQuery({
+    limit: templatePagination.pageSize,
+    page: templatePagination.current,
+    search: debouncedTemplateSearch,
+    start_date: templateFilters.start_date,
+    end_date: templateFilters.end_date,
+    token
+  }, { skip: !token || !showTemplateModal });
+
+  useEffect(() => {
+    if (productionHistoryData?.pagination) {
+      setTemplatePagination((prev) => ({
+        ...prev,
+        total: productionHistoryData.pagination.total,
+      }));
+    }
+  }, [productionHistoryData]);
+
+  const toggleSelectTemplate = (id) => {
+    setSelectedTemplateIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
+  };
+
+  const toggleSelectAllTemplatesOnPage = () => {
+    const productions = productionHistoryData?.data || [];
+    const pageIds = productions.map((p) => p.id);
+    const allSelected = pageIds.every((id) => selectedTemplateIds.includes(id));
+
+    if (allSelected) {
+      setSelectedTemplateIds((prev) => prev.filter((id) => !pageIds.includes(id)));
+    } else {
+      setSelectedTemplateIds((prev) => [...new Set([...prev, ...pageIds])]);
+    }
+  };
+
+  const handleSelectTemplate = async (selectedProduction) => {
+    setLoading(true);
+    try {
+      const response = await api.get(`/production/${selectedProduction.id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const production = response.data.data;
+
+      setForm({
+        item_id: production.item_id || '',
+        quantity: production.quantity || '',
+        production_date: dayjs().format('YYYY-MM-DD'),
+        notes: production.notes || '',
+      });
+
+      if (Array.isArray(production.details)) {
+        const detailsWithCost = await Promise.all(
+          production.details.map(async (detail, index) => {
+            const currentMat = materialLookup.get(String(detail.raw_material_id));
+            let cost = 0;
+            try {
+              const costRes = await api.get(`total-cost/${Number(detail.quantity)}/${detail.raw_material_id}`, {
+                headers: { Authorization: `Bearer ${token}` },
+              });
+              cost = Number(costRes.data?.data?.totalCost) || 0;
+            } catch (err) {
+              console.error('Error fetching cost for material:', detail.raw_material_id, err);
+            }
+            return {
+              key: Date.now() + index,
+              raw_material_id: detail.raw_material_id,
+              material_name: detail.material_name || 'Unknown Material',
+              material_code: detail.material_code || 'N/A',
+              primary_unit: detail.primary_unit || 'unit',
+              secondary_unit: detail.secondary_unit || '',
+              selected_unit: detail.primary_unit || 'unit',
+              quantity: Number(detail.quantity) || 0,
+              cost_per_unit: cost,
+              in_stock: currentMat ? currentMat.in_stock : Number(detail.in_stock || 0),
+            };
+          })
+        );
+        setSelectedRawMaterials(detailsWithCost);
+      }
+      setShowTemplateModal(false);
+      toast.success(t('templateAppliedSuccess'));
+    } catch (error) {
+      console.error('Error fetching template:', error);
+      toast.error(t('failedToLoadTemplate'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleImportTemplates = async () => {
+    if (selectedTemplateIds.length === 0) return;
+    setLoading(true);
+    try {
+      const allMaterials = [];
+      let lastItemId = '';
+
+      for (const templateId of selectedTemplateIds) {
+        const response = await api.get(`/production/${templateId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const production = response.data.data;
+        lastItemId = production.item_id;
+
+        const materials = (production.details || []).map((detail) => {
+          const currentMat = materialLookup.get(String(detail.raw_material_id));
+          return {
+            raw_material_id: detail.raw_material_id,
+            material_name: detail.material_name || 'Unknown Material',
+            material_code: detail.material_code || 'N/A',
+            primary_unit: detail.primary_unit || 'unit',
+            secondary_unit: detail.secondary_unit || '',
+            selected_unit: detail.primary_unit || 'unit',
+            quantity: Number(detail.quantity) || 0,
+            in_stock: currentMat ? currentMat.in_stock : Number(detail.in_stock || 0),
+          };
+        });
+        allMaterials.push(...materials);
+      }
+
+      // Merge collected materials with current form state
+      const mergedList = [...selectedRawMaterials];
+      allMaterials.forEach((newMat) => {
+        const existingIndex = mergedList.findIndex(
+          (mat) => mat.raw_material_id === newMat.raw_material_id
+        );
+        if (existingIndex >= 0) {
+          mergedList[existingIndex] = {
+            ...mergedList[existingIndex],
+            quantity: mergedList[existingIndex].quantity + newMat.quantity,
+          };
+        } else {
+          mergedList.push({ ...newMat, key: Date.now() + Math.random() });
+        }
+      });
+
+      // Update costs for all merged materials using the API
+      const finalMaterials = await Promise.all(
+        mergedList.map(async (mat) => {
+          let cost = 0;
+          try {
+            const costRes = await api.get(`total-cost/${mat.quantity}/${mat.raw_material_id}`, {
+              headers: { Authorization: `Bearer ${token}` },
+            });
+            cost = Number(costRes.data?.data?.totalCost) || 0;
+          } catch (error) {
+            console.error('Error fetching current cost for material:', mat.raw_material_id, error);
+            cost = mat.cost_per_unit || 0;
+          }
+          return { ...mat, cost_per_unit: cost };
+        })
+      );
+
+      setSelectedRawMaterials(finalMaterials);
+      setForm(prev => ({ ...prev, item_id: prev.item_id || lastItemId }));
+      setSelectedTemplateIds([]);
+      setShowTemplateModal(false);
+      toast.success(t('templatesImportedSuccess'));
+    } catch (error) {
+      console.error('Error importing templates:', error);
+      toast.error(t('failedToImportTemplates'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const items = itemData?.data || [];
   const rawMaterials = rawData?.data || [];
 
+  const materialLookup = useMemo(() => {
+    const map = new Map();
+    rawMaterials.forEach((rm) => {
+      const inStock = Array.isArray(rm.stock)
+        ? rm.stock.reduce((sum, s) => sum + (Number(s.in_stock) || 0), 0)
+        : Number(rm.stock?.in_stock || 0);
+      map.set(String(rm.id), { ...rm, in_stock: inStock });
+    });
+    return map;
+  }, [rawMaterials]);
+
   const availableRawMaterials = useMemo(() => {
     const selectedIds = selectedRawMaterials.map((rm) => rm.raw_material_id);
-    return rawMaterials.filter((rm) => !selectedIds.includes(rm.id));
-  }, [rawMaterials, selectedRawMaterials]);
+    return Array.from(materialLookup.values()).filter((rm) => !selectedIds.includes(rm.id));
+  }, [materialLookup, selectedRawMaterials]);
 
   const totalCost = useMemo(() => {
     return selectedRawMaterials.reduce((sum, material) => {
@@ -139,17 +336,21 @@ const ProductionForm = () => {
 
         if (Array.isArray(production?.details)) {
           setSelectedRawMaterials(
-            production.details.map((detail, index) => ({
-              key: detail.id || `${detail.raw_material_id}-${index}`,
-              raw_material_id: detail.raw_material_id,
-              material_name: detail.material_name || 'Unknown Material',
-              material_code: detail.material_code || 'N/A',
-              primary_unit: detail.primary_unit || 'unit',
-              secondary_unit: detail.secondary_unit || '',
-              selected_unit: detail.primary_unit || 'unit',
-              quantity: Number(detail.quantity) || 0,
-              cost_per_unit: Number(detail.cost_per_unit) || 0,
-            }))
+            production.details.map((detail, index) => {
+              const currentMat = materialLookup.get(String(detail.raw_material_id));
+              return {
+                key: detail.id || `${detail.raw_material_id}-${index}`,
+                raw_material_id: detail.raw_material_id,
+                material_name: detail.material_name || 'Unknown Material',
+                material_code: detail.material_code || 'N/A',
+                primary_unit: detail.primary_unit || 'unit',
+                secondary_unit: detail.secondary_unit || '',
+                selected_unit: detail.primary_unit || 'unit',
+                quantity: Number(detail.quantity) || 0,
+                cost_per_unit: Number(detail.cost_per_unit) || 0,
+                in_stock: currentMat ? currentMat.in_stock : Number(detail.in_stock || 0),
+              };
+            })
           );
         }
       } catch (error) {
@@ -248,9 +449,7 @@ const ProductionForm = () => {
   };
 
   const handleAddRawMaterial = () => {
-    const selectedMaterial = rawMaterials.find(
-      (material) => String(material.id) === String(modalForm.raw_material_id)
-    );
+    const selectedMaterial = materialLookup.get(String(modalForm.raw_material_id));
 
     if (!selectedMaterial) {
       setModalError(t('selectRawMaterial'));
@@ -303,6 +502,7 @@ const ProductionForm = () => {
       selected_unit: selectedUnit,
       quantity: quantityInPrimaryUnit,
       cost_per_unit: Number(modalForm.cost_per_unit),
+      in_stock: Number(selectedMaterial.in_stock || 0),
     };
 
     setSelectedRawMaterials((prev) => [...prev, newMaterial]);
@@ -315,17 +515,55 @@ const ProductionForm = () => {
     setSelectedRawMaterials((prev) => prev.filter((material) => material.key !== key));
   };
 
-  const handleUpdateRawMaterial = (key, field, value) => {
-    setSelectedRawMaterials((prev) =>
-      prev.map((material) =>
-        material.key === key
-          ? {
-              ...material,
-              [field]: Number(value) || 0,
+  const handleUpdateRawMaterial = async (key, field, value) => {
+    const numValue = Number(value) || 0;
+    
+    setSelectedRawMaterials((prev) => {
+      const next = prev.map((material) => {
+        if (material.key === key) {
+          let updatedQty = field === 'quantity' ? numValue : material.quantity;
+          
+          if (field === 'quantity') {
+            if (updatedQty > material.in_stock) {
+              toast.warning(`${t('insufficientStock') || 'Insufficient stock'}: ${material.in_stock}`);
+              updatedQty = material.in_stock;
             }
-          : material
-      )
-    );
+          }
+
+          return {
+            ...material,
+            [field]: field === 'quantity' ? updatedQty : numValue,
+          };
+        }
+        return material;
+      });
+      return next;
+    });
+
+    // If quantity changed, fetch new cost
+    if (field === 'quantity') {
+      const material = selectedRawMaterials.find(m => m.key === key);
+      if (!material) return;
+
+      let targetQty = numValue;
+      if (targetQty > material.in_stock) targetQty = material.in_stock;
+
+      if (targetQty > 0) {
+        try {
+          const response = await api.get(`total-cost/${targetQty}/${material.raw_material_id}`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          if (response.status === 200) {
+            const cost = Number(response.data?.data?.totalCost) || 0;
+            setSelectedRawMaterials(prev => prev.map(m => 
+              m.key === key ? { ...m, cost_per_unit: cost } : m
+            ));
+          }
+        } catch (error) {
+          console.error('Error updating cost:', error);
+        }
+      }
+    }
   };
 
   const validateForm = () => {
@@ -455,16 +693,30 @@ const ProductionForm = () => {
             </div>
           </div>
 
-          {isEditMode && currentProduction ? (
-            <div className="flex flex-wrap gap-3">
-              <span className="rounded-full bg-blue-100 px-3 py-1 text-sm font-medium text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
-                ID: {currentProduction.id}
-              </span>
-              <span className="rounded-full bg-green-100 px-3 py-1 text-sm font-medium text-green-700 dark:bg-green-900/30 dark:text-green-300">
-                {dayjs(currentProduction.production_date).format('MMM D, YYYY')}
-              </span>
-            </div>
-          ) : null}
+          <div className="flex items-center gap-3">
+            {!isEditMode && (
+              <Button
+                type="button"
+                variant="success"
+                onClick={() => setShowTemplateModal(true)}
+                disabled={loading}
+                outline={false}
+              >
+                <LuRefreshCw className={loading ? 'animate-spin' : ''} />
+                {t('useTemplate')}
+              </Button>
+            )}
+            {isEditMode && currentProduction ? (
+              <div className="flex flex-wrap gap-3">
+                <span className="rounded-full bg-blue-100 px-3 py-1 text-sm font-medium text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+                  ID: {currentProduction.id}
+                </span>
+                <span className="rounded-full bg-green-100 px-3 py-1 text-sm font-medium text-green-700 dark:bg-green-900/30 dark:text-green-300">
+                  {dayjs(currentProduction.production_date).format('MMM D, YYYY')}
+                </span>
+              </div>
+            ) : null}
+          </div>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -531,7 +783,7 @@ const ProductionForm = () => {
                     setForm((prev) => ({ ...prev, quantity: value }));
                     setFormErrors((prev) => ({ ...prev, quantity: '' }));
                   }}
-                  addonAfter={<span className="text-sm dark:text-gray-300">{t('unitsCount')}</span>}
+                  addonAfter={<span className="text-sm dark:text-gray-300">{selectedItem?.primary_unit || selectedItem?.unit || t('unitsCount')}</span>}
                 />
                 {formErrors.quantity ? <p className="text-sm text-red-500">{formErrors.quantity}</p> : null}
               </div>
@@ -591,22 +843,30 @@ const ProductionForm = () => {
                               <div className="text-xs text-gray-500 dark:text-gray-400">{material.material_code}</div>
                             </td>
                             <td className="px-4 py-3 min-w-48">
-                              <Input
-                                type="number"
-                                min={0.01}
-                                step={0.01}
-                                value={material.quantity}
-                                onChange={(value) => handleUpdateRawMaterial(material.key, 'quantity', value)}
-                                addonAfter={<span className="text-sm dark:text-gray-300">{t(String(material.primary_unit).toUpperCase())}</span>}
-                              />
+                              <div className="flex flex-col gap-1">
+                                <Input
+                                  type="number"
+                                  min={0.01}
+                                  step={0.01}
+                                  max={material.in_stock}
+                                  value={material.quantity}
+                                  onChange={(value) => handleUpdateRawMaterial(material.key, 'quantity', value)}
+                                  addonAfter={<span className="text-sm dark:text-gray-300">{t(String(material.primary_unit).toUpperCase())}</span>}
+                                />
+                                <span className="text-[10px] text-gray-400">
+                                  {t('stock') || 'Stock'}: {material.in_stock}
+                                </span>
+                              </div>
                             </td>
                             <td className="px-4 py-3 min-w-40">
                               <Input
                                 type="number"
+                                readOnly
                                 min={0.01}
                                 step={0.01}
                                 value={material.cost_per_unit}
                                 onChange={(value) => handleUpdateRawMaterial(material.key, 'cost_per_unit', value)}
+                                className="bg-gray-50 dark:bg-gray-900/30 cursor-not-allowed"
                               />
                             </td>
                             <td className="px-4 py-3 text-right font-semibold text-green-600 dark:text-green-400">
@@ -701,7 +961,7 @@ const ProductionForm = () => {
                     title: 'material_name',
                     subtitle: 'material_code',
                     image: 'material_image',
-                    quantity: 'stock'
+                    quantity: 'in_stock'
                   }}
                   value={modalForm.raw_material_id}
                   onSelected={handleRawMaterialSelect}
@@ -746,10 +1006,16 @@ const ProductionForm = () => {
                     type="number"
                     min={0.01}
                     step={0.01}
+                    max={selectedRawMaterialForModal?.in_stock}
                     value={modalForm.quantity}
                     onChange={(value) => setModalForm((prev) => ({ ...prev, quantity: value }))}
                     onBlur={() => handleModalQuantityCostRefresh()}
                   />
+                  {selectedRawMaterialForModal && (
+                    <span className="text-[10px] text-gray-400 mt-1">
+                      {t('stock') || 'Stock'}: {selectedRawMaterialForModal.in_stock}
+                    </span>
+                  )}
                 </div>
 
                 <div>
@@ -806,6 +1072,203 @@ const ProductionForm = () => {
           </div>
         </div>
       ) : null}
+
+      <Modal
+        open={showTemplateModal}
+        onClose={() => setShowTemplateModal(false)}
+        width={1000}
+      >
+        <div className="flex flex-col max-h-[85vh]">
+          {/* Modal Header */}
+          <div className="p-4 border-b dark:border-gray-700">
+            <h3 className="text-lg font-bold text-gray-800 dark:!text-gray-100">
+              {t('selectProductionTemplate')}
+            </h3>
+          </div>
+
+          {/* Filters Area */}
+          <div className="p-4 bg-gray-50 dark:bg-gray-800/40 border-b dark:border-gray-700">
+            <div className="grid grid-cols-1 gap-3 lg:grid-cols-12">
+              <div className="lg:col-span-6">
+                <div className="relative">
+                  <LuSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder={t('searchProductions')}
+                    value={templateSearchTerm}
+                    onChange={(e) => setTemplateSearchTerm(e.target.value)}
+                    className="w-full border border-gray-300 bg-white py-1.5 pl-10 pr-4 text-sm text-gray-900 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-900 dark:text-white rounded-md"
+                  />
+                </div>
+              </div>
+              <div className="lg:col-span-3">
+                <DatePicker
+                  value={templateFilters.start_date ? dayjs(templateFilters.start_date) : null}
+                  onChange={(_, dateString) =>
+                    setTemplateFilters((prev) => ({ ...prev, start_date: dateString || '' }))
+                  }
+                  format="YYYY-MM-DD"
+                  className="date-picker w-full"
+                  placeholder={t('startDate')}
+                />
+              </div>
+              <div className="lg:col-span-3">
+                <DatePicker
+                  value={templateFilters.end_date ? dayjs(templateFilters.end_date) : null}
+                  onChange={(_, dateString) =>
+                    setTemplateFilters((prev) => ({ ...prev, end_date: dateString || '' }))
+                  }
+                  format="YYYY-MM-DD"
+                  className="date-picker w-full"
+                  placeholder={t('endDate')}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Selected Summary */}
+          {selectedTemplateIds.length > 0 && (
+            <div className="px-4 py-2 bg-blue-50 dark:bg-blue-900/30 border-b dark:border-gray-700 flex justify-between items-center">
+              <div className="flex items-center gap-2 text-sm text-blue-700 dark:text-blue-300">
+                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-600 text-[10px] font-bold text-white">
+                  {selectedTemplateIds.length}
+                </span>
+                <span>{t('productionsSelected')}</span>
+              </div>
+              <div className="flex gap-2">
+                <Button 
+                  onClick={() => setSelectedTemplateIds([])} 
+                  variant="danger" 
+                  outline={true}
+                  size="small"
+                >
+                  {t('clearAll')}
+                </Button>
+                <Button 
+                  onClick={handleImportTemplates} 
+                  variant="primary"
+                  size="small"
+                >
+                  <LuPlus />
+                  {t('importMaterials')}
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Table Area */}
+          <div className="flex-1 overflow-y-auto min-h-[300px]">
+            <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400 border-collapse">
+              <thead className="text-xs text-gray-700 uppercase bg-gray-100 dark:bg-gray-800 dark:text-gray-400 sticky top-0 z-10 shadow-sm">
+                <tr>
+                  <th className="px-4 py-3 bg-gray-100 dark:bg-gray-800 w-12 text-center">
+                    <Checkbox 
+                      onChange={toggleSelectAllTemplatesOnPage}
+                      checked={productionHistoryData?.data?.length > 0 && productionHistoryData.data.every(p => selectedTemplateIds.includes(p.id))}
+                    />
+                  </th>
+                  <th className="px-4 py-3 bg-gray-100 dark:bg-gray-800">{t('id')}</th>
+                  <th className="px-4 py-3 bg-gray-100 dark:bg-gray-800">{t('item')}</th>
+                  <th className="px-4 py-3 bg-gray-100 dark:bg-gray-800">{t('quantity')}</th>
+                  <th className="px-4 py-3 bg-gray-100 dark:bg-gray-800">{t('date')}</th>
+                  <th className="px-4 py-3 bg-gray-100 dark:bg-gray-800 text-right">{t('action')}</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                {historyLoading ? (
+                  <tr>
+                    <td colSpan="6" className="px-4 py-10 text-center">
+                      <div className="flex flex-col items-center gap-2">
+                        <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                        <span>{t('loading')}...</span>
+                      </div>
+                    </td>
+                  </tr>
+                ) : productionHistoryData?.data?.length === 0 ? (
+                  <tr>
+                    <td colSpan="6" className="px-4 py-10 text-center italic text-gray-400">
+                      {t('noProductionsFound')}
+                    </td>
+                  </tr>
+                ) : (
+                  productionHistoryData?.data?.map((prod) => {
+                    const isSelected = selectedTemplateIds.includes(prod.id);
+                    return (
+                      <tr 
+                        key={prod.id} 
+                        className={`transition-colors group cursor-pointer ${
+                          isSelected 
+                            ? 'bg-blue-50 dark:bg-blue-900/20' 
+                            : 'bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800'
+                        }`}
+                        onClick={() => toggleSelectTemplate(prod.id)}
+                      >
+                        <td className="px-4 py-3 text-center" onClick={(e) => e.stopPropagation()}>
+                          <Checkbox 
+                            checked={isSelected}
+                            onChange={() => toggleSelectTemplate(prod.id)}
+                          />
+                        </td>
+                        <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">
+                          #{prod.id}
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="font-medium text-gray-800 dark:text-gray-200">{prod.item_name}</div>
+                          <div className="text-xs text-gray-500">{prod.item_code}</div>
+                        </td>
+                        <td className="px-4 py-3 font-semibold">{prod.quantity}</td>
+                        <td className="px-4 py-3">{dayjs(prod.production_date).format('YYYY-MM-DD')}</td>
+                        <td className="px-4 py-3 text-right" onClick={(e) => e.stopPropagation()}>
+                          <Button
+                            onClick={() => handleSelectTemplate(prod)}
+                            variant="primary"
+                            outline={true}
+                            size="small"
+                          >
+                            {t('useAsBase')}
+                          </Button>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Modal Footer / Pagination */}
+          <div className="p-4 border-t dark:border-gray-700 bg-gray-50 dark:bg-gray-800/40">
+            <div className="flex flex-col sm:flex-row justify-between items-center gap-4 text-sm font-medium">
+              <div className="text-gray-600 dark:text-gray-400">
+                {t('totalRecords')}: <span className="text-gray-900 dark:text-white">{templatePagination.total}</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <Button
+                  disabled={templatePagination.current === 1 || historyLoading}
+                  onClick={() => setTemplatePagination(p => ({ ...p, current: p.current - 1 }))}
+                  variant="primary"
+                  outline={true}
+                  size="small"
+                >
+                  {t('previous')}
+                </Button>
+                <div className="px-3 py-1 bg-white dark:bg-gray-700 border dark:border-gray-600 rounded shadow-sm text-gray-700 dark:text-gray-200">
+                  {templatePagination.current} / {Math.ceil(templatePagination.total / templatePagination.pageSize) || 1}
+                </div>
+                <Button
+                  disabled={templatePagination.current * templatePagination.pageSize >= templatePagination.total || historyLoading}
+                  onClick={() => setTemplatePagination(p => ({ ...p, current: p.current + 1 }))}
+                  variant="primary"
+                  outline={true}
+                  size="small"
+                >
+                  {t('next')}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Modal>
     </motion.div>
   );
 };

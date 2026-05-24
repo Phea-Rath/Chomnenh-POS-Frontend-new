@@ -360,23 +360,7 @@ const LoginForm = () => {
                 Forgot password?
               </Link>
             </div>
-            <TelegramLogin 
-              botUsername="chomnenh_bot" 
-              onAuthSuccess={handleTelegramData} 
-            />
-
-            {isLoading && (
-              <p
-                style={{
-                  margin: 0,
-                  fontSize: "11px",
-                  color: "#1e3a5f",
-                  textAlign: "center",
-                }}
-              >
-                Verifying Telegram login...
-              </p>
-            )}
+            
 
             {/* Submit button */}
             <button
@@ -435,6 +419,23 @@ const LoginForm = () => {
                 "Sign In"
               )}
             </button>
+            <TelegramLogin 
+              botUsername="chomnenh_bot" 
+              onAuthSuccess={handleTelegramData} 
+            />
+
+            {isLoading && (
+              <p
+                style={{
+                  margin: 0,
+                  fontSize: "11px",
+                  color: "#1e3a5f",
+                  textAlign: "center",
+                }}
+              >
+                Verifying Telegram login...
+              </p>
+            )}
           </div>
         </div>
 
