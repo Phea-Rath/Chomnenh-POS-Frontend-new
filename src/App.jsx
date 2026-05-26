@@ -116,6 +116,7 @@ import ImportTools from "./utils/ImportTools";
 import OrderInvoiceForm from "./components/orders/OrderInvoiceForm";
 import OrderInvoiceList from "./components/orders/OrderInvoiceList";
 import StockInvoice from "./components/stocks/StockInvoice";
+import IncomeStatement from "./components/Reports/IncomeStatement";
 
 
 function ProtectedRoute({ children }) {
@@ -407,6 +408,10 @@ const router = createBrowserRouter([
       {
         path: "/report/expenses",
         element: <ExpenseReportByUser />,
+      },
+      {
+        path: "/report/income-statement",
+        element: <IncomeStatement />,
       },
       {
         path: "/report/raw-materials",

@@ -173,9 +173,11 @@ const StockTransfer = () => {
       let response;
       const payload = { ...form, items: selectItems };
       if (isUpdate) {
-        response = await updateStock({ id: form.stock_id || id, itemData: payload, token });
+        response = await api.put(`stock-transfer`, payload, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
       } else {
-        response = await api.post(`stock_masters`, payload, {
+        response = await api.post(`stock-transfer`, payload, {
           headers: { Authorization: `Bearer ${token}` }
         });
       }

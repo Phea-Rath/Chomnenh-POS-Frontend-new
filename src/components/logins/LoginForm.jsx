@@ -136,6 +136,7 @@ const LoginForm = () => {
 
   return (
     <div
+      className="login-wrapper"
       style={{
         minHeight: "100vh",
         display: "flex",
@@ -159,6 +160,7 @@ const LoginForm = () => {
       />
 
       <div
+        className="login-container"
         style={{
           width: "100%",
           maxWidth: "360px",
@@ -213,7 +215,7 @@ const LoginForm = () => {
         </div>
 
         {/* Body */}
-        <div style={{ padding: "24px 28px 20px" }}>
+        <div className="login-body" style={{ padding: "24px 28px 20px" }}>
           {/* Sub-heading */}
           <div style={{ marginBottom: "18px" }}>
             <h2
@@ -460,7 +462,30 @@ const LoginForm = () => {
       </div>
 
       {/* Spin keyframe */}
-      <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
+      <style>{`
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        
+        @media (max-width: 640px) {
+          .login-wrapper {
+            padding: 0 !important;
+            align-items: flex-start !important;
+          }
+          .login-container {
+            max-width: 100% !important;
+            border-radius: 0 !important;
+            min-height: 100vh !important;
+            display: flex !important;
+            flex-direction: column !important;
+            box-shadow: none !important;
+          }
+          .login-body {
+            flex: 1 !important;
+            display: flex !important;
+            flex-direction: column !important;
+            justify-content: center !important;
+          }
+        }
+      `}</style>
     </div>
   );
 };

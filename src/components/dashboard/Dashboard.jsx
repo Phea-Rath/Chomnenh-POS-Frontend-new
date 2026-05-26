@@ -79,27 +79,27 @@ const definePersents = (currentValue, previousValue) => {
 };
 
 const MetricCard = ({ title, value, persent, isLoss, icon: Icon, colorClass, chartData, chartColor, loading }) => (
-  <div className="bg-primary p-6 rounded-sm shadow-sm border border-gray-100 dark:border-gray-700 transition-all hover:shadow-md relative overflow-hidden">
+  <div className="bg-primary p-4 md:p-6 rounded-sm shadow-sm border border-gray-100 dark:border-gray-700 transition-all hover:shadow-md relative overflow-hidden">
     {loading && (
-      <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/40 bg-primary/40">
+      <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/40 dark:bg-black/40">
         <div className="w-6 h-6 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
       </div>
     )}
     <div className="flex justify-between items-start mb-4">
       <div>
-        <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">{title}</p>
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
+        <p className="text-[10px] md:text-sm font-semibold text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wider">{title}</p>
+        <h3 className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white">
           ${Number(value || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
         </h3>
       </div>
-      <div className={`p-3 rounded-sm ${colorClass}`}><Icon size={24} /></div>
+      <div className={`p-2 md:p-3 rounded-sm ${colorClass}`}><Icon className="w-5 h-5 md:w-6 md:h-6" /></div>
     </div>
-    <div className="flex items-center gap-2 mb-6">
-      <span className={`flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full ${isLoss ? "bg-red-50 text-red-600" : "bg-green-50 text-green-600"}`}>
+    <div className="flex items-center gap-2 mb-4 md:mb-6">
+      <span className={`flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full ${isLoss ? "bg-red-50 text-red-600 dark:bg-red-950/20" : "bg-green-50 text-green-600 dark:bg-green-950/20"}`}>
         {isLoss ? <BsArrowDownRight /> : <BsArrowUpRight />} {persent}%
       </span>
     </div>
-    <div className="h-16 -mx-6 -mb-6 overflow-hidden rounded-b-2xl">
+    <div className="h-12 md:h-16 -mx-4 md:-mx-6 -mb-4 md:-mb-6 overflow-hidden">
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart data={chartData}>
           <Area type="monotone" dataKey="value" stroke={chartColor} fill={chartColor} fillOpacity={0.1} />
@@ -110,16 +110,16 @@ const MetricCard = ({ title, value, persent, isLoss, icon: Icon, colorClass, cha
 );
 
 const ChartArea = ({ title, children, loading }) => (
-  <div className="bg-white bg-primary p-6 rounded-sm shadow-sm border border-gray-100 dark:border-gray-700 relative">
-    <div className="flex justify-between items-center mb-8">
-      <h3 className="text-lg font-bold text-gray-900 dark:text-white">{title}</h3>
+  <div className="bg-primary p-4 md:p-6 rounded-sm shadow-sm border border-gray-100 dark:border-gray-700 relative">
+    <div className="flex justify-between items-center mb-6 md:mb-8">
+      <h3 className="text-sm md:text-lg font-bold text-gray-900 dark:text-white uppercase tracking-wide">{title}</h3>
     </div>
     {loading && (
-      <div className="absolute inset-0 z-10 flex items-center justify-center rounded-sm bg-white/40 bg-primary/40">
+      <div className="absolute inset-0 z-10 flex items-center justify-center rounded-sm bg-white/40 dark:bg-black/40">
         <div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
       </div>
     )}
-    <div className="h-80">{children}</div>
+    <div className="h-64 md:h-80">{children}</div>
   </div>
 );
 
@@ -210,14 +210,14 @@ const Dashboard = () => {
 
   if (userLogin?.data?.role_id === 1) {
     return (
-      <div className="max-w-2xl mx-auto p-8">
-        <div className="bg-white rounded-sm p-10 shadow-xl border border-gray-100 text-center">
-          <div className="inline-flex items-center justify-center w-20 h-20 rounded-sm bg-indigo-50 text-indigo-600 mb-6">
+      <div className="max-w-2xl mx-auto p-4 md:p-8">
+        <div className="bg-primary rounded-sm p-6 md:p-10 shadow-xl border border-gray-100 dark:border-gray-700 text-center">
+          <div className="inline-flex items-center justify-center w-16 h-16 md:w-20 md:h-20 rounded-sm bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 mb-6">
             <RiShoppingCartFill size={40} />
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-3">System Administrator</h1>
-          <p className="text-gray-500 mb-8">Full administrative control active.</p>
-          <Link to="/setting" className="inline-flex items-center justify-between bg-indigo-600 text-white rounded-sm px-8 py-5 shadow-lg hover:bg-indigo-700 transition-all">
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-3">System Administrator</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-8">Full administrative control active.</p>
+          <Link to="/setting" className="inline-flex items-center justify-center bg-indigo-600 text-white rounded-sm px-6 py-4 md:px-8 md:py-5 shadow-lg hover:bg-indigo-700 transition-all w-full md:w-auto">
             <span className="font-bold text-lg">System Settings</span>
           </Link>
         </div>
@@ -226,34 +226,43 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="p-2 space-y-2 bg-transparent min-h-screen">
-      <div className="flex flex-col gap-4 mb-8 lg:flex-row lg:items-end lg:justify-between">
+    <div className="p-2 space-y-4 bg-transparent min-h-screen">
+      <div className="flex flex-col gap-6 mb-8 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t("dashboard")}</h1>
           <p className="text-sm text-gray-500 dark:text-gray-400">{t("performanceInsights")}</p>
         </div>
-        <div className="flex items-center gap-2">
-          
-          <RefreshButton onRefresh={() => {saleQuery.refetch();purchaseQuery.refetch();expenseQuery.refetch();profitQuery.refetch();}} />
+        
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+          <div className="flex items-center justify-between sm:justify-start gap-2">
+            <RefreshButton onRefresh={() => {saleQuery.refetch();purchaseQuery.refetch();expenseQuery.refetch();profitQuery.refetch();}} />
+            <button
+              type="button"
+              onClick={resetFilters}
+              className="flex-1 sm:flex-none bg-indigo-600 text-white px-4 py-2 rounded-sm text-xs font-bold hover:bg-indigo-700 transition-colors h-9 uppercase tracking-wider"
+            >
+              Reset Filter
+            </button>
+          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
             <input
               type="date"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
-              className="bg-primary px-4 py-2 rounded-sm shadow-sm border border-gray-100 dark:border-gray-700 text-sm text-gray-700 dark:text-gray-200"
+              className="bg-primary px-3 py-2 rounded-sm shadow-sm border border-gray-100 dark:border-gray-700 text-[11px] text-gray-700 dark:text-gray-200 h-9"
             />
             <input
               type="date"
               value={endDate}
               min={startDate}
               onChange={(e) => setEndDate(e.target.value)}
-              className="bg-primary px-4 py-2 rounded-sm shadow-sm border border-gray-100 dark:border-gray-700 text-sm text-gray-700 dark:text-gray-200"
+              className="bg-primary px-3 py-2 rounded-sm shadow-sm border border-gray-100 dark:border-gray-700 text-[11px] text-gray-700 dark:text-gray-200 h-9"
             />
             <select
               value={userId}
               onChange={(e) => setUserId(e.target.value)}
-              className="bg-primary px-4 py-2 rounded-sm shadow-sm border border-gray-100 dark:border-gray-700 text-sm text-gray-700 dark:text-gray-200"
+              className="col-span-2 md:col-span-1 bg-primary px-3 py-2 rounded-sm shadow-sm border border-gray-100 dark:border-gray-700 text-[11px] text-gray-700 dark:text-gray-200 h-9"
             >
               <option value="">All Users</option>
               {usersData?.data?.map((user) => (
@@ -262,26 +271,19 @@ const Dashboard = () => {
                 </option>
               ))}
             </select>
-            <button
-              type="button"
-              onClick={resetFilters}
-              className="bg-indigo-600 text-white px-4 py-2 rounded-sm text-sm font-semibold hover:bg-indigo-700 transition-colors"
-            >
-              Reset Filter
-            </button>
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
-        <MetricCard title={t("revenue")} value={sales.thisPeriod} persent={sales.persent} isLoss={sales.thisPeriod < sales.lastPeriod} icon={RiShoppingCartFill} colorClass="bg-indigo-50 text-indigo-600" chartData={revenueChart} chartColor="#6366f1" loading={saleQuery.isFetching || previousSaleQuery.isFetching} />
-        <MetricCard title={t("purchases")} value={purchases.thisPeriod} persent={purchases.persent} isLoss={purchases.thisPeriod > purchases.lastPeriod} icon={FaWarehouse} colorClass="bg-amber-50 text-amber-600" chartData={purchaseChart} chartColor="#f59e0b" loading={purchaseQuery.isFetching || previousPurchaseQuery.isFetching} />
-        <MetricCard title={t("expenses")} value={expenses.thisPeriod} persent={expenses.persent} isLoss={expenses.thisPeriod > expenses.lastPeriod} icon={RiMoneyDollarCircleFill} colorClass="bg-rose-50 text-rose-600" chartData={expenseChart} chartColor="#f43f5e" loading={expenseQuery.isFetching || previousExpenseQuery.isFetching} />
-        <MetricCard title={t("netProfit")} value={profit.thisPeriod} persent={profit.persent} isLoss={profit.thisPeriod < profit.lastPeriod} icon={FaMoneyBillTrendUp} colorClass="bg-emerald-50 text-emerald-600" chartData={profitChart} chartColor="#10b981" loading={profitQuery.isFetching || previousProfitQuery.isFetching} />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <MetricCard title={t("revenue")} value={sales.thisPeriod} persent={sales.persent} isLoss={sales.thisPeriod < sales.lastPeriod} icon={RiShoppingCartFill} colorClass="bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30" chartData={revenueChart} chartColor="#6366f1" loading={saleQuery.isFetching || previousSaleQuery.isFetching} />
+        <MetricCard title={t("purchases")} value={purchases.thisPeriod} persent={purchases.persent} isLoss={purchases.thisPeriod > purchases.lastPeriod} icon={FaWarehouse} colorClass="bg-amber-50 text-amber-600 dark:bg-amber-900/30" chartData={purchaseChart} chartColor="#f59e0b" loading={purchaseQuery.isFetching || previousPurchaseQuery.isFetching} />
+        <MetricCard title={t("expenses")} value={expenses.thisPeriod} persent={expenses.persent} isLoss={expenses.thisPeriod > expenses.lastPeriod} icon={RiMoneyDollarCircleFill} colorClass="bg-rose-50 text-rose-600 dark:bg-rose-900/30" chartData={expenseChart} chartColor="#f43f5e" loading={expenseQuery.isFetching || previousExpenseQuery.isFetching} />
+        <MetricCard title={t("netProfit")} value={profit.thisPeriod} persent={profit.persent} isLoss={profit.thisPeriod < profit.lastPeriod} icon={FaMoneyBillTrendUp} colorClass="bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30" chartData={profitChart} chartColor="#10b981" loading={profitQuery.isFetching || previousProfitQuery.isFetching} />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-2">
-        <div className="lg:col-span-2 space-y-2">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="lg:col-span-2 space-y-4">
           <ChartArea title={t("profitAnalytics")} loading={profitQuery.isFetching}>
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={profitChart}>
@@ -309,43 +311,45 @@ const Dashboard = () => {
           </ChartArea>
         </div>
 
-        <div className="space-y-2">
-          <div className="bg-white bg-primary p-6 rounded-sm shadow-sm border border-gray-100 dark:border-gray-700">
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6">{t("topSellingItems")}</h3>
+        <div className="space-y-4">
+          <div className="bg-primary p-6 rounded-sm shadow-sm border border-gray-100 dark:border-gray-700">
+            <h3 className="text-sm md:text-lg font-bold text-gray-900 dark:text-white mb-6 uppercase tracking-wide">{t("topSellingItems")}</h3>
             <div className="space-y-6">
               {popularSales?.data?.map((s, i) => (
                 <div key={i} className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-sm p-1 border border-gray-100 dark:border-gray-600 bg-gray-50 dark:bg-gray-700">
+                  <div className="w-10 h-10 md:w-12 md:h-12 rounded-sm p-1 border border-gray-100 dark:border-gray-600 bg-gray-50 dark:bg-gray-700">
                     <img className="w-full h-full object-contain" src={s.image} alt="" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h4 className="text-sm font-bold text-gray-800 dark:text-gray-200 truncate">{s.item_name}</h4>
-                    <p className="text-xs text-gray-400">{s.brand_name}</p>
+                    <h4 className="text-xs md:text-sm font-bold text-gray-800 dark:text-gray-200 truncate uppercase tracking-tight">{s.item_name}</h4>
+                    <p className="text-[10px] text-gray-400">{s.brand_name}</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-sm font-bold text-gray-900 dark:text-white">${s.total_price}</p>
-                    <p className="text-[10px] text-emerald-600 font-semibold">{s.total_quantity} sold</p>
+                    <p className="text-xs md:text-sm font-bold text-gray-900 dark:text-white">${s.total_price}</p>
+                    <p className="text-[9px] text-emerald-600 font-semibold">{s.total_quantity} sold</p>
                   </div>
                 </div>
               ))}
             </div>
           </div>
 
-          <div className="bg-white bg-primary p-6 rounded-sm shadow-sm border border-gray-100 dark:border-gray-700 text-center">
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">{t("marketShare")}</h3>
+          <div className="bg-primary p-6 rounded-sm shadow-sm border border-gray-100 dark:border-gray-700 text-center">
+            <h3 className="text-sm md:text-lg font-bold text-gray-900 dark:text-white mb-4 uppercase tracking-wide">{t("marketShare")}</h3>
             <div className="flex justify-center mb-4">
-              <PieChart width={160} height={160}>
-                <Pie data={orderPersentMonthly?.data || []} innerRadius={50} outerRadius={70} paddingAngle={5} dataKey="persent">
-                  {(orderPersentMonthly?.data || []).map((_, idx) => <Cell key={idx} fill={COLORS[idx % COLORS.length]} stroke="none" />)}
-                </Pie>
-                <Tooltip />
-              </PieChart>
+              <ResponsiveContainer width="100%" height={160}>
+                <PieChart>
+                  <Pie data={orderPersentMonthly?.data || []} innerRadius={50} outerRadius={70} paddingAngle={5} dataKey="persent">
+                    {(orderPersentMonthly?.data || []).map((_, idx) => <Cell key={idx} fill={COLORS[idx % COLORS.length]} stroke="none" />)}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
             </div>
             <div className="space-y-2 text-left">
               {orderPersentMonthly?.data?.map((entry, idx) => (
-                <div key={idx} className="flex justify-between text-xs">
-                  <span className="text-gray-500 dark:text-gray-400">{entry.name}</span>
-                  <span className="font-bold">{entry.persent}%</span>
+                <div key={idx} className="flex justify-between text-[10px] md:text-xs">
+                  <span className="text-gray-500 dark:text-gray-400 uppercase font-medium">{entry.name}</span>
+                  <span className="font-bold text-slate-700 dark:text-slate-200">{entry.persent}%</span>
                 </div>
               ))}
             </div>
@@ -353,8 +357,8 @@ const Dashboard = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-2">
-        <div className="lg:col-span-2  relative">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="lg:col-span-2 relative">
           <ChartArea title={t("purchaseInventory")} loading={purchaseQuery.isFetching}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={purchaseChart}>
@@ -369,31 +373,31 @@ const Dashboard = () => {
           </ChartArea>
         </div>
         <div className="bg-primary p-6 rounded-sm shadow-sm border border-gray-100 dark:border-gray-700">
-          <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6">{t("recentStockIn")}</h3>
+          <h3 className="text-sm md:text-lg font-bold text-gray-900 dark:text-white mb-6 uppercase tracking-wide">{t("recentStockIn")}</h3>
           <div className="space-y-6">
             {popularStock?.data?.map((s, idx) => (
               <div key={idx} className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-sm flex items-center justify-center bg-indigo-50 dark:bg-indigo-900">
+                <div className="w-10 h-10 rounded-sm flex items-center justify-center bg-indigo-50 dark:bg-indigo-900/30">
                   <img className="w-6 h-6 object-contain" src={s.image} alt="" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h4 className="text-sm font-bold text-gray-800 dark:text-gray-200 truncate">{s.item_name}</h4>
-                  <p className="text-xs text-gray-400">{s.brand_name}</p>
+                  <h4 className="text-xs md:text-sm font-bold text-gray-800 dark:text-gray-200 truncate uppercase tracking-tight">{s.item_name}</h4>
+                  <p className="text-[10px] text-gray-400">{s.brand_name}</p>
                 </div>
-                <div className="text-emerald-600 dark:text-emerald-400 font-bold text-sm bg-emerald-50 dark:bg-emerald-900 px-2 py-1 rounded-sm">+{s.total_quantity}</div>
+                <div className="text-emerald-600 dark:text-emerald-400 font-bold text-xs bg-green-50 dark:bg-green-900/30 px-2 py-1 rounded-sm">+{s.total_quantity}</div>
               </div>
             ))}
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-2">
-        <div className=" relative">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="relative">
           <ChartArea title={t("expenseAnalysis")} loading={expenseQuery.isFetching}>
             <ResponsiveContainer width="100%" height="100%">
               <RadarChart cx="50%" cy="50%" outerRadius="80%" data={expenseChart}>
                 <PolarGrid stroke="#f0f0f0" className="dark:stroke-gray-700" />
-                <PolarAngleAxis dataKey="name" tick={{ fontSize: 10, fill: "#6b7280" }} />
+                <PolarAngleAxis dataKey="name" tick={{ fontSize: 9, fill: "#6b7280" }} />
                 <Radar name="Price" dataKey="value" stroke="#67bafe" fill="#67bafe" fillOpacity={0.4} />
                 <Radar name="Quantity" dataKey="quantity" stroke="#ef4444" fill="#ef4444" fillOpacity={0.4} />
                 <Tooltip />
@@ -401,20 +405,20 @@ const Dashboard = () => {
             </ResponsiveContainer>
           </ChartArea>
         </div>
-        <div className="bg-primary p-6 rounded-sm shadow-sm border border-gray-100 dark:border-gray-700">
-          <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6">{t("majorExpenses")}</h3>
-          <div className="space-y-6">
+        <div className="bg-primary lg:col-span-2 p-6 rounded-sm shadow-sm border border-gray-100 dark:border-gray-700">
+          <h3 className="text-sm md:text-lg font-bold text-gray-900 dark:text-white mb-6 uppercase tracking-wide">{t("majorExpenses")}</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
             {popularExpanses?.data?.map((ex, idx) => (
               <div key={idx} className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-full bg-rose-50 dark:bg-rose-900 flex items-center justify-center text-rose-600 dark:text-rose-300">
+                <div className="w-10 h-10 rounded-full bg-rose-50 dark:bg-rose-900/30 flex items-center justify-center text-rose-600 dark:text-rose-300">
                   <RiMoneyDollarCircleFill size={20} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h4 className="text-sm font-bold text-gray-800 dark:text-gray-200 truncate">{ex.description}</h4>
-                  <p className="text-xs text-rose-400 dark:text-rose-300">{ex.type}</p>
+                  <h4 className="text-xs md:text-sm font-bold text-gray-800 dark:text-gray-200 truncate uppercase tracking-tight">{ex.description}</h4>
+                  <p className="text-[10px] text-rose-400 dark:text-rose-300">{ex.type}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-sm font-bold text-rose-600 dark:text-rose-400">-${ex.total_price}</p>
+                  <p className="text-xs md:text-sm font-bold text-rose-600 dark:text-rose-400">-${ex.total_price}</p>
                 </div>
               </div>
             ))}

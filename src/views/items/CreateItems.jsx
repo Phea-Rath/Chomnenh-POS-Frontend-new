@@ -91,7 +91,7 @@ const ItemForm = () => {
 
   // Helper function to update colors in attributes
   const updateColorsInAttributes = (newColors) => {
-    const colorAttributeIndex = attributes.findIndex(attr => attr.name === "colors");
+    const colorAttributeIndex = attributes.findIndex(attr => attr.name.toLowerCase() === "colors" || attr.name.toLowerCase() === "color");
 
     if (colorAttributeIndex !== -1) {
       // Update existing colors attribute
@@ -236,7 +236,7 @@ const ItemForm = () => {
     // Append attributes - ensure colors are properly formatted
     const formattedAttributes = attributes.map(attr => ({
       name: attr.name,
-      type: attr.type,
+      // type: attr.type,
       value: (Array.isArray(attr.value) ? attr.value.join(',') : attr.value)
     }));
 
@@ -796,19 +796,6 @@ const ItemForm = () => {
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                           {t('brand')} <span className="text-red-500">*</span>
                         </label>
-                        {/* <select
-                          onChange={(e) => setItem({ ...item, brand_id: e.target.value })}
-                          value={item.brand_id}
-                          className={getSelectClass('brand_id')}
-                          data-field="brand_id"
-                        >
-                          <option value="" disabled>{t('selectBrand')}</option>
-                          {brands?.map(({ brand_name, brand_id }, index) => (
-                            <option key={index} value={brand_id}>
-                              {brand_name}
-                            </option>
-                          ))}
-                        </select> */}
                         <RichSearch
                           data={brands}
                           value={item.brand_id}
@@ -831,19 +818,6 @@ const ItemForm = () => {
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                           {t('scale')} <span className="text-red-500">*</span>
                         </label>
-                        {/* <select
-                          onChange={(e) => setItem({ ...item, scale_id: e.target.value })}
-                          value={item.scale_id}
-                          className={getSelectClass('scale_id')}
-                          data-field="scale_id"
-                        >
-                          <option value="" disabled>{t('selectScale')}</option>
-                          {scales?.map(({ scale_name, scale_id }, index) => (
-                            <option key={index} value={scale_id}>
-                              {scale_name}
-                            </option>
-                          ))}
-                        </select> */}
                         <RichSearch
                           data={scales}
                           value={item.scale_id}
@@ -984,39 +958,7 @@ const ItemForm = () => {
                             <div className="text-red-500 text-sm mt-1">{errors[`attribute_${actualIndex}_name`]}</div>
                           )}
                         </div>
-                        <div className="flex-1 w-full">
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('attributeType')}</label>
-                          {/* <select
-                            value={attribute.type}
-                            onChange={(e) => updateAttribute(actualIndex, 'type', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100"
-                          >
-                            <option value="text">{t('text')}</option>
-                            <option value="number">{t('number')}</option>
-                            <option value="boolean">{t('boolean')}</option>
-                          </select> */}
-                          <RichSearch
-                            data={[
-                              {
-                                value:'text',
-                                label:'Text'
-                              },
-                              {
-                                value:'number',
-                                label:'Number'
-                              },
-                              {
-                                value:'boolean',
-                                label:'Boolean'
-                              }
-                            ]}
-                            keyFields={{
-                              id: "value",
-                              title: "label"
-                            }}
-                            onSelected={value=> updateAttribute(actualIndex, 'type', value)}
-                          />
-                        </div>
+                        
                         <div className="flex-1 w-full">
                           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('attributeValue')}</label>
                           {renderAttributeValueInput(attribute, actualIndex)}

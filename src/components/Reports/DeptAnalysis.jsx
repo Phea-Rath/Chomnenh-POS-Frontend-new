@@ -1,5 +1,5 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { FiCalendar, FiSearch, FiAlertTriangle } from 'react-icons/fi';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { FiFilter, FiPrinter, FiAlertTriangle } from 'react-icons/fi';
 import {
     LineChart,
     Line,
@@ -11,8 +11,13 @@ import {
     ResponsiveContainer
 } from 'recharts';
 import { useGetDebtAnalysisMutation } from '../../../app/Features/reportsSlice';
+import { useGetUserLoginQuery } from '../../../app/Features/usersSlice';
 import { toast } from 'react-toastify';
 import { useReportText } from './reportText';
+import { useReactToPrint } from 'react-to-print';
+import { DatePicker } from 'antd';
+import dayjs from 'dayjs';
+import { useOutletsContext } from '../../layouts/Management';
 
 const EMPTY_REPORT = {
     start_date: '',
@@ -32,8 +37,11 @@ const EMPTY_REPORT = {
 
 const DeptAnalysis = () => {
     const { rt } = useReportText();
+    const { darkMode } = useOutletsContext();
     const token = localStorage.getItem('token');
     const [getDebtAnalysis] = useGetDebtAnalysisMutation();
+    const { data: userLogin } = useGetUserLoginQuery(token);
+    const profile = userLogin?.data;
 
     const formatDateForInput = (date) => {
         const year = date.getFullYear();
@@ -52,9 +60,9 @@ const DeptAnalysis = () => {
 
     const [reportData, setReportData] = useState(null);
     const [loading, setLoading] = useState(false);
+    const reportRef = useRef();
 
-    const handleInputChange = (e) => {
-        const { name, value } = e.target;
+    const handleFieldChange = (name, value) => {
         setFormData((prev) => ({ ...prev, [name]: value }));
     };
 
@@ -82,6 +90,11 @@ const DeptAnalysis = () => {
         await fetchReport();
     };
 
+    const handlePrint = useReactToPrint({
+        content: () => reportRef.current,
+        contentRef: reportRef,
+    });
+
     const toNumber = (value) => {
         const number = Number(value);
         return Number.isFinite(number) ? number : 0;
@@ -100,7 +113,7 @@ const DeptAnalysis = () => {
         return `${number.toLocaleString('en-US', {
             minimumFractionDigits: 2,
             maximumFractionDigits: 2
-        })} KHR`;
+        })} ៛`;
     };
 
     const cards = useMemo(() => reportData?.cards || EMPTY_REPORT.cards, [reportData]);
@@ -122,10 +135,10 @@ const DeptAnalysis = () => {
                     : 'text-rose-600';
         const statusBg =
             status === 'Healthy'
-                ? 'bg-emerald-50 border-emerald-100'
+                ? 'bg-emerald-50 dark:bg-emerald-950/20 border-emerald-100 dark:border-emerald-900/50'
                 : status === 'Balanced'
-                    ? 'bg-amber-50 border-amber-100'
-                    : 'bg-rose-50 border-rose-100';
+                    ? 'bg-amber-50 dark:bg-amber-950/20 border-amber-100 dark:border-amber-900/50'
+                    : 'bg-rose-50 dark:bg-rose-950/20 border-rose-100 dark:border-rose-900/50';
 
         return {
             ar,
@@ -156,187 +169,259 @@ const DeptAnalysis = () => {
 
     return (
         <div className="report-page min-h-screen bg-transparent p-2 md:p-4">
+            <style dangerouslySetInnerHTML={{
+                __html: `
+                @media print {
+                    @page {
+                        size: A4;
+                        margin: 5mm;
+                    }
+                    body {
+                        -webkit-print-color-adjust: exact;
+                        font-family: 'Siemreap', 'Poppins', sans-serif;
+                    }
+                    .print-container {
+                        font-size: 10px !important;
+                    }
+                    .print-container .chart-container {
+                        page-break-inside: avoid;
+                    }
+                    .print-container .stats-grid {
+                        display: grid !important;
+                        grid-template-columns: repeat(2, 1fr) !important;
+                        gap: 10px !important;
+                    }
+                    .print-container .stats-card {
+                        padding: 10px !important;
+                        border: 1px solid #e2e8f0 !important;
+                    }
+
+                    .print-container .stats-grid > div{
+                        box-shadow: none !important;
+                        border-radius: 0 !important;
+                    }
+
+                    .print-container .chart-section > div {
+                        box-shadow: none !important;
+                        border: 0 !important;
+                    }
+
+                    .print-container .print-chart{
+                        width: 700px !important;
+                    }
+                }
+            `}} />
             <div className="max-w-7xl mx-auto">
                 <div className="mb-6">
-                    <h1 className="text-2xl font-bold text-slate-900">{rt("Debt Analysis Dashboard")}</h1>
-                    <p className="text-slate-500 text-sm mt-1">Monitor receivables, payables, and liquidity trends</p>
+                    <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{rt("Debt Analysis Dashboard")}</h1>
+                    <p className="text-slate-500 text-sm mt-1 dark:text-slate-400">{rt("Monitor receivables, payables, and liquidity trends")}</p>
                 </div>
 
-                <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 text-xs mb-6">
-                    <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
+                <div className="bg-primary rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 p-5 text-xs mb-6">
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
                         <div>
-                            <label className="block font-medium text-slate-600 mb-2">Start Date</label>
-                            <div className="relative">
-                                <FiCalendar className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                                <input
-                                    type="date"
-                                    name="start_date"
-                                    value={formData.start_date}
-                                    onChange={handleInputChange}
-                                    className="w-full pl-9 pr-3 py-2 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                />
-                            </div>
+                            <label className="block font-medium text-slate-600 dark:text-slate-300 mb-2">{rt("Start Date")}</label>
+                            <DatePicker
+                                className="w-full date-picker"
+                                value={formData.start_date ? dayjs(formData.start_date) : null}
+                                onChange={(date) => handleFieldChange('start_date', date ? date.format('YYYY-MM-DD') : '')}
+                            />
                         </div>
 
                         <div>
-                            <label className="block font-medium text-slate-600 mb-2">End Date</label>
-                            <div className="relative">
-                                <FiCalendar className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                                <input
-                                    type="date"
-                                    name="end_date"
-                                    value={formData.end_date}
-                                    onChange={handleInputChange}
-                                    className="w-full pl-9 pr-3 py-2 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                />
-                            </div>
+                            <label className="block font-medium text-slate-600 dark:text-slate-300 mb-2">{rt("End Date")}</label>
+                            <DatePicker
+                                className="w-full date-picker"
+                                value={formData.end_date ? dayjs(formData.end_date) : null}
+                                onChange={(date) => handleFieldChange('end_date', date ? date.format('YYYY-MM-DD') : '')}
+                            />
                         </div>
 
-                        <div className="md:col-span-3">
-                            <button
-                                onClick={handleGetReport}
-                                disabled={loading}
-                                className="w-full flex items-center justify-center gap-2 bg-blue-600 text-white px-5 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                                <FiSearch size={16} />
-                                {loading ? rt('Loading...') : rt('Get Report')}
-                            </button>
-                        </div>
+                        <button
+                            onClick={handleGetReport}
+                            disabled={loading}
+                            className="flex items-center justify-center gap-2 bg-blue-600 text-white px-5 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed h-10"
+                        >
+                            <FiFilter size={16} />
+                            {loading ? rt('Loading...') : rt('Get Report')}
+                        </button>
+                        
+                        <button
+                            onClick={handlePrint}
+                            className="flex items-center justify-center gap-2 bg-slate-600 text-white px-5 py-2 rounded-md hover:bg-slate-700 h-10 print:hidden"
+                        >
+                            <FiPrinter size={16} />
+                            {rt('Print')}
+                        </button>
                     </div>
                 </div>
 
-                {reportData && (
-                    <>
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                            <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-4 border-l-4 border-emerald-500">
-                                <p className="text-slate-500">Account Receivables (AR)</p>
-                                <p className="text-lg font-semibold text-emerald-600">{formatUSD(cards.ar_total)}</p>
-                                <p className="text-slate-400 text-xs mt-1">{formatKHR(cards.ar_total_kh)}</p>
-                            </div>
-                            <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-4 border-l-4 border-amber-500">
-                                <p className="text-slate-500">Account Payables (AP)</p>
-                                <p className="text-lg font-semibold text-amber-600">{formatUSD(cards.ap_total)}</p>
-                                <p className="text-slate-400 text-xs mt-1">{formatKHR(cards.ap_total_kh)}</p>
-                            </div>
-                            <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-4 border-l-4 border-indigo-500">
-                                <p className="text-slate-500">Inventory Payables</p>
-                                <p className="text-lg font-semibold text-indigo-600">{formatUSD(cards.inv_total)}</p>
-                                <p className="text-slate-400 text-xs mt-1">{formatKHR(cards.inv_total_kh)}</p>
-                            </div>
-                            <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-4 border-l-4 border-rose-500">
-                                <p className="text-slate-500">Net Balance</p>
-                                <p className={`text-lg font-semibold ${totals.balance >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
-                                    {formatUSD(cards.balance_total)}
-                                </p>
-                                <p className="text-slate-400 text-xs mt-1">{formatKHR(cards.balance_total_kh)}</p>
+                <div className="print-container" ref={reportRef}>
+                    {/* Print Header */}
+                    <div className="hidden print:flex items-center justify-between mb-8 border-b pb-4 print-header">
+                        <div className="flex items-center gap-4">
+                            {profile?.image ? (
+                                <img src={profile.image} alt="Profile" className="w-16 h-16 rounded-full object-cover border-2 border-slate-200" />
+                            ) : (
+                                <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center border-2 border-slate-200">
+                                    <span className="text-2xl text-slate-400 uppercase">{profile?.username?.[0] || 'U'}</span>
+                                </div>
+                            )}
+                            <div>
+                                <h2 className="text-xl font-bold text-slate-900">{profile?.username || 'User'}</h2>
+                                <p className="text-sm text-slate-500">{profile?.role || 'Staff'}</p>
                             </div>
                         </div>
+                        <div className="text-right">
+                            <h1 className="text-xl font-bold text-blue-600">{rt("Debt Analysis Dashboard")}</h1>
+                            <p className="text-xs text-slate-500">{new Date().toLocaleString()}</p>
+                        </div>
+                    </div>
 
-                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                            <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
-                                <div className="flex items-center justify-between mb-4">
-                                    <div>
-                                        <h2 className="text-sm font-semibold text-slate-700 uppercase tracking-wide">
-                                            AR vs Total Debt
-                                        </h2>
-                                        <p className="text-slate-400 text-xs">Daily balances within selected range</p>
-                                    </div>
+                    <ul className="px-3 flex flex-wrap gap-4 text-xs font-medium text-slate-500 uppercase tracking-wider mb-6">
+                        <li>{rt("Start Date")}: <span className="font-semibold text-slate-700 dark:text-slate-300">{formData.start_date || rt('All')}</span></li>
+                        <li>{rt("End Date")}: <span className="font-semibold text-slate-700 dark:text-slate-300">{formData.end_date || rt('All')}</span></li>
+                    </ul>
+
+                    {reportData && (
+                        <>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6 stats-grid">
+                                <div className="bg-primary rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 p-4 border-l-4 border-emerald-500 stats-card">
+                                    <p className="text-slate-500 dark:text-slate-400 text-[10px] uppercase font-semibold">{rt("Account Receivables (AR)")}</p>
+                                    <p className="text-lg font-bold mt-1 text-emerald-600">{formatUSD(cards.ar_total)}</p>
+                                    <p className="text-slate-400 text-[9px] mt-1">{formatKHR(cards.ar_total_kh)}</p>
                                 </div>
-
-                                <div className="h-80">
-                                    <ResponsiveContainer width="100%" height="100%">
-                                        <LineChart data={chartData} margin={{ top: 10, right: 20, left: 0, bottom: 10 }}>
-                                            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                                            <XAxis dataKey="label" tick={{ fontSize: 11 }} />
-                                            <YAxis tick={{ fontSize: 11 }} />
-                                            <RechartsTooltip
-                                                // formatter={(value, name) => [formatUSD(value), name != 'ar' ? 'AR' : 'AP + INV']}
-                                                labelFormatter={(label) => `Date: ${label}`}
-                                            />
-                                            <Legend />
-                                            <Line
-                                                type="monotone"
-                                                dataKey="ar"
-                                                name="AR"
-                                                stroke="#10b981"
-                                                strokeWidth={2}
-                                                dot={false}
-                                            />
-                                            <Line
-                                                type="monotone"
-                                                dataKey="ap_inv"
-                                                name="AP + INV"
-                                                stroke="#ef4444"
-                                                strokeWidth={2}
-                                                strokeDasharray="6 4"
-                                                dot={false}
-                                            />
-                                        </LineChart>
-                                    </ResponsiveContainer>
+                                <div className="bg-primary rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 p-4 border-l-4 border-amber-500 stats-card">
+                                    <p className="text-slate-500 dark:text-slate-400 text-[10px] uppercase font-semibold">{rt("Account Payables (AP)")}</p>
+                                    <p className="text-lg font-bold mt-1 text-amber-600">{formatUSD(cards.ap_total)}</p>
+                                    <p className="text-slate-400 text-[9px] mt-1">{formatKHR(cards.ap_total_kh)}</p>
+                                </div>
+                                <div className="bg-primary rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 p-4 border-l-4 border-indigo-500 stats-card">
+                                    <p className="text-slate-500 dark:text-slate-400 text-[10px] uppercase font-semibold">{rt("Inventory Payables")}</p>
+                                    <p className="text-lg font-bold mt-1 text-indigo-600">{formatUSD(cards.inv_total)}</p>
+                                    <p className="text-slate-400 text-[9px] mt-1">{formatKHR(cards.inv_total_kh)}</p>
+                                </div>
+                                <div className="bg-primary rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 p-4 border-l-4 border-rose-500 stats-card">
+                                    <p className="text-slate-500 dark:text-slate-400 text-[10px] uppercase font-semibold">{rt("Net Balance")}</p>
+                                    <p className={`text-lg font-bold mt-1 ${totals.balance >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                                        {formatUSD(cards.balance_total)}
+                                    </p>
+                                    <p className="text-slate-400 text-[9px] mt-1">{formatKHR(cards.balance_total_kh)}</p>
                                 </div>
                             </div>
 
-                            <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
-                                <h2 className="text-sm font-semibold text-slate-700 uppercase tracking-wide mb-4">
-                                    Financial Insights
-                                </h2>
-
-                                <div className={`rounded-lg border p-4 ${totals.statusBg} mb-4`}>
-                                    <div className="flex items-center gap-2">
-                                        <FiAlertTriangle className={totals.statusColor} />
-                                        <span className={`text-sm font-semibold ${totals.statusColor}`}>{totals.status}</span>
+                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8 chart-section">
+                                <div className="lg:col-span-2 bg-primary rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 p-5 chart-container">
+                                    <div className="mb-4">
+                                        <h2 className="text-sm font-bold text-slate-800 dark:text-white uppercase tracking-wide">
+                                            {rt("AR vs Total Debt")}
+                                        </h2>
+                                        <p className="text-slate-400 text-[10px]">{rt("Daily balances within selected range")}</p>
                                     </div>
-                                    <p className="text-xs text-slate-500 mt-2">
-                                        Coverage below 1.0x means receivables do not cover current liabilities.
-                                    </p>
+
+                                    <div className="h-80">
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            <LineChart className='print-chart' data={chartData} margin={{ top: 10, right: 20, left: 0, bottom: 10 }}>
+                                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={darkMode ? '#374151' : '#e5e7eb'} />
+                                                <XAxis dataKey="label" stroke={darkMode ? '#9ca3af' : '#666'} tick={{ fontSize: 10 }} />
+                                                <YAxis stroke={darkMode ? '#9ca3af' : '#666'} tick={{ fontSize: 10 }} />
+                                                <RechartsTooltip
+                                                    contentStyle={{
+                                                        backgroundColor: darkMode ? '#1f2937' : '#fff',
+                                                        border: 'none',
+                                                        borderRadius: '8px',
+                                                        color: darkMode ? '#fff' : '#000',
+                                                        boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                                                        fontSize: '10px'
+                                                    }}
+                                                    itemStyle={{ color: darkMode ? '#fff' : '#000' }}
+                                                    labelFormatter={(label) => `${rt('Date')}: ${label}`}
+                                                />
+                                                <Legend formatter={(value) => <span className="dark:!text-gray-300 text-[10px]">{rt(value)}</span>} />
+                                                <Line
+                                                    type="monotone"
+                                                    dataKey="ar"
+                                                    name="AR"
+                                                    stroke="#10b981"
+                                                    strokeWidth={2}
+                                                    dot={false}
+                                                />
+                                                <Line
+                                                    type="monotone"
+                                                    dataKey="ap_inv"
+                                                    name="AP + INV"
+                                                    stroke="#ef4444"
+                                                    strokeWidth={2}
+                                                    strokeDasharray="6 4"
+                                                    dot={false}
+                                                />
+                                            </LineChart>
+                                        </ResponsiveContainer>
+                                    </div>
                                 </div>
 
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <p className="text-xs uppercase tracking-wide text-slate-400">Debt Status</p>
-                                        <p className={`text-sm font-semibold ${totals.statusColor}`}>{totals.status}</p>
-                                    </div>
-                                    <div>
-                                        <p className="text-xs uppercase tracking-wide text-slate-400">Cash Coverage</p>
-                                        <p className="text-sm font-semibold text-slate-900">
-                                            {totals.coverage.toFixed(2)}x
+                                <div className="bg-primary rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 p-5 stats-card">
+                                    <h2 className="text-sm font-bold text-slate-800 dark:text-white uppercase tracking-wide mb-4">
+                                        {rt("Financial Insights")}
+                                    </h2>
+
+                                    <div className={`rounded-lg border p-4 ${totals.statusBg} mb-4`}>
+                                        <div className="flex items-center gap-2">
+                                            <FiAlertTriangle className={totals.statusColor} />
+                                            <span className={`text-xs font-bold ${totals.statusColor}`}>{rt(totals.status)}</span>
+                                        </div>
+                                        <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-2">
+                                            {rt("Coverage below 1.0x means receivables do not cover current liabilities.")}
                                         </p>
                                     </div>
-                                </div>
 
-                                <div className="border-t border-slate-100 mt-4 pt-4 space-y-3 text-xs text-slate-500">
-                                    <div className="flex items-center justify-between">
-                                        <span>Total Debt (AP + INV)</span>
-                                        <span className="font-medium text-slate-700">{formatUSD(totals.totalDebt)}</span>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <p className="text-[9px] uppercase tracking-wide text-slate-400">{rt("Debt Status")}</p>
+                                            <p className={`text-xs font-bold ${totals.statusColor}`}>{rt(totals.status)}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-[9px] uppercase tracking-wide text-slate-400">{rt("Cash Coverage")}</p>
+                                            <p className="text-xs font-bold text-slate-900 dark:text-white">
+                                                {totals.coverage.toFixed(2)}x
+                                            </p>
+                                        </div>
                                     </div>
-                                    <div className="flex items-center justify-between">
-                                        <span>Receivables Coverage</span>
-                                        <span className="font-medium text-slate-700">{formatUSD(totals.ar)}</span>
-                                    </div>
-                                    <div className="flex items-center justify-between">
-                                        <span>Net Position</span>
-                                        <span className={`font-medium ${totals.balance >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
-                                            {formatUSD(totals.balance)}
-                                        </span>
+
+                                    <div className="border-t border-slate-100 dark:border-slate-700 mt-4 pt-4 space-y-3 text-[11px] text-slate-500 dark:text-slate-400">
+                                        <div className="flex items-center justify-between">
+                                            <span>{rt("Total Debt (AP + INV)")}</span>
+                                            <span className="font-bold text-slate-700 dark:text-slate-200">{formatUSD(totals.totalDebt)}</span>
+                                        </div>
+                                        <div className="flex items-center justify-between">
+                                            <span>{rt("Receivables Coverage")}</span>
+                                            <span className="font-bold text-slate-700 dark:text-slate-200">{formatUSD(totals.ar)}</span>
+                                        </div>
+                                        <div className="flex items-center justify-between">
+                                            <span>{rt("Net Position")}</span>
+                                            <span className={`font-bold ${totals.balance >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                                                {formatUSD(totals.balance)}
+                                            </span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    </>
-                )}
+                        </>
+                    )}
+                </div>
 
                 {!reportData && !loading && (
-                    <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-12 text-center">
-                        <FiSearch size={48} className="mx-auto text-slate-300 mb-4" />
-                        <h3 className="text-lg font-medium text-slate-900 mb-2">No Analysis Generated</h3>
-                        <p className="text-slate-500">Select a date range to generate the debt analysis report.</p>
+                    <div className="bg-primary rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 p-12 text-center">
+                        <FiAlertTriangle size={48} className="mx-auto text-slate-300 dark:text-slate-600 mb-4" />
+                        <h3 className="text-lg font-medium text-slate-900 dark:text-white mb-2">{rt("No Report Generated")}</h3>
+                        <p className="text-slate-500 dark:text-slate-400">{rt("Use the filters above to generate a debt analysis report")}</p>
                     </div>
                 )}
 
                 {loading && (
-                    <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-12 text-center">
+                    <div className="bg-primary rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 p-12 text-center">
                         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                        <p className="text-slate-600">Generating analysis...</p>
+                        <p className="text-slate-600 dark:text-slate-400">{rt("Generating report...")}</p>
                     </div>
                 )}
             </div>
@@ -345,4 +430,3 @@ const DeptAnalysis = () => {
 };
 
 export default DeptAnalysis;
-

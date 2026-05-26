@@ -60,7 +60,7 @@ const RegisterForm = () => {
     else if (!/^[0-9+\-\s]+$/.test(users.phone_number)) newErrors.phone_number = "Invalid phone number";
     if (!users.role_id) newErrors.role_id = "Please select a role";
     if (users.role_id == 3 && !users.start_date) newErrors.start_date = "Start date is required";
-    if (!fileImage) newErrors.image = "Profile image is required";
+    // if (!fileImage) newErrors.image = "Profile image is required";
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };

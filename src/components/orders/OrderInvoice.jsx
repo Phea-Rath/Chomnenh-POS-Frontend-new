@@ -2,16 +2,15 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { FaDownload, FaPrint } from "react-icons/fa";
 import { IoArrowBackCircle } from "react-icons/io5";
 import { useReactToPrint } from "react-to-print";
-import { QRCodeCanvas } from "qrcode.react";
 import { useLocation, useNavigate, useParams } from "react-router";
 import { motion } from "framer-motion";
 import handleDownload from "../../services/imageDowload";
 import { useGetOrderByIdQuery } from "../../../app/Features/ordersSlice";
-import { useGetAllUserQuery, useGetUserProfileQuery } from "../../../app/Features/usersSlice";
 import { useTranslation } from "react-i18next";
 import timeAgo from "../../services/timeAgo";
 import Button from "../../utils/Button";
 import { currencyFormat } from "../../services/serviceFunction";
+import { useGetProfileByUserQuery } from "../../../app/Features/userProfileSlice";
 
 const OrderInvoice = () => {
   const { t } = useTranslation();
@@ -19,13 +18,11 @@ const OrderInvoice = () => {
   const navigator = useNavigate();
   const { id } = useParams();
   const token = localStorage.getItem("token");
-  const {data:users}=useGetAllUserQuery(token);
-  const profileId = Number(localStorage.getItem("profileId") || localStorage.getItem("prifileId"));
   const invoiceRef = useRef(null);
   const [data, setData] = useState({});
 
   const { data: invoiceData, isLoading } = useGetOrderByIdQuery({ id, token });
-  const { data: profileData } = useGetUserProfileQuery({ id: profileId, token });
+  const { data: profileData } = useGetProfileByUserQuery(invoiceData?.data?.created_by, { skip: !invoiceData?.data?.created_by });
 
   useEffect(() => {
     setData(invoiceData?.data || {});
@@ -50,8 +47,6 @@ const OrderInvoice = () => {
     });
   };
 
-  console.log(data);
-  
   const exchangeRate = Number(data?.exchange_rate || 4000);
   const sellerName = data?.created_by_name || "N/A";
   const customerName = data?.customer_name || data?.customer?.customer_name || t("walkInCustomer");

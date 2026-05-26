@@ -117,7 +117,7 @@ const Waste = () => {
             {/* Waste List */}
             <div className="border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700 overflow-hidden transition-colors">
                 <div className="bg-gray-50 dark:bg-gray-900/50 px-4 py-3 border-b border-gray-200 dark:border-gray-700">
-                    <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">{t('itemsInsufficientStock')}</h3>
+                    <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">{t('wasteItem')}</h3>
                     <p className="text-sm text-gray-500 dark:text-gray-400">{t('stockBelowNeeded')}</p>
                 </div>
 
@@ -157,7 +157,7 @@ const Waste = () => {
                                     <div className="text-right">
                                         <div className="flex items-center gap-2 text-sm">
                                             <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300">
-                                                {parseInt(item.taken_quantity).toLocaleString()} {t('taken')}
+                                                {parseInt(item.taken_quantity).toLocaleString()} {t('inStock')}
                                             </span>
                                         </div>
                                         <div className="flex items-center gap-2 text-sm mt-1">

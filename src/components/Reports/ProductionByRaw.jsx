@@ -1,17 +1,22 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { FiDownload, FiPrinter, FiFilter, FiCalendar } from 'react-icons/fi';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { FiDownload, FiPrinter, FiFilter } from 'react-icons/fi';
 import { useGetProductionByRawReportMutation } from '../../../app/Features/reportsSlice';
 import { toast } from 'react-toastify';
 import * as XLSX from 'xlsx';
-import { useGetAllUserQuery } from '../../../app/Features/usersSlice';
+import { useGetAllUserQuery, useGetUserLoginQuery } from '../../../app/Features/usersSlice';
 import { useGetAllRawMaterialQuery } from '../../../app/Features/RawMaterialSlice';
 import { useReactToPrint } from 'react-to-print';
 import { useReportText } from './reportText';
+import RichSearch from '../../utils/RichSearch';
+import { DatePicker } from 'antd';
+import dayjs from 'dayjs';
 
 const ProductionByRaw = () => {
     const { rt } = useReportText();
     const token = localStorage.getItem('token');
     const [getProductionByRaw] = useGetProductionByRawReportMutation();
+    const { data: userLogin } = useGetUserLoginQuery(token);
+    const profile = userLogin?.data;
 
     const formatDateForInput = (date) => {
         const year = date.getFullYear();
@@ -53,8 +58,7 @@ const ProductionByRaw = () => {
         }
     }, [rawMaterialData]);
 
-    const handleInputChange = (e) => {
-        const { name, value } = e.target;
+    const handleFieldChange = (name, value) => {
         setFormData((prev) => {
             const next = { ...prev, [name]: value };
 
@@ -72,14 +76,10 @@ const ProductionByRaw = () => {
         });
     };
 
-    useEffect(() => {
-        fetchReport();
-    }, []);
-
-    async function fetchReport() {
+    async function fetchReport(payload = formData) {
         try {
             setLoading(true);
-            const res = await getProductionByRaw({ itemData: formData, token });
+            const res = await getProductionByRaw({ itemData: payload, token });
             if (res?.data?.status === 200) {
                 setReportData(res.data.data || []);
             } else {
@@ -91,6 +91,10 @@ const ProductionByRaw = () => {
             setLoading(false);
         }
     }
+
+    useEffect(() => {
+        fetchReport();
+    }, []);
 
     const handleGetReport = async () => {
         await fetchReport();
@@ -106,11 +110,18 @@ const ProductionByRaw = () => {
     const formatNumber = (value) => {
         const number = Number(value);
         if (Number.isNaN(number)) return '0.00';
-        return number.toFixed(2);
+        return number.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     };
 
-    const totals = reportData
-        ? reportData.reduce(
+    const totals = useMemo(() => {
+        if (!reportData || reportData.length === 0) return {
+            quantity: 0,
+            total_cost: 0,
+            production_quantity: 0,
+            production_total_cost: 0,
+        };
+
+        return reportData.reduce(
             (acc, item) => ({
                 quantity: acc.quantity + (Number(item.quantity) || 0),
                 total_cost: acc.total_cost + (Number(item.total_cost) || 0),
@@ -123,8 +134,8 @@ const ProductionByRaw = () => {
                 production_quantity: 0,
                 production_total_cost: 0,
             }
-        )
-        : {};
+        );
+    }, [reportData]);
 
     const handleExportExcel = () => {
         if (!reportData || reportData.length === 0) return;
@@ -154,170 +165,195 @@ const ProductionByRaw = () => {
     });
 
     return (
-        <div className="report-page min-h-screen bg-transparent p-1 md:p-3">
-            <div className="mx-auto">
-                <div className="mb-8 ml-2">
-                    <h1 className="text-2xl font-bold text-gray-900">{rt("Production Report By Raw Material")}</h1>
-                    <p className="text-gray-600 text-md mt-2">{rt("Generate and export production cost by raw material")}</p>
+        <div className="report-page min-h-screen bg-transparent p-2 md:p-4">
+            <style dangerouslySetInnerHTML={{
+                __html: `
+                @media print {
+                    @page {
+                        size: A4;
+                        margin: 5mm;
+                    }
+                    body {
+                        -webkit-print-color-adjust: exact;
+                        font-family: 'Siemreap', 'Poppins', sans-serif;
+                    }
+                    .print-container {
+                        font-size: 10px !important;
+                    }
+                    .print-container table {
+                        width: 100% !important;
+                        border-collapse: collapse !important;
+                    }
+                    .print-container th, 
+                    .print-container td {
+                        padding: 4px 6px !important;
+                        font-size: 10px !important;
+                        border: 1px solid #e2e8f0 !important;
+                    }
+                    .print-container .print-header {
+                        margin-bottom: 15px !important;
+                    }
+                }
+            `}} />
+            <div className="max-w-7xl mx-auto">
+                <div className="mb-6">
+                    <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{rt("Production Report By Raw Material")}</h1>
+                    <p className="text-slate-500 text-sm mt-1 dark:text-slate-400">{rt("Generate and export production cost by raw material")}</p>
                 </div>
 
-                <div className="bg-white rounded-lg shadow-md p-6 text-xs mb-6">
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                <div className="bg-primary rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 p-5 text-xs mb-6">
+                    <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
                         <div>
-                            <label className="block font-medium text-gray-700 mb-2">User</label>
-                            <select
-                                name="created_by"
+                            <label className="block font-medium text-slate-600 dark:text-slate-300 mb-2">{rt("User")}</label>
+                            <RichSearch
+                                data={users}
+                                keyFields={{ id: 'id', title: 'username' }}
+                                onSelected={(id) => handleFieldChange('created_by', id)}
                                 value={formData.created_by}
-                                onChange={handleInputChange}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            >
-                                <option value="">All Users</option>
-                                {users?.map((user) => (
-                                    <option key={user.id} value={user.id}>
-                                        {user.username}
-                                    </option>
-                                ))}
-                            </select>
+                                placeholder={rt("All Users")}
+                            />
                         </div>
 
                         <div>
-                            <label className="block font-medium text-gray-700 mb-2">Raw Material</label>
-                            <select
-                                name="raw_material_id"
+                            <label className="block font-medium text-slate-600 dark:text-slate-300 mb-2">{rt("Raw Material")}</label>
+                            <RichSearch
+                                data={rawMaterials}
+                                keyFields={{ id: 'id', title: 'material_name' }}
+                                onSelected={(id) => handleFieldChange('raw_material_id', id)}
                                 value={formData.raw_material_id}
-                                onChange={handleInputChange}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            >
-                                <option value="">All Raw Materials</option>
-                                {rawMaterials?.map((material) => (
-                                    <option key={material.id} value={material.id}>
-                                        {material.material_name} ({material.material_code})
-                                    </option>
-                                ))}
-                            </select>
+                                placeholder={rt("All Raw Materials")}
+                            />
                         </div>
 
                         <div>
-                            <label className="block font-medium text-gray-700 mb-2">Start Date</label>
-                            <div className="relative">
-                                <FiCalendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                                <input
-                                    type="date"
-                                    name="start_date"
-                                    value={formData.start_date}
-                                    onChange={handleInputChange}
-                                    className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                />
-                            </div>
+                            <label className="block font-medium text-slate-600 dark:text-slate-300 mb-2">{rt("Start Date")}</label>
+                            <DatePicker
+                                className="w-full date-picker"
+                                value={formData.start_date ? dayjs(formData.start_date) : null}
+                                onChange={(date) => handleFieldChange('start_date', date ? date.format('YYYY-MM-DD') : '')}
+                            />
                         </div>
 
                         <div>
-                            <label className="block font-medium text-gray-700 mb-2">End Date</label>
-                            <div className="relative">
-                                <FiCalendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                                <input
-                                    type="date"
-                                    name="end_date"
-                                    value={formData.end_date}
-                                    onChange={handleInputChange}
-                                    className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                />
-                            </div>
+                            <label className="block font-medium text-slate-600 dark:text-slate-300 mb-2">{rt("End Date")}</label>
+                            <DatePicker
+                                className="w-full date-picker"
+                                value={formData.end_date ? dayjs(formData.end_date) : null}
+                                onChange={(date) => handleFieldChange('end_date', date ? date.format('YYYY-MM-DD') : '')}
+                            />
                         </div>
-                    </div>
 
-                    <div className="flex gap-3">
                         <button
                             onClick={handleGetReport}
                             disabled={loading}
-                            className="flex items-center gap-2 bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="flex items-center justify-center gap-2 bg-blue-600 text-white px-5 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed h-10"
                         >
-                            <FiFilter size={18} />
+                            <FiFilter size={16} />
                             {loading ? rt('Loading...') : rt('Get Report')}
                         </button>
                     </div>
                 </div>
 
                 {reportData && (
-                    <div className="bg-white rounded-lg shadow-md p-6 text-xs">
-                        <div className="flex justify-end gap-3 mb-6">
+                    <div className="bg-primary rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 p-5 text-xs">
+                        <div className="flex justify-end gap-3 mb-4">
                             <button
                                 onClick={handleExportExcel}
-                                className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700"
+                                className="flex items-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-md hover:bg-emerald-700"
                             >
-                                <FiDownload size={18} />
+                                <FiDownload size={16} />
                                 {rt('Export Excel')}
                             </button>
                             <button
                                 onClick={handlePrint}
-                                className="flex items-center gap-2 bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700 print:hidden"
+                                className="flex items-center gap-2 bg-slate-600 text-white px-4 py-2 rounded-md hover:bg-slate-700 print:hidden"
                             >
-                                <FiPrinter size={18} />
+                                <FiPrinter size={16} />
                                 {rt('Print')}
                             </button>
                         </div>
 
-                        <div className="overflow-x-auto print:overflow-visible print:p-10 print:bg-white print:text-black print:shadow-none" ref={reportRef}>
-                            <ul className="px-5 flex justify-between text-left text-xs font-medium mb-5 text-gray-500 uppercase tracking-wider">
-                                <li>User: <span className="font-bold">{formData?.username || 'All'}</span></li>
-                                <li>Raw Material: <span className="font-bold">{formData?.raw_material_name || 'All'}</span></li>
-                                <li>Start Date: <span className="font-bold">{formData.start_date || 'All'}</span></li>
-                                <li>End Date: <span className="font-bold">{formData.end_date || 'All'}</span></li>
+                        <div className="overflow-x-auto print:overflow-visible print:p-0 print:bg-white print:text-black print:shadow-none print-container" ref={reportRef}>
+                            {/* Print Header */}
+                            <div className="hidden print:flex items-center justify-between mb-8 border-b pb-4 print-header">
+                                <div className="flex items-center gap-4">
+                                    {profile?.image ? (
+                                        <img src={profile.image} alt="Profile" className="w-16 h-16 rounded-full object-cover border-2 border-slate-200" />
+                                    ) : (
+                                        <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center border-2 border-slate-200">
+                                            <span className="text-2xl text-slate-400 uppercase">{profile?.username?.[0] || 'U'}</span>
+                                        </div>
+                                    )}
+                                    <div>
+                                        <h2 className="text-xl font-bold text-slate-900">{profile?.username || 'User'}</h2>
+                                        <p className="text-sm text-slate-500">{profile?.role || 'Staff'}</p>
+                                    </div>
+                                </div>
+                                <div className="text-right">
+                                    <h1 className="text-xl font-bold text-blue-600">{rt("Production Report By Raw Material")}</h1>
+                                    <p className="text-xs text-slate-500">{new Date().toLocaleString()}</p>
+                                </div>
+                            </div>
+
+                            <ul className="px-3 flex flex-wrap gap-4 text-xs font-medium text-slate-500 uppercase tracking-wider mb-4">
+                                <li>{rt("User")}: <span className="font-semibold text-slate-700 dark:text-slate-300">{formData.username || rt('All')}</span></li>
+                                <li>{rt("Raw Material")}: <span className="font-semibold text-slate-700 dark:text-slate-300">{formData.raw_material_name || rt('All')}</span></li>
+                                <li>{rt("Start Date")}: <span className="font-semibold text-slate-700 dark:text-slate-300">{formData.start_date || rt('All')}</span></li>
+                                <li>{rt("End Date")}: <span className="font-semibold text-slate-700 dark:text-slate-300">{formData.end_date || rt('All')}</span></li>
                             </ul>
 
-                            <table className="min-w-full border-collapse border border-gray-400">
-                                <thead className="bg-gray-50">
+                            <table className="min-w-full border-collapse border border-slate-200 dark:border-slate-700">
+                                <thead className="bg-slate-50 dark:bg-slate-800">
                                     <tr>
-                                        <th className="border border-gray-300 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Raw Code</th>
-                                        <th className="border border-gray-300 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Raw Material</th>
-                                        <th className="border border-gray-300 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cost Per Unit</th>
-                                        <th className="border border-gray-300 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Raw Cost</th>
-                                        <th className="border border-gray-300 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Primary Unit</th>
-                                        <th className="border border-gray-300 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Secondary Unit</th>
-                                        <th className="border border-gray-300 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Conversion</th>
-                                        <th className="border border-gray-300 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Production Qty</th>
-                                        <th className="border border-gray-300 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Production Total Cost</th>
+                                        <th className="border border-slate-200 dark:border-slate-700 px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">{rt("Raw Code")}</th>
+                                        <th className="border border-slate-200 dark:border-slate-700 px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">{rt("Raw Material")}</th>
+                                        <th className="border border-slate-200 dark:border-slate-700 px-4 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">{rt("Cost Per Unit")}</th>
+                                        <th className="border border-slate-200 dark:border-slate-700 px-4 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">{rt("Total Raw Cost")}</th>
+                                        <th className="border border-slate-200 dark:border-slate-700 px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">{rt("Primary Unit")}</th>
+                                        <th className="border border-slate-200 dark:border-slate-700 px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">{rt("Secondary Unit")}</th>
+                                        <th className="border border-slate-200 dark:border-slate-700 px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">{rt("Conversion")}</th>
+                                        <th className="border border-slate-200 dark:border-slate-700 px-4 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">{rt("Production Qty")}</th>
+                                        <th className="border border-slate-200 dark:border-slate-700 px-4 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">{rt("Production Total Cost")}</th>
                                     </tr>
                                 </thead>
-                                <tbody className="bg-white divide-y divide-gray-200">
+                                <tbody className="bg-white dark:bg-slate-900 divide-y divide-slate-100 dark:divide-slate-800">
                                     {reportData?.map((item, index) => (
-                                        <tr key={index} className="hover:bg-gray-50 !text-xs">
-                                            <td className="border border-gray-300 px-6 py-4 whitespace-nowrap font-medium text-gray-900">{item.material_code}</td>
-                                            <td className="border border-gray-300 px-6 py-4 whitespace-nowrap text-gray-500">{item.material_name}</td>
-                                            <td className="border border-gray-300 px-6 py-4 whitespace-nowrap text-gray-500">{formatCurrency(item.cost_per_unit)}</td>
-                                            <td className="border border-gray-300 px-6 py-4 whitespace-nowrap text-gray-500">{formatCurrency(item.total_cost)}</td>
-                                            <td className="border border-gray-300 px-6 py-4 whitespace-nowrap text-gray-500">{formatNumber(item.quantity)}{item.primary_unit}</td>
-                                            <td className="border border-gray-300 px-6 py-4 whitespace-nowrap text-gray-500">{formatNumber(item.quantity * item.conversion_value)}{item.secondary_unit}</td>
-                                            <td className="border border-gray-300 px-6 py-4 whitespace-nowrap text-gray-500">{item.conversion_value}</td>
-                                            <td className="border border-gray-300 px-6 py-4 whitespace-nowrap text-gray-500">{formatNumber(item.production_quantity)}</td>
-                                            <td className="border border-gray-300 px-6 py-4 whitespace-nowrap font-medium text-green-600">{formatCurrency(item.production_total_cost)}</td>
+                                        <tr key={index} className="hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                                            <td className="border border-slate-200 dark:border-slate-700 px-4 py-3 font-medium text-slate-900 dark:text-slate-100">{item.material_code}</td>
+                                            <td className="border border-slate-200 dark:border-slate-700 px-4 py-3 text-slate-600 dark:text-slate-400">{item.material_name}</td>
+                                            <td className="border border-slate-200 dark:border-slate-700 px-4 py-3 text-right text-slate-600 dark:text-slate-400">{formatCurrency(item.cost_per_unit)}</td>
+                                            <td className="border border-slate-200 dark:border-slate-700 px-4 py-3 text-right text-slate-600 dark:text-slate-400">{formatCurrency(item.total_cost)}</td>
+                                            <td className="border border-slate-200 dark:border-slate-700 px-4 py-3 text-slate-600 dark:text-slate-400">{formatNumber(item.quantity)}{item.primary_unit}</td>
+                                            <td className="border border-slate-200 dark:border-slate-700 px-4 py-3 text-slate-600 dark:text-slate-400">{formatNumber(item.quantity * item.conversion_value)}{item.secondary_unit}</td>
+                                            <td className="border border-slate-200 dark:border-slate-700 px-4 py-3 text-slate-600 dark:text-slate-400">{item.conversion_value}</td>
+                                            <td className="border border-slate-200 dark:border-slate-700 px-4 py-3 text-right text-slate-600 dark:text-slate-400">{formatNumber(item.production_quantity)}</td>
+                                            <td className="border border-slate-200 dark:border-slate-700 px-4 py-3 text-right font-medium text-emerald-600">{formatCurrency(item.production_total_cost)}</td>
                                         </tr>
                                     ))}
-
                                     {reportData.length > 0 && (
-                                        <tr className="bg-gray-100 font-bold">
-                                            <td className="border border-gray-300 px-6 py-4 text-right" colSpan={2}>Total</td>
-                                            <td className="border border-gray-300 px-6 py-4">-</td>
-                                            <td className="border border-gray-300 px-6 py-4">{formatCurrency(totals.total_cost)}</td>
-                                            <td className="border border-gray-300 px-6 py-4">{formatNumber(totals.quantity)}</td>
-                                            <td className="border border-gray-300 px-6 py-4" colSpan={2}>-</td>
-                                            <td className="border border-gray-300 px-6 py-4">{formatNumber(totals.production_quantity)}</td>
-                                            <td className="border border-gray-300 px-6 py-4 text-green-600">{formatCurrency(totals.production_total_cost)}</td>
+                                        <tr className="bg-slate-50 dark:bg-slate-800 font-semibold">
+                                            <td className="border border-slate-200 dark:border-slate-700 px-4 py-3 text-right text-slate-900 dark:text-slate-100" colSpan={2}>{rt("Total")}</td>
+                                            <td className="border border-slate-200 dark:border-slate-700 px-4 py-3 text-right text-slate-800 dark:text-slate-200">-</td>
+                                            <td className="border border-slate-200 dark:border-slate-700 px-4 py-3 text-right text-slate-800 dark:text-slate-200">{formatCurrency(totals.total_cost)}</td>
+                                            <td className="border border-slate-200 dark:border-slate-700 px-4 py-3 text-right text-slate-800 dark:text-slate-200">{formatNumber(totals.quantity)}</td>
+                                            <td className="border border-slate-200 dark:border-slate-700 px-4 py-3 text-right text-slate-800 dark:text-slate-200" colSpan={2}>-</td>
+                                            <td className="border border-slate-200 dark:border-slate-700 px-4 py-3 text-right text-slate-800 dark:text-slate-200">{formatNumber(totals.production_quantity)}</td>
+                                            <td className="border border-slate-200 dark:border-slate-700 px-4 py-3 text-right text-emerald-600">{formatCurrency(totals.production_total_cost)}</td>
                                         </tr>
                                     )}
                                 </tbody>
                             </table>
 
                             {reportData?.length > 0 && (
-                                <div className="mt-6 p-4 bg-gray-50 rounded-md">
-                                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                <div className="mt-4 p-4 bg-slate-50 dark:bg-slate-800 rounded-md border border-slate-100 dark:border-slate-700">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div>
-                                            <span className="font-medium text-gray-700">Total Raw Materials: </span>
-                                            <span className="text-gray-600">{reportData.length}</span>
+                                            <span className="font-medium text-slate-600 dark:text-slate-400">{rt("Total Raw Materials: ")}</span>
+                                            <span className="text-slate-700 dark:text-slate-200">{reportData.length}</span>
                                         </div>
                                         <div>
-                                            <span className="font-medium text-gray-700">Total Production Cost: </span>
-                                            <span className="text-green-600 font-medium">{formatCurrency(totals.production_total_cost)}</span>
+                                            <span className="font-medium text-slate-600 dark:text-slate-400">{rt("Total Production Cost: ")}</span>
+                                            <span className="text-emerald-600 font-medium">{formatCurrency(totals.production_total_cost)}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -327,17 +363,17 @@ const ProductionByRaw = () => {
                 )}
 
                 {!reportData && !loading && (
-                    <div className="bg-white rounded-lg shadow-md p-12 text-center">
-                        <FiFilter size={48} className="mx-auto text-gray-400 mb-4" />
-                        <h3 className="text-lg font-medium text-gray-900 mb-2">{rt("No Report Generated")}</h3>
-                        <p className="text-gray-500">{rt("Use the filters above to generate a production report by raw material")}</p>
+                    <div className="bg-primary rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 p-12 text-center">
+                        <FiFilter size={48} className="mx-auto text-slate-300 dark:text-slate-600 mb-4" />
+                        <h3 className="text-lg font-medium text-slate-900 dark:text-white mb-2">{rt("No Report Generated")}</h3>
+                        <p className="text-slate-500 dark:text-slate-400">{rt("Use the filters above to generate a production report by raw material")}</p>
                     </div>
                 )}
 
                 {loading && (
-                    <div className="bg-white rounded-lg shadow-md p-12 text-center">
+                    <div className="bg-primary rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 p-12 text-center">
                         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                        <p className="text-gray-600">{rt("Generating report...")}</p>
+                        <p className="text-slate-600 dark:text-slate-400">{rt("Generating report...")}</p>
                     </div>
                 )}
             </div>
@@ -346,4 +382,3 @@ const ProductionByRaw = () => {
 };
 
 export default ProductionByRaw;
-

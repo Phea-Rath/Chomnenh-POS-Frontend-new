@@ -79,7 +79,7 @@ const Sidebar = ({ darkMode }) => {
 
   const user = profile?.data;
 
-  const CustomNavLink = ({ item }) => {
+  const CustomNavLink = ({ key, item }) => {
     const isActive = location.pathname === item.menu_path;
 
     return (
@@ -93,7 +93,7 @@ const Sidebar = ({ darkMode }) => {
       >
         <div className={`white-icon-sidebar transition-all duration-300
           `}>
-          {item?.menu_icon && <img className={item?.menu_icon ? 'w-5 h-5' : ''} src={item?.menu_icon} onError={(e)=>e.target.src=icon} alt="" />}
+          {item?.menu_icon && <img key={key} className={item?.menu_icon ? 'w-5 h-5' : ''} src={item?.menu_icon} onError={(e)=>e.target.src=icon} alt="" />}
         </div>
 
         <span className={`font-semibold text-[14px] tracking-tight ${collapsed && !isMobile ? 'hidden' : 'flex-1'}`}>

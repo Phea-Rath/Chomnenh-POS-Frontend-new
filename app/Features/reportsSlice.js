@@ -53,6 +53,9 @@ export const reportsApi = createApi({
         getStockByRawReport: builder.mutation({
             query: ({ itemData, token }) => createData(itemData, '/stock_report_raw', token),
         }),
+        getIncomeStatement: builder.query({
+            query: ({token, start_date, end_date}) => queryData(`/income-statement?start_date=${start_date}&end_date=${end_date}`, token),
+        }),
 
     }),
 });
@@ -72,5 +75,6 @@ export const {
     useGetAPReportMutation,
     useGetARReportMutation,
     useGetDebtAnalysisMutation,
-    useGetStockByRawReportMutation
+    useGetStockByRawReportMutation,
+    useGetIncomeStatementQuery
 } = reportsApi;

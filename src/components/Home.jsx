@@ -65,25 +65,25 @@ const Home = () => {
   };
 
   return (
-    <div className="p-6 lg:p-10 relative bg-transparent text-slate-900 dark:text-slate-100">
+    <div className="p-3 md:p-6 lg:p-10 relative bg-transparent text-slate-900 dark:text-slate-100">
       <motion.div
         initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
         className="max-w-7xl mx-auto relative z-10"
       >
-        <header className="mb-10 flex justify-between items-end">
+        <header className="mb-6 md:mb-10 flex justify-between items-end">
           <div>
-            <h1 className="text-3xl font-extrabold tracking-tight mb-2 text-slate-900 dark:text-slate-100">
+            <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight mb-1 md:mb-2 text-slate-900 dark:text-slate-100">
               {t("dashboard")}
             </h1>
-            <p className="font-medium text-slate-500 dark:text-slate-400">{t("manageWorkspace")}</p>
+            <p className="text-xs md:text-base font-medium text-slate-500 dark:text-slate-400">{t("manageWorkspace")}</p>
           </div>
           <div className="hidden md:block text-sm font-semibold px-4 py-2 rounded-full border text-blue-600 bg-blue-50 border-blue-100 dark:text-blue-400 dark:bg-blue-900/20 dark:border-blue-800/30">
             {new Date().toLocaleDateString(i18n.language === 'kh' ? 'km-KH' : 'en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
           </div>
         </header>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-5 auto-rows-[200px]">
+        <div className="grid grid-cols-3 md:grid-cols-4 gap-2 md:gap-5 auto-rows-[110px] md:auto-rows-[200px]">
           {menu.map((perm, index) => {
             const color = colorSchemes[index % colorSchemes.length];
             const isWide = index % 6 === 0;
@@ -93,15 +93,15 @@ const Home = () => {
                 key={index}
                 whileHover={{ scale: 1.01 }}
                 whileTap={{ scale: 0.98 }}
-                className={`${isWide ? "md:col-span-2" : "md:col-span-1"}`}
+                className={`${isWide ? "md:col-span-2" : "col-span-1"}`}
               >
                 <Link to={perm?.menu_path} className="h-full block">
-                  <div className={`h-full group relative overflow-hidden border transition-all duration-300 border-gradient-gold  border-slate-200 dark:border-gray-700 hover:shadow-blue-500/10 dark:hover:shadow-xl ${isWide ? "dark:shadow-blue-900/20" : ""} ${color.border} p-8 flex flex-col justify-between`}>
+                  <div className={`h-full group relative overflow-hidden border transition-all duration-300 border-gradient-gold  border-slate-200 dark:border-gray-700 hover:shadow-blue-500/10 dark:hover:shadow-xl ${isWide ? "dark:shadow-blue-900/20" : ""} ${color.border} p-3 md:p-8 flex flex-col justify-between`}>
 
                     {/* Icon Section */}
                     <div className="flex justify-between items-start">
-                      <div className={`p-2 rounded-sm ${color.bg} ${color.icon} text-2xl transition-transform duration-500 group-hover:rotate-[360deg]`}>
-                        <img className="w-7 h-7 white-icon" src={perm?.menu_icon} alt="" />
+                      <div className={`p-1.5 md:p-2 rounded-sm ${color.bg} ${color.icon} text-lg md:text-2xl transition-transform duration-500 group-hover:rotate-[360deg]`}>
+                        <img className="w-5 h-5 md:w-7 md:h-7 white-icon" src={perm?.menu_icon} alt="" />
                       </div>
                       {/* <div className={`text-[10px] uppercase tracking-widest font-bold px-3 py-1 rounded-full ${color.tag} ${color.icon} dark:bg-gray-700 dark:text-slate-300`}>
                         {t("active")
@@ -110,17 +110,17 @@ const Home = () => {
 
                     {/* Text Section */}
                     <div>
-                      <h3 className={`text-xl font-bold mb-1 ${color.text}`}>
+                      <h3 className={`text-[10px] md:text-xl font-bold mb-0.5 md:mb-1 ${color.text} uppercase tracking-tight line-clamp-1`}>
                         {perm?.menu_name}
                       </h3>
-                      <p className={`text-sm font-medium line-clamp-1 ${color.muted}`}>
+                      <p className={`hidden md:block text-sm font-medium line-clamp-1 ${color.muted}`}>
                         {t("quickAccess")} {perm?.menu_name.toLowerCase()}
                       </p>
                     </div>
 
                     {/* Invisible Arrow that slides in on hover */}
-                    <div className={`absolute bottom-6 right-8 opacity-0 group-hover:opacity-100 group-hover:translate-x-2 transition-all duration-300 ${color.icon}`}>
-                      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <div className={`absolute bottom-3 md:bottom-6 right-3 md:right-8 opacity-0 group-hover:opacity-100 group-hover:translate-x-2 transition-all duration-300 ${color.icon}`}>
+                      <svg className="w-4 h-4 md:w-6 md:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M14 5l7 7-7 7" />
                       </svg>
                     </div>

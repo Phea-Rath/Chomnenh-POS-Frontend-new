@@ -34,6 +34,9 @@ export const userProfileApi = createApi({
         getProfileById: builder.query({
             query: (id) => queryDataNoToken(`/profile-by-id/${id}`),
         }),
+        getProfileByUser: builder.query({
+            query: (id) => queryDataNoToken(`/profile-by-user/${id}`),
+        }),
     }),
 });
 
@@ -47,4 +50,5 @@ export const {
     useUpdateRoleMutation,
     useGetAllProfileQuery,
     useGetProfileByIdQuery,
+    useGetProfileByUserQuery,
 } = userProfileApi;

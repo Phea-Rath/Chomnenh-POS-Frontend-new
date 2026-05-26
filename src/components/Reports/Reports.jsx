@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { useEffect, useState } from "react"
 import { useGetMenuReportQuery } from "../../../app/Features/permissionSlice";
 import { useTranslation } from "react-i18next";
+import incomeIcon from '../../assets/income.png'
 
 const colors = [
   { iconBg: "bg-blue-50 dark:bg-blue-900/30", hoverBorder: "hover:border-blue-200 dark:hover:border-blue-700" },
@@ -12,6 +13,14 @@ const colors = [
   { iconBg: "bg-rose-50 dark:bg-rose-900/30", hoverBorder: "hover:border-rose-200 dark:hover:border-rose-700" },
   { iconBg: "bg-purple-50 dark:bg-purple-900/30", hoverBorder: "hover:border-purple-200 dark:hover:border-purple-700" },
 ];
+
+const newMenu = [
+  {
+    menu_name:"Income Statement",
+    menu_icon: incomeIcon,
+    menu_path:"/report/income-statement"
+  }
+]
 
 const flattenMenus = (menus = []) =>
   menus.flatMap((menu) => [menu, ...(menu?.menus?.length ? flattenMenus(menu.menus) : [])]);
@@ -53,7 +62,7 @@ const Reports = () => {
         </header>
 
         <article className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
-          {menu?.map((perm, index) => {
+          {[...newMenu, ...menu]?.map((perm, index) => {
             const color = colors[index % colors.length];
             return (
               <motion.div
@@ -65,10 +74,10 @@ const Reports = () => {
                 <Link
                   to={perm?.menu_path}
                   className={`
-                    group flex flex-col items-center justify-center p-6 border-gradient-gold
-                    border border-gray-100 dark:border-gray-700
-                    hover:shadow-xl hover:shadow-gray-200/50 dark:hover:shadow-black/20 transition-all duration-300
-                    w-full min-h-[160px] text-center space-y-4
+                     group flex flex-col items-center justify-center p-6 border-gradient-gold
+                                         border border-gray-100 dark:border-gray-700
+                                        hover:shadow-xl hover:shadow-gray-200/50 dark:hover:shadow-black/20 transition-all duration-300
+                                        w-full min-h-[160px] text-center space-y-4
                     ${color.hoverBorder}
                   `}
                 >
@@ -86,6 +95,7 @@ const Reports = () => {
               </motion.div>
             );
           })}
+          
         </article>
       </section>
     </motion.div >
