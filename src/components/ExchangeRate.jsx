@@ -53,7 +53,7 @@ const ExchangeRate = () => {
 
   return (
     <div className=" h-full flex items-center justify-center">
-      <div className="border-gradient-gold p-6 rounded-lg shadow-lg w-full">
+      <div className="border-gradient-gold p-6 shadow-lg w-full">
         <div className="flex flex-col justify-center items-center">
           <FcCurrencyExchange className="text-5xl" />
           <h1 className="text-2xl font-bold mb-4 text-center text-gray-800 dark:text-white">

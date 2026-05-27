@@ -75,7 +75,7 @@ const Settings = () => {
                   to={perm?.menu_path}
                   className={`
                     group flex flex-col items-center justify-center p-6 border-gradient-gold
-                    rounded-sm border border-gray-100 dark:border-gray-700 shadow-sm
+                     border border-gray-100 dark:border-gray-700 shadow-sm
                     hover:shadow-xl hover:shadow-gray-200/50 dark:hover:shadow-black/20 transition-all duration-300
                     w-full min-h-[160px] text-center space-y-4
                     ${color.hoverBorder}
@@ -88,7 +88,7 @@ const Settings = () => {
                       alt={perm?.menu_name}
                     />
                   </div>
-                  <h2 className="font-semibold text-gray-700 dark:text-gray-200 group-hover:text-gray-900 dark:group-hover:text-white transition-colors">
+                  <h2 className={`text-[10px] md:text-[14px] text-slate-800 dark:text-slate-100 font-bold mb-0.5 md:mb-1 uppercase tracking-tight line-clamp-1`}>
                     {perm?.menu_name}
                   </h2>
                 </Link>

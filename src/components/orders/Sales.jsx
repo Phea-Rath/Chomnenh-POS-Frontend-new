@@ -24,7 +24,25 @@ import { PiShoppingCartBold } from "react-icons/pi";
 import { motion } from "framer-motion";
 import { useGetAllSaleQuery } from "../../../app/Features/salesSlice";
 import { useGetAllCategoriesQuery } from "../../../app/Features/categoriesSlice";
-import { useGetAllOrderQuery } from "../../../app/Features/ordersSlice";
+import { useGetAllBrandQuery } from "../../../app/Features/brandsSlice";
+import { 
+  useGetAllOrderQuery,
+  useGetPopularOrderQuery,
+  useGetPersentOrderMonthlyQuery 
+} from "../../../app/Features/ordersSlice";
+import {
+  LineChart,
+  Line,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip as RechartTooltip,
+  ResponsiveContainer,
+  Cell,
+  Legend
+} from "recharts";
 import { IoMdAddCircle } from "react-icons/io";
 import { IoMdRemoveCircle } from "react-icons/io";
 import { useGetAllItemsQuery } from "../../../app/Features/itemsSlice";
@@ -36,7 +54,7 @@ import { FaPercent, FaPalette, FaRuler } from "react-icons/fa";
 import { GiSugarCane } from "react-icons/gi";
 import { BiCategory } from "react-icons/bi";
 import api from "../../services/api";
-import { MdOutlineAddShoppingCart } from "react-icons/md";
+import { MdOutlineAddShoppingCart, MdOutlineTableChart, MdOutlineGridView } from "react-icons/md";
 import { TbShoppingCartOff } from "react-icons/tb";
 import { useGetAllWasteQuery } from "../../../app/Features/notificationSlice";
 import { useDebounce } from "use-debounce";
@@ -46,6 +64,9 @@ import handleDownload from "../../services/imageDowload";
 import * as qrService from "../../services/qrPaymentService";
 import { useTranslation } from "react-i18next";
 import dayjs from "dayjs";
+import RichSearch from "../../utils/RichSearch";
+import { LuEye, LuFileText, LuTrash2, LuBan, LuRotateCcw, LuCreditCard } from "react-icons/lu";
+import { BiEdit } from "react-icons/bi";
 
 
 // const { Option } = Select;
@@ -113,11 +134,15 @@ const Sales = () => {
   const [messageApi, contextHolder] = message.useMessage();
   const [modal, modalContextHolder] = Modal.useModal();
   const [Category, setCategory] = useState([]);
+  const [Brand, setBrand] = useState([]);
+  const [viewMode, setViewMode] = useState("products"); // 'products' or 'orders'
   const [orders, setOrders] = useState(localOrderItems || initialOrder);
   const [search, setSearch] = useState('');
   const [debounce] = useDebounce(search, 500);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [categoryId, setCategoryId] = useState('');
+  const [brandId, setBrandId] = useState('');
   const {
     setLoading,
     open,
@@ -132,23 +157,38 @@ const Sales = () => {
     token,
     limit: pageSize,
     page: currentPage,
-    search: debounce
+    search: debounce,
+    category_id: categoryId,
+    brand_id: brandId
   });
   const categoryContext = useGetAllCategoriesQuery(token);
-  const orderContext = useGetAllOrderQuery({  token, limit: 10, page: 1, search: '' });
+  const brandContext = useGetAllBrandQuery(token);
+  const orderContext = useGetAllOrderQuery({  
+    token, 
+    limit: pageSize, 
+    page: currentPage, 
+    search: debounce,
+    category_id: categoryId,
+    brand_id: brandId
+  });
+  const { data: popularOrders } = useGetPopularOrderQuery(token);
+  const { data: percentMonthly } = useGetPersentOrderMonthlyQuery(token);
   const { refetch: refetchWaste } = useGetAllWasteQuery(token);
 
   const items = useMemo(() => saleItemContext?.data?.data || [], [saleItemContext?.data]);
-  const totalItems = saleItemContext?.data?.pagination?.total || 0;
+  const orderList = useMemo(() => orderContext?.data?.data || [], [orderContext?.data]);
+  const totalItems = viewMode === "products" 
+    ? (saleItemContext?.data?.pagination?.total || 0)
+    : (orderContext?.data?.pagination?.total || 0);
 
   localStorage.setItem("orderItems", JSON.stringify(initialOrder));
 
   // Helper function to calculate price based on sale type and discount
   const getItemPrice = (item, saleType = "sale") => {
     if (saleType === "sale") {
-      return item.price_discount || (item.price * (1 - (item.discount || 0) / 100));
+      return item.item_price || item.price;
     } else {
-      return item.wholesale_price_discount || (item.wholesale_price * (1 - (item.discount || 0) / 100));
+      return item.wholesale_price;
     }
   };
   // Parse attributes for display
@@ -228,6 +268,9 @@ const Sales = () => {
   useEffect(() => {
     if (categoryContext.data?.data) {
       setCategory(categoryContext.data.data);
+    }
+    if (brandContext.data?.data) {
+      setBrand(brandContext.data.data);
     }
 
     if (items) {
@@ -1011,18 +1054,15 @@ const Sales = () => {
   };
 
   function onFilterCategory(e) {
-    const value = e.target.value;
+    const value = e.target.value === "all" ? "" : e.target.value;
+    setCategoryId(value);
+    setCurrentPage(1);
+  }
 
-    if (value === "all") {
-      setItemsSech(allItems);
-    } else if (value) {
-      const filterItem = allItems?.filter(
-        (item) => item.category_id == value
-      );
-      setItemsSech(filterItem);
-    } else {
-      setItemsSech(allItems);
-    }
+  function onFilterBrand(e) {
+    const value = e.target.value === "all" ? "" : e.target.value;
+    setBrandId(value);
+    setCurrentPage(1);
   }
 
   function onSearch(e) {
@@ -1279,34 +1319,31 @@ const Sales = () => {
               <p className="text-gray-600 dark:text-gray-400">{t("selectProducts")}</p>
             </div>
 
-            <div className="flex items-center gap-3">
-              {/* <Link to="/order-list">
-                <button className="inline-flex items-center gap-2 px-4 py-2 border border-green-600 bg-green-600 text-white rounded hover:bg-green-700 text-sm font-medium">
-                  <LuListChecks />
-                  {t("viewOrders")}
-                </button>
-              </Link> */}
-
-              <div className="relative">
-                <button
-                  onClick={showDrawer}
-                  className="inline-flex items-center gap-2 px-4 py-2 border rounded text-sm font-medium transition-colors border-gray-300 text-gray-700 hover:border-blue-500 hover:text-blue-600 dark:border-gray-700 bg-primary dark:text-gray-200 dark:hover:border-blue-500 dark:hover:text-blue-400"
-                >
-                  <PiShoppingCartBold />
-                  {t("viewCart")}
-                </button>
-                {orderCount > 0 && (
-                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-blue-600 border-2 border-white rounded-full text-white text-xs font-medium flex items-center justify-center">
-                    {orderCount}
-                  </span>
-                )}
-              </div>
-            </div>
+            
           </div>
+
+          {/* Floating Sticky Cart Button */}
+          <div className="fixed bottom-24 right-6 z-50">
+            <motion.button
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              onClick={showDrawer}
+              className="relative w-16 h-16 bg-blue-600 text-white rounded-full shadow-2xl flex items-center justify-center hover:bg-blue-700 transition-all border-4 border-white dark:border-gray-800"
+            >
+              <PiShoppingCartBold className="text-2xl" />
+              {orderCount > 0 && (
+                <span className="absolute -top-1 -right-1 w-6 h-6 bg-red-500 border-2 border-white rounded-full text-white text-[10px] font-black flex items-center justify-center animate-bounce">
+                  {orderCount}
+                </span>
+              )}
+            </motion.button>
+          </div>
+
+          
 
           {/* Search and Filter Bar */}
           <div className="border rounded p-2 mb-6 border-gray-200 bg-primary dark:border-gray-700">
-            <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex flex-col md:flex-row gap-4">
               <div className="flex-1">
                 <div className="relative">
                   <input
@@ -1321,15 +1358,35 @@ const Sales = () => {
                   </div>
                 </div>
               </div>
+
+
+              {/* Brand Filter with RichSearch */}
+              <div className="flex items-center gap-2 min-w-[200px]">
+                <span className="text-xs font-medium text-gray-500 whitespace-nowrap">{t("brand")}:</span>
+                <RichSearch
+                  data={[{ brand_id: "all", brand_name: t("allBrands") }, ...Brand]}
+                  keyFields={{ id: "brand_id", title: "brand_name" }}
+                  value={brandId || "all"}
+                  onSelected={(id) => {
+                    setBrandId(id === "all" ? "" : id);
+                    setCurrentPage(1);
+                  }}
+                  placeholder={t("searchBrands")}
+                />
+              </div>
             </div>
           </div>
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-2 flex-wrap mb-6">
             {[{ category_id: "all", category_name: t("allCategories") }, ...Category].map((cat) => (
               <button
                 key={cat.category_id}
                 value={cat.category_id}
                 onClick={onFilterCategory}
-                className="px-3 py-1 bg-chomnenh-light text-white rounded-full text-sm font-medium hover:bg-primary dark:hover:bg-primary"
+                className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all ${
+                  (categoryId == cat.category_id || (cat.category_id === "all" && categoryId === ""))
+                    ? "bg-blue-600 text-white shadow-md shadow-blue-500/20"
+                    : "bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700"
+                }`}
               >
                 {cat.category_name}
               </button>
@@ -1337,131 +1394,128 @@ const Sales = () => {
           </div>
         </div>
 
-        {/* Products Grid */}
+        {/* Products Grid or Order List */}
         <div>
-          {itemsSech?.length === 0 ? (
-            saleItemContext?.isLoading ? (
-              <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
-                {[...Array(8)].map((_, index) => (
-                  <div key={index} className="border rounded p-4 animate-pulse border-gray-200 bg-primary dark:border-gray-700">
-                    <div className="h-48 rounded mb-4 bg-transparent"></div>
-                    <div className="h-4 rounded w-3/4 mb-2 bg-transparent"></div>
-                    <div className="h-3 rounded w-1/2 mb-4 bg-transparent"></div>
-                    <div className="flex justify-between">
-                      <div className="h-6 rounded w-1/4 bg-transparent"></div>
-                      <div className="h-8 rounded w-1/3 bg-transparent"></div>
+          {
+            itemsSech?.length === 0 ? (
+              saleItemContext?.isLoading ? (
+                <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
+                  {[...Array(8)].map((_, index) => (
+                    <div key={index} className="border rounded p-4 animate-pulse border-gray-200 bg-primary dark:border-gray-700">
+                      <div className="h-48 rounded mb-4 bg-transparent"></div>
+                      <div className="h-4 rounded w-3/4 mb-2 bg-transparent"></div>
+                      <div className="h-3 rounded w-1/2 mb-4 bg-transparent"></div>
+                      <div className="flex justify-between">
+                        <div className="h-6 rounded w-1/4 bg-transparent"></div>
+                        <div className="h-8 rounded w-1/3 bg-transparent"></div>
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="border rounded p-8 text-center border-gray-200 bg-primary dark:border-gray-700">
-                <div className="w-16 h-16 mx-auto mb-4 text-gray-400 dark:text-gray-600">
-                  <PiShoppingCartBold className="w-full h-full" />
+                  ))}
                 </div>
-                <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-2">{t("noProductsFound")}</h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">{t("tryAdjustingSearch")}</p>
-                <button
-                  onClick={() => navigate("/inventories/stock-list/add")}
-                  className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm font-medium"
-                >
-                  {t("addProductsToStock")}
-                </button>
-              </div>
-            )
-          ) : (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-2">
-              {itemsSech?.map((item) => (
-                <motion.div
-                  key={item.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  whileHover={{ y: -5 }}
-                  transition={{ duration: 0.2 }}
-                  className="border rounded hover:shadow-sm transition-all duration-300 h-full border-gray-200 bg-primary dark:border-gray-700"
-                >
-                  <div className="p-4">
-                    {/* Product Image */}
-                    <div className="relative mb-4 overflow-hidden rounded bg-gray-100 bg-transparent">
-                      <img
-                        src={item.image}
-                        alt={item.name}
-                        className="w-full h-48 object-contain p-4 hover:scale-105 transition-transform duration-300"
-                        onError={(e) => {
-                          e.target.onerror = null;
-                          e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(item.name)}&background=3b82f6&color=fff&size=256`;
-                        }}
-                      />
-                      {/* Stock Badge */}
-                      {item.in_stock !== undefined && (
-                        <span
-                          className={`absolute top-2 right-2 px-2 py-1 rounded-full text-xs font-medium text-white ${item.in_stock <= 5 ? 'bg-red-500' : 'bg-green-500'
-                            }`}
-                        >
-                          {item.in_stock}
-                        </span>
-                      )}
-                      {/* Discount Badge */}
-                      {item.discount != 100 && item.discount > 0 && (
-                        <span className="absolute top-2 left-2 px-2 py-1 rounded-full text-xs font-medium text-white bg-gradient-to-r from-red-500 to-pink-600">
-                          -{item.discount}%
-                        </span>
-                      )}
-                      {item.discount == 100 && (
-                        <span className="absolute top-2 left-2 px-2 py-1 rounded-full text-xs font-medium text-white bg-gradient-to-r from-red-500 to-pink-600">
-                          free
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Product Info */}
-                    <div className="space-y-3">
+              ) : (
+                <div className="border rounded p-8 text-center border-gray-200 bg-primary dark:border-gray-700">
+                  <div className="w-16 h-16 mx-auto mb-4 text-gray-400 dark:text-gray-600">
+                    <PiShoppingCartBold className="w-full h-full" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-2">{t("noProductsFound")}</h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">{t("tryAdjustingSearch")}</p>
+                  <button
+                    onClick={() => navigate("/inventories/stock-list/add")}
+                    className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm font-medium"
+                  >
+                    {t("addProductsToStock")}
+                  </button>
+                </div>
+              )
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-7 3xl:grid-cols-8 gap-2">
+                {itemsSech?.map((item) => (
+                  <motion.div
+                    key={item.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    whileHover={{ y: -5 }}
+                    transition={{ duration: 0.2 }}
+                    className="border rounded hover:shadow-sm transition-all duration-300 h-full border-gray-200 bg-primary dark:border-gray-700"
+                  >
+                    <div>
+                      {/* Product Image */}
                       <div>
-                        <h3 className="font-bold text-sm line-clamp-1 mb-1 text-gray-800 dark:text-white">{item.name}</h3>
-                        <p className="text-xs font-mono text-gray-500 dark:text-gray-400">{item.code}</p>
+                        <img
+                          src={item.image}
+                          alt={item.name}
+                          className="w-full h-35 object-fit transition-transform duration-300"
+                          onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(item.name)}&background=3b82f6&color=fff&size=256`;
+                          }}
+                        />
+                        {/* Stock Badge */}
+                        {item.in_stock !== undefined && (
+                          <span
+                            className={`absolute top-2 right-2 px-2 py-1 rounded-full text-xs font-medium text-white ${item.in_stock <= 5 ? 'bg-red-500' : 'bg-green-500'
+                              }`}
+                          >
+                            {item.in_stock}
+                          </span>
+                        )}
+                        {/* Discount Badge */}
+                        {item.discount != 100 && item.discount > 0 && (
+                          <span className="absolute top-2 left-2 px-2 py-1 rounded-full text-xs font-medium text-white bg-gradient-to-r from-red-500 to-pink-600">
+                            -{item.discount}%
+                          </span>
+                        )}
+                        {item.discount == 100 && (
+                          <span className="absolute top-2 left-2 px-2 py-1 rounded-full text-xs font-medium text-white bg-gradient-to-r from-red-500 to-pink-600">
+                            free
+                          </span>
+                        )}
                       </div>
 
-                      {/* Price Information */}
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <div className="text-lg font-bold text-green-600">
-                              ${getItemPrice(item, "sale").toFixed(2)}
-                            </div>
-                            {item.discount > 0 && (
-                              <div className="text-xs text-gray-400 line-through">
-                                ${item.price.toFixed(2)}
+                      {/* Product Info */}
+                      <div className="p-1">
+                        <div>
+                          <h3 className="font-bold text-sm line-clamp-1 mb-1 text-gray-800 dark:text-white">{item.name}</h3>
+                          <p className="text-xs font-mono text-gray-500 dark:text-gray-400">{item.code}</p>
+                        </div>
+                         <div className="text-right">
+                              <div className="text-[8px] text-gray-600 dark:text-gray-400">{t("wholesale").toUpperCase()}</div>
+                              <div className="text-xs font-medium text-blue-600 dark:text-blue-300">
+                                ${getItemPrice(item, "wholesale").toFixed(2)}
                               </div>
-                            )}
-                          </div>
-                          <div className="text-right">
-                            <div className="text-xs text-gray-600 dark:text-gray-400">{t("wholesale")}</div>
-                            <div className="text-sm font-medium text-blue-600">
-                              ${getItemPrice(item, "wholesale").toFixed(2)}
                             </div>
+
+                        {/* Quantity Controls */}
+                        <div className="flex items-center justify-between pt-1 border-t border-gray-100 dark:border-gray-500">
+                          <div className="leading-4">
+                              <div className="text-md font-semibold text-green-600">
+                                ${getItemPrice(item, "sale").toFixed(2)}
+                              </div>
+                             
+                              {item.discount > 0 && (
+                                <div className="text-xs text-gray-400 line-through">
+                                  ${item.price.toFixed(2)}
+                                </div>
+                                
+                              )}
                           </div>
+                          <button
+                            onClick={() => handleOrder(item, item.quantity)}
+                            disabled={item.in_stock <= 0}
+                            className={`p-2 rounded ${item.in_stock <= 0
+                              ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                              : 'bg-blue-600 text-white hover:bg-blue-700'
+                              }`}
+                          >
+                            {item.in_stock <= 0 ? <TbShoppingCartOff /> : <MdOutlineAddShoppingCart />}
+                          </button>
                         </div>
                       </div>
-
-                      {/* Quantity Controls */}
-                      <div className="flex items-center justify-end pt-3 border-t border-gray-100 dark:border-gray-500">
-                        <button
-                          onClick={() => handleOrder(item, item.quantity)}
-                          disabled={item.in_stock <= 0}
-                          className={`p-2 rounded ${item.in_stock <= 0
-                            ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                            : 'bg-blue-600 text-white hover:bg-blue-700'
-                            }`}
-                        >
-                          {item.in_stock <= 0 ? <TbShoppingCartOff /> : <MdOutlineAddShoppingCart />}
-                        </button>
-                      </div>
                     </div>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          )}
+                  </motion.div>
+                ))}
+              </div>
+            )}
         </div>
 
         {/* Order Summary Drawer */}
@@ -1877,12 +1931,29 @@ const Sales = () => {
         )}
 
         {/* Pagination */}
-        <div className="mt-12 flex justify-center">
-          <div className={`flex items-center gap-2 border rounded p-2 ${darkMode ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"}`}>
+        <div className="mt-12 sticky bottom-0 z-30 flex flex-col md:flex-row items-center justify-center gap-4 p-4">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-medium text-gray-700 dark:text-white">{t("page")}:</span>
+            <select
+              value={pageSize}
+              onChange={(e) => {
+                setPageSize(Number(e.target.value));
+                setCurrentPage(1);
+              }}
+              className="px-2 py-1 border rounded text-xs bg-white dark:bg-gray-800 border-gray-300 text-gray-900 dark:border-gray-600 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+            >
+              {[10, 20, 50, 100].map((size) => (
+                <option key={size} value={size} className="dark:bg-gray-800">
+                  {size}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className={`flex items-center gap-2 border rounded p-1 ${darkMode ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"}`}>
             <button
               onClick={() => { setCurrentPage(1); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
               disabled={currentPage === 1}
-              className={`px-3 py-1 border rounded disabled:opacity-50 ${darkMode ? "border-gray-700 hover:bg-gray-700 text-gray-300" : "border-gray-300 hover:bg-gray-100 text-gray-700"
+              className={`px-3 py-1 border rounded disabled:opacity-50 transition-colors ${darkMode ? "border-gray-700 hover:bg-gray-700 text-gray-300" : "border-gray-300 hover:bg-gray-100 text-gray-700"
                 }`}
             >
               ⟪
@@ -1890,26 +1961,26 @@ const Sales = () => {
             <button
               onClick={() => { setCurrentPage(prev => Math.max(prev - 1, 1)); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
               disabled={currentPage === 1}
-              className={`px-3 py-1 border rounded disabled:opacity-50 ${darkMode ? "border-gray-700 hover:bg-gray-700 text-gray-300" : "border-gray-300 hover:bg-gray-100 text-gray-700"
+              className={`px-3 py-1 border rounded disabled:opacity-50 transition-colors ${darkMode ? "border-gray-700 hover:bg-gray-700 text-gray-300" : "border-gray-300 hover:bg-gray-100 text-gray-700"
                 }`}
             >
               ⟨
             </button>
-            <span className={`px-3 py-1 text-sm ${darkMode ? "text-gray-300" : "text-gray-700"}`}>
+            <span className={`px-4 py-1 text-xs font-bold ${darkMode ? "text-gray-300" : "text-gray-700"}`}>
               {t("page")} {currentPage} {t("of")} {Math.ceil(totalItems / pageSize)}
             </span>
             <button
               onClick={() => { setCurrentPage(prev => Math.min(prev + 1, Math.ceil(totalItems / pageSize))); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-              disabled={currentPage === Math.ceil(totalItems / pageSize)}
-              className={`px-3 py-1 border rounded disabled:opacity-50 ${darkMode ? "border-gray-700 hover:bg-gray-700 text-gray-300" : "border-gray-300 hover:bg-gray-100 text-gray-700"
+              disabled={currentPage === Math.ceil(totalItems / pageSize) || totalItems === 0}
+              className={`px-3 py-1 border rounded disabled:opacity-50 transition-colors ${darkMode ? "border-gray-700 hover:bg-gray-700 text-gray-300" : "border-gray-300 hover:bg-gray-100 text-gray-700"
                 }`}
             >
               ⟩
             </button>
             <button
               onClick={() => { setCurrentPage(Math.ceil(totalItems / pageSize)); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-              disabled={currentPage === Math.ceil(totalItems / pageSize)}
-              className={`px-3 py-1 border rounded disabled:opacity-50 ${darkMode ? "border-gray-700 hover:bg-gray-700 text-gray-300" : "border-gray-300 hover:bg-gray-100 text-gray-700"
+              disabled={currentPage === Math.ceil(totalItems / pageSize) || totalItems === 0}
+              className={`px-3 py-1 border rounded disabled:opacity-50 transition-colors ${darkMode ? "border-gray-700 hover:bg-gray-700 text-gray-300" : "border-gray-300 hover:bg-gray-100 text-gray-700"
                 }`}
             >
               ⟫

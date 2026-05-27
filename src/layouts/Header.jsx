@@ -6,7 +6,6 @@ import { BiBell, BiMenuAltLeft, BiMenuAltRight, BiX } from "react-icons/bi";
 import { useGetUserLoginQuery } from "../../app/Features/usersSlice";
 import { useEffect, useState } from "react";
 import { Badge, Space } from "antd";
-import logo from "../assets/logo.jpg";
 import { useTranslation } from "react-i18next";
 import api from "../services/api";
 
@@ -101,24 +100,7 @@ const Header = ({ darkMode, setDarkMode }) => {
             )}
           </button>
 
-          <Link
-            to={uId == 1 ? '/dashboard' : '/home'}
-            className="flex items-center gap-2 hover:opacity-80 transition-opacity"
-          >
-            <div className="">
-              <div className="flex items-center gap-3">
-                <div className={`w-5 h-5 rounded-2xl flex items-center justify-center shadow-inner ${darkMode ? "bg-blue-500 shadow-blue-400" : "bg-blue-600 shadow-blue-400"}`}>
-                  <span className="text-white font-black text-xl"><img src={logo} alt="" /></span>
-                </div>
-                <div>
-                  <h1 className={`font-black text-xs leading-tight tracking-tight ${darkMode ? "text-white" : "text-slate-900"}`}>
-                    CHOMNENH <span className={`${darkMode ? "text-blue-400" : "text-blue-600"}`}>POS</span>
-                  </h1>
-                  <p className={`text-[10px] hidden lg:block uppercase font-bold tracking-[0.1em] ${darkMode ? "text-gray-400" : "text-slate-400"}`}>Management v2.0</p>
-                </div>
-              </div>
-            </div>
-          </Link>
+          
         </div>
 
         {/* Right Section - User and Notifications */}

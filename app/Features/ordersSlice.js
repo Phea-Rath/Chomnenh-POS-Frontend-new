@@ -16,7 +16,7 @@ export const ordersApi = createApi({
   }),
   endpoints: (builder) => ({
     getAllOrder: builder.query({
-      query: ({token, limit, page, search}) => queryData(`/order_masters?limit=${limit}&page=${page}&search=${search}`, token),
+      query: ({token, limit, page, search='', category_id='', brand_id=''}) => queryData(`/order_masters?limit=${limit}&page=${page}&category_id=${category_id}&brand_id=${brand_id}&search=${search}`, token),
     }),
 
     getOrderInvoice: builder.query({

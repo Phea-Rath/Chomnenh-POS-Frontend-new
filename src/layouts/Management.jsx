@@ -17,6 +17,7 @@ import { useGetAllOrderQuery, useGetOrderByUserQuery } from '../../app/Features/
 const outletContext = createContext();
 export const useOutletsContext = () => useContext(outletContext);
 
+import logo from "../assets/logo.jpg";
 
 const Management = () => {
   const token = localStorage.getItem('token');
@@ -133,7 +134,22 @@ const Management = () => {
           <main ref={topRef} className={` h-[calc(100vh)] ${data?.data?.role_id !== 1 ? (sidebar ? "lg:w-[calc(100vw-250px)]" : "lg:w-[calc(100vw-80px)]") : ""} pt-[86px] overflow-auto m-0 w-[100vw] p-4 ${darkMode ? "!bg-[#21335e] !text-white" : "!bg-[#F8FAFC] !text-black"}`}>
             {/* <div className='absolute -z-0 top-0 right-0 w-2/5 h-full bg-gradient-to-b from-blue-50/50 to-transparent pointer-events-none' /> */}
             <Outlet />
+            <div className="absolute z-[9999] bottom-5 right-5 pointer-events-none opacity-50">
+              <div className="flex items-center gap-3">
+                <div className={`w-5 h-5 rounded-2xl flex items-center justify-center shadow-inner ${darkMode ? "bg-blue-500 shadow-blue-400" : "bg-blue-600 shadow-blue-400"}`}>
+                  <span className="text-white font-black text-xl"><img src={logo} alt="" /></span>
+                </div>
+                <div>
+                  <h1 className={`font-black text-xs leading-tight tracking-tight ${darkMode ? "text-white" : "text-slate-900"}`}>
+                    CHOMNENH <span className={`${darkMode ? "text-blue-400" : "text-blue-600"}`}>POS</span>
+                  </h1>
+                  <p className={`text-[10px] hidden lg:block uppercase font-bold tracking-[0.1em] ${darkMode ? "text-gray-400" : "text-slate-400"}`}>Management v2.0</p>
+                </div>
+              </div>
+            </div>
           </main>
+          
+          
         </div>
         {/* <Footer /> */}
       </section>

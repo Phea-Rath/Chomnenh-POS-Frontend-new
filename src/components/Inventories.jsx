@@ -81,7 +81,7 @@ const Inventories = () => {
                                             onError={(e) => e.target.src = icon}
                                         />
                                     </div>
-                                    <h2 className="font-semibold text-gray-500 dark:text-gray-200 group-hover:text-gray-900 dark:group-hover:text-white transition-colors">
+                                    <h2 className={`text-[10px] md:text-[14px] text-slate-800 dark:text-slate-100 font-bold mb-0.5 md:mb-1 uppercase tracking-tight line-clamp-1`}>
                                         {perm?.menu_name}
                                     </h2>
                                 </Link>

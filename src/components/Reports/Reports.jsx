@@ -6,12 +6,12 @@ import { useTranslation } from "react-i18next";
 import incomeIcon from '../../assets/income.png'
 
 const colors = [
-  { iconBg: "bg-blue-50 dark:bg-blue-900/30", hoverBorder: "hover:border-blue-200 dark:hover:border-blue-700" },
-  { iconBg: "bg-indigo-50 dark:bg-indigo-900/30", hoverBorder: "hover:border-indigo-200 dark:hover:border-indigo-700" },
-  { iconBg: "bg-emerald-50 dark:bg-emerald-900/30", hoverBorder: "hover:border-emerald-200 dark:hover:border-emerald-700" },
-  { iconBg: "bg-orange-50 dark:bg-orange-900/30", hoverBorder: "hover:border-orange-200 dark:hover:border-orange-700" },
-  { iconBg: "bg-rose-50 dark:bg-rose-900/30", hoverBorder: "hover:border-rose-200 dark:hover:border-rose-700" },
-  { iconBg: "bg-purple-50 dark:bg-purple-900/30", hoverBorder: "hover:border-purple-200 dark:hover:border-purple-700" },
+  { iconBg: "bg-blue-50 dark:bg-blue-900/30", hoverBorder: "hover:border-blue-200 dark:hover:border-blue-700", iconText: "text-blue-500 dark:text-blue-300"},
+  { iconBg: "bg-indigo-50 dark:bg-indigo-900/30", hoverBorder: "hover:border-indigo-200 dark:hover:border-indigo-700", iconText:"text-indigo-500 dark:text-indigo-300" },
+  { iconBg: "bg-emerald-50 dark:bg-emerald-900/30", hoverBorder: "hover:border-emerald-200 dark:hover:border-emerald-700", iconText: "text-emerald-500 dark:text-emerald-300"},
+  { iconBg: "bg-orange-50 dark:bg-orange-900/30", hoverBorder: "hover:border-orange-200 dark:hover:border-orange-700", iconText: "text-orange-500 dark:text-orange-300" },
+  { iconBg: "bg-rose-50 dark:bg-rose-900/30", hoverBorder: "hover:border-rose-200 dark:hover:border-rose-700", iconText: "text-rose-500 dark:text-rose-300" },
+  { iconBg: "bg-purple-50 dark:bg-purple-900/30", hoverBorder: "hover:border-purple-200 dark:hover:border-purple-700", iconText: "text-purple-500 dark:text-purple-300" },
 ];
 
 const newMenu = [
@@ -41,12 +41,19 @@ const Reports = () => {
         storedMenus = [];
       }
     }
+    
 
     const rawMenu = data?.data ?? storedMenus ?? [];
     const allMenus = flattenMenus(rawMenu || []);
     const perms = allMenus.filter(i => i.active === 1);
     setMenu(perms);
   }, [data])
+  const getMenuLogo = (text) => {
+      return text
+        .split(" ")
+        .map(word => word.charAt(0).toUpperCase())
+        .join("");
+    };
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -82,14 +89,17 @@ const Reports = () => {
                   `}
                 >
                   <div className={`p-4 rounded-sm ${color.iconBg} transition-transform group-hover:scale-110 duration-300`}>
-                    <img
+                    {/* <img
                       className="w-10 h-10 object-contain white-icon"
                       src={perm?.menu_icon}
                       alt={perm?.menu_name}
-                    />
+                    /> */}
+                    <div className={`font-bold ${color.iconText}`}>
+                      {getMenuLogo(perm?.menu_name)}
+                    </div>
                   </div>
-                  <h2 className="font-semibold text-gray-700 dark:text-gray-200 group-hover:text-gray-900 dark:group-hover:text-white transition-colors">
-                    {perm?.menu_name}
+                  <h2 className={`text-[10px] md:text-[14px] text-slate-800 dark:text-slate-100 font-bold mb-0.5 md:mb-1 uppercase tracking-tight line-clamp-1`}>
+                    {perm?.menu_name.toUpperCase()}
                   </h2>
                 </Link>
               </motion.div>

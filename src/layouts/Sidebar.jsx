@@ -86,7 +86,7 @@ const Sidebar = ({ darkMode }) => {
       <div
         onClick={() => { if (isMobile) setSidebar(false); navigate(item.menu_path); }}
         title={collapsed ? item.menu_name : undefined}
-        className={`group flex items-center ${collapsed && !isMobile ? 'justify-center px-0 py-3 mx-2' : 'gap-3 px-4 py-1 mx-4'} rounded-sm cursor-pointer transition-all duration-300 mb-1
+        className={`group flex items-center ${collapsed && !isMobile ? 'justify-center px-0 py-3 mx-2' : 'gap-3 px-4 py-2 mx-4'} rounded-sm cursor-pointer transition-all duration-300 mb-1
           ${isActive
             ? 'bg-[#1e3a5f] text-white shadow-lg'
             : 'text-[#93c5fd] hover:bg-[#1e3a5f]/40 hover:text-white'}`}
@@ -142,15 +142,15 @@ const Sidebar = ({ darkMode }) => {
 
       {/* Navigation */}
       <div className={`flex-1 overflow-y-auto custom-scrollbar ${menuContentPadding}`}>
-        <div className={`${collapsed && !isMobile ? 'px-0' : 'px-6'} mb-2`}>
-          <span className={`text-[10px] font-bold uppercase tracking-widest ${collapsed ? 'sr-only' : 'px-4'} text-[#93c5fd]/60`}>{t("menu")}</span>
+        <div className={`${collapsed && !isMobile ? 'px-1' : 'px-6'} mb-2 border-y border-[#4971ad]`}>
+          <span className={`text-sm font-bold uppercase tracking-widest ${collapsed ? 'sr-only' : 'px-4'} text-[#93c5fd]/60`}>{t("menu")}</span>
         </div>
         {menu?.filter(m => m.menu_name.toLowerCase() != 'setting').map((item) => <CustomNavLink key={item.menu_id} item={item} />)}
       </div>
 
       {/* Footer / Settings */}
       {menu?.some(m => m.menu_name.toLowerCase() == 'setting') && (
-        <div className={`mt-auto border-t border-[#1e3a5f]/30 ${collapsed && !isMobile ? 'p-3' : 'p-6'}`}>
+        <div className={`mt-auto border-t border-gray-400 ${collapsed && !isMobile ? 'p-1' : 'p-1'}`}>
           <Link
             to={menu?.find(m => m.menu_name.toLowerCase() == 'setting').menu_path}
             onClick={() => isMobile ? setSidebar(false) : null}
