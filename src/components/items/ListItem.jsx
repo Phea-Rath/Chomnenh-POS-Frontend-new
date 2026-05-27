@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo } from "react";
-import { IoIosSearch, IoIosGrid, IoIosList } from "react-icons/io";
+import { IoIosSearch, IoIosGrid, IoIosList, IoIosImages } from "react-icons/io";
 import { useOutletsContext } from "../../layouts/Management";
 import AlertBox from "../../services/AlertBox";
 import { useDebounce } from "use-debounce";
@@ -73,7 +73,7 @@ const LoadingSpinner = ({ tip = "Loading..." }) => (
 );
 
 const EmptyState = ({ description, buttonText, onButtonClick }) => (
-  <div className="flex flex-col items-center justify-center py-16 border-2 border-dashed border-gray-300 rounded bg-white">
+  <div className="flex flex-col items-center justify-center py-16 border-2 border-dashed border-gray-300 rounded">
     <svg className="w-16 h-16 text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4v10l8 4 8-4V7z" />
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 12l8-4m-8 4l-8-4m8 4v10" />
@@ -95,40 +95,44 @@ const GridCard = ({ item, onEdit, onDelete, onView, formatCurrency, getDiscount,
   const inStock = item?.stock?.in_stock || 0;
 
   return (
-    <div className="rounded bg-primary hover:shadow-sm transition-all duration-300 overflow-hidden group">
-      <div onClick={onView} className="relative h-48 flex items-center justify-center overflow-hidden cursor-pointer">
-        <img
+    <div className="rounded bg-primary hover:shadow-sm transition-all duration-300 overflow-hidden border border-gray-300 dark:border-0 group">
+      <div onClick={onView} className="relative h-35 flex items-center justify-center overflow-hidden cursor-pointer">
+        {item.image?<img
           src={item.image || initialImage}
           alt={item.name}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+          className="w-full h-full object-fit group-hover:scale-105 transition-transform"
           onError={(e) => {
             e.target.onerror = null;
-            e.target.src = initialImage;
+            e.target.src = <IoIosImages className="text-6xl text-gray-400"/>;
           }}
-        />
-        <div className="absolute top-2 left-2 flex flex-col gap-1">
+        />:
+        <div className=" object-fit w-full h-full transition-transform duration-300 flex justify-center items-center">
+          <IoIosImages className="text-6xl text-gray-400"/>
+        </div>
+        }
+        <div className="absolute top-2 left-2 uppercase flex text-xs flex-col gap-1">
           <Tag color={inStock > 0 ? "success" : "error"}>
             {inStock > 0 ? `${t("Stock:")} ${inStock}` : t("Sold Out")}
           </Tag>
         </div>
         {item.discount > 0 && item.discount < 100 && (
-          <div className="absolute top-2 right-0">
+          <div className="absolute top-2 uppercase text-xs right-0">
             <Tag color="error" className="rounded-l-md border-none font-bold">{item.discount}% {t("off")}</Tag>
           </div>
         )}
         {item.discount == 100 && (
-          <div className="absolute top-2 right-0">
+          <div className="absolute top-2 uppercase text-xs right-0">
             <Tag color="error" className="rounded-l-md border-none font-bold">free</Tag>
           </div>
         )}
       </div>
-      <div className="p-3">
-        <div className="mb-2">
+      <div className="p-2">
+        <div>
           <p className="text-xs text-gray-500 dark:text-gray-400 uppercase font-bold">{item.category_name}</p>
           <h3 className="font-semibold text-gray-800 dark:text-white text-sm line-clamp-1">{item.name}</h3>
-        </div>
-        <div className=" rounded p-2 flex justify-between items-center">
           <span className="font-bold text-lg text-green-600">{formatCurrency(item.price_discount || item.price)}</span>
+        </div>
+        <div className="pt-1 flex justify-between border-t border-gray-400 items-center">
           <div className="flex gap-1">
             <button onClick={onView} className="p-1.5 bg-blue-100 text-blue-600 rounded hover:bg-blue-200">
               <RiEyeLine size={14} />
@@ -168,15 +172,19 @@ const ListView = ({ items, navigator, onDelete, formatCurrency, t }) => (
               <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-3">
-                    <img
+                    {item.image?<img
                       src={item.image || initialImage}
                       alt={item.name}
                       className="w-10 h-10 object-cover rounded border border-gray-200"
                       onError={(e) => {
                         e.target.onerror = null;
-                        e.target.src = initialImage;
+                        e.target.src =  <IoIosImages className="text-6xl text-gray-400"/>;
                       }}
-                    />
+                    />:
+                    <div className=" object-fit w-10 h-10 transition-transform duration-300 flex justify-center items-center">
+                      <IoIosImages className="text-6xl text-gray-400"/>
+                    </div>
+                    }
                     <div>
                       <div className="font-medium text-gray-800 dark:text-white">{item.name}</div>
                       <div className="text-xs text-gray-500">{item.category_name}</div>
@@ -458,7 +466,7 @@ const ListItem = () => {
           <LoadingSpinner tip={t("Syncing with database...")} />
         ) : items.length > 0 ? (
           viewMode === "grid" ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-6 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-7 3xl:grid-cols-7 gap-3">
               {items.map((item) => (
                 <GridCard
                   key={item.id}

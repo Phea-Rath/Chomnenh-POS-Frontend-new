@@ -67,7 +67,7 @@ import dayjs from "dayjs";
 import RichSearch from "../../utils/RichSearch";
 import { LuEye, LuFileText, LuTrash2, LuBan, LuRotateCcw, LuCreditCard } from "react-icons/lu";
 import { BiEdit } from "react-icons/bi";
-
+import { IoIosImages } from "react-icons/io";
 
 // const { Option } = Select;
 
@@ -1441,15 +1441,19 @@ const Sales = () => {
                     <div>
                       {/* Product Image */}
                       <div>
-                        <img
+                        {item.image?<img
                           src={item.image}
                           alt={item.name}
                           className="w-full h-35 object-fit transition-transform duration-300"
                           onError={(e) => {
                             e.target.onerror = null;
-                            e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(item.name)}&background=3b82f6&color=fff&size=256`;
+                            e.target.src = initialImage;
                           }}
-                        />
+                        />:
+                        <div className="w-full h-35 object-fit transition-transform duration-300 flex justify-center items-center">
+                          <IoIosImages className="text-6xl text-gray-400"/>
+                        </div>
+                        }
                         {/* Stock Badge */}
                         {item.in_stock !== undefined && (
                           <span
@@ -1473,7 +1477,7 @@ const Sales = () => {
                       </div>
 
                       {/* Product Info */}
-                      <div className="p-1">
+                      <div className="p-2">
                         <div>
                           <h3 className="font-bold text-sm line-clamp-1 mb-1 text-gray-800 dark:text-white">{item.name}</h3>
                           <p className="text-xs font-mono text-gray-500 dark:text-gray-400">{item.code}</p>
