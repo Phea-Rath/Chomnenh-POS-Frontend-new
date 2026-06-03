@@ -49,6 +49,7 @@ import RefreshButton from "../../utils/RefreshButton";
 import Button from "../../utils/Button";
 import { IoWarning } from "react-icons/io5";
 import timeAgo from "../../services/timeAgo";
+import PaymentModel from "../../utils/PaymentModal";
 
 dayjs.extend(relativeTime);
 
@@ -212,10 +213,16 @@ const OrderInvoiceList = () => {
     }
   };
 
-  const handlePaymentOrder = async () => {
+  const handlePaymentOrder = async (value) => {
     try {
       setLoading(true);
-      const res = await api.put(`/order_payment/${id}/${paymentAmount}`, null, {
+      const res = await api.put(`/order_payment/${id}/${0}`, {
+          transection_id: value.transection_id,
+          remark: value.remark,
+          payment_method:value.payment_method,
+          amount: value.amount,
+          payment_date: value.payment_date,
+        }, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.data.status === 200) {
@@ -733,8 +740,9 @@ const OrderInvoiceList = () => {
           </>
         )}
       </div>
+       <PaymentModel isShow={showPaymentModal} onClose={()=>setShowPaymentModal(false)} isLoading={contextLoading} balance={parseFloat(balanceAmount?.balance).toFixed(2)} pay={parseFloat(balanceAmount?.pay).toFixed(2)} onPayment={handlePaymentOrder}/>
 
-      {showPaymentModal && (
+      {/* {showPaymentModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
           <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="w-full max-w-md rounded-lg border border-gray-200 bg-white p-6 shadow-xl dark:border-gray-700 dark:bg-gray-800">
             <h3 className="mb-4 flex items-center gap-2 text-xl font-semibold dark:text-white">
@@ -765,7 +773,7 @@ const OrderInvoiceList = () => {
             </div>
           </motion.div>
         </div>
-      )}
+      )} */}
     </motion.div>
   );
 };

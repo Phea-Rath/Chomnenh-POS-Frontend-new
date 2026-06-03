@@ -16,9 +16,9 @@ import {
   FaWarehouse,
 } from "react-icons/fa";
 import api from "../../services/api";
-import { toast } from "react-toastify";
 import { useNavigate, useParams } from "react-router";
-import { Badge, Divider, DatePicker, Checkbox } from "antd";
+import { useNotify } from "../../utils/NotificationProvider";
+import { Badge, Divider, DatePicker, Checkbox, Alert } from "antd";
 import dayjs from "dayjs";
 import { useDebounce } from "use-debounce";
 import { useTranslation } from "react-i18next";
@@ -36,6 +36,9 @@ import { useGetAllUserQuery } from "../../../app/Features/usersSlice";
 import { useGetOrderByIdQuery, useGetOrderInvoiceQuery } from "../../../app/Features/ordersSlice";
 import Modal from "../../utils/Modal";
 import { LuSearch } from "react-icons/lu";
+import MiniVisaPaymentCard from "../../utils/MiniVisaCard";
+import PaymentModel from "../../utils/PaymentModal";
+import { PAYMENT_METHODS, PAYMENT_STATUS } from "../../services/paymentService";
 
 const DEFAULT_STATUS = 0;
 const ITEM_FOR_OPTIONS = [
@@ -115,6 +118,7 @@ const createInitialFormData = () => ({
   total_amount: 0,
   balance: 0,
   items: [],
+  payments: [],
 });
 
 const toNumber = (value) => {
@@ -126,22 +130,25 @@ const toNumber = (value) => {
 
 const OrderInvoiceForm = () => {
   const { t } = useTranslation();
+  const notify = useNotify();
   const { id: orderId } = useParams();
   const isEditMode = Boolean(orderId);
   const token = localStorage.getItem("token");
 
   const navigator = useNavigate();
-  
+
   const [formData, setFormData] = useState(() => createInitialFormData());
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
   const [fieldErrors, setFieldErrors] = useState({});
+  const [alertError, setAlertError] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearch] = useDebounce(searchTerm, 500);
   const [limit, setLimit] = useState(10);
   const [paymentStatus, setPaymentStatus] = useState("");
   const [currentPage] = useState(1);
   const [showModal, setShowModal] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedInvoiceIds, setSelectedInvoiceIds] = useState([]);
 
   const toggleSelectInvoice = (id) => {
@@ -195,7 +202,7 @@ const OrderInvoiceForm = () => {
 
       updateFormData((prev) => {
         const nextItems = [...prev.items];
-        
+
         allItems.forEach((newItem) => {
           const existingIndex = nextItems.findIndex(
             (item) => item.item_id === newItem.item_id && item.item_for === newItem.item_for
@@ -219,32 +226,34 @@ const OrderInvoiceForm = () => {
 
       setSelectedInvoiceIds([]);
       setShowModal(false);
-      toast.success(t("templatesImported") || "Items imported successfully");
+      notify.success(t("templatesImported") || "Items imported successfully");
     } catch (error) {
       console.error("Error importing templates:", error);
-      toast.error(t("errorImportingTemplates") || "Failed to import templates");
+      const err = t("errorImportingTemplates") || "Failed to import templates";
+      setAlertError(err);
+      notify.error(err);
     } finally {
       setLoading(false);
     }
   };
 
-  const {data:users} = useGetAllUserQuery(token)
+  const { data: users } = useGetAllUserQuery(token)
   const { data: orderByIdData, isFetching: orderByIdLoading, refetch } = useGetOrderByIdQuery(
     { id: orderId, token },
     { skip: !isEditMode || !orderId || !token }
   );
 
   const {
-      refetch: refetchInvoice,
-    } = useGetOrderInvoiceQuery(
-      {
-        token,
-        limit: 10,
-        page: 1,
-        search: '',
-      },
-      { skip: !token }
-    );
+    refetch: refetchInvoice,
+  } = useGetOrderInvoiceQuery(
+    {
+      token,
+      limit: 10,
+      page: 1,
+      search: '',
+    },
+    { skip: !token }
+  );
 
   const { data: customerData } = useGetAllCustomerQuery(token);
   const { data: deliverData } = useGetAllDeliverQuery(token);
@@ -263,21 +272,21 @@ const OrderInvoiceForm = () => {
   });
 
   const { data: usersData } = useGetAllUserQuery(token, { skip: !token });
-    const { data: customersData } = useGetAllCustomerQuery(token, { skip: !token });
-    const {
-      data: invoiceData,
-      isLoading: queryLoading,
-      refetch: refetchInvoices,
-    } = useGetOrderInvoiceQuery(
-      {
-        token,
-        limit: pagination.pageSize,
-        page: pagination.current,
-        search: debouncedSearch,
-        ...filters,
-      },
-      { skip: !token }
-    );
+  const { data: customersData } = useGetAllCustomerQuery(token, { skip: !token });
+  const {
+    data: invoiceData,
+    isLoading: queryLoading,
+    refetch: refetchInvoices,
+  } = useGetOrderInvoiceQuery(
+    {
+      token,
+      limit: pagination.pageSize,
+      page: pagination.current,
+      search: debouncedSearch,
+      ...filters,
+    },
+    { skip: !token }
+  );
 
   const createUser = users?.data?.filter((user) => user.role_id !== 1 && user.role_id !== 2) || [];
   const customers = customerData?.data || [];
@@ -294,28 +303,28 @@ const OrderInvoiceForm = () => {
   };
 
   const invoices = invoiceData?.data || [];
-    const userFilterOptions = [{ id: "", username: "All Users" }, ...createUser];
-    const customerFilterOptions = [{ customer_id: "", customer_name: "All Customers" }, ...customers];
-  
-    useEffect(() => {
-      if (invoiceData?.pagination) {
-        setPagination((prev) => ({
-          ...prev,
-          total: invoiceData.pagination.total,
-        }));
-      }
-    }, [invoiceData]);
-  
-    useEffect(() => {
-      setPagination((prev) => ({ ...prev, current: 1 }));
-    }, [debouncedSearch, filters.created_by, filters.customer_id, filters.item_for, filters.start_date, filters.end_date]);
-  
-    const handleResetFilters = () => {
-      setSearchTerm("");
-      setFilters(DEFAULT_FILTERS);
-      setPagination((prev) => ({ ...prev, current: 1 }));
-    };
-  
+  const userFilterOptions = [{ id: "", username: "All Users" }, ...createUser];
+  const customerFilterOptions = [{ customer_id: "", customer_name: "All Customers" }, ...customers];
+
+  useEffect(() => {
+    if (invoiceData?.pagination) {
+      setPagination((prev) => ({
+        ...prev,
+        total: invoiceData.pagination.total,
+      }));
+    }
+  }, [invoiceData]);
+
+  useEffect(() => {
+    setPagination((prev) => ({ ...prev, current: 1 }));
+  }, [debouncedSearch, filters.created_by, filters.customer_id, filters.item_for, filters.start_date, filters.end_date]);
+
+  const handleResetFilters = () => {
+    setSearchTerm("");
+    setFilters(DEFAULT_FILTERS);
+    setPagination((prev) => ({ ...prev, current: 1 }));
+  };
+
 
   const buildOrderItem = (item, overrides = {}) => ({
     item_id: Number(item.id),
@@ -361,18 +370,18 @@ const OrderInvoiceForm = () => {
       return calculateTotals(next);
     });
   };
-  
+
 
   useEffect(() => {
     if (!isEditMode || !orderByIdData?.data) {
       return;
     }
-    
+
     const order = orderByIdData.data;
     // if(order.order_id != Number(orderId)){
-      refetch();
+    refetch();
     // }
-    
+
     const normalizedItems = (order.items || order.details || []).map((detail) => {
       const currentItem = itemLookup.get(Number(detail.item_id));
       return {
@@ -395,7 +404,7 @@ const OrderInvoiceForm = () => {
         order_customer_id: order.order_customer_id || order.customer_id || "",
         deliver_id: order.deliver_id || "",
         delivery_fee: toNumber(order.delivery_fee),
-        order_tax: toNumber(order.order_tax||0),
+        order_tax: toNumber(order.order_tax || 0),
         payment: toNumber(order.payment),
         order_payment_status: order.order_payment_status,
         due_date: order.due_date || "",
@@ -413,10 +422,11 @@ const OrderInvoiceForm = () => {
         total_amount: toNumber(order.order_total ?? order.total_amount),
         balance: toNumber(order.balance),
         items: normalizedItems,
+        payments: order.payments || [],
       })
     );
   }, [isEditMode, orderByIdData]);
-  
+
 
   const validateField = (name, value) => {
     const nextFieldErrors = { ...fieldErrors };
@@ -518,7 +528,7 @@ const OrderInvoiceForm = () => {
         const newQty = Number(nextItems[existingIndex].quantity) + 1;
 
         if (newQty > nextItems[existingIndex].in_stock) {
-          toast.warning(`${t("insufficientStock") || "Insufficient stock"}: ${nextItems[existingIndex].in_stock}`);
+          notify.warning(`${t("insufficientStock") || "Insufficient stock"}: ${nextItems[existingIndex].in_stock}`);
           return prev;
         }
 
@@ -540,6 +550,7 @@ const OrderInvoiceForm = () => {
   };
 
   const removeItem = (index) => {
+    event.preventDefault();
     updateFormData((prev) => ({
       ...prev,
       items: prev.items.filter((_, itemIndex) => itemIndex !== index),
@@ -554,7 +565,7 @@ const OrderInvoiceForm = () => {
     }
 
     if (quantity > item.in_stock) {
-      toast.warning(`${t("insufficientStock") || "Insufficient stock"}: ${item.in_stock}`);
+      notify.warning(`${t("insufficientStock") || "Insufficient stock"}: ${item.in_stock}`);
       quantity = item.in_stock;
     }
 
@@ -602,7 +613,7 @@ const OrderInvoiceForm = () => {
           itemIndex === index ? { ...item, item_for: itemFor, discount: 0, item_price: 0 } : item
         ),
       }));
-    }else{
+    } else {
       updateFormData((prev) => ({
         ...prev,
         items: prev.items.map((item, itemIndex) =>
@@ -648,7 +659,7 @@ const OrderInvoiceForm = () => {
           const rowCode = String(row.code || "").trim().toLowerCase();
           const matchedItem = sourceLookup.get(rowCode);
           console.log(matchedItem);
-          
+
 
           if (!matchedItem) {
             return null;
@@ -670,7 +681,9 @@ const OrderInvoiceForm = () => {
         .filter(Boolean);
 
       if (importedItems.length === 0) {
-        toast.error("No matching items found in the import file.");
+        const err = "No matching items found in the import file.";
+        setAlertError(err);
+        notify.error(err);
         return;
       }
 
@@ -701,19 +714,22 @@ const OrderInvoiceForm = () => {
       });
 
       if (res.data.missing_codes) {
+        const warning = `Codes ${res.data.missing_codes} are not found.`;
         setErrors((prev) => ({
           ...prev,
           items: `Codes [${res.data.missing_codes}] are not found.`,
         }));
-        toast.warning(`Codes ${res.data.missing_codes} are not found.`);
+        notify.warning(warning);
       }
 
-      // toast.success(`Imported ${importedItems.length} item(s).`);
+      // notify.success(`Imported ${importedItems.length} item(s).`);
     } catch {
-      toast.error("Failed to import file. please check your file and try again.");
+      const err = "Failed to import file. please check your file and try again.";
+      setAlertError(err);
+      notify.error(err);
       setErrors((prev) => ({
         ...prev,
-        file: "Failed to import file. please check your file and try again.",
+        file: err,
       }));
     } finally {
       event.target.value = "";
@@ -734,7 +750,9 @@ const OrderInvoiceForm = () => {
     event.preventDefault();
 
     if (!validateForm()) {
-      toast.error(t("pleaseFixErrors"));
+      const err = t("pleaseFixErrors");
+      setAlertError(err);
+      notify.error(err);
       return;
     }
 
@@ -766,18 +784,19 @@ const OrderInvoiceForm = () => {
           quantity: Number(item.quantity),
           discount: toNumber(item.discount).toFixed(2),
         })),
+        payments: formData.payments,
       };
 
       if (isEditMode) {
         await api.put(`/order_masters/${orderId}`, payload, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        toast.success(t("updateOrderSuccess"));
+        notify.success(t("updateOrderSuccess"));
       } else {
         await api.post("/order_masters", payload, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        toast.success(t("createOrderSuccess"));
+        notify.success(t("createOrderSuccess"));
       }
 
       refetchInvoice();
@@ -795,7 +814,8 @@ const OrderInvoiceForm = () => {
         setErrors({ general: errorMessage });
       }
 
-      toast.error(errorMessage);
+      setAlertError(errorMessage);
+      notify.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -873,12 +893,15 @@ const OrderInvoiceForm = () => {
           total_amount: 0,
           balance: 0,
           items: normalizedItems,
+          payments: [],
         })
       );
       setShowModal(false);
     } catch (error) {
       console.error("Error fetching order template:", error);
-      toast.error(t("errorFetchingTemplate") || "Failed to fetch template details");
+      const err = t("errorFetchingTemplate") || "Failed to fetch template details";
+      setAlertError(err);
+      notify.error(err);
     } finally {
       setLoading(false);
     }
@@ -887,6 +910,15 @@ const OrderInvoiceForm = () => {
   return (
     <div className=" bg-transparent py-2 transition-colors">
       <div className="px-2">
+        {alertError && (
+          <Alert
+            message={alertError}
+            type="error"
+            closable
+            onClose={() => setAlertError("")}
+            className="mb-6"
+          />
+        )}
         <div className="mb-8">
           <div className="mb-4 flex items-center justify-between">
             <div>
@@ -898,11 +930,11 @@ const OrderInvoiceForm = () => {
               </p>
             </div>
             <div className="mt-6 flex items-center justify-center gap-2">
-              {!orderId &&<Button type="button"  onClick={() => setShowModal(true)} disabled={loading || orderByIdLoading} variant="success" outline={false}>
+              {!orderId && <Button type="button" onClick={() => setShowModal(true)} disabled={loading || orderByIdLoading} variant="success" outline={false}>
                 <FaCloudUploadAlt className="text-lg" />
-              
+
               </Button>}
-              <Button type="button"  onClick={handleSubmit} disabled={loading || orderByIdLoading} variant="primary" outline={false}>
+              <Button type="button" onClick={handleSubmit} disabled={loading || orderByIdLoading} variant="primary" outline={false}>
                 <FaSave />
                 {isEditMode ? t("update") : t("create")}
               </Button>
@@ -918,7 +950,7 @@ const OrderInvoiceForm = () => {
             </div>
           </div>
 
-          {Object.keys(errors).length > 0 && (
+          {/* {Object.keys(errors).length > 0 && (
             <div className="mb-6">
               <div className="border-red-200 bg-red-50 shadow-sm dark:!border-red-800 dark:!bg-red-900/10">
                 <div className="flex items-start gap-3">
@@ -938,7 +970,7 @@ const OrderInvoiceForm = () => {
                 </div>
               </div>
             </div>
-          )}
+          )} */}
         </div>
 
         <form>
@@ -1014,7 +1046,7 @@ const OrderInvoiceForm = () => {
                         {t("status")} <span className="text-red-500">*</span>
                       </label>
                       <RichSearch
-                        data={ORDER_PAYMENT_STATUS_OPTIONS}
+                        data={PAYMENT_STATUS}
                         value={formData.order_payment_status}
                         placeholder={t("status")}
                         keyFields={{
@@ -1030,12 +1062,12 @@ const OrderInvoiceForm = () => {
                         {t("paymentMethod")}
                       </label>
                       <RichSearch
-                        data={PAYMENT_METHOD_SEARCH_OPTIONS}
+                        data={PAYMENT_METHODS}
                         value={formData.order_payment_method}
                         placeholder={t("paymentMethod")}
                         keyFields={{
-                          id: "id",
-                          title: "title",
+                          id: "value",
+                          title: "label",
                         }}
                         onSelected={handlePaymentMethodSelect}
                       />
@@ -1047,7 +1079,7 @@ const OrderInvoiceForm = () => {
                           {t("term")}
                         </span>
                       </label>
-                      <Input 
+                      <Input
                         type="number"
                         value={formData.term}
                         onChange={(value) => handleInputChange("term", value)}
@@ -1216,29 +1248,7 @@ const OrderInvoiceForm = () => {
                         />
                       </div>
 
-                      <div>
-                        <div className="mb-2 flex items-center justify-between">
-                          <span className="flex items-center gap-2 text-gray-600 dark:!text-gray-400">
-                            <FaDollarSign className="text-gray-400" />
-                            {t("paymentAmount")} <span className="text-red-500">*</span>
-                          </span>
-                        </div>
-                        <Input
-                          type="number"
-                          name="payment"
-                          value={formData.payment}
-                          onChange={(value) => handleInputChange("payment", value)}
-                          placeholder={t("enterAmount")}
-                          className={`w-full dark:!bg-gray-700 dark:!text-gray-200 dark:!border-gray-600 ${
-                            fieldErrors.payment ? "border-red-500" : ""
-                          }`}
-                          min="0"
-                          step="0.01"
-                        />
-                        {fieldErrors.payment && (
-                          <div className="mt-1 text-sm text-red-500">{fieldErrors.payment}</div>
-                        )}
-                      </div>
+                      
 
                       <div>
                         <div className="mb-2 flex items-center justify-between">
@@ -1277,6 +1287,40 @@ const OrderInvoiceForm = () => {
                       </div>
                     </div>
 
+                    <div>
+                        <div className="mb-2 flex items-center justify-between">
+                          <span className="flex items-center gap-2 text-gray-600 dark:!text-gray-400">
+                            <FaDollarSign className="text-gray-400" />
+                            {t("paymentAmount")} <span className="text-red-500">*</span>
+                          </span>
+                        </div>
+                        <div className="cursor-pointer" onClick={() => setShowPaymentModal(true)}>
+                          <MiniVisaPaymentCard payment={formData?.payments[formData?.payments?.length - 1]} />
+                        </div>
+                        {fieldErrors.payment && (
+                          <div className="mt-1 text-sm text-red-500">{fieldErrors.payment}</div>
+                        )}
+                      </div>
+
+                      <PaymentModel
+                        isShow={showPaymentModal}
+                        onClose={() => setShowPaymentModal(false)}
+                        data={formData?.payments[formData?.payments?.length - 1]}
+                        balance={formData?.balance}
+                        pay={formData?.payment}
+                        onPayment={(data) => {
+                          setShowPaymentModal(false);
+                          updateFormData(prev => {
+                            const newPayment = parseFloat(data.amount) || 0;
+                            return {
+                              ...prev,
+                              payment: newPayment,
+                              order_payment_method: data.payment_method,
+                              payments: [data]
+                            };
+                          });
+                        }}
+                      />
                     <Divider className="my-4 dark:!border-gray-700" />
 
                     <div className="flex justify-between text-sm font-bold">
@@ -1296,11 +1340,10 @@ const OrderInvoiceForm = () => {
                     <div className="flex justify-between">
                       <span className="text-gray-600 dark:!text-gray-400">{t("remainingBalance")}</span>
                       <span
-                        className={`font-bold ${
-                          formData.balance > 0
+                        className={`font-bold ${formData.balance > 0
                             ? "text-orange-600 dark:!text-orange-400"
                             : "text-green-600 dark:!text-green-400"
-                        }`}
+                          }`}
                       >
                         ${Number(formData.balance).toFixed(2)}
                       </span>
@@ -1323,7 +1366,7 @@ const OrderInvoiceForm = () => {
                       </div>
                     </div>
 
-                    
+
                   </div>
                 </div>
               </div>
@@ -1416,15 +1459,15 @@ const OrderInvoiceForm = () => {
                 <span>{t("invoicesSelected")}</span>
               </div>
               <div className="flex gap-2">
-                <Button 
-                  onClick={() => setSelectedInvoiceIds([])} 
-                  variant="danger" 
+                <Button
+                  onClick={() => setSelectedInvoiceIds([])}
+                  variant="danger"
                   outline={true}
                 >
                   {t("clearAll")}
                 </Button>
-                <Button 
-                  onClick={handleImportTemplates} 
+                <Button
+                  onClick={handleImportTemplates}
                   variant="primary"
                 >
                   <FaCloudUploadAlt />
@@ -1440,8 +1483,8 @@ const OrderInvoiceForm = () => {
               <thead className="text-xs text-gray-700 uppercase bg-gray-100 dark:bg-gray-800 dark:text-gray-400 sticky top-0 z-10 shadow-sm">
                 <tr>
                   <th className="px-4 py-3 bg-gray-100 dark:bg-gray-800 w-12">
-                    <Checkbox 
-                      type="checkbox" 
+                    <Checkbox
+                      type="checkbox"
                       onChange={toggleSelectAllOnPage}
                       checked={invoices.length > 0 && invoices.every(inv => selectedInvoiceIds.includes(inv.order_id || inv.id))}
                       className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
@@ -1474,17 +1517,16 @@ const OrderInvoiceForm = () => {
                   invoices.map((invoice) => {
                     const isSelected = selectedInvoiceIds.includes(invoice.order_id || invoice.id);
                     return (
-                      <tr 
-                        key={invoice.order_id || invoice.id} 
-                        className={`transition-colors group cursor-pointer ${
-                          isSelected 
-                            ? 'bg-blue-50 dark:bg-blue-900/20' 
+                      <tr
+                        key={invoice.order_id || invoice.id}
+                        className={`transition-colors group cursor-pointer ${isSelected
+                            ? 'bg-blue-50 dark:bg-blue-900/20'
                             : 'bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800'
-                        }`}
+                          }`}
                         onClick={() => toggleSelectInvoice(invoice.order_id || invoice.id)}
                       >
                         <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
-                          <Checkbox 
+                          <Checkbox
                             type="checkbox"
                             checked={isSelected}
                             onChange={() => toggleSelectInvoice(invoice.order_id || invoice.id)}

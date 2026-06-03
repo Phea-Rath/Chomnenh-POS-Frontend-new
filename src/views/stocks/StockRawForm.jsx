@@ -12,10 +12,9 @@ import {
     useUpdateStockRawMutation,
     useGetStockRawByIdQuery,
 } from "../../../app/Features/stocksSlice";
-import { DatePicker, Select, Tag, Avatar } from "antd";
+import { DatePicker, Select, Tag, Avatar, Alert } from "antd";
 import { useDebounce } from "use-debounce";
 import dayjs from 'dayjs';
-import { toast } from "react-toastify";
 import { useTranslation } from "react-i18next";
 import { FaTrash, FaEdit, FaSave, FaTimes, FaBox, FaFlask } from "react-icons/fa";
 import { MdLocalShipping } from "react-icons/md";
@@ -23,11 +22,13 @@ import Button from "../../utils/Button";
 import RichSearch from "../../utils/RichSearch";
 // import DatePicker from "../../utils/DatePicker";
 import Input from "../../utils/Input";
+import { useNotify } from "../../utils/NotificationProvider";
 
 const { Option } = Select;
 
 const StockRawForm = () => {
     const { t } = useTranslation();
+    const notify = useNotify();
     const { id } = useParams();
     const isEditMode = Boolean(id);
     const [alertBox, setAlertBox] = useState(false);
@@ -47,6 +48,7 @@ const StockRawForm = () => {
     const [debouncedSearch] = useDebounce(searchMaterial, 500);
     const [currentPage, setCurrentPage] = useState(1);
     const [limit, setLimit] = useState(10);
+    const [errors, setErrors] = useState({});
 
     const rawMaterialRes = useGetAllRawMaterialQuery({ limit: limit, page: currentPage, search: debouncedSearch, token });
     const warehouseRes = useGetAllWarehousesQuery(token);
@@ -251,8 +253,8 @@ const StockRawForm = () => {
                 if (isEditMode) refetchStockRawById();
                 refetchRawMaterials();
                 setLoading(false);
-                toast.success(
-                    response.data.message || (isEditMode ? t('updatePurchaseSuccess') : t('createPurchaseSuccess'))
+                notify.success(
+                    response.data.message || (isEditMode ? t('stockRawUpdatedSuccess') : t('stockRawCreatedSuccess'))
                 );
                 navigator(-1);
             } else {
@@ -260,11 +262,9 @@ const StockRawForm = () => {
             }
         } catch (error) {
             setLoading(false);
-            toast.error(
-                error?.response?.data?.message ||
-                error?.message ||
-                t('errorProcessingPurchase')
-            );
+            const errorMessage = error?.response?.data?.message || error?.message || t('errorProcessingStockRaw');
+            setErrors({ general: errorMessage });
+            notify.error(errorMessage);
         }
     }
 
@@ -275,7 +275,7 @@ const StockRawForm = () => {
     function handleSubmit(e) {
         e.preventDefault();
         if (selectMaterials.length === 0) {
-            toast.error(t('pleaseAddAtLeastOneRaw'));
+            notify.error(t('pleaseAddAtLeastOneRaw'));
             return;
         }
         setAlertBox(true);
@@ -304,16 +304,56 @@ const StockRawForm = () => {
 
             <div className=" mx-auto overflow-visible">
                 {/* Header */}
-                <div className="flex justify-between items-center mb-8 overflow-visible">
-                    <div>
-                        <MdLocalShipping className="text-2xl text-blue-600 dark:text-blue-400" />
-                        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-                            {isEditMode ? t('editRawMaterialStock') : t('createRawMaterialStockIn')}
-                        </h1>
-                        <p className="text-gray-600 dark:text-gray-400">
-                            {isEditMode ? t('updateExistingRawTransfer') : t('addNewItemsToInventory')}
-                        </p>
+                <div className="mb-8 overflow-visible">
+                    <div className="flex justify-between items-center mb-4 overflow-visible">
+                        <div>
+                            <MdLocalShipping className="text-2xl text-blue-600 dark:text-blue-400" />
+                            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+                                {isEditMode ? t('editRawMaterialStock') : t('createRawMaterialStockIn')}
+                            </h1>
+                            <p className="text-gray-600 dark:text-gray-400">
+                                {isEditMode ? t('updateExistingRawTransfer') : t('addNewItemsToInventory')}
+                            </p>
+                        </div>
+                        {/* Action Buttons */}
+                                    <div className="flex gap-3 pt-4">
+                                        <Button
+                                            type="submit"
+                                            disabled={selectMaterials.length === 0}
+                                            
+                                        >
+                                            {isEditMode ? <FaSave /> : <MdLocalShipping />}
+                                            {isEditMode ? t('updateStock') : t('createStock')}
+                                        </Button>
+                                        <Link to={-1} className="flex-1">
+                                            <Button
+                                                type="button"
+                                                variant="danger"
+                                                outline
+                                            >
+                                                <FaTimes />
+                                                {t('cancel')}
+                                            </Button>
+                                        </Link>
+                                    </div>
                     </div>
+
+                    {/* Validation Summary */}
+                    {Object.keys(errors).length > 0 && (
+                        <Alert
+                            message={t('pleaseFixErrors')}
+                            description={
+                                <ul className="list-disc list-inside">
+                                    {Object.values(errors).map((error, index) => (
+                                        error && <li key={index}>{error}</li>
+                                    ))}
+                                </ul>
+                            }
+                            type="error"
+                            showIcon
+                            className="mb-6"
+                        />
+                    )}
                 </div>
 
                 <form onSubmit={handleSubmit}>
@@ -503,7 +543,7 @@ const StockRawForm = () => {
                                                 </select>
                                             </div> */}
 
-                                            <div className="grow">
+                                            {/* <div className="grow">
                                                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                                     {t('stockType')}
                                                 </label>
@@ -511,7 +551,7 @@ const StockRawForm = () => {
                                                     placeholder={t('selectStockType')}
                                                     data={stockTypeRes?.data?.data} keyFields={{id: 'stock_type_id', title: 'stock_type_name'}} 
                                                     onSelected={(id)=>setForm(prev => ({ ...prev, stock_type_id: id }))}/>
-                                            </div>
+                                            </div> */}
 
                                             <div className="grow">
                                                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -552,27 +592,7 @@ const StockRawForm = () => {
                                         </div>
                                     </div>
 
-                                    {/* Action Buttons */}
-                                    <div className="flex gap-3 pt-4">
-                                        <Button
-                                            type="submit"
-                                            disabled={selectMaterials.length === 0}
-                                            
-                                        >
-                                            {isEditMode ? <FaSave /> : <MdLocalShipping />}
-                                            {isEditMode ? t('updateStock') : t('createStock')}
-                                        </Button>
-                                        <Link to={-1} className="flex-1">
-                                            <Button
-                                                type="button"
-                                                variant="danger"
-                                                outline
-                                            >
-                                                <FaTimes />
-                                                {t('cancel')}
-                                            </Button>
-                                        </Link>
-                                    </div>
+                                    
                                 </div>
 
                             </div>

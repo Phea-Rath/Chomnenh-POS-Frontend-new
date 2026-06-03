@@ -68,6 +68,7 @@ import RichSearch from "../../utils/RichSearch";
 import { LuEye, LuFileText, LuTrash2, LuBan, LuRotateCcw, LuCreditCard } from "react-icons/lu";
 import { BiEdit } from "react-icons/bi";
 import { IoIosImages } from "react-icons/io";
+import { PAYMENT_METHODS, PAYMENT_STATUS } from "../../services/paymentService";
 
 // const { Option } = Select;
 
@@ -78,6 +79,7 @@ const initialOrder = {
   order_total: 0,
   order_customer_id: 1,
   online: 0,
+  transection_id:null,
   term: 0,
   due_date: null,
   status: 6,
@@ -93,18 +95,7 @@ const initialOrder = {
   items: [],
 };
 
-const PAYMENT_METHODS = [
-  { value: "cash", label: "Cash" },
-  { value: "aba", label: "ABA" },
-  { value: "ac", label: "Aclida" },
-  { value: "bakong", label: "Bakong" },
-];
 
-const PAYMENT_STATUS = [
-  { value: "paid", label: "Paid" },
-  { value: "cod", label: "COD" },
-  { value: "credit", label: "Credit" },
-]
 const Sales = () => {
   const { t } = useTranslation();
   const proId = localStorage.getItem("profileId");
@@ -181,13 +172,18 @@ const Sales = () => {
     ? (saleItemContext?.data?.pagination?.total || 0)
     : (orderContext?.data?.pagination?.total || 0);
 
-  localStorage.setItem("orderItems", JSON.stringify(initialOrder));
+  // localStorage.setItem("orderItems", JSON.stringify(initialOrder));
 
   // Helper function to calculate price based on sale type and discount
   const getItemPrice = (item, saleType = "sale") => {
     if (saleType === "sale") {
-      return item.item_price || item.price;
+      // In cart item, original_price is the retail unit price.
+      // In catalog item, price is the retail unit price.
+      // Cart items have selectionKey, catalog items don't.
+      if (item.selectionKey) return item.original_price;
+      return item.price;
     } else {
+      // Both catalog and cart items store wholesale_price as unit price.
       return item.wholesale_price;
     }
   };
@@ -300,7 +296,7 @@ const Sales = () => {
         const scannedBarcode = inputBuffer.trim();
 
         const findItem = allItems?.find(
-          (i) => i.barcode && i.barcode.toString() === scannedBarcode
+          (i) => i.barcode && i.barcode.toString() == scannedBarcode
         );
 
         if (!findItem) {
@@ -361,7 +357,8 @@ const Sales = () => {
 
   // Handle order
   function handleOrder(item, quantity) {
-    console.log(item);
+    console.log(item, orders);
+    const ordersItems = JSON.parse(localStorage.getItem("orderItems"))?.items || [];
 
     if (!item) {
       messageApi.open({
@@ -391,8 +388,8 @@ const Sales = () => {
 
     const selectionKey = `${item.id}-${attributeKey}`;
 
-    const sameOrder = orders?.items?.find(
-      (orderItem) => orderItem.id === item.id
+    const sameOrder = ordersItems?.find(
+      (orderItem) => orderItem.id == item.id
     );
 
     if (sameOrder) {
@@ -408,11 +405,11 @@ const Sales = () => {
         const updatedItems = prev.items.map((orderItem) => {
           if (orderItem.selectionKey === selectionKey) {
             const newQuantity = Number(orderItem.quantity) + Number(quantity);
-            const price = getItemPrice(item, prev.sale_type);
+            const unitPrice = getItemPrice(item, prev.sale_type);
             return {
               ...orderItem,
               quantity: newQuantity,
-              price: parseFloat(price * newQuantity),
+              price: parseFloat((unitPrice * newQuantity).toFixed(2)),
             };
           }
           return orderItem;
@@ -425,17 +422,10 @@ const Sales = () => {
           prev.sale_type
         );
 
-        const order_discount = updatedItems.reduce((acc, curr) => {
-          const originalPrice = prev.sale_type === "sale"
-            ? curr.original_price
-            : curr.wholesale_price;
-          return acc + (originalPrice * curr.quantity * (curr.discount / 100));
-        }, 0);
-
         const results = {
           ...prev,
           items: updatedItems,
-          order_discount: parseFloat(order_discount.toFixed(2)),
+          order_discount: totals.totalDiscount,
           order_subtotal: totals.subtotal,
           order_subtotal_discount: totals.subtotal,
           order_total: totals.total,
@@ -451,10 +441,12 @@ const Sales = () => {
           content: `${t("addedToCart")}: ${item?.name}`,
         });
         localStorage.setItem("orderItems", JSON.stringify(results));
+        const newCount = results.items?.reduce((sum, curr) => sum + (curr.quantity || 0), 0) || 0;
+        setOrderCount(newCount);
         return results;
       });
     } else {
-      const price = getItemPrice(item, orders.sale_type);
+      const unitPrice = getItemPrice(item, orders.sale_type);
 
       setOrders((prev) => {
         const updatedItems = [
@@ -467,10 +459,10 @@ const Sales = () => {
             cost: item.cost,
             image: item.image,
             images: item.images,
-            price: Number(price * Number(quantity)),
+            price: Number((unitPrice * Number(quantity)).toFixed(2)),
             quantity: quantity,
             discount: item.discount,
-            original_price: orders.sale_type === "sale" ? item.price : item.wholesale_price,
+            original_price: item.price, // Always store retail price here
             displayAttributes: item.displayAttributes,
             selectionKey: selectionKey,
             stock_in: item?.stock_in,
@@ -487,17 +479,11 @@ const Sales = () => {
           prev.order_tax || 0,
           prev.sale_type
         );
-        const order_discount = updatedItems.reduce((acc, curr) => {
-          const originalPrice = prev.sale_type === "sale"
-            ? curr.original_price
-            : curr.wholesale_price;
-          return acc + (originalPrice * curr.quantity * (curr.discount / 100));
-        }, 0);
 
         const results = {
           ...prev,
           items: updatedItems,
-          order_discount: parseFloat(order_discount.toFixed(2)),
+          order_discount: totals.totalDiscount,
           order_subtotal: totals.subtotal,
           order_subtotal_discount: totals.subtotal,
           order_total: totals.total,
@@ -510,6 +496,8 @@ const Sales = () => {
         };
 
         localStorage.setItem("orderItems", JSON.stringify(results));
+        const newCount = results.items?.reduce((sum, curr) => sum + (curr.quantity || 0), 0) || 0;
+        setOrderCount(newCount);
         return results;
       });
     }
@@ -517,10 +505,6 @@ const Sales = () => {
       type: "success",
       content: `${t("addedToCart")}: ${item?.name}`,
     });
-    // Update order count
-    const storedOrder = JSON.parse(localStorage.getItem("orderItems") || "{}");
-    const newCount = storedOrder.items?.reduce((sum, curr) => sum + (curr.quantity || 0), 0) || 0;
-    setOrderCount(newCount);
   }
 
   // Function to increase quantity
@@ -529,10 +513,14 @@ const Sales = () => {
       item.id === id && item.selectionKey === selectionKey
     );
 
-
     if (!findItem) return;
 
-    if (findItem.quantity >= findItem.in_stock) {
+    // Check total quantity of this product ID in cart against available stock
+    const cartQtyOfProduct = orders.items
+      .filter(item => item.id === id)
+      .reduce((sum, item) => sum + item.quantity, 0);
+
+    if (cartQtyOfProduct >= findItem.in_stock) {
       messageApi.open({
         type: "error",
         content: t("notEnoughStock"),
@@ -544,11 +532,11 @@ const Sales = () => {
       const updatedItems = prev.items.map((item) => {
         if (item.id === id && item.selectionKey === selectionKey) {
           const newQuantity = item.quantity + 1;
-          const price = getItemPrice(item, prev.sale_type);
+          const unitPrice = getItemPrice(item, prev.sale_type);
           return {
             ...item,
             quantity: newQuantity,
-            price: Number(price * newQuantity),
+            price: Number((unitPrice * newQuantity).toFixed(2)),
           };
         }
         return item;
@@ -564,6 +552,7 @@ const Sales = () => {
       const results = {
         ...prev,
         items: updatedItems,
+        order_discount: totals.totalDiscount,
         order_subtotal: totals.subtotal,
         order_subtotal_discount: totals.subtotal,
         order_total: totals.total,
@@ -576,12 +565,10 @@ const Sales = () => {
       };
 
       localStorage.setItem("orderItems", JSON.stringify(results));
+      const newCount = results.items?.reduce((sum, curr) => sum + (curr.quantity || 0), 0) || 0;
+      setOrderCount(newCount);
       return results;
     });
-
-    const storedOrder = JSON.parse(localStorage.getItem("orderItems") || "{}");
-    const newCount = storedOrder.items?.reduce((sum, curr) => sum + (curr.quantity || 0), 0) || 0;
-    setOrderCount(newCount);
   }
 
   // Function to handle input quantity
@@ -590,10 +577,13 @@ const Sales = () => {
       item.id === id && item.selectionKey === selectionKey
     );
 
-
     if (!findItem) return;
 
-    if (findItem.quantity >= findItem.in_stock) {
+    const otherItemsQty = orders.items
+      .filter(item => item.id === id && item.selectionKey !== selectionKey)
+      .reduce((sum, item) => sum + item.quantity, 0);
+
+    if (otherItemsQty + Number(qty) > findItem.in_stock) {
       messageApi.open({
         type: "error",
         content: t("notEnoughStock"),
@@ -605,11 +595,11 @@ const Sales = () => {
       const updatedItems = prev.items.map((item) => {
         if (item.id === id && item.selectionKey === selectionKey) {
           const newQuantity = Number(qty);
-          const price = getItemPrice(item, prev.sale_type);
+          const unitPrice = getItemPrice(item, prev.sale_type);
           return {
             ...item,
             quantity: newQuantity,
-            price: Number(price * newQuantity),
+            price: Number((unitPrice * newQuantity).toFixed(2)),
           };
         }
         return item;
@@ -625,6 +615,7 @@ const Sales = () => {
       const results = {
         ...prev,
         items: updatedItems,
+        order_discount: totals.totalDiscount,
         order_subtotal: totals.subtotal,
         order_subtotal_discount: totals.subtotal,
         order_total: totals.total,
@@ -637,12 +628,10 @@ const Sales = () => {
       };
 
       localStorage.setItem("orderItems", JSON.stringify(results));
+      const newCount = results.items?.reduce((sum, curr) => sum + (curr.quantity || 0), 0) || 0;
+      setOrderCount(newCount);
       return results;
     });
-
-    const storedOrder = JSON.parse(localStorage.getItem("orderItems") || "{}");
-    const newCount = storedOrder.items?.reduce((sum, curr) => sum + (curr.quantity || 0), 0) || 0;
-    setOrderCount(newCount);
   }
 
   // Function to decrease quantity
@@ -657,13 +646,12 @@ const Sales = () => {
       const updatedItems = prev.items.map((item) => {
         if (item.id === id && item.selectionKey === selectionKey) {
           const newQuantity = item.quantity - 1;
-          const price = getItemPrice(item, prev.sale_type);
-          console.log(getItemPrice(item, prev.sale_type));
+          const unitPrice = getItemPrice(item, prev.sale_type);
 
           return {
             ...item,
             quantity: newQuantity,
-            price: Number(price * newQuantity),
+            price: Number((unitPrice * newQuantity).toFixed(2)),
           };
         }
         return item;
@@ -679,6 +667,7 @@ const Sales = () => {
       const results = {
         ...prev,
         items: updatedItems,
+        order_discount: totals.totalDiscount,
         order_subtotal: totals.subtotal,
         order_subtotal_discount: totals.subtotal,
         order_total: totals.total,
@@ -691,12 +680,10 @@ const Sales = () => {
       };
 
       localStorage.setItem("orderItems", JSON.stringify(results));
+      const newCount = results.items?.reduce((sum, curr) => sum + (curr.quantity || 0), 0) || 0;
+      setOrderCount(newCount);
       return results;
     });
-
-    const storedOrder = JSON.parse(localStorage.getItem("orderItems") || "{}");
-    const newCount = storedOrder.items?.reduce((sum, curr) => sum + (curr.quantity || 0), 0) || 0;
-    setOrderCount(newCount);
   }
 
   // Function to delete item
@@ -705,7 +692,6 @@ const Sales = () => {
     const findItem = orders.items.find((item, index) =>
       item.id === id && index === selectionKey
     );
-    console.log(orders.items);
 
     if (!findItem) return;
 
@@ -724,6 +710,7 @@ const Sales = () => {
       const results = {
         ...prev,
         items: updatedItems,
+        order_discount: totals.totalDiscount,
         order_subtotal: totals.subtotal,
         order_subtotal_discount: totals.subtotal,
         order_total: totals.total,
@@ -736,12 +723,10 @@ const Sales = () => {
       };
 
       localStorage.setItem("orderItems", JSON.stringify(results));
+      const newCount = results.items?.reduce((sum, curr) => sum + (curr.quantity || 0), 0) || 0;
+      setOrderCount(newCount);
       return results;
     });
-
-    const storedOrder = JSON.parse(localStorage.getItem("orderItems") || "{}");
-    const newCount = storedOrder.items?.reduce((sum, curr) => sum + (curr.quantity || 0), 0) || 0;
-    setOrderCount(newCount);
 
     messageApi.open({
       type: "success",
@@ -791,10 +776,10 @@ const Sales = () => {
       status: 6,
       order_discount: calculateTotalDiscount() || 0,
       order_address: orders.order_address || "unknown",
+      order_date: dayjs().format("YYYY-MM-DD HH:mm:ss"),
       items: itemsWithAttributes
     };
 
-    console.log(payload);
 
 
     try {
@@ -823,8 +808,8 @@ const Sales = () => {
 
         // Navigate to receipt/invoice
         const path = payload.sale_type === "sale"
-          ? `/order-list/receipt/${orderRes.data.data.order_id}`
-          : `/order-list/invoice/${orderRes.data.data.order_id}`;
+          ? `/receipt/${orderRes.data.data.order_id}`
+          : `/invoice/${orderRes.data.data.order_id}`;
         navigate(path);
       } else {
         throw new Error(orderRes.data.message || t("failedToCreateOrder"));
@@ -1802,7 +1787,7 @@ const Sales = () => {
                         </select>
                       </div>
 
-                      <div className={`flex justify-between items-center ${payment === "paid" ? "hidden" : ""}`}>
+                      <div className={`flex justify-between items-center ${payment !== "credit" ? "hidden" : ""}`}>
                         <label className="text-sm text-gray-600 dark:text-gray-300">{t("pay")}</label>
                         <input
                           type="number"

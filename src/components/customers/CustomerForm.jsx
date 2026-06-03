@@ -2,12 +2,12 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router";
 import { FaSave, FaTimes, FaMapMarkerAlt, FaUser, FaEnvelope, FaPhone, FaMapMarkedAlt, FaTrash, FaEdit } from "react-icons/fa";
 import { IoMdCloudUpload } from "react-icons/io";
-import { toast } from "react-toastify";
+import { Alert } from "antd";
 import { useTranslation } from "react-i18next";
 import { useOutletsContext } from "../../layouts/Management";
 import {
   useCreateCustomerMutation,
-  useGetAllCustomerQuery,
+  useGetAllCustomerQuery, 
   useUpdateCustomerMutation,
 } from "../../../app/Features/customersSlice";
 import api from "../../services/api";
@@ -15,9 +15,11 @@ import AlertBox from "../../services/AlertBox";
 import Input from "../../utils/Input";
 import RichSearch from "../../utils/RichSearch";
 import Button from "../../utils/Button";
+import { useNotify } from "../../utils/NotificationProvider";
 
 const CustomerForm = () => {
   const { t } = useTranslation();
+  const notify = useNotify();
   const token = localStorage.getItem("token");
   const { id } = useParams();
   const navigate = useNavigate();
@@ -34,6 +36,7 @@ const CustomerForm = () => {
   const [communes, setCommunes] = useState([]);
   const [villages, setVillages] = useState([]);
   const [alertBox, setAlertBox] = useState(false);
+  const [submissionError, setSubmissionError] = useState(null);
   
   const [dataForm, setFormData] = useState({
     customer_name: "",
@@ -164,7 +167,7 @@ const CustomerForm = () => {
     const file = e.target.files[0];
     if (file) {
       if (file.size > 2 * 1024 * 1024) {
-        toast.error(t('fileTooLarge', 'File too large (Max 2MB)'));
+        notify.error(t('error'), t('fileTooLarge', 'File too large (Max 2MB)'));
         return;
       }
       const reader = new FileReader();
@@ -181,16 +184,18 @@ const CustomerForm = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    setSubmissionError(null);
     if (validateForm()) {
       setAlertBox(true);
     } else {
-      toast.error(t('fixValidationErrors', 'Please fix validation errors'));
+      notify.error(t('error'), t('fixValidationErrors', 'Please fix validation errors'));
     }
   };
 
   const handleConfirm = async () => {
     setLoading(true);
     setAlertBox(false);
+    setSubmissionError(null);
 
     try {
       const formData = new FormData();
@@ -207,18 +212,20 @@ const CustomerForm = () => {
           itemData: formData,
           token,
         }).unwrap();
-        toast.success(t('customerUpdated', 'Customer updated successfully!'));
+        notify.success(t('success'), t('customerUpdated', 'Customer updated successfully!'));
       } else {
         await api.post("customers", formData, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        toast.success(t('customerCreated', 'Customer created successfully!'));
+        notify.success(t('success'), t('customerCreated', 'Customer created successfully!'));
       }
       refetch();
       navigate(-1);
       localStorage.removeItem("itemEdit");
     } catch (err) {
-      toast.error(err?.data?.message || err?.message || t('operationFailed', 'Operation failed'));
+      const errMsg = err?.data?.message || err?.message || t('operationFailed', 'Operation failed');
+      setSubmissionError(errMsg);
+      notify.error(t('error'), errMsg);
     } finally {
       setLoading(false);
     }
@@ -237,7 +244,7 @@ const CustomerForm = () => {
 
   const getCurrentLocation = () => {
     if (!navigator.geolocation) {
-      toast.error(t('geolocationNotSupported', 'Geolocation not supported'));
+      notify.error(t('error'), t('geolocationNotSupported', 'Geolocation not supported'));
       return;
     }
     navigator.geolocation.getCurrentPosition(
@@ -248,7 +255,7 @@ const CustomerForm = () => {
         setFormData(prev => ({ ...prev, customer_address: newAddress }));
         setLocation({ latitude: lat, longitude: lng });
       },
-      (err) => toast.error(err.message)
+      (err) => notify.error(t('error'), err.message)
     );
   };
 
@@ -267,13 +274,39 @@ const CustomerForm = () => {
 
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-            {isUpdate ? t('editCustomer') : t('createNewCustomer')}
-          </h1>
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+              {isUpdate ? t('editCustomer') : t('createNewCustomer')}
+            </h1>
+            {/* Actions */}
+              <div className="flex justify-end gap-4">
+                <Button variant="danger" outline onClick={() => navigate(-1)} disabled={loading}>
+                  <FaTimes /> {t('cancel')}
+                </Button>
+                <Button onClick={handleSubmit} disabled={loading}>
+                  {isUpdate ? <FaEdit /> : <FaSave />}
+                  {loading ? t('saving') : isUpdate ? t('updateCustomer') : t('createCustomer')}
+                </Button>
+              </div>
+          </div>
           <p className="text-gray-600 dark:text-gray-400">
             {isUpdate ? t('updateCustomerInfo') : t('addNewCustomerSystem')}
           </p>
+
+          
         </div>
+
+        {submissionError && (
+          <Alert
+            message={t('error', 'Error')}
+            description={submissionError}
+            type="error"
+            showIcon
+            closable
+            onClose={() => setSubmissionError(null)}
+            className="mb-6"
+          />
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left Column: Image & Location */}
@@ -318,8 +351,8 @@ const CustomerForm = () => {
                 <h2 className="text-lg font-semibold text-gray-800 dark:text-white">{t('basicInformation')}</h2>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
+              <div className="flex flex-wrap gap-6">
+                <div className="space-y-2 grow">
                   <label className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('customerName')} <span className="text-red-500">*</span></label>
                   <Input
                     value={dataForm.customer_name}
@@ -329,7 +362,7 @@ const CustomerForm = () => {
                   {errors.customer_name && <p className="text-red-500 text-xs">{errors.customer_name}</p>}
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-2 grow">
                   <label className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('phoneNumber')}</label>
                   <Input
                     value={dataForm.customer_tel}
@@ -339,7 +372,7 @@ const CustomerForm = () => {
                   {errors.customer_tel && <p className="text-red-500 text-xs">{errors.customer_tel}</p>}
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-2 grow">
                   <label className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('emailAddress')}</label>
                   <Input
                     type="email"
@@ -349,7 +382,7 @@ const CustomerForm = () => {
                   />
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-2 grow">
                   <label className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('addressCoordinates')}</label>
                   <div className="flex gap-2">
                     <Input
@@ -372,8 +405,8 @@ const CustomerForm = () => {
                 <h2 className="text-lg font-semibold text-gray-800 dark:text-white">{t('geographicalLocation')}</h2>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
+              <div className="flex flex-wrap gap-6">
+                <div className="space-y-2 grow">
                   <label className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('province')}</label>
                   <RichSearch
                     data={provinces}
@@ -390,7 +423,7 @@ const CustomerForm = () => {
                   />
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-2 grow">
                   <label className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('district')}</label>
                   <RichSearch
                     data={districts}
@@ -408,7 +441,7 @@ const CustomerForm = () => {
                   />
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-2 grow">
                   <label className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('commune')}</label>
                   <RichSearch
                     data={communes}
@@ -426,7 +459,7 @@ const CustomerForm = () => {
                   />
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-2 grow">
                   <label className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('village')}</label>
                   <RichSearch
                     data={villages}
@@ -471,16 +504,7 @@ const CustomerForm = () => {
               )}
             </div>
 
-            {/* Actions */}
-            <div className="flex justify-end gap-4 pt-6 mt-6 border-t border-gray-200 dark:border-gray-700">
-              <Button variant="danger" outline onClick={() => navigate(-1)} disabled={loading}>
-                <FaTimes /> {t('cancel')}
-              </Button>
-              <Button onClick={handleSubmit} disabled={loading}>
-                {isUpdate ? <FaEdit /> : <FaSave />}
-                {loading ? t('saving') : isUpdate ? t('updateCustomer') : t('createCustomer')}
-              </Button>
-            </div>
+           
           </div>
         </div>
       </div>

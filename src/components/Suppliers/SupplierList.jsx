@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FaSearch, FaEye, FaEdit, FaTrash, FaTimes, FaPlus, FaMapMarkerAlt, FaTruck } from 'react-icons/fa';
+import { FaSearch, FaEye, FaEdit, FaTrash, FaTimes, FaPlus, FaMapMarkerAlt, FaTruck, FaList, FaThLarge, FaPhone, FaEnvelope } from 'react-icons/fa';
 import { Link, useNavigate } from 'react-router';
 import api from '../../services/api';
 import { useGetAllSupplierQuery } from '../../../app/Features/suppliesSlice';
@@ -22,15 +22,16 @@ const SupplierList = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredSuppliers, setFilteredSuppliers] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [itemsPerPage, setItemsPerPage] = useState(12);
   const [selectedSupplier, setSelectedSupplier] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  const [viewMode, setViewMode] = useState('list');
 
   const paginationOptions = [
-    { id: 10, title: '10 / Page' },
-    { id: 20, title: '20 / Page' },
-    { id: 50, title: '50 / Page' },
-    { id: 100, title: '100 / Page' },
+    { id: 12, title: `12 / ${t('page')}` },
+    { id: 24, title: `24 / ${t('page')}` },
+    { id: 48, title: `48 / ${t('page')}` },
+    { id: 96, title: `96 / ${t('page')}` },
   ];
 
   useEffect(() => {
@@ -51,16 +52,16 @@ const SupplierList = () => {
   }, [searchTerm, suppliers]);
 
   const handleDelete = async (id) => {
-    if (window.confirm('Are you sure you want to delete this supplier?')) {
+    if (window.confirm(t('confirmDeleteSupplier', 'Are you sure you want to delete this supplier?'))) {
       try {
         await api.delete(`/suppliers/${id}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         setSuppliers(suppliers.filter(supplier => supplier.supplier_id !== id));
         setFilteredSuppliers(filteredSuppliers.filter(supplier => supplier.supplier_id !== id));
-        message.success('Supplier deleted successfully!');
+        message.success(t('supplierDeleted', 'Supplier deleted successfully!'));
       } catch (err) {
-        message.error(err.response?.data?.message || 'Error deleting supplier.');
+        message.error(err.response?.data?.message || t('operationFailed', 'Error deleting supplier.'));
       }
     }
   };
@@ -99,15 +100,31 @@ const SupplierList = () => {
               <FaTruck className="text-white text-2xl" />
             </div>
             <div>
-              <h1 className="text-2xl sm:text-3xl text-gray-900 dark:text-white">Suppliers</h1>
-              <p className="text-sm text-gray-500">Manage your supplier network</p>
+              <h1 className="text-2xl sm:text-3xl text-gray-900 dark:text-white font-bold">{t('suppliers', 'Suppliers')}</h1>
+              <p className="text-sm text-gray-500">{t('manageSupplierNetwork', 'Manage your supplier network')}</p>
             </div>
           </div>
-          <div className='flex gap-2 w-full sm:w-auto'>
+          <div className='flex items-center gap-2 w-full sm:w-auto'>
+            <div className="flex bg-gray-100 dark:bg-gray-800 p-1 rounded-lg mr-2">
+              <button
+                onClick={() => setViewMode('list')}
+                className={`p-2 rounded-md transition-all ${viewMode === 'list' ? 'bg-white dark:bg-gray-700 shadow-sm text-blue-600' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
+                title={t('listView')}
+              >
+                <FaList size={18} />
+              </button>
+              <button
+                onClick={() => setViewMode('grid')}
+                className={`p-2 rounded-md transition-all ${viewMode === 'grid' ? 'bg-white dark:bg-gray-700 shadow-sm text-blue-600' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
+                title={t('gridView')}
+              >
+                <FaThLarge size={18} />
+              </button>
+            </div>
             <RefreshButton onRefresh={refetch} />
             <Link to="create">
               <Button>
-                <FaPlus /> <span>New</span>
+                <FaPlus /> <span>{t('new', 'New')}</span>
               </Button>
             </Link>
           </div>
@@ -120,15 +137,15 @@ const SupplierList = () => {
                 <FaSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
                 <input
                   type="text"
-                  placeholder="Search by name, phone or email..."
+                  placeholder={t('searchSupplierPlaceholder', "Search by name, phone or email...")}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-11 pr-4 py-2.5 border border-gray-200 dark:border-gray-600 rounded-sm focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none text-sm bg-white dark:bg-gray-700 dark:text-gray-100"
+                  className="w-full pl-11 pr-4 py-2.5 border border-gray-200 dark:border-gray-400 rounded-sm focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none text-sm dark:text-gray-100"
                 />
               </div>
               
               <div className="flex items-center gap-3 w-full md:w-auto">
-                <label className="text-gray-500 whitespace-nowrap text-sm">Show:</label>
+                <label className="text-gray-500 whitespace-nowrap text-sm">{t('show', 'Show')}:</label>
                 <div className="w-32">
                   <RichSearch
                     data={paginationOptions}
@@ -138,7 +155,7 @@ const SupplierList = () => {
                       setItemsPerPage(id);
                       setCurrentPage(1);
                     }}
-                    placeholder={`${itemsPerPage} / Page`}
+                    placeholder={`${itemsPerPage} / ${t('page')}`}
                   />
                 </div>
               </div>
@@ -147,17 +164,19 @@ const SupplierList = () => {
 
           <div className="p-0">
             {isLoading ? (
-              <div className="p-8 space-y-6">
-                {[1, 2, 3, 4, 5].map((i) => (
-                  <Skeleton key={i} active avatar={{ size: 'large', shape: 'square' }} paragraph={{ rows: 1 }} />
+              <div className="p-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+                  <Card key={i} className="dark:bg-gray-800 border-gray-100 dark:border-gray-700">
+                    <Skeleton active avatar={{ size: 'large', shape: 'square' }} paragraph={{ rows: 2 }} />
+                  </Card>
                 ))}
               </div>
             ) : error ? (
               <div className="m-6 p-6 bg-red-50 border border-red-100 text-red-600 rounded-2xl flex items-center gap-3">
                 <ExclamationCircleOutlined className="text-xl" />
                 <div>
-                  <p className="">Error loading suppliers</p>
-                  <p className="text-sm opacity-90">{error.message || "Please try refreshing the page."}</p>
+                  <p className="">{t('errorLoadingSuppliers', 'Error loading suppliers')}</p>
+                  <p className="text-sm opacity-90">{error.message || t('tryRefreshing', "Please try refreshing the page.")}</p>
                 </div>
               </div>
             ) : filteredSuppliers.length === 0 ? (
@@ -166,21 +185,21 @@ const SupplierList = () => {
                   image={Empty.PRESENTED_IMAGE_SIMPLE}
                   description={
                     <div className="text-center">
-                      <p className="text-gray-500 text-lg">No suppliers found</p>
-                      <p className="text-gray-400 text-sm">Try adjusting your search criteria</p>
+                      <p className="text-gray-500 text-lg">{t('noSuppliersFound', 'No suppliers found')}</p>
+                      <p className="text-gray-400 text-sm">{t('tryAdjustingSearch', 'Try adjusting your search criteria')}</p>
                     </div>
                   } 
                 />
               </div>
-            ) : (
+            ) : viewMode === 'list' ? (
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="bg-primary text-gray-500 dark:text-gray-400 uppercase text-[11px] tracking-wider border-b border-gray-100 dark:border-gray-700">
-                      <th className="px-6 py-4">Supplier</th>
-                      <th className="px-6 py-4">Location</th>
-                      <th className="px-6 py-4">Contact</th>
-                      <th className="px-6 py-4 text-center">Actions</th>
+                      <th className="px-6 py-4">{t('supplier', 'Supplier')}</th>
+                      <th className="px-6 py-4">{t('location', 'Location')}</th>
+                      <th className="px-6 py-4">{t('contact', 'Contact')}</th>
+                      <th className="px-6 py-4 text-center">{t('actions', 'Actions')}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y bg-transparent divide-gray-100 dark:divide-gray-700">
@@ -197,10 +216,10 @@ const SupplierList = () => {
                               />
                             </div>
                             <div>
-                              <p className="text-sm text-gray-900 dark:text-white group-hover:text-blue-600 transition-colors">
+                              <p className="text-sm text-gray-900 dark:text-white group-hover:text-blue-600 transition-colors font-medium">
                                 {supplier.supplier_name}
                               </p>
-                              <p className="text-[11px] text-gray-400">ID: #{supplier.supplier_id}</p>
+                              <p className="text-[11px] text-gray-400">{t('id', 'ID')}: #{supplier.supplier_id}</p>
                             </div>
                           </div>
                         </td>
@@ -215,45 +234,45 @@ const SupplierList = () => {
                         <td className="px-6 py-4">
                           <div className="space-y-1">
                             <p className="text-xs font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2">
-                              {supplier.supplier_tel || "No Phone"}
+                              <FaPhone className="text-blue-400 text-[10px]" /> {supplier.supplier_tel || "No Phone"}
                             </p>
-                            <p className="text-[11px] text-gray-400 truncate max-w-[150px]">
-                              {supplier.supplier_email || "No Email"}
+                            <p className="text-[11px] text-gray-400 truncate max-w-[150px] flex items-center gap-2">
+                              <FaEnvelope className="text-gray-400 text-[10px]" /> {supplier.supplier_email || "No Email"}
                             </p>
                           </div>
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex justify-center items-center gap-1">
-                            <Tooltip title="View Details">
+                            <Tooltip title={t('viewDetails')}>
                               <button
                                 onClick={() => openDetail(supplier)}
-                                className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"
+                                className="p-2 text-blue-500 hover:bg-blue-50 dark:hover:bg-gray-700 rounded-lg transition-colors"
                               >
                                 <FaEye />
                               </button>
                             </Tooltip>
-                            <Tooltip title="Edit">
+                            <Tooltip title={t('edit')}>
                               <button
                                 onClick={() => handleEdit(supplier)}
-                                className="p-2 text-green-500 hover:bg-green-50 rounded-lg transition-colors"
+                                className="p-2 text-green-500 hover:bg-green-50 dark:hover:bg-gray-700 rounded-lg transition-colors"
                               >
                                 <FaEdit />
                               </button>
                             </Tooltip>
-                            <Tooltip title="Delete">
+                            <Tooltip title={t('delete')}>
                               <button
                                 onClick={() => handleDelete(supplier.supplier_id)}
-                                className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-gray-700 rounded-lg transition-colors"
                               >
                                 <FaTrash />
                               </button>
                             </Tooltip>
-                            <Tooltip title="View on Map">
+                            <Tooltip title={t('viewOnMap', 'View on Map')}>
                               <a
                                 href={`https://www.google.com/maps?q=${encodeURIComponent(formatAddress(supplier))}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="p-2 text-orange-500 hover:bg-orange-50 rounded-lg transition-colors"
+                                className="p-2 text-orange-500 hover:bg-orange-50 dark:hover:bg-gray-700 rounded-lg transition-colors"
                               >
                                 <FaMapLocationDot />
                               </a>
@@ -264,6 +283,57 @@ const SupplierList = () => {
                     ))}
                   </tbody>
                 </table>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 p-6">
+                {currentSuppliers.map((supplier) => (
+                  <Card
+                    key={supplier.supplier_id}
+                    hoverable
+                    className="overflow-hidden border-gray-100 dark:!border-gray-700 dark:!bg-gray-800 group transition-all duration-300"
+                    cover={
+                      <div className="h-48 overflow-hidden bg-gray-50 dark:!bg-gray-900 relative">
+                        <Image
+                          alt={supplier.supplier_name}
+                          src={supplier.image || import.meta.env.VITE_DEFAULT_PROFILE}
+                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                          preview={false}
+                          fallback={import.meta.env.VITE_DEFAULT_PROFILE}
+                        />
+                        <div className="absolute top-3 right-3">
+                          <Badge count={`ID: #${supplier.supplier_id}`} style={{ backgroundColor: '#3b82f6' }} />
+                        </div>
+                      </div>
+                    }
+                    actions={[
+                      <Tooltip title={t('viewDetails')} key="view"><FaEye className="mx-auto text-blue-500 hover:scale-125 transition-transform" onClick={() => openDetail(supplier)} /></Tooltip>,
+                      <Tooltip title={t('edit')} key="edit"><FaEdit className="mx-auto text-green-500 hover:scale-125 transition-transform" onClick={() => handleEdit(supplier)} /></Tooltip>,
+                      <Tooltip title={t('delete')} key="delete"><FaTrash className="mx-auto text-red-500 hover:scale-125 transition-transform" onClick={() => handleDelete(supplier.supplier_id)} /></Tooltip>,
+                    ]}
+                  >
+                    <Card.Meta
+                      title={<span className="dark:text-white font-bold block truncate">{supplier.supplier_name}</span>}
+                      description={
+                        <div className="space-y-3 mt-3">
+                          <div className="flex items-start gap-2 text-[11px] text-gray-500 dark:text-gray-400 min-h-[32px]">
+                            <FaMapMarkerAlt className="text-red-400 flex-shrink-0 mt-0.5" />
+                            <span className="line-clamp-2" title={formatAddress(supplier)}>{formatAddress(supplier)}</span>
+                          </div>
+                          <div className="flex flex-col gap-1.5 border-t border-gray-50 dark:border-gray-700 pt-3">
+                            <div className="flex items-center gap-2 text-[11px] text-gray-600 dark:text-gray-300">
+                              <FaPhone className="text-blue-400 flex-shrink-0" />
+                              <span className="font-medium">{supplier.supplier_tel || "N/A"}</span>
+                            </div>
+                            <div className="flex items-center gap-2 text-[11px] text-gray-600 dark:text-gray-300">
+                              <FaEnvelope className="text-gray-400 flex-shrink-0" />
+                              <span className="truncate">{supplier.supplier_email || "N/A"}</span>
+                            </div>
+                          </div>
+                        </div>
+                      }
+                    />
+                  </Card>
+                ))}
               </div>
             )}
           </div>
@@ -284,14 +354,7 @@ const SupplierList = () => {
           )}
         </div>
 
-        <div className="mt-8 flex justify-center">
-          <Link
-            to="/dashboard"
-            className="px-6 py-2.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-600 transition-all flex items-center gap-2 text-sm border border-gray-200 dark:border-gray-600"
-          >
-            <FaTimes /> Back to Dashboard
-          </Link>
-        </div>
+        
       </div>
 
       {/* Detail Modal */}
@@ -331,7 +394,7 @@ const SupplierList = () => {
                   <div className="text-white text-center sm:text-left">
                     <h2 className="text-3xl mb-1">{selectedSupplier.supplier_name}</h2>
                     <Tag color="blue" className="rounded-full px-3 border-none bg-white/20 text-white">
-                      Supplier ID: #{selectedSupplier.supplier_id}
+                      {t('supplier', 'Supplier')} ID: #{selectedSupplier.supplier_id}
                     </Tag>
                   </div>
                 </div>
@@ -343,22 +406,22 @@ const SupplierList = () => {
                     <div>
                       <h3 className="text-sm text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
                         <div className="w-1 h-4 bg-blue-500 rounded-full"></div>
-                        Contact Info
+                        {t('contactInfo', 'Contact Info')}
                       </h3>
                       <div className="space-y-4">
                         <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-2xl">
                           <div className="p-2 bg-white dark:bg-gray-700 rounded-lg">
-                            <FaEye className="text-blue-500" />
+                            <FaPhone className="text-blue-500" />
                           </div>
                           <div>
-                            <p className="text-[10px] text-gray-500 uppercase">Phone Number</p>
+                            <p className="text-[10px] text-gray-500 uppercase">{t('phoneNumber', 'Phone Number')}</p>
                             <p className="text-sm text-gray-800 dark:text-gray-200">{selectedSupplier.supplier_tel || 'N/A'}</p>
                           </div>
                         </div>
                         <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-2xl">
                           <div className="p-2 bg-white dark:bg-gray-700 rounded-lg text-green-500 font-bold">@</div>
                           <div>
-                            <p className="text-[10px] text-gray-500 uppercase">Email Address</p>
+                            <p className="text-[10px] text-gray-500 uppercase">{t('emailAddress', 'Email Address')}</p>
                             <p className="text-sm text-gray-800 dark:text-gray-200 truncate max-w-[180px]">{selectedSupplier.supplier_email || 'N/A'}</p>
                           </div>
                         </div>
@@ -370,7 +433,7 @@ const SupplierList = () => {
                     <div>
                       <h3 className="text-sm text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
                         <div className="w-1 h-4 bg-orange-500 rounded-full"></div>
-                        Location
+                        {t('location', 'Location')}
                       </h3>
                       <div className="p-4 bg-orange-50/50 dark:bg-orange-900/10 rounded-2xl border border-orange-100 dark:border-orange-900/20">
                         <div className="flex items-start gap-3">
@@ -383,9 +446,9 @@ const SupplierList = () => {
                               href={`https://www.google.com/maps?q=${encodeURIComponent(formatAddress(selectedSupplier))}`}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="mt-3 inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 text-xs transition-all font-bold"
+                              className="mt-3 inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 text-[10px] transition-all font-bold uppercase"
                             >
-                              <FaMapLocationDot /> OPEN IN MAPS
+                              <FaMapLocationDot size={14} /> {t('openInMaps', 'OPEN IN MAPS')}
                             </a>
                           </div>
                         </div>
@@ -396,7 +459,7 @@ const SupplierList = () => {
 
                 {selectedSupplier.description && (
                   <div className="mt-6">
-                    <Card title="Description" size="small" className="shadow-sm border-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200">
+                    <Card title={t('description', 'Description')} size="small" className="shadow-sm border-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200">
                       <p className="text-sm italic text-gray-600 dark:text-gray-400">"{selectedSupplier.description}"</p>
                     </Card>
                   </div>
@@ -407,15 +470,15 @@ const SupplierList = () => {
                     onClick={() => setShowDetailModal(false)}
                     variant='danger'
                     outline
-                    className="order-2 sm:order-1 px-8 py-3 rounded-2xl text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all font-bold"
+                    className="order-2 sm:order-1 px-8 py-3 rounded-2xl text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all font-bold uppercase tracking-wide"
                   >
-                    CLOSE
+                    {t('close', 'CLOSE')}
                   </Button>
                   <Button onClick={() => handleEdit(selectedSupplier)}
                     variant='success'
-                    className="order-1 sm:order-2 px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl shadow-blue-200 dark:shadow-none transition-all flex items-center justify-center gap-2 font-bold"
+                    className="order-1 sm:order-2 px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl shadow-blue-200 dark:shadow-none transition-all flex items-center justify-center gap-2 font-bold uppercase tracking-wide"
                   >
-                    <FaEdit /> EDIT SUPPLIER
+                    <FaEdit /> {t('editSupplier', 'EDIT SUPPLIER')}
                   </Button>
                 </div>
               </div>

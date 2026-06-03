@@ -5,6 +5,8 @@ import ExchangeRate from "../ExchangeRate";
 import { useGetMenuSettingQuery } from "../../../app/Features/permissionSlice";
 import { useGetUserLoginQuery } from "../../../app/Features/usersSlice";
 import { useTranslation } from "react-i18next";
+import award from '../../assets/award.png';
+import trophy from '../../assets/trophy.png';
 
 const colors = [
   { iconBg: "bg-blue-50 dark:bg-blue-900/30", hoverBorder: "hover:border-blue-200 dark:hover:border-blue-700" },
@@ -14,6 +16,19 @@ const colors = [
   { iconBg: "bg-rose-50 dark:bg-rose-900/30", hoverBorder: "hover:border-rose-200 dark:hover:border-rose-700" },
   { iconBg: "bg-purple-50 dark:bg-purple-900/30", hoverBorder: "hover:border-purple-200 dark:hover:border-purple-700" },
 ];
+
+const newMenus = [
+  {
+    menu_name: "Top Seller",
+    menu_path: "/top-seller",
+    menu_icon: award,
+  },
+  {
+    menu_name: "Top Items",
+    menu_path: "/top-items",
+    menu_icon: trophy,
+  }
+]
 
 const flattenMenus = (menus = []) =>
   menus.flatMap((menu) => [menu, ...(menu?.menus?.length ? flattenMenus(menu.menus) : [])]);
@@ -62,7 +77,7 @@ const Settings = () => {
         )}
 
         <article className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
-          {menu?.map((perm, index) => {
+          {[...newMenus, ...menu]?.map((perm, index) => {
             const color = colors[index % colors.length];
             return (
               <motion.div

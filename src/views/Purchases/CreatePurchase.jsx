@@ -19,16 +19,17 @@ import {
   FaIdBadge,
   FaIdCard,
   FaFileInvoice,
-  FaFileExcel
+  FaFileExcel,
+  FaStickyNote,
+  FaMoneyBillWave
 } from "react-icons/fa";
 import axios from "axios";
 import { useGetAllItemsQuery } from "../../../app/Features/itemsSlice";
 import api from "../../services/api";
 import { useGetAllSupplierQuery } from "../../../app/Features/suppliesSlice";
-import { toast } from "react-toastify";
 import { useLocation, useNavigate, useParams } from "react-router";
 import { useGetAllPurchaseQuery, useGetAllPurchaseRawQuery } from "../../../app/Features/purchasesSlice";
-import { Select, Card, Badge, Tag, Divider, Radio, DatePicker } from "antd";
+import { Select, Card, Badge, Tag, Divider, Radio, DatePicker, Alert } from "antd";
 const { Option } = Select;
 import dayjs from "dayjs";
 import { motion } from "framer-motion";
@@ -44,9 +45,19 @@ import * as XLSX from 'xlsx';
 import { BiImport } from "react-icons/bi";
 import readFormFile from "../../services/readFormFile";
 import ImportItemInList from "../../utils/ImportItemInList";
+import { useNotify } from "../../utils/NotificationProvider";
+import { IoIdCard } from "react-icons/io5";
+import { BsBank } from "react-icons/bs";
+import MiniVisaPaymentCard from "../../utils/MiniVisaCard";
+import PaymentModel from "../../utils/PaymentModal";
+import MiniShippingCard from "../../utils/MiniShippingCard";
+import ShippingModal from "../../utils/ShippingModal";
+import AlertBox from "../../services/AlertBox";
+import { PAYMENT_STATUS, TAX_OPTIONS } from "../../services/paymentService";
 
 const CreatePurchase = () => {
   const { t } = useTranslation();
+  const notify = useNotify();
   const options = [
     { label: t('products'), value: 0, className: 'label-1' },
     { label: t('rawMaterials'), value: 1, className: 'label-2' },
@@ -69,6 +80,15 @@ const CreatePurchase = () => {
     status: 'Pending',
     items: [],
     payments: [],
+    shipping_details: {
+      shipping_fee: 0,
+      carrier: '',
+      tracking_number: '',
+      shipping_date: null,
+      remark: '',
+      vai: 'truck'
+    },
+    payment_status: 'cash',
   });
   const targetFields = ["code", "quantity", "cost"];
 
@@ -86,8 +106,10 @@ const CreatePurchase = () => {
   const [quantity, setQuantity] = useState(1);
   const [itemCost, setItemCost] = useState(0);
   const [attributes, setAttributes] = useState([]);
-  const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentAmount, setPaymentAmount] = useState(0);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [showShippingModal, setShowShippingModal] = useState(false);
+  const [paymentData, setPaymentData] = useState(null);
   const [rawMaterials, setRawMaterials] = useState([]);
   const [debouncedSearch] = useDebounce(searchTerm, 500);
   const [currentPage, setCurrentPage] = useState(1);
@@ -102,6 +124,7 @@ const CreatePurchase = () => {
   const { refetch } = useGetAllPurchaseQuery({ token, limit: 10, page: 1, search: "" });
   const [errors, setErrors] = useState({});
   const [fieldErrors, setFieldErrors] = useState({});
+  const [showAlert, setShowAlert] = useState(false);
   const { refetch: refetchRawMaterials } = useGetAllPurchaseRawQuery({ token, limit: 10, page: 1, search: "" });
 
   const onChangeItemType = ({ target: { value } }) => {
@@ -151,7 +174,7 @@ const CreatePurchase = () => {
             sub_total: parseFloat(purchase.sub_total) || 0,
             tax_rate: parseFloat(purchase.tax_rate) || 0,
             tax_amount: parseFloat(purchase.tax_amount) || 0,
-            shipping_fee: parseFloat(purchase.shipping_fee) || 0,
+            shipping_fee: parseFloat(purchase?.shippings?.fee) || 0,
             total_amount: parseFloat(purchase.total_amount) || 0,
             total_paid: parseFloat(purchase.total_paid) || 0,
             balance: parseFloat(purchase.balance) || 0,
@@ -167,15 +190,22 @@ const CreatePurchase = () => {
               code: detail.item_code,
               image: detail.images?.[0]?.image || null,
             })),
-            payments: purchase.payments.map((p) => ({
-              amount: parseFloat(p.amount),
-              paid_at: p.paid_at.split(" ")[0],
-            })),
+            payments: purchase.payments,
+            shipping_details: {
+              shipping_fee: parseFloat(purchase?.shippings?.fee) || 0,
+              tracking_number: purchase?.shippings?.tracking_number || '',
+              carrier: purchase?.shippings?.carrier || '',
+              shipping_date: purchase?.shippings?.date || null,
+              ship_term: purchase?.shippings?.term || null,
+              remark: purchase?.shippings?.remark || '',
+              vai: purchase?.shippings?.vai || 'truck'
+            },
+            payment_status: purchase?.payment_status || 'cash'
           });
 
           setLoading(false);
         } catch (err) {
-          toast.error(t('failedToLoadPurchaseData'));
+          notify.error(t('failedToLoadPurchaseData'));
           console.error(err);
         }
       };
@@ -197,7 +227,7 @@ const CreatePurchase = () => {
             sub_total: parseFloat(purchase.sub_total) || 0,
             tax_rate: parseFloat(purchase.tax_rate) || 0,
             tax_amount: parseFloat(purchase.tax_amount) || 0,
-            shipping_fee: parseFloat(purchase.shipping_fee) || 0,
+            shipping_fee: parseFloat(purchase?.shippings?.fee) || 0,
             total_amount: parseFloat(purchase.total_amount) || 0,
             total_paid: parseFloat(purchase.total_paid) || 0,
             balance: parseFloat(purchase.balance) || 0,
@@ -213,15 +243,22 @@ const CreatePurchase = () => {
               code: detail.material_code,
               image: detail.material_image || null,
             })),
-            payments: purchase.payments.map((p) => ({
-              amount: parseFloat(p.amount),
-              paid_at: p.paid_at.split(" ")[0],
-            })),
+            payments: purchase.payments,
+            shipping_details: {
+              shipping_fee: parseFloat(purchase?.shippings?.fee) || 0,
+              tracking_number: purchase?.shippings?.tracking_number || '',
+              carrier: purchase?.shippings?.carrier || '',
+              shipping_date: purchase?.shippings?.date || null,
+              ship_term: purchase?.shippings?.term || null,
+              remark: purchase?.shippings?.remark || '',
+              vai: purchase?.shippings?.vai || 'truck'
+            },
+            payment_status: purchase.payment_status || 'cash'
           });
 
           setLoading(false);
         } catch (err) {
-          toast.error(t('failedToLoadPurchaseData'));
+          notify.error(t('failedToLoadPurchaseData'));
           console.error(err);
         }
       };
@@ -248,8 +285,8 @@ const CreatePurchase = () => {
       case 'purchase_date':
         if (!value) {
           newFieldErrors.purchase_date = t('required');
-        } else if (new Date(value) > new Date()) {
-          newFieldErrors.purchase_date = t('purchaseDateCannotBeInFuture');
+        // } else if (!isEditMode && new Date(value) > new Date()) {
+        //   newFieldErrors.purchase_date = t('purchaseDateCannotBeInFuture');
         } else {
           delete newFieldErrors.purchase_date;
         }
@@ -329,7 +366,7 @@ const CreatePurchase = () => {
   };
 
   const addItemToPurchase = (id) => {
-    console.log(id);
+    
     let item = null;
     if (itemType == 0) {
       item = items.find((item) => item.id == id);
@@ -341,23 +378,41 @@ const CreatePurchase = () => {
       return;
     }
 
-    
-    
+    const existItem = formData?.items?.some((i)=>i.item_id == id );
+    if(existItem){
+      setFormData((prev) => {
+        const items = prev.items.map((i) =>
+          i.item_id === id
+            ? {
+                ...i,
+                quantity: i.quantity + 1,
+              }
+            : i
+        );
 
-    const newItem = {
-      item_id: itemType == 0 ? item.id : item.id,
-      quantity: 1,
-      item_cost: 0,
-      attributes,
-      name: itemType == 0 ? item.name : item.material_name,
-      code: itemType == 0 ? item.code : item.material_code,
-      image: itemType == 0 ? item.image : item.material_image,
-    };
+        return {
+          ...prev,
+          items,
+        };
+      });
+    }else{
+      const newItem = {
+        item_id: id,
+        quantity: 1,
+        item_cost: 0,
+        attributes,
+        name: itemType == 0 ? item.name : item.material_name,
+        code: itemType == 0 ? item.code : item.material_code,
+        image: itemType == 0 ? item.image : item.material_image,
+      };
 
-    setFormData((prev) => ({
-      ...prev,
-      items: [...prev.items, newItem],
-    }));
+      setFormData((prev) => ({
+        ...prev,
+        items: [...prev.items, newItem],
+      }));
+    }
+
+    
 
     setSelectedItem(null);
     setQuantity(1);
@@ -368,6 +423,7 @@ const CreatePurchase = () => {
   };
 
   const removeItem = (index) => {
+    event.preventDefault();
     setFormData((prev) => ({
       ...prev,
       items: prev.items.filter((_, i) => i !== index),
@@ -378,8 +434,6 @@ const CreatePurchase = () => {
   };
 
   const handleQtyChange = (index, newQty) => {
-    console.log(newQty);
-    
     if (newQty <= 0) {
       setErrors({ items: t('invalidQuantity') });
       return;
@@ -421,15 +475,11 @@ const CreatePurchase = () => {
 
   const onAddPayment = async (value) => {
     setPaymentAmount(value)
-
     setFormData((prev) => ({
       ...prev,
-      payments: [...prev.payments, newPayment],
-      total_paid: prev.total_paid + paymentAmount,
-      balance: prev.total_amount - (prev.total_paid + paymentAmount),
+      total_paid: prev.total_paid + value,
+      balance: prev.total_amount - (prev.total_paid + value),
     }));
-
-    
   };
 
   const removePayment = (index) => {
@@ -479,7 +529,14 @@ const CreatePurchase = () => {
         ...prev,
         supplier_id: value,
       }));
-    } else if (name === "shipping_fee" || name === "tax_rate") {
+    } else if (name === "shipping_fee") {
+      const val = parseFloat(value) || 0;
+      setFormData((prev) => ({ 
+        ...prev, 
+        [name]: val,
+        shipping_details: { ...prev.shipping_details, shipping_fee: val }
+      }));
+    } else if (name === "tax_rate") {
       setFormData((prev) => ({ ...prev, [name]: parseFloat(value) || 0 }));
     } else {
       setFormData((prev) => ({ ...prev, [name]: value }));
@@ -489,6 +546,7 @@ const CreatePurchase = () => {
       setErrors(prev => ({ ...prev, [name]: '' }));
     }
   };
+
   const downloadTemplate = (targetFields, title) => {
     const normalizedFields = Array.isArray(targetFields?.[0])
       ? targetFields[0]
@@ -502,127 +560,118 @@ const CreatePurchase = () => {
   };
 
   const handleImportItems = async (event) => {
-      event.preventDefault();
-      const file = event.target.files?.[0];
+    event.preventDefault();
+    const file = event.target.files?.[0];
 
-      if (!file) {
-        return;
-      }
+    if (!file) {
+      return;
+    }
 
-      try {
-        const importedRows = await readFormFile(file, targetFields);
-        const res = await api.post(`/import-items-by-code/${itemType?'material':'items'}`, {data: importedRows,  }, {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`
-          },
-        });
-        if (res.status === 200) {
-          const sourceItems = res.data.data;
-          const importedItems = importedRows
-            .map((row) => {
-              // const rowName = String(row.name || "").trim().toLowerCase();
-              const rowCode = String(row.code || "").trim().toLowerCase();
-              const matchedItem = sourceItems.find((sourceItem) => {
-                // const sourceName = String(itemType === 1 ? sourceItem.material_name : sourceItem.name || "").trim().toLowerCase();
-                const sourceCode = String(itemType === 1 ? sourceItem.material_code : sourceItem.code || "").trim().toLowerCase();
-  
-                return (rowCode && sourceCode === rowCode);
-              });
-  
-              if (!matchedItem) {
-                return null;
-              }
-  
-              const quantity = Math.max(1, Number(row.quantity ?? row.stock) || 1);
-              const itemCost = Number(row.cost ?? row.price) || 0;
-  
-              return {
-                item_id: matchedItem.id,
-                quantity,
-                item_cost: itemCost,
-                total_amount: quantity * itemCost,
-                attributes: [],
-                name: itemType === 1 ? matchedItem.material_name : matchedItem.name,
-                code: itemType === 1 ? matchedItem.material_code : matchedItem.code,
-                image: itemType === 1 ? matchedItem.material_image : matchedItem.image,
-              };
-            })
-            .filter(Boolean);
-            if (importedItems.length === 0) {
-              toast.error("No matching items found in the import file.");
-              setErrors(prev => ({ ...prev, items: `Codes [${res.data.missing_codes}] are not found.` }));
-              return;
-            }
-            setFormData((prev) => {
-            const mergedItems = [...prev.items];
-
-            importedItems.forEach((importedItem) => {
-              const existingIndex = mergedItems.findIndex(
-                (item) => Number(item.item_id) === Number(importedItem.item_id)
-              );
-
-              if (existingIndex >= 0) {
-                mergedItems[existingIndex] = {
-                  ...mergedItems[existingIndex],
-                  quantity: Number(mergedItems[existingIndex].quantity || 0) + importedItem.quantity,
-                  item_cost: importedItem.item_cost || mergedItems[existingIndex].item_cost,
-                };
-                return;
-              }
-
-              mergedItems.push(importedItem);
+    try {
+      const importedRows = await readFormFile(file, targetFields);
+      const res = await api.post(`/import-items-by-code/${itemType?'material':'items'}`, {data: importedRows,  }, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+      });
+      if (res.status === 200) {
+        const sourceItems = res.data.data;
+        const importedItems = importedRows
+          .map((row) => {
+            const rowCode = String(row.code || "").trim().toLowerCase();
+            const matchedItem = sourceItems.find((sourceItem) => {
+              const sourceCode = String(itemType === 1 ? sourceItem.material_code : sourceItem.code || "").trim().toLowerCase();
+              return (rowCode && sourceCode === rowCode);
             });
 
+            if (!matchedItem) {
+              return null;
+            }
+
+            const quantity = Math.max(1, Number(row.quantity ?? row.stock) || 1);
+            const itemCost = Number(row.cost ?? row.price) || 0;
+
             return {
-              ...prev,
-              items: mergedItems,
+              item_id: matchedItem.id,
+              quantity,
+              item_cost: itemCost,
+              total_amount: quantity * itemCost,
+              attributes: [],
+              name: itemType === 1 ? matchedItem.material_name : matchedItem.name,
+              code: itemType === 1 ? matchedItem.material_code : matchedItem.code,
+              image: itemType === 1 ? matchedItem.material_image : matchedItem.image,
             };
+          })
+          .filter(Boolean);
+
+        if (importedItems.length === 0) {
+          notify.error(t('noMatchingItemsFound'));
+          setErrors(prev => ({ ...prev, items: t('codesNotFound', { codes: res.data.missing_codes }) }));
+          return;
+        }
+
+        setFormData((prev) => {
+          const mergedItems = [...prev.items];
+
+          importedItems.forEach((importedItem) => {
+            const existingIndex = mergedItems.findIndex(
+              (item) => Number(item.item_id) === Number(importedItem.item_id)
+            );
+
+            if (existingIndex >= 0) {
+              mergedItems[existingIndex] = {
+                ...mergedItems[existingIndex],
+                quantity: Number(mergedItems[existingIndex].quantity || 0) + importedItem.quantity,
+                item_cost: importedItem.item_cost || mergedItems[existingIndex].item_cost,
+              };
+              return;
+            }
+
+            mergedItems.push(importedItem);
           });
 
-          if(res.data.missing_codes){
-            setErrors(prev => ({ ...prev, items: `Codes [${res.data.missing_codes}] are not found.` }));
-            toast.warning(`Codes ${res.data.missing_codes} are not found.`);
-          }
+          return {
+            ...prev,
+            items: mergedItems,
+          };
+        });
 
-          // setErrors((prev) => ({ ...prev, items: null }));
-          toast.success(`Imported ${importedItems.length} item(s).`);
+        if (res.data.missing_codes) {
+          setErrors(prev => ({ ...prev, items: t('codesNotFound', { codes: res.data.missing_codes }) }));
+          notify.warning(t('codesNotFound', { codes: res.data.missing_codes }));
         }
-        
 
-
-        
-      } catch (error) {
-        console.error(error);
-        toast.error("Failed to import file. please check your file and try again.");
-        setErrors(prev => ({ ...prev, file: "Failed to import file. please check your file and try again." }));
-      } finally {
-        event.target.value = "";
+        notify.success(t('importedSuccess', { count: importedItems.length }));
       }
-    // };
-
-    // input.click();
+    } catch (error) {
+      console.error(error);
+      notify.error(t('failedToImportFile'));
+      setErrors(prev => ({ ...prev, file: t('failedToImportFile') }));
+    } finally {
+      event.target.value = "";
+    }
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
 
-    if (paymentAmount < 0) {
+    if (formData?.payments[0]?.amount < 0) {
       setErrors({ paymentModal: t('invalidPaymentAmount') });
       return;
     }
 
-    if (!paymentDate) {
+    if (formData?.payments[0]?.amount > 0 && !formData?.payments[0]?.paid_at) {
       setErrors({ paymentModal: t('selectPaymentDate') });
       return;
     }
 
-    if (Number(paymentAmount.toFixed(0)) > Number(formData.balance.toFixed(0))) {
+    if (Number(Number(formData?.payments[0]?.amount)?.toFixed(0)) > Number(formData?.balance.toFixed(0))) {
       setErrors({ paymentModal: t('paymentExceedBalance') });
       return;
     }
     if (!validateForm()) {
-      toast.error(t('pleaseFixErrors'));
+      notify.error(t('pleaseFixErrors'));
       const firstErrorField = Object.keys(fieldErrors)[0];
       if (firstErrorField) {
         const element = document.querySelector(`[name="${firstErrorField}"]`);
@@ -634,6 +683,11 @@ const CreatePurchase = () => {
       return;
     }
 
+    setShowAlert(true);
+  };
+
+  const handleConfirmSubmit = async () => {
+    setShowAlert(false);
     setLoading(true);
 
     try {
@@ -658,17 +712,22 @@ const CreatePurchase = () => {
           attributes: item.attributes,
           item_cost: parseFloat(item.item_cost),
         })),
-        payments: [
-          {
-            amount: paymentAmount,
-            paid_at: paymentDate,
-          }
-        ]
+        payments: formData.payments,
+        shippings: formData.shipping_details ? [{
+          fee: parseFloat(formData.shipping_details.shipping_fee) || 0,
+          carrier: formData.shipping_details.carrier,
+          vai: formData.shipping_details.vai,
+          tracking_number: formData.shipping_details.tracking_number,
+          remark: formData.shipping_details.remark,
+          date: formData.shipping_details.shipping_date,
+          term: formData.shipping_details.ship_term
+        }] : [],
+        payment_status: formData?.payment_status || 'cash'
       };
 
       if (isEditMode) {
         if (itemType != 0) {
-          await api.put(`/purchase_raw/${purchaseId}`, payload, {
+          await api.put(`/purchase_raw`, payload, {
             headers: { Authorization: `Bearer ${token}` },
           });
           refetchRawMaterials();
@@ -679,7 +738,7 @@ const CreatePurchase = () => {
           refetch();
         }
 
-        toast.success(t('updatePurchaseSuccess'));
+        notify.success(t('updatePurchaseSuccess'));
       } else {
         if (itemType != 0) {
           await api.post("/purchase_raw", payload, {
@@ -694,13 +753,13 @@ const CreatePurchase = () => {
           refetch();
         }
 
-        toast.success(t('createPurchaseSuccess'));
+        notify.success(t('createPurchaseSuccess'));
       }
       navigator(-1);
     } catch (err) {
       const errorMessage = err.response?.data?.message || t('errorProcessingPurchase');
       setErrors({ general: errorMessage });
-      toast.error(errorMessage);
+      notify.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -708,11 +767,9 @@ const CreatePurchase = () => {
 
   const onScrollFetch = (e) => {
     const target = e.target;
-    
     const nearBottom = target.scrollHeight - target.scrollTop - target.clientHeight < 100;
     const total = itemType == 0 ? itemData?.pagination?.total : rawData?.pagination?.total;
     const currentLength = itemType == 0 ? items?.length : rawMaterials?.length;
-    console.log(nearBottom, total, currentLength);
     if (nearBottom && total > currentLength) {
       if(itemType == 0 && !itemLoading){
         setLimit(prev => prev + 10);
@@ -736,6 +793,15 @@ const CreatePurchase = () => {
 
   return (
     <div className="view-page bg-transparent py-8 transition-colors">
+      <AlertBox
+        isOpen={showAlert}
+        title={isEditMode ? t('confirmUpdate') : t('confirmCreatePurchase')}
+        message={isEditMode ? t('confirmUpdatePurchaseMessage') : t('confirmCreatePurchaseMessage')}
+        onConfirm={handleConfirmSubmit}
+        onCancel={() => setShowAlert(false)}
+        confirmText={isEditMode ? t('update') : t('create')}
+        cancelText={t('cancel')}
+      />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-8">
@@ -748,18 +814,25 @@ const CreatePurchase = () => {
                 {isEditMode ? t('updatePurchaseOrderDetails') : t('addNewPurchaseToSystem')}
               </p>
             </div>
-            <Badge
-              count={isEditMode ? t('editMode') : t('new')}
-              className="bg-gradient-to-r from-blue-500 to-indigo-600"
-              style={{
-                backgroundColor: isEditMode ? '#3b82f6' : '#10b981',
-                color: 'white',
-                padding: '6px 16px',
-                borderRadius: '20px',
-                fontWeight: '600',
-                fontSize: '12px'
-              }}
-            />
+            <div className=" mt-6 flex justify-center items-center gap-2">
+                      <Button
+                        type="button"
+                        onClick={handleSubmit}
+                        disabled={loading}
+                        variant='primary'
+                        outline={false}
+                      >
+                        <FaSave />{loading ? t('processing') : isEditMode ? t('update') : t('create')}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant='danger'
+                        outline={true}
+                        onClick={() => navigator(-1)}
+                      >
+                        <FaTimes />{t('back')}
+                      </Button>
+                    </div>
           </div>
 
           {/* Validation Summary */}
@@ -769,26 +842,23 @@ const CreatePurchase = () => {
               animate={{ opacity: 1, y: 0 }}
               className="mb-6"
             >
-              <div className="border-red-200 bg-red-50 dark:!bg-red-900/10 dark:!border-red-800 shadow-sm">
-                <div className="flex items-start gap-3">
-                  <div className="p-2 bg-red-100 dark:!bg-red-900/30 rounded-lg">
-                    <FaExclamationTriangle className="text-red-600 dark:!text-red-400" />
-                  </div>
-                  <div>
-                    <h3 className="text-red-800 dark:!text-red-300 font-semibold mb-2">{t('pleaseFixErrors')}</h3>
-                    <ul className="list-disc list-inside text-red-700 dark:!text-red-400 text-sm space-y-1">
-                      {Object.values(errors).map((error, index) => (
-                        error && <li key={index}>{error}</li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-              </div>
+              <Alert
+                message={t('pleaseFixErrors')}
+                description={
+                  <ul className="list-disc list-inside">
+                    {Object.values(errors).map((error, index) => (
+                      error && <li key={index}>{error}</li>
+                    ))}
+                  </ul>
+                }
+                type="error"
+                showIcon
+              />
             </motion.div>
           )}
         </div>
 
-        <form onSubmit={handleSubmit}>
+        <form>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Left Column - Form Sections */}
             <div className="lg:col-span-2 space-y-6">
@@ -823,7 +893,6 @@ const CreatePurchase = () => {
                           subtitle: 'supplier_tel',
                         }}
                         onSelected={(value) => handleInputChange('supplier_id', value)}
-
                       />
                       
                       {fieldErrors.supplier_id && (
@@ -838,7 +907,7 @@ const CreatePurchase = () => {
                           {t('purchaseDate')} <span className="text-red-500">*</span>
                         </span>
                       </label>
-                      <DatePicker className="date-picker" size="large" onChange={(date, dateString) => handleInputChange('purchase_date', dateString)} />
+                      <DatePicker showTime value={formData.purchase_date?dayjs(formData.purchase_date):''} className="date-picker" size="large" onChange={(date, dateString) => handleInputChange('purchase_date', dateString)} />
                       {fieldErrors.purchase_date && (
                         <div className="text-red-500 text-sm mt-1">{fieldErrors.purchase_date}</div>
                       )}
@@ -860,12 +929,12 @@ const CreatePurchase = () => {
                       <h2 className="text-lg font-bold text-gray-800 dark:!text-gray-100">{t('purchaseItems')}</h2>
                     </div>
                     
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center grow gap-2">
                       <RichSearch
                         data={itemType==1? rawMaterials:items}
                         placeholder={t('addItem')}
                         keyFields={{
-                          id: itemType==1?'id':'id',
+                          id: 'id',
                           title: itemType==1?'material_name':'name',
                           image: itemType==1?'material_image':'image',
                           subtitle: itemType==1?'material_code':'code',
@@ -880,8 +949,6 @@ const CreatePurchase = () => {
                     </div>
                     
                   </div>
-
-                  
 
                   {formData.items.length === 0 ? (
                     <div className="text-center py-12 bg-gray-50 dark:!bg-blue-900/50 rounded-lg border-2 border-dashed border-gray-300 dark:!border-gray-700">
@@ -898,18 +965,17 @@ const CreatePurchase = () => {
                           <FaFileExcel className="text-white" size={18} />
                           <span>{t('downloadTemplate')}</span>
                         </Button>
-                        
                       </div>
                     </div>
                   ) : (
                     <ItemTable
-                    priceLabel='item_cost'
-                    t={t} 
-                    data={formData.items} 
-                    onDelete={removeItem} 
-                    onQtyChange={handleQtyChange} 
-                    onCostChange={handleCostChange}
-                    haedTitle={[{title: t('item'), key: 'item'}, {title: t('quantity'), key: 'quantity'}, {title: t('price'), key: 'price'}, {title: t('total'), key: 'total'}, {title: '', key: 'action'}]}
+                      priceLabel='item_cost'
+                      t={t} 
+                      data={formData.items} 
+                      onDelete={removeItem} 
+                      onQtyChange={handleQtyChange} 
+                      onCostChange={handleCostChange}
+                      haedTitle={[{title: t('item'), key: 'item'}, {title: t('quantity'), key: 'quantity'}, {title: t('price'), key: 'price'}, {title: t('total'), key: 'total'}, {title: '', key: 'action'}]}
                     />
                   )}
                   {errors.items && (
@@ -921,7 +987,7 @@ const CreatePurchase = () => {
               </motion.div>
 
               {/* Payments Section */}
-              <motion.div
+              {/* <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3, delay: 0.2 }}
@@ -930,7 +996,7 @@ const CreatePurchase = () => {
                   <div className="flex items-center justify-between mb-6">
                     <div className="flex items-center gap-2">
                       <FaDollarSign className="text-green-500" />
-                      <h2 className="text-lg font-bold text-gray-800 dark:!text-gray-100">{t('paymentInformation')}</h2>
+                      <h2 className="text-lg font-bold text-gray-800 dark:!text-gray-100">{t('payment')}</h2>
                     </div>
                   </div>
                   <div className="p-6 space-y-6 flex gap-3 flex-wrap">
@@ -943,12 +1009,10 @@ const CreatePurchase = () => {
                         value={paymentAmount}
                         onChange={(value) => {
                           setPaymentAmount(parseFloat(value) || 0);
-                          setFormData(prev => {
-                            return {
-                              ...prev,
-                              total_paid: value
-                            }
-                          })
+                          setFormData(prev => ({
+                            ...prev,
+                            total_paid: parseFloat(value) || 0
+                          }))
                         }}
                         size="large"
                         min="0"
@@ -982,12 +1046,61 @@ const CreatePurchase = () => {
                     </div>
                   )}
                 </div>
-              </motion.div>
+              </motion.div> */}
+              <div className="flex gap-4 items-end">
+                <MiniVisaPaymentCard onClick={()=>setShowPaymentModal(true)} payment={formData?.payments[formData?.payments?.length - 1]}/>
+                <MiniShippingCard onClick={() => setShowShippingModal(true)} shipping={formData.shipping_details} />
+              </div>
+              <PaymentModel
+                isShow={showPaymentModal} 
+                onClose={()=>setShowPaymentModal(false)}
+                data={formData?.payments[formData?.payments?.length - 1]}
+                balance={formData?.balance}
+                pay={formData?.total_paid}
+                onPayment={(data)=>{
+                  setPaymentData(data); 
+                  setShowPaymentModal(false); 
+                  const amount = parseFloat(data.amount) || 0;
+                  setPaymentAmount(amount);
+                  if (data.paid_at || data.payment_date) {
+                    setPaymentDate(data.paid_at || data.payment_date);
+                  }
+                  setFormData(prev => ({
+                    ...prev, 
+                    payments: [data],
+                    total_paid: amount,
+                  }))}
+                }
+
+              />
+              <ShippingModal
+                isShow={showShippingModal}
+                onClose={() => setShowShippingModal(false)}
+                data={formData.shipping_details}
+                purchaseDate={formData.purchase_date}
+                onConfirm={(data) => {
+                  setShowShippingModal(false);
+                  const newFee = parseFloat(data.shipping_fee) || 0;
+                  setFormData(prev => {
+                    const subTotal = prev.items.reduce((sum, item) => sum + (item.quantity * item.item_cost), 0);
+                    const taxAmount = subTotal * (prev.tax_rate / 100);
+                    const totalAmount = subTotal + taxAmount + newFee;
+                    const balance = totalAmount - prev.total_paid;
+                    return {
+                      ...prev,
+                      shipping_details: data,
+                      shipping_fee: newFee,
+                      total_amount: totalAmount,
+                      balance: balance < 0 ? 0 : balance
+                    };
+                  });
+                }}
+              />
+             {/* <MiniVisaPaymentCard  payment={formData?.payments[formData?.payments?.length-1]}/> */}
             </div>
 
             {/* Right Column - Summary */}
             <div className="space-y-6">
-              {/* Summary div */}
               <motion.div
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -1012,30 +1125,28 @@ const CreatePurchase = () => {
                             <FaPercent className="text-gray-400" />
                             {t('tax')}
                           </span>
-                          {/* <span className="font-bold text-gray-800 dark:!text-gray-100">${formData.tax_rate.toFixed(2)}</span> */}
                         </div>
-                        <Input
-                          type="number"
+                        <RichSearch
                           name="tax_rate"
+                          data={TAX_OPTIONS}
+                          keyFields={{
+                            id: 'value',
+                            title: "label"
+                          }}
                           value={formData.tax_rate}
-                          onChange={(value) => handleInputChange('tax_rate', value)}
+                          onSelected={(value) => handleInputChange('tax_rate', value)}
                           placeholder={t('taxRate')}
-                          className={`w-full ${fieldErrors.tax_rate ? 'border-red-500' : ''} dark:!bg-gray-700 dark:!text-gray-200 dark:!border-gray-600`}
-                          min="0"
-                          max="100"
-                          step="0.1"
                         />
                         {fieldErrors.tax_rate && (
                           <div className="text-red-500 text-sm mt-1">{fieldErrors.tax_rate}</div>
                         )}
                       </div>
-                      <div className=" grow">
+                      {/* <div className=" grow">
                         <div className="flex items-center justify-between mb-2">
                           <span className="text-gray-600 dark:!text-gray-400 flex items-center gap-2">
                             <FaTruck className="text-gray-400" />
                             {t('shippingFee')}
                           </span>
-                          {/* <span className="font-bold text-gray-800 dark:!text-gray-100">${formData.shipping_fee.toFixed(2)}</span> */}
                         </div>
                         <Input
                           type="number"
@@ -1050,14 +1161,35 @@ const CreatePurchase = () => {
                         {fieldErrors.shipping_fee && (
                           <div className="text-red-500 text-sm mt-1">{fieldErrors.shipping_fee}</div>
                         )}
+                      </div> */}
+                      <div className=" grow">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-gray-600 dark:!text-gray-400 flex items-center gap-2">
+                            <FaMoneyBillWave className="text-gray-400" />
+                            {t('paymentStatus')}
+                          </span>
+                        </div>
+                        <RichSearch
+                          data={PAYMENT_STATUS}
+                          keyFields={{
+                            id: 'value',
+                            title: 'label',
+                          }}
+                          placeholder={t('paymentStatus')}
+                          onSelected={(value) => handleInputChange('payment_status', value)}
+                          value={formData.payment_status}
+                        />
+                        {fieldErrors.payment_status && (
+                          <div className="text-red-500 text-sm mt-1">{fieldErrors.payment_status}</div>
+                        )}
                       </div>
+                      
                       <div className=" grow">
                         <div className="flex items-center justify-between mb-2">
                           <span className="text-gray-600 dark:!text-gray-400 flex items-center gap-2">
                             <FaTruck className="text-gray-400" />
                             {t('exchangeRate')}(៛)
                           </span>
-                          {/* <span className="font-bold text-gray-800 dark:!text-gray-100">៛{parseFloat(formData.exchange_rate).toFixed(2)}</span> */}
                         </div>
                         <Input
                           type="number"
@@ -1079,7 +1211,6 @@ const CreatePurchase = () => {
                             <FaFileInvoice className="text-gray-400" />
                             {t('invoiceId')}
                           </span>
-                          {/* <span className="font-bold text-gray-800 dark:!text-gray-100">៛{parseFloat(formData.exchange_rate).toFixed(2)}</span> */}
                         </div>
                         <Input
                           type="text"
@@ -1088,12 +1219,34 @@ const CreatePurchase = () => {
                           onChange={(value) => handleInputChange('invoice_number', value)}
                           placeholder={t('invoiceId')}
                           className={`w-full ${fieldErrors.invoice_number ? 'border-red-500' : ''} dark:!bg-gray-700 dark:!text-gray-200 dark:!border-gray-600`}
-
                         />
-                        {fieldErrors.invoice_number && (
-                          <div className="text-red-500 text-sm mt-1">{fieldErrors.exchange_rate}</div>
-                        )}
                       </div>
+                      {/* <div className=" grow">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-gray-600 dark:!text-gray-400 flex items-center gap-2">
+                            <FaCalendarAlt className="text-gray-400" />
+                            {t('shipTerm')} ({t('days')})
+                          </span>
+                        </div>
+                        <Input
+                          type="number"
+                          name="ship_term"
+                          value={formData.ship_term}
+                          onChange={(value) => handleInputChange('ship_term', value)}
+                          placeholder={t('shipTerm')}
+                          className={`w-full dark:!bg-gray-700 dark:!text-gray-200 dark:!border-gray-600`}
+                          min="0"
+                        />
+                      </div>
+                      <div className=" grow">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-gray-600 dark:!text-gray-400 flex items-center gap-2">
+                            <FaCalendarAlt className="text-gray-400" />
+                            {t('shipTerm')} ({t('days')})
+                          </span>
+                        </div>
+                        <DatePicker value={formData.purchase_date?dayjs(formData.purchase_date).add(formData.ship_term, 'day'):''} className="date-picker" size="large" />
+                      </div> */}
                     </div>
 
                     <Divider className="my-4 dark:!border-gray-700" />
@@ -1117,7 +1270,6 @@ const CreatePurchase = () => {
 
                     <Divider className="my-4 dark:!border-gray-700" />
 
-                    {/* Quick Stats */}
                     <div className="grid grid-cols-2 gap-4">
                       <div className="bg-blue-50 dark:!bg-blue-900/20 p-3 rounded-lg text-center">
                         <div className="text-sm text-gray-600 dark:!text-gray-400">{t('items')}</div>
@@ -1129,27 +1281,7 @@ const CreatePurchase = () => {
                       </div>
                     </div>
 
-                    {/* Action Buttons */}
-                    <div className=" mt-6 flex justify-center items-center gap-2">
-                      <Button
-                        type="submit"
-                        disabled={loading}
-                        variant='primary'
-                        outline={false}
-                      >
-                        <FaSave />Save
-                        {/* {loading ? t('processing') : isEditMode ? t('updatePurchase') : t('createPurchase')} */}
-                      </Button>
-                      <Button
-                        type="button"
-                        variant='danger'
-                        outline={true}
-                        onClick={() => window.history.back()}
-                      >
-                        <FaTimes />Back
-                        {/* {t('cancel')} */}
-                      </Button>
-                    </div>
+                    
                   </div>
                 </div>
               </motion.div>
@@ -1157,12 +1289,8 @@ const CreatePurchase = () => {
           </div>
         </form>
       </div>
-
-      
     </div>
   );
 };
 
 export default CreatePurchase;
-
-

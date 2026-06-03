@@ -40,7 +40,7 @@ const OrderReceipt = () => {
     return (
       <div className="w-full h-full flex justify-center items-center py-20">
         <Spin tip={t("loadingDetails")} size="large">
-          <div className="p-10 bg-gray-100 dark:bg-gray-800 rounded" />
+          <div className="p-10 bg-gray-100 rounded" />
         </Spin>
       </div>
     );
@@ -77,11 +77,11 @@ const OrderReceipt = () => {
   const formatMoney = (value) => `$${Number(value || 0).toFixed(2)}`;
 
   return (
-    <div className="view-page p-4 bg-transparent min-h-screen">
+    <div className="p-4 bg-transparent h-[100vh] overflow-auto">
       <div className="flex justify-between items-center mb-4 no-print max-w-xl mx-auto">
         <button
           onClick={() => navigator(-1)}
-          className="flex items-center text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+          className="flex items-center text-blue-600 hover:text-blue-800"
         >
           <IoArrowBackCircle className="mr-2" size={24} />
           {t("back")}
@@ -115,7 +115,7 @@ const OrderReceipt = () => {
       <div
         ref={receiptRef}
         id="receipt-print"
-        className="mx-auto max-w-xl rounded-[28px] border border-slate-200 bg-white px-8 py-10 text-slate-900 shadow-[0_20px_60px_-28px_rgba(15,23,42,0.28)] print:m-0 print:max-w-none print:rounded-none print:border-0 print:shadow-none sm:px-10"
+        className="mx-auto max-w-md border border-slate-200 bg-white px-8 py-10 text-slate-900 shadow-[0_20px_60px_-28px_rgba(15,23,42,0.28)] print:m-0 print:max-w-none print:rounded-none print:border-0 print:shadow-none sm:px-10"
       >
         <div className="text-center">
           {profile.image && !logoError && (
@@ -128,10 +128,10 @@ const OrderReceipt = () => {
               />
             </div>
           )}
-          <h1 className="text-[2.1rem] font-bold tracking-tight text-[#1e88e5]">
+          <h1 className="text-sm font-bold tracking-tight text-[#1e88e5]">
             វិក្កយបត្រ
           </h1>
-          <p className="mt-1 text-[2rem] font-light uppercase tracking-[0.08em] text-[#1e88e5]">
+          <p className="mt-1 text-sm font-light uppercase tracking-[0.08em] text-[#1e88e5]">
             Invoice
           </p>
           {profile.profile_name && (
@@ -141,51 +141,51 @@ const OrderReceipt = () => {
 
         <div className="mt-10 grid grid-cols-2 gap-x-8 gap-y-6 text-[15px] leading-8 sm:text-[17px]">
           <div>
-            <p className="font-semibold text-slate-900">លេខរៀងបញ្ជាទិញ#:</p>
-            <p className="text-[1.1em]">{order.order_no || id}</p>
+            <p className="font-semibold text-xs text-slate-900">លេខរៀងបញ្ជាទិញ#:</p>
+            <p className="text-xs">{order.order_no || id}</p>
           </div>
           <div>
-            <p className="font-semibold text-slate-900">កាលបរិច្ឆេទ:</p>
-            <p className="text-[1.1em]">{formatDate(order.order_date)}</p>
+            <p className="font-semibold text-xs text-slate-900">កាលបរិច្ឆេទ:</p>
+            <p className="text-xs">{formatDate(order.order_date)}</p>
           </div>
           <div>
-            <p className="font-semibold text-slate-900">លេខទូរស័ព្ទ:</p>
-            <p className="text-[1.1em]">{order.order_tel || profile.telephone || "N/A"}</p>
+            <p className="font-semibold text-xs text-slate-900">លេខទូរស័ព្ទ:</p>
+            <p className="text-xs">{order.order_tel || profile.telephone || "N/A"}</p>
           </div>
           <div>
-            <p className="font-semibold text-slate-900">អតិថិជន:</p>
-            <p className="text-[1.1em]">{order.customer_name || order.customer?.customer_name || order.order_tel || t("walkInCustomer")}</p>
+            <p className="font-semibold text-xs text-slate-900">អតិថិជន:</p>
+            <p className="text-xs">{order.customer_name || order.customer?.customer_name || order.order_tel || t("walkInCustomer")}</p>
           </div>
           <div>
-            <p className="font-semibold text-slate-900">ទីតាំង:</p>
-            <p className="text-[1.1em]">{order.order_address || profile.address || "N/A"}</p>
+            <p className="font-semibold text-xs text-slate-900">ទីតាំង:</p>
+            <p className="text-xs">{order.order_address || profile.address || "N/A"}</p>
           </div>
         </div>
 
         <div className="my-8 h-px bg-slate-200" />
 
         <div>
-          <table className="w-full border-separate border-spacing-0 text-[15px] sm:text-[16px]">
+          <table className="w-full border-separate border-spacing-0 text-xs">
             <thead>
-              <tr className="bg-[#eef6ff] dark:bg-gray-700 text-slate-900">
-                <th className="border-b-[3px] border-[#1e88e5] px-3 py-4 text-left text-lg font-semibold">ទំនិញ</th>
-                <th className="border-b-[3px] border-[#1e88e5] px-3 py-4 text-center text-lg font-semibold">បរិមាណ</th>
-                <th className="border-b-[3px] border-[#1e88e5] px-3 py-4 text-right text-lg font-semibold">តម្លៃ</th>
+              <tr className="bg-[#eef6ff] text-slate-900">
+                <th className="border-b-[3px] border-[#1e88e5] px-3 py-4 text-left font-semibold">ទំនិញ</th>
+                <th className="border-b-[3px] border-[#1e88e5] px-3 py-4 text-center font-semibold">បរិមាណ</th>
+                <th className="border-b-[3px] border-[#1e88e5] px-3 py-4 text-right font-semibold">តម្លៃ</th>
               </tr>
             </thead>
             <tbody>
               {items.map((item, index) => (
                 <tr key={index}>
-                  <td className="border-b border-dashed border-slate-300 px-3 py-5 align-top text-lg">
+                  <td className="border-b border-dashed border-slate-300 px-3 py-5 align-top">
                     <div className="font-medium uppercase tracking-[0.01em]">{item.item_name}</div>
                     {item.size_name && (
                       <div className="mt-1 text-sm text-slate-500">{t("size")}: {item.size_name}</div>
                     )}
                   </td>
-                  <td className="border-b border-dashed border-slate-300 px-3 py-5 text-center align-top text-lg">
+                  <td className="border-b border-dashed border-slate-300 px-3 py-5 text-center align-top">
                     {item.quantity} {item.scale_name}
                   </td>
-                  <td className="border-b border-dashed border-slate-300 px-3 py-5 text-right align-top text-lg">
+                  <td className="border-b border-dashed border-slate-300 px-3 py-5 text-right align-top">
                     {formatMoney(Number(item.price || 0) * Number(item.quantity || 0))}
                   </td>
                 </tr>
@@ -194,7 +194,7 @@ const OrderReceipt = () => {
           </table>
         </div>
 
-        <div className="mt-6 space-y-0 text-[18px]">
+        <div className="mt-6 space-y-0 text-xs">
           <div className="flex items-center justify-between border-b-[3px] border-[#1e88e5] px-2 py-4 font-medium">
             <span>សរុបដើម</span>
             <span>{formatMoney(subtotal)}</span>
@@ -211,7 +211,7 @@ const OrderReceipt = () => {
               <span>{formatMoney(deliveryFee)}</span>
             </div>
           )}
-          <div className="flex items-center justify-between border-b border-dashed border-slate-300 px-2 py-4 text-[20px] font-bold">
+          <div className="flex items-center justify-between border-b border-dashed border-slate-300 px-2 py-4 text-xs font-bold">
             <span>សរុបចុងក្រោយ</span>
             <span>{formatMoney(total)}</span>
           </div>
@@ -226,7 +226,7 @@ const OrderReceipt = () => {
                 alt={profile.profile_name || "Company"}
               />
             ) : (
-              <div className="text-center text-sm text-slate-300">
+              <div className="text-center text-xs text-slate-300">
                 <div className="mx-auto mb-2 h-16 w-16 rounded-full border border-slate-200" />
                 QR / Stamp
               </div>
@@ -234,9 +234,9 @@ const OrderReceipt = () => {
           </div>
         </div>
 
-        <div className="mt-7 text-center text-[15px] text-slate-500">
+        <div className="mt-7 text-center text-xs text-slate-500">
           <p>សូមអរគុណអ្នកទាំងអស់គ្នា!</p>
-          <p className="mt-6 text-[16px]">🙏 សូមអរគុណចំពោះការគាំទ្រ!</p>
+          <p className="mt-6 text-xs">🙏 សូមអរគុណចំពោះការគាំទ្រ!</p>
         </div>
       </div>
     </div>

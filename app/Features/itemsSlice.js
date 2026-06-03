@@ -34,6 +34,9 @@ export const itemsApi = createApi({
         deleteItem: builder.mutation({
             query: ({ id, token }) => deleteData(id, '/items', token),
         }),
+        getTopItems: builder.query({
+            query: ({operation, token, filter = 'price', limit = 5}) => queryData(`/top-items?operation=${operation}&filter=${filter}&limit=${limit}`, token),
+        }),
     }),
 });
 
@@ -47,5 +50,6 @@ export const {
     useGetAllItemInStockQuery,
     useGetAllItemsForMarketPlaceQuery,
     useGetItemMarketPlaceByIdQuery,
+    useGetTopItemsQuery,
 
 } = itemsApi;

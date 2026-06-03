@@ -29,7 +29,8 @@ const STOCK_FIELDS = [
 
 const StockByWarehouse = () => {
     const { t, i18n } = useTranslation();
-    const { warehouse_id } = useParams();
+    const { id } = useParams();
+    const warehouse_id = id ?? 1;
     const isKhmer = i18n.language === 'kh';
     const token = localStorage.getItem('token');
     const [selectedWarehouse, setSelectedWarehouse] = useState('');
@@ -443,7 +444,7 @@ const StockByWarehouse = () => {
                 ) : filteredStocks.length === 0 ? (
                     <EmptyState />
                 ) : viewMode === 'grid' ? (
-                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-4">
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
                         {filteredStocks.map((item) => (
                             <GridItem key={item.item_id} item={item} />
                         ))}

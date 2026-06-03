@@ -11,11 +11,10 @@ import {
   useGetAllItemsQuery,
   useGetItemByIdQuery,
 } from "../../../app/Features/itemsSlice";
-import { Divider, Select, Space } from "antd";
+import { Divider, Select, Space, Alert } from "antd";
 import { FaSave, FaTimes, FaPalette, FaTag, FaBox, FaTrash, FaPlus, FaEdit } from "react-icons/fa";
 import api from "../../services/api";
 import { useNavigate, useParams } from "react-router";
-import { toast } from "react-toastify";
 import { useGetAllSaleQuery } from "../../../app/Features/salesSlice";
 import { IoPulseOutline } from "react-icons/io5";
 import { useGetAllAttributeQuery } from "../../../app/Features/attributesSlice";
@@ -23,9 +22,11 @@ import { useTranslation } from "react-i18next";
 import Input from "../../utils/Input";
 import RichSearch from "../../utils/RichSearch";
 import Button from "../../utils/Button";
+import { useNotify } from "../../utils/NotificationProvider";
 
 const ItemForm = () => {
   const { t } = useTranslation();
+  const notify = useNotify();
   const { id } = useParams(); // Get item ID from URL if editing
   const isEditMode = Boolean(id);
   const navigator = useNavigate();
@@ -49,6 +50,7 @@ const ItemForm = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [highlightedIndex, setHighlightedIndex] = useState(0);
+  const [submissionError, setSubmissionError] = useState(null);
   const wrapperRef = useRef(null);
 
   // Item state following the response format
@@ -202,10 +204,10 @@ const ItemForm = () => {
 
   const handleConfirm = async () => {
     setLoading(true);
-    console.log(existingImageId);
+    setSubmissionError(null);
 
     if (!validateForm()) {
-      toast.error(t('fixValidationErrors', "Please fix all validation errors before submitting"));
+      notify.error(t('error'), t('fixValidationErrors', "Please fix all validation errors before submitting"));
       setLoading(false);
       return;
     }
@@ -282,16 +284,14 @@ const ItemForm = () => {
         refetch();
         if (isEditMode) refetchItem();
         saleContext.refetch();
-        toast.success(response.data.message || t('itemSuccess', `Item ${isEditMode ? 'updated' : 'created'} successfully`));
+        notify.success(t('success'), response.data.message || t(isEditMode ? 'itemUpdated' : 'itemCreated'));
         setLoading(false);
         navigator(-1);
-        // }
       }
     } catch (error) {
-      console.error("Error:", error);
-      toast.error(
-        error?.response?.data?.message || t('itemError', `An error occurred while ${isEditMode ? 'updating' : 'creating'} the item`)
-      );
+      const errMsg = error?.response?.data?.message || error?.message || t('operationFailed');
+      setSubmissionError(errMsg);
+      notify.error(t('error'), errMsg);
       setLoading(false);
     }
   };
@@ -301,10 +301,9 @@ const ItemForm = () => {
   }
 
   function handleSubmit() {
-
-    console.log(existingImageId);
+    setSubmissionError(null);
     if (!validateForm()) {
-      toast.error(t('fixValidationErrors', "Please fix all validation errors before submitting"));
+      notify.error(t('error'), t('fixValidationErrors', "Please fix all validation errors before submitting"));
 
       const firstErrorField = Object.keys(errors)[0];
       if (firstErrorField) {
@@ -514,6 +513,18 @@ const ItemForm = () => {
             {isEditMode ? t('updateProductInfo', 'Update product information') : t('addNewProductToInventory', 'Add a new product to your inventory system')}
           </p>
         </div>
+
+        {submissionError && (
+          <Alert
+            message={t('error', 'Error')}
+            description={submissionError}
+            type="error"
+            showIcon
+            closable
+            onClose={() => setSubmissionError(null)}
+            className="mb-6"
+          />
+        )}
 
         <div>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -761,19 +772,6 @@ const ItemForm = () => {
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                           {t('category')} <span className="text-red-500">*</span>
                         </label>
-                        {/* <select
-                          onChange={(e) => setItem({ ...item, category_id: e.target.value })}
-                          value={item.category_id}
-                          className={getSelectClass('category_id')}
-                          data-field="category_id"
-                        >
-                          <option value="" disabled>{t('selectCategory')}</option>
-                          {categories?.map(({ category_name, category_id }, index) => (
-                            <option key={index} value={category_id}>
-                              {category_name}
-                            </option>
-                          ))}
-                        </select> */}
                         <RichSearch
                           data={categories}
                           value={item.category_id}
@@ -927,8 +925,6 @@ const ItemForm = () => {
                             placeholder={t('selectAttributeName')}
                             size="large"
                             value={attribute.name}
-                            // dropdownClassName="dark:!bg-gray-800 dark:[&_.ant-select-item]:!text-white dark:[&_.ant-select-item-option-selected]:!bg-slate-700 dark:[&_.ant-select-item-option-active]:!bg-slate-700/80"
-                            // popupClassName="dark:[&_.ant-select-item]:!bg-slate-800 dark:[&_.ant-select-item]:!text-white dark:[&_.ant-select-item-option-selected]:!bg-slate-700 dark:[&_.ant-select-item-option-active]:!bg-slate-700/80"
                             onChange={(value) => updateAttribute(actualIndex, 'name', value)}
                             popupRender={menu => (
                               <div >

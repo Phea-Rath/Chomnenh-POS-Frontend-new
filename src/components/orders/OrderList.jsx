@@ -46,6 +46,7 @@ import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import { LiaUserEditSolid } from "react-icons/lia";
 import { BiEdit } from "react-icons/bi";
+import PaymentModel from "../../utils/PaymentModal";
 
 dayjs.extend(relativeTime);
 
@@ -169,10 +170,10 @@ const OrderList = () => {
     }
   };
 
-  const handlePaymentOrder = async () => {
+  const handlePaymentOrder = async (form) => {
     try {
       setLoading(true);
-      const res = await api.put(`/order_payment/${id}/${paymentAmount}`, null, {
+      const res = await api.put(`/order_payment/${id}/0`, form, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.data.status === 200) {
@@ -383,9 +384,9 @@ const OrderList = () => {
 
   const GridView = () => (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-      {(orderData?.data || []).map((order) => (
+      {(orderData?.data || []).map((order, idx) => (
         <div
-          
+          key={idx}
           className={`border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition-all overflow-hidden ${order.is_cancelled ? 'bg-red-50 dark:bg-red-900/10' : ''}`}
         >
           <div className="p-4">
@@ -458,6 +459,8 @@ const OrderList = () => {
                         onClick={() => {
                           setPaymentAmount(order.balance);
                           setBalanceAmount({ pay: order.payment, balance: order.balance });
+                          console.log({ pay: order.payment, balance: order.balance });
+                          
                           setId(order.order_id);
                           setShowPaymentModal(true);
                         }}
@@ -505,6 +508,7 @@ const OrderList = () => {
       <AlertBox isOpen={alertBox} title={t("deleteOrderTitle")} message={t("deleteOrderMessage")} onConfirm={handleConfirmDelete} onCancel={handleCancel} confirmText={t("delete")} cancelText={t("cancel")} confirmColor="error" />
       <AlertBox isOpen={alertBoxCancel} title={t("cancelOrderTitle")} message={t("cancelOrderMessage")} onConfirm={handleConfirmCancelOrder} onCancel={handleCancel} confirmText={t("cancelOrderAction")} cancelText={t("keepOrder")} confirmColor="warning" />
       <AlertBox isOpen={alertBoxUncancel} title={t("uncancelOrderTitle")} message={t("uncancelOrderMessage")} onConfirm={handleConfirmUncancelOrder} onCancel={handleCancel} confirmText={t("uncancelOrder")} cancelText={t("keepCancelled")} confirmColor="info" />
+      <PaymentModel isShow={showPaymentModal} onClose={()=>setShowPaymentModal(false)} onPayment={handlePaymentOrder} pay={balanceAmount.pay} balance={balanceAmount.balance} />
 
       <div className="mx-auto">
         {/* Header */}
@@ -605,7 +609,7 @@ const OrderList = () => {
         )}
       </div>
 
-      {showPaymentModal && (
+      {/* {showPaymentModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
           <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full border border-gray-200 dark:border-gray-700 shadow-xl">
             <h3 className="text-xl font-semibold mb-4 flex items-center gap-2 dark:text-white">
@@ -629,7 +633,7 @@ const OrderList = () => {
             </div>
           </motion.div>
         </div>
-      )}
+      )} */}
     </motion.div>
   );
 };

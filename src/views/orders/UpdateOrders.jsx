@@ -12,9 +12,9 @@ import {
   useGetStockByOrderIdQuery,
 } from "../../../app/Features/stocksSlice";
 import api from "../../services/api";
-import { message, Select, Tag, Card, Badge, Tooltip, Avatar, DatePicker } from "antd";
+import { message, Tag, Card, Badge, Tooltip, Avatar, DatePicker, Alert } from "antd";
 import { useGetAllItemInStockQuery, useGetAllItemsQuery } from "../../../app/Features/itemsSlice";
-import { toast } from "react-toastify";
+import { useNotify } from "../../utils/NotificationProvider";
 import { useGetAllCustomerQuery } from "../../../app/Features/customersSlice";
 import { FaPercent, FaTag, FaPalette, FaRuler, FaWeight } from "react-icons/fa";
 import { motion } from "framer-motion";
@@ -28,26 +28,23 @@ import { MdDeleteSweep } from "react-icons/md";
 import Input from "../../utils/Input";
 import dayjs from "dayjs";
 import Button from "../../utils/Button";
-const PAYMENT_METHODS = [
-  { value: "cash", label: "Cash" },
-  { value: "aba", label: "ABA" },
-  { value: "ac", label: "Aclida" },
-  { value: "bakong", label: "Bakong" },
-];
+import MiniVisaPaymentCard from "../../utils/MiniVisaCard";
+import PaymentModel from "../../utils/PaymentModal";
+import { PAYMENT_STATUS, TAX_OPTIONS } from "../../services/paymentService";
 
-const PAYMENT_STATUS = [
-  { value: "paid", label: "Paid" },
-  { value: "credit", label: "Credit" },
-  { value: "cod", label: "COD" },
-];  
+;
+
+
 const UpdateOrders = () => {
   const { t } = useTranslation();
+  const notify = useNotify();
   const navigator = useNavigate();
   const [returnItem, setReturnItem] = useState([]);
   const [saleItem, setSaleItem] = useState([]);
   const { id } = useParams();
   const [items, setItems] = useState([]);
   const [alertBox, setAlertBox] = useState(false);
+  const [alertError, setAlertError] = useState("");
   const [selectedItems, setSelectedItems] = useState([]);
   const { setLoading, darkMode } = useOutletsContext();
   const token = localStorage.getItem("token");
@@ -55,6 +52,7 @@ const UpdateOrders = () => {
   const [debouncedSearch] = useDebounce(searchItem, 500);
   const [currentPage, setCurrentPage] = useState(1);
   const [limit, setLimit] = useState(10);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
 
   // API hooks
   const orderContext = useGetAllOrderQuery(token);
@@ -90,6 +88,7 @@ const UpdateOrders = () => {
     payment: 0,
     order_tax: 0,
     items: [],
+    payments: [],
   });
 
   // Helper function to get item price based on sale type
@@ -193,6 +192,7 @@ const UpdateOrders = () => {
         balance: order.balance || 0,
         payment: order.payment || 0,
         items: order.items || [],
+        payments: order.payments || [],
       });
 
       // Process items with attributes
@@ -248,7 +248,8 @@ const UpdateOrders = () => {
     if (!item) return;
 
     if (item?.in_stock <= 0) {
-      toast.info(t('notEnoughStock'));
+      const msg = t('notEnoughStock');
+      notify.info(msg);
       return;
     }
 
@@ -501,6 +502,10 @@ const UpdateOrders = () => {
 
         return baseItem;
       }),
+      payments: (form.payments || []).map((payment) => ({
+        ...payment,
+        paid_at: payment.payment_date,
+      })),
     };
 
     const toDay = new Date();
@@ -565,13 +570,13 @@ const UpdateOrders = () => {
       if (orderRes.data.status === 200) {
         orderContext.refetch();
         refetch();
-        toast.success(orderRes.data.message || t("orderUpdatedSuccessfully"));
+        notify.success(orderRes.data.message || t("orderUpdatedSuccessfully"));
         navigator("/order-list");
       }
     } catch (error) {
-      toast.error(
-        error?.message || error || t("errorUpdatingOrder")
-      );
+      const errorMsg = error?.message || error || t("errorUpdatingOrder");
+      setAlertError(errorMsg);
+      notify.error(errorMsg);
     } finally {
       setLoading(false);
     }
@@ -586,6 +591,15 @@ const UpdateOrders = () => {
     >
       <section className="px-4 md:px-6 lg:px-8 py-6">
         {contextHolder}
+        {alertError && (
+          <Alert
+            message={alertError}
+            type="error"
+            closable
+            onClose={() => setAlertError("")}
+            className="mb-6"
+          />
+        )}
         <AlertBox
           isOpen={alertBox}
           title={t("confirmUpdate")}
@@ -609,11 +623,10 @@ const UpdateOrders = () => {
             <div className="flex items-center gap-3">
               <Link
                 to="/order-list"
-                className={`px-4 py-2 font-medium rounded-lg transition-colors ${
-                  darkMode 
-                    ? "bg-gray-800 text-gray-200 hover:bg-gray-700" 
+                className={`px-4 py-2 font-medium rounded-lg transition-colors ${darkMode
+                    ? "bg-gray-800 text-gray-200 hover:bg-gray-700"
                     : "bg-gray-200 text-gray-800 hover:bg-gray-300"
-                }`}
+                  }`}
               >
                 {t("backToOrders")}
               </Link>
@@ -630,14 +643,14 @@ const UpdateOrders = () => {
                     <h3 className={`text-lg font-semibold mb-2 ${darkMode ? "text-gray-200" : "text-gray-700"}`}>
                       {t("addItemsToOrder")}
                     </h3>
-                    
+
 
                     <RichSearch
                       onSelected={handleSelectItem}
                       placeholder={t("searchAndSelectItems")}
                       onSearch={(value) => setSearchItem(value)}
                       onScrollReader={onScrollFetch}
-                      keyFields={{id: 'id', title: 'name', subtitle: 'code', image: 'image', price: 'price', quantity: 'in_stock'}}
+                      keyFields={{ id: 'id', title: 'name', subtitle: 'code', image: 'image', price: 'price', quantity: 'in_stock' }}
                       data={items}
                     />
                   </div>
@@ -738,11 +751,10 @@ const UpdateOrders = () => {
                                     max={item?.in_stock + (orderData?.data?.items[index]?.quantity || 0)}
                                     value={item.quantity}
                                     onChange={(e) => handleItemChange(index, "quantity", e.target.value, item.id)}
-                                    className={`w-20 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-center ${
-                                      darkMode 
-                                        ? "bg-gray-700 border-gray-600 text-white" 
+                                    className={`w-20 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-center ${darkMode
+                                        ? "bg-gray-700 border-gray-600 text-white"
                                         : "bg-white border-gray-300"
-                                    }`}
+                                      }`}
                                   />
                                   <div className="ml-2 text-xs text-gray-500">
                                     {t("max")}: {item?.in_stock + (orderData?.data?.items[index]?.quantity || 0)}
@@ -758,8 +770,8 @@ const UpdateOrders = () => {
                               <td className="px-4 py-4">
                                 <div className={`font-bold ${darkMode ? "text-white" : "text-gray-900"}`}>
                                   ${
-                                    
-                                       (Number(item.price_per_unit || item.item_price || 0) * Number(item.quantity || 0))
+
+                                    (Number(item.price_per_unit || item.item_price || 0) * Number(item.quantity || 0))
                                   }
                                 </div>
                               </td>
@@ -767,13 +779,12 @@ const UpdateOrders = () => {
                                 <button
                                   type="button"
                                   onClick={() => handleRemoveItem(item)}
-                                  className={`px-4 py-2 cursor-pointer text-sm border rounded-lg transition-all duration-200 font-medium ${
-                                    darkMode
+                                  className={`px-4 py-2 cursor-pointer text-sm border rounded-lg transition-all duration-200 font-medium ${darkMode
                                       ? "bg-red-900/20 text-red-400 border-red-900/50 hover:bg-red-900/40"
                                       : "bg-gradient-to-r from-red-50 to-red-100 text-red-600 border-red-200 hover:from-red-100 hover:to-red-200"
-                                  }`}
+                                    }`}
                                 >
-                                  <MdDeleteSweep className="text-xl"/>
+                                  <MdDeleteSweep className="text-xl" />
                                 </button>
                               </td>
                             </tr>
@@ -787,7 +798,7 @@ const UpdateOrders = () => {
 
               {/* Right Column - Order & Payment Details */}
               <div className="space-y-6">
-                
+
 
                 {/* Order Details */}
                 <div>
@@ -795,37 +806,37 @@ const UpdateOrders = () => {
                     {t("orderDetails")}
                   </h3>
                   <div className="grow">
-                      <label className={`block text-sm font-medium mb-2 ${darkMode ? "text-gray-400" : "text-gray-700"}`}>
-                        {t("saleType")}
-                      </label>
-                      <div className="flex gap-3">
-                        <Button
-                          type="button"
-                          outline={form.sale_type !== 'sale'}
-                          onClick={() => handleFormChange({ target: { name: 'sale_type', value: 'sale' } })}
-                          
-                        >
-                          {t("retailSale")}
-                        </Button>
-                        <Button
-                          type="button"
-                          outline={form.sale_type !== 'wholesale'}
-                          onClick={() => handleFormChange({ target: { name: 'sale_type', value: 'wholesale' } })}
-                        >
-                          {t("wholesale")}
-                        </Button>
-                      </div>
+                    <label className={`block text-sm font-medium mb-2 ${darkMode ? "text-gray-400" : "text-gray-700"}`}>
+                      {t("saleType")}
+                    </label>
+                    <div className="flex gap-3">
+                      <Button
+                        type="button"
+                        outline={form.sale_type !== 'sale'}
+                        onClick={() => handleFormChange({ target: { name: 'sale_type', value: 'sale' } })}
+
+                      >
+                        {t("retailSale")}
+                      </Button>
+                      <Button
+                        type="button"
+                        outline={form.sale_type !== 'wholesale'}
+                        onClick={() => handleFormChange({ target: { name: 'sale_type', value: 'wholesale' } })}
+                      >
+                        {t("wholesale")}
+                      </Button>
                     </div>
+                  </div>
                   <div className="space-y-4 flex flex-wrap gap-4 mt-3">
                     {/* Sale Type Selection */}
-                    
+
 
                     {/* Customer Selection (for wholesale) */}
                     <div className={form.sale_type === "wholesale" ? "block grow" : "hidden"}>
                       <label className={`block text-sm font-medium mb-2 ${darkMode ? "text-gray-400" : "text-gray-700"}`}>
                         {t("customer")}
                       </label>
-                      
+
                       <RichSearch
                         data={customers?.data}
                         value={form.order_customer_id}
@@ -859,7 +870,7 @@ const UpdateOrders = () => {
                       <label className={`block text-sm font-medium mb-2 ${darkMode ? "text-gray-400" : "text-gray-700"}`}>
                         {t("customerTel")}
                       </label>
-                     
+
                       <Input
                         type="tel"
                         name="order_tel"
@@ -869,7 +880,7 @@ const UpdateOrders = () => {
                       />
                     </div>
 
-                    
+
 
                     {/* Order Date */}
                     <div>
@@ -879,19 +890,19 @@ const UpdateOrders = () => {
                       <DatePicker
                         type="date"
                         name="order_date"
-                        value={form.order_date?dayjs(form.order_date):''}
+                        value={form.order_date ? dayjs(form.order_date) : ''}
                         onChange={handleFormChange}
                         className="date-picker"
                       />
                     </div>
-                    {form.due_date&&<div>
+                    {form.due_date && <div>
                       <label className={`block text-sm font-medium mb-2 ${darkMode ? "text-gray-400" : "text-gray-700"}`}>
                         {t("dueDate")}
                       </label>
                       <DatePicker
                         type="date"
                         name="due_date"
-                        value={form.due_date?dayjs(form.due_date):''}
+                        value={form.due_date ? dayjs(form.due_date) : ''}
                         onChange={handleFormChange}
                         className="date-picker"
                       />
@@ -919,42 +930,25 @@ const UpdateOrders = () => {
                     {t("paymentInfo")}
                   </h3>
                   <div className="space-y-4 flex flex-wrap gap-3">
-                    {/* Payment Method */}
-                    <div className="grow" >
-                      <label className={`block text-sm font-medium mb-2 ${darkMode ? "text-gray-400" : "text-gray-700"}`}>
-                        {t("paymentMethod")}
-                      </label>
-                      <RichSearch
-                        data={PAYMENT_METHODS}
-                        keyFields={{
-                          id: 'value',
-                          title: 'label',
-                        }}
-                        onSelected={handleFormChange}
-                        value={form.order_payment_method}
-                      />
-                    </div>
+                    {/* Payment Card */}
+                      <MiniVisaPaymentCard  onClick={() => setShowPaymentModal(true)} payment={form.payments[form.payments.length - 1]} />
 
                     {/* Tax (for wholesale) */}
                     <div className={form.sale_type === "wholesale" ? "block grow" : "hidden"}>
                       <label className={`block text-sm font-medium mb-2 ${darkMode ? "text-gray-400" : "text-gray-700"}`}>
-                        {t("taxPercentage")}(%)
+                        {t("taxPercentage")}({form.order_tax}%)
                       </label>
                       <div className="relative">
-                        <Input
-                          type="number"
+                        <RichSearch
                           name="order_tax"
-                          min="0"
-                          max="100"
-                          step="0.1"
                           value={form.order_tax}
                           onChange={handleFormChange}
-                          className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                            darkMode 
-                              ? "bg-gray-700 border-gray-600 text-white" 
-                              : "bg-white border-gray-300"
-                          }`}
-                          placeholder="0.00"
+                          data={TAX_OPTIONS}
+                          keyFields={{
+                            id: "value",
+                            title: 'label'
+                          }}
+                          placeholder="Select Tax"
                         />
                       </div>
                     </div>
@@ -965,7 +959,7 @@ const UpdateOrders = () => {
                         {t("deliveryFee")}($)
                       </label>
                       <div className="relative">
-                        
+
                         <Input
                           type="number"
                           name="delivery_fee"
@@ -973,41 +967,38 @@ const UpdateOrders = () => {
                           step="0.01"
                           value={form.delivery_fee}
                           onChange={handleFormChange}
-                          className={`w-full pl-8 pr-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                            darkMode 
-                              ? "bg-gray-700 border-gray-600 text-white" 
+                          className={`w-full pl-8 pr-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${darkMode
+                              ? "bg-gray-700 border-gray-600 text-white"
                               : "bg-white border-gray-300"
-                          }`}
-                          placeholder="0.00"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Payment Amount */}
-                    <div className="grow">
-                      <label className={`block text-sm font-medium mb-2 ${darkMode ? "text-gray-400" : "text-gray-700"}`}>
-                        {t("paymentAmountLabel")}($)
-                      </label>
-                      <div className="relative">
-                        
-                        <Input
-                          type="number"
-                          name="payment"
-                          min="0"
-                          step="0.01"
-                          value={form.payment}
-                          onChange={handleFormChange}
-                          className={`w-full pl-8 pr-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                            darkMode 
-                              ? "bg-gray-700 border-gray-600 text-white" 
-                              : "bg-white border-gray-300"
-                          }`}
+                            }`}
                           placeholder="0.00"
                         />
                       </div>
                     </div>
                   </div>
                 </div>
+                <PaymentModel
+                  isShow={showPaymentModal}
+                  onClose={() => setShowPaymentModal(false)}
+                  data={form.payments[form.payments.length - 1]}
+                  balance={form.balance}
+                  pay={form.payment}
+                  onPayment={(data) => {
+                    setShowPaymentModal(false);
+                    setForm(prev => {
+                      const newPayment = parseFloat(data.amount) || 0;
+                      const updatedForm = {
+                        ...prev,
+                        payment: newPayment,
+                        order_payment_method: data.payment_method,
+                        payments: [data]
+                      };
+                      // Recalculate balance
+                      updatedForm.balance = updatedForm.order_total - newPayment;
+                      return updatedForm;
+                    });
+                  }}
+                />
                 <div>
                   <h3 className={`text-lg font-semibold mb-4 ${darkMode ? "text-gray-200" : "text-gray-700"}`}>
                     {t("orderSummary")}

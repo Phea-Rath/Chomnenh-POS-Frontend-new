@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router";
 import { FaSave, FaTimes, FaMapMarkerAlt, FaTruck, FaEnvelope, FaPhone, FaMapMarkedAlt, FaTrash, FaEdit, FaInfoCircle } from "react-icons/fa";
 import { IoMdCloudUpload } from "react-icons/io";
-import { toast } from "react-toastify";
+import { Alert } from "antd";
 import { useTranslation } from "react-i18next";
 import { useOutletsContext } from "../../layouts/Management";
 import {
@@ -14,9 +14,11 @@ import AlertBox from "../../services/AlertBox";
 import Input from "../../utils/Input";
 import RichSearch from "../../utils/RichSearch";
 import Button from "../../utils/Button";
+import { useNotify } from "../../utils/NotificationProvider";
 
 const SupplierForm = () => {
   const { t } = useTranslation();
+  const notify = useNotify();
   const navigate = useNavigate();
   const { id } = useParams();
   const token = localStorage.getItem("token");
@@ -33,6 +35,7 @@ const SupplierForm = () => {
   const [villages, setVillages] = useState([]);
   const [alertBox, setAlertBox] = useState(false);
   const [initialSupplier, setInitialSupplier] = useState(null);
+  const [submissionError, setSubmissionError] = useState(null);
 
   const [dataForm, setFormData] = useState({
     supplier_name: "",
@@ -170,7 +173,7 @@ const SupplierForm = () => {
     const file = e.target.files[0];
     if (file) {
       if (file.size > 2 * 1024 * 1024) {
-        toast.error(t('fileTooLarge', 'File too large (Max 2MB)'));
+        notify.error(t('error'), t('fileTooLarge', 'File too large (Max 2MB)'));
         return;
       }
       const reader = new FileReader();
@@ -187,16 +190,18 @@ const SupplierForm = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    setSubmissionError(null);
     if (validateForm()) {
       setAlertBox(true);
     } else {
-      toast.error(t('fixValidationErrors', 'Please fix validation errors'));
+      notify.error(t('error'), t('fixValidationErrors', 'Please fix validation errors'));
     }
   };
 
   const handleConfirm = async () => {
     setLoading(true);
     setAlertBox(false);
+    setSubmissionError(null);
 
     try {
       const formData = new FormData();
@@ -211,17 +216,19 @@ const SupplierForm = () => {
         await api.post(`/suppliers/${id}`, formData, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        toast.success(t('supplierUpdated', 'Supplier updated successfully!'));
+        notify.success(t('success'), t('supplierUpdated', 'Supplier updated successfully!'));
       } else {
         await api.post("/suppliers", formData, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        toast.success(t('supplierCreated', 'Supplier created successfully!'));
+        notify.success(t('success'), t('supplierCreated', 'Supplier created successfully!'));
       }
       refetch();
       navigate(-1);
     } catch (err) {
-      toast.error(err.response?.data?.message || t('operationFailed', 'Operation failed'));
+      const errMsg = err.response?.data?.message || err?.message || t('operationFailed', 'Operation failed');
+      setSubmissionError(errMsg);
+      notify.error(t('error'), errMsg);
     } finally {
       setLoading(false);
     }
@@ -240,7 +247,7 @@ const SupplierForm = () => {
 
   const getCurrentLocation = () => {
     if (!navigator.geolocation) {
-      toast.error(t('geolocationNotSupported', 'Geolocation not supported'));
+      notify.error(t('error'), t('geolocationNotSupported', 'Geolocation not supported'));
       return;
     }
     navigator.geolocation.getCurrentPosition(
@@ -251,7 +258,7 @@ const SupplierForm = () => {
         setFormData(prev => ({ ...prev, supplier_address: newAddress }));
         setLocation({ latitude: lat, longitude: lng });
       },
-      (err) => toast.error(err.message)
+      (err) => notify.error(t('error'), err.message)
     );
   };
 
@@ -272,13 +279,37 @@ const SupplierForm = () => {
 
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-            {isEditMode ? t('editSupplier') : t('createNewSupplier')}
-          </h1>
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+              {isEditMode ? t('editSupplier') : t('createNewSupplier')}
+            </h1>
+            {/* Actions */}
+            <div className="flex justify-end gap-4">
+              <Button variant="danger" outline onClick={() => navigate(-1)} disabled={loading}>
+                <FaTimes /> {t('cancel')}
+              </Button>
+              <Button onClick={handleSubmit} disabled={loading}>
+                {isEditMode ? <FaEdit /> : <FaSave />}
+                {loading ? t('saving') : isEditMode ? t('updateSupplier') : t('createSupplier')}
+              </Button>
+            </div>
+          </div>
           <p className="text-gray-600 dark:text-gray-400">
             {isEditMode ? t('updateSupplierInfo') : t('addNewSupplierSystem')}
           </p>
         </div>
+
+        {submissionError && (
+          <Alert
+            message={t('error', 'Error')}
+            description={submissionError}
+            type="error"
+            showIcon
+            closable
+            onClose={() => setSubmissionError(null)}
+            className="mb-6"
+          />
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left Column: Image & Location */}
@@ -323,8 +354,8 @@ const SupplierForm = () => {
                 <h2 className="text-lg font-semibold text-gray-800 dark:text-white">{t('basicInformation')}</h2>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
+              <div className="flex flex-wrap gap-6">
+                <div className="space-y-2 grow">
                   <label className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('supplierName')} <span className="text-red-500">*</span></label>
                   <Input
                     value={dataForm.supplier_name}
@@ -334,7 +365,7 @@ const SupplierForm = () => {
                   {errors.supplier_name && <p className="text-red-500 text-xs">{errors.supplier_name}</p>}
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-2 grow">
                   <label className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('phoneNumber')}</label>
                   <Input
                     value={dataForm.supplier_tel}
@@ -344,7 +375,7 @@ const SupplierForm = () => {
                   {errors.supplier_tel && <p className="text-red-500 text-xs">{errors.supplier_tel}</p>}
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-2 grow">
                   <label className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('emailAddress')}</label>
                   <Input
                     type="email"
@@ -354,7 +385,7 @@ const SupplierForm = () => {
                   />
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-2 grow">
                   <label className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('supplierAddress')} <span className="text-red-500">*</span></label>
                   <div className="flex gap-2">
                     <Input
@@ -369,7 +400,7 @@ const SupplierForm = () => {
                   {errors.supplier_address && <p className="text-red-500 text-xs">{errors.supplier_address}</p>}
                 </div>
 
-                <div className="md:col-span-2 space-y-2">
+                <div className="md:col-span-2 space-y-2 grow">
                   <label className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('description')}</label>
                   <textarea
                     className={textareaClasses}
@@ -388,8 +419,8 @@ const SupplierForm = () => {
                 <h2 className="text-lg font-semibold text-gray-800 dark:text-white">{t('geographicalLocation')}</h2>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
+              <div className="flex flex-wrap gap-6">
+                <div className="space-y-2 grow">
                   <label className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('province')}</label>
                   <RichSearch
                     data={provinces}
@@ -406,7 +437,7 @@ const SupplierForm = () => {
                   />
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-2 grow">
                   <label className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('district')}</label>
                   <RichSearch
                     data={districts}
@@ -424,7 +455,7 @@ const SupplierForm = () => {
                   />
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-2 grow">
                   <label className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('commune')}</label>
                   <RichSearch
                     data={communes}
@@ -442,7 +473,7 @@ const SupplierForm = () => {
                   />
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-2 grow">
                   <label className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('village')}</label>
                   <RichSearch
                     data={villages}
@@ -487,16 +518,7 @@ const SupplierForm = () => {
               )}
             </div>
 
-            {/* Actions */}
-            <div className="flex justify-end gap-4 pt-6 mt-6 border-t border-gray-200 dark:border-gray-700">
-              <Button variant="danger" outline onClick={() => navigate(-1)} disabled={loading}>
-                <FaTimes /> {t('cancel')}
-              </Button>
-              <Button onClick={handleSubmit} disabled={loading}>
-                {isEditMode ? <FaEdit /> : <FaSave />}
-                {loading ? t('saving') : isEditMode ? t('updateSupplier') : t('createSupplier')}
-              </Button>
-            </div>
+            
           </div>
         </div>
       </div>

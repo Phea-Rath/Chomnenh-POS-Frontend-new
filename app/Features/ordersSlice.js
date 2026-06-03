@@ -110,7 +110,10 @@ export const ordersApi = createApi({
     viewOrder: builder.mutation({
       query: ({ id, token }) => uncancelData(id, "/view_order", token),
     }),
-  }),
+    getTopSeller: builder.query({
+      query: ({ token, filter = "price" }) => queryData(`/top-seller?filter=${filter}`, token),
+    }),
+  })
 });
 
 export const {
@@ -130,4 +133,5 @@ export const {
   useGetPersentOrderMonthlyQuery,
   useGetAllDeliveryTrackingQuery,
   useGetOrderInvoiceQuery,
+  useGetTopSellerQuery,
 } = ordersApi;

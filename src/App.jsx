@@ -117,6 +117,8 @@ import OrderInvoiceForm from "./components/orders/OrderInvoiceForm";
 import OrderInvoiceList from "./components/orders/OrderInvoiceList";
 import StockInvoice from "./components/stocks/StockInvoice";
 import IncomeStatement from "./components/Reports/IncomeStatement";
+import TopSeller from "./components/top/TopSeller";
+import TopItemsAndRawMaterials from "./components/top/TopItemsAndRawMaterials";
 
 
 function ProtectedRoute({ children }) {
@@ -595,7 +597,17 @@ const router = createBrowserRouter([
       {
         path: 'import-tool',
         element: <ImportTools />
+      },
+      {
+        path: 'top-seller',
+        element: <TopSeller />
+      },
+      {
+        path: 'top-items',
+        element: <TopItemsAndRawMaterials />
       }
+
+
 
     ],
   },

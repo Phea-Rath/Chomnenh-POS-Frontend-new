@@ -22,6 +22,9 @@ export const rawMaterialsApi = createApi({
         deleteRawMaterial: builder.mutation({
             query: ({ id, token }) => deleteData(id, '/raw_materials', token),
         }),
+        getTopRawMaterials: builder.query({
+            query: ({ token, filter = 'quantity', limit = 5, operation }) => queryData(`/top-raw-materials?filter=${filter}&limit=${limit}&operation=${operation}`, token),
+        }),
     }),
 });
 
@@ -30,5 +33,6 @@ export const {
     useGetRawMaterialByIdQuery,
     useCreateRawMaterialMutation,
     useUpdateRawMaterialMutation,
-    useDeleteRawMaterialMutation
+    useDeleteRawMaterialMutation,
+    useGetTopRawMaterialsQuery,
 } = rawMaterialsApi;

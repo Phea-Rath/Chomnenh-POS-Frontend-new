@@ -19,7 +19,7 @@ import dayjs from 'dayjs';
 import { FaBox } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import { useTranslation } from 'react-i18next';
-import { DatePicker, Checkbox } from 'antd';
+import { DatePicker, Checkbox, Spin } from 'antd';
 import api from '../../services/api';
 import Input from '../../utils/Input';
 import RichSearch from '../../utils/RichSearch';
@@ -28,6 +28,9 @@ import Modal from '../../utils/Modal';
 import { useGetAllItemsQuery } from '../../../app/Features/itemsSlice';
 import { useGetAllRawMaterialQuery } from '../../../app/Features/RawMaterialSlice';
 import { useGetAllProductionQuery } from '../../../app/Features/productSlice';
+import { MdWarning } from 'react-icons/md';
+import { BiCheckCircle } from 'react-icons/bi';
+import { LoadingOutlined } from '@ant-design/icons';
 
 const defaultForm = {
   item_id: '',
@@ -40,7 +43,7 @@ const defaultModalState = {
   raw_material_id: '',
   quantity: '',
   unit: '',
-  cost_per_unit: '',
+  total_cost: '',
 };
 
 const ProductionForm = () => {
@@ -186,6 +189,7 @@ const ProductionForm = () => {
           })
         );
         setSelectedRawMaterials(detailsWithCost);
+        
       }
       setShowTemplateModal(false);
       toast.success(t('templateAppliedSuccess'));
@@ -288,9 +292,56 @@ const ProductionForm = () => {
   }, [rawMaterials]);
 
   const availableRawMaterials = useMemo(() => {
-    const selectedIds = selectedRawMaterials.map((rm) => rm.raw_material_id);
-    return Array.from(materialLookup.values()).filter((rm) => !selectedIds.includes(rm.id));
+    const selectedIds = selectedRawMaterials.map((rm) => String(rm.raw_material_id));
+    return Array.from(materialLookup.values()).filter((rm) => !selectedIds.includes(String(rm.id)));
   }, [materialLookup, selectedRawMaterials]);
+
+  // Sync selected material details with full raw materials data when available
+  useEffect(() => {
+    if (materialLookup.size > 0 && selectedRawMaterials.length > 0) {
+      setSelectedRawMaterials(prev => {
+        let hasChanged = false;
+        const updated = prev.map(mat => {
+          const lookup = materialLookup.get(String(mat.raw_material_id));
+          if (lookup) {
+            const nameChanged = lookup.material_name && lookup.material_name !== mat.material_name;
+            const codeChanged = lookup.material_code && lookup.material_code !== mat.material_code;
+            const stockChanged = lookup.in_stock !== undefined && lookup.in_stock !== mat.in_stock;
+            const unitChanged = lookup.primary_unit && lookup.primary_unit !== mat.primary_unit;
+
+            if (nameChanged || codeChanged || stockChanged || unitChanged) {
+              hasChanged = true;
+              return {
+                ...mat,
+                material_name: lookup.material_name || mat.material_name,
+                material_code: lookup.material_code || mat.material_code,
+                primary_unit: lookup.primary_unit || mat.primary_unit,
+                secondary_unit: lookup.secondary_unit || mat.secondary_unit,
+                in_stock: lookup.in_stock ?? mat.in_stock,
+              };
+            }
+          }
+          return mat;
+        });
+        return hasChanged ? updated : prev;
+      });
+    }
+  }, [materialLookup]);
+
+  // Sync selected item details
+  useEffect(() => {
+    if (items.length > 0 && form.item_id) {
+      const found = items.find(i => String(i.item_id) === String(form.item_id));
+      if (found) {
+        setSelectedItem(prev => {
+          if (!prev || String(prev.item_id) !== String(found.item_id) || prev.name !== found.name) {
+            return found;
+          }
+          return prev;
+        });
+      }
+    }
+  }, [items, form.item_id]);
 
   const totalCost = useMemo(() => {
     return selectedRawMaterials.reduce((sum, material) => {
@@ -397,7 +448,7 @@ const ProductionForm = () => {
       raw_material_id: materialId,
       quantity: '',
       unit: material?.primary_unit || '',
-      cost_per_unit: '',
+      total_cost: '',
     });
     setModalError('');
   };
@@ -417,7 +468,7 @@ const ProductionForm = () => {
 
       if (response.status === 200) {
         const cost = Number(response.data?.data?.totalCost) || 0;
-        setModalForm((prev) => ({ ...prev, cost_per_unit: cost }));
+        setModalForm((prev) => ({ ...prev, total_cost: cost }));
       }
     } catch (error) {
       console.error(error);
@@ -430,6 +481,7 @@ const ProductionForm = () => {
   const handleModalQuantityCostRefresh = async (nextState = modalForm, nextMaterial = selectedRawMaterialForModal) => {
     const quantity = Number(nextState.quantity);
     if (!quantity || !nextMaterial) {
+      setModalForm((prev) => ({ ...prev, total_cost: '' }));
       return;
     }
 
@@ -450,6 +502,8 @@ const ProductionForm = () => {
 
   const handleAddRawMaterial = () => {
     const selectedMaterial = materialLookup.get(String(modalForm.raw_material_id));
+    console.log(selectedMaterial);
+    
 
     if (!selectedMaterial) {
       setModalError(t('selectRawMaterial'));
@@ -461,7 +515,7 @@ const ProductionForm = () => {
       return;
     }
 
-    if (!modalForm.cost_per_unit || Number(modalForm.cost_per_unit) <= 0) {
+    if (!modalForm.total_cost || Number(modalForm.total_cost) <= 0) {
       setModalError(t('enterCost'));
       return;
     }
@@ -501,13 +555,12 @@ const ProductionForm = () => {
       secondary_unit: selectedMaterial.secondary_unit || '',
       selected_unit: selectedUnit,
       quantity: quantityInPrimaryUnit,
-      cost_per_unit: Number(modalForm.cost_per_unit),
+      cost_per_unit: Number(modalForm.total_cost / quantityInPrimaryUnit), 
       in_stock: Number(selectedMaterial.in_stock || 0),
     };
 
     setSelectedRawMaterials((prev) => [...prev, newMaterial]);
     setFormErrors((prev) => ({ ...prev, raw_materials: '' }));
-    toast.success(t('rawMaterialAddedSuccess'));
     resetModal();
   };
 
@@ -556,7 +609,7 @@ const ProductionForm = () => {
           if (response.status === 200) {
             const cost = Number(response.data?.data?.totalCost) || 0;
             setSelectedRawMaterials(prev => prev.map(m => 
-              m.key === key ? { ...m, cost_per_unit: cost } : m
+              m.key === key ? { ...m, cost_per_unit: cost / m.quantity } : m
             ));
           }
         } catch (error) {
@@ -731,15 +784,16 @@ const ProductionForm = () => {
                 <label htmlFor="production_date" className="text-sm font-medium text-gray-700 dark:text-gray-300">
                   {t('productionDate')}
                 </label>
-                <input
+                <DatePicker
                   id="production_date"
                   type="date"
-                  value={form.production_date}
-                  onChange={(event) => {
-                    setForm((prev) => ({ ...prev, production_date: event.target.value }));
+                  showTime
+                  value={form.production_date?dayjs(form.production_date) : null}
+                  onChange={(date, dateString) => {
+                    setForm((prev) => ({ ...prev, production_date: dateString }));
                     setFormErrors((prev) => ({ ...prev, production_date: '' }));
                   }}
-                  className="rounded-sm border border-gray-300 bg-transparent px-4 py-2 text-gray-900 outline-none transition-all focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-gray-400 dark:text-white"
+                  className="date-picker"
                 />
                 {formErrors.production_date ? (
                   <p className="text-sm text-red-500">{formErrors.production_date}</p>
@@ -798,20 +852,41 @@ const ProductionForm = () => {
           </div>
 
           <div>
-            <div className="mb-4 flex items-center justify-between gap-4">
+            <div className="mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <h2 className="flex items-center gap-2 text-lg font-semibold text-gray-800 dark:text-gray-100">
                 <LuListChecks className="text-green-500" />
                 {t('rawMaterialsConsumption')}
               </h2>
 
-              <Button
-                type="button"
-                onClick={() => setRawMaterialModalVisible(true)}
-                disabled={!availableRawMaterials.length}
-              >
-                <LuPlus />
-                {t('add')}
-              </Button>
+              <div className="flex items-center gap-2">
+                <div className="relative flex-1 sm:min-w-64">
+                  <LuSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder={t('searchRawMaterials')}
+                    value={rawSearch}
+                    onChange={(e) => setRawSearch(e.target.value)}
+                    className="w-full border border-gray-300 bg-white py-1.5 pl-10 pr-4 text-sm text-gray-900 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-900 dark:text-white rounded-md"
+                  />
+                  {rawSearch && (
+                    <button
+                      type="button"
+                      onClick={() => setRawSearch('')}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
+                      <LuX size={14} />
+                    </button>
+                  )}
+                </div>
+                <Button
+                  type="button"
+                  onClick={() => setRawMaterialModalVisible(true)}
+                  disabled={!availableRawMaterials.length && !rawSearch}
+                >
+                  <LuPlus />
+                  {t('add')}
+                </Button>
+              </div>
             </div>
 
             {formErrors.raw_materials ? (
@@ -834,7 +909,11 @@ const ProductionForm = () => {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-800">
-                      {selectedRawMaterials.map((material) => {
+                      {selectedRawMaterials
+                        .filter(m => !rawSearch || 
+                          m.material_name?.toLowerCase().includes(rawSearch.toLowerCase()) || 
+                          m.material_code?.toLowerCase().includes(rawSearch.toLowerCase()))
+                        .map((material) => {
                         const rowTotal = (Number(material.quantity) || 0) * (Number(material.cost_per_unit) || 0);
                         return (
                           <tr key={material.key} className="align-top">
@@ -1005,6 +1084,8 @@ const ProductionForm = () => {
                   <Input
                     type="number"
                     min={0.01}
+                    spinner={false}
+                    disabled={!selectedRawMaterialForModal}
                     step={0.01}
                     max={selectedRawMaterialForModal?.in_stock}
                     value={modalForm.quantity}
@@ -1046,11 +1127,11 @@ const ProductionForm = () => {
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                {/* <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
                   {t('costPerUnit')}
-                </label>
-                <div className="rounded-sm border border-gray-300 bg-gray-50 px-4 py-3 text-gray-900 dark:border-gray-400 dark:bg-gray-900/30 dark:text-white">
-                  {costLoading ? t('loading') : Number(modalForm.cost_per_unit || 0).toFixed(2)}
+                </label> */}
+                <div className="text-xs">
+                  {costLoading ?<span className='flex items-center gap-1 text-gray-400'> <Spin indicator={<LoadingOutlined spin />} size="middle" /> {t('checkingInStock')+'...'}</span> : !modalForm.total_cost ?<span className='flex items-center text-yellow-500 gap-1'> <MdWarning className='text-xl'/> {t('pleaseSelectARawMaterialAndQuantity')}</span> : modalForm.total_cost > 0? <span className='flex items-center text-green-500 gap-1'> <BiCheckCircle className='text-xl'/> {t('inStock')}</span> : <span  className='flex items-center text-orange-500 gap-1'> <MdWarning className='text-xl'/> {t('outOfStock')}</span>}
                 </div>
               </div>
 

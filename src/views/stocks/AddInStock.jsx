@@ -8,16 +8,10 @@ import {
   useGetAllItemsQuery,
 } from "../../../app/Features/itemsSlice";
 import { useGetAllWarehousesQuery } from "../../../app/Features/warehousesSlice";
-import {
-  useCreateStockMutation,
-  useGetAllStockQuery,
-  useUpdateStockMutation,
-  useGetStockByIdQuery,
-} from "../../../app/Features/stocksSlice";
-import { Select, Tag, Avatar, DatePicker } from "antd";
+import { useGetAllStockQuery, useGetStockByIdQuery } from "../../../app/Features/stocksSlice";
+import { Select, Tag, Avatar, DatePicker, Alert } from "antd";
 import { useGetAllSaleQuery } from "../../../app/Features/salesSlice";
 import { useGetAllWasteQuery } from "../../../app/Features/notificationSlice";
-import { toast } from "react-toastify";
 import { FaTrash, FaEdit, FaSave, FaTimes, FaBox, FaPalette, FaRuler } from "react-icons/fa";
 import { MdLocalShipping } from "react-icons/md";
 import dayjs from 'dayjs'; // Import dayjs instead of moment
@@ -26,11 +20,13 @@ import { useTranslation } from "react-i18next";
 import Button from "../../utils/Button";
 import RichSearch from "../../utils/RichSearch";
 import Input from "../../utils/Input";
+import { useNotify } from "../../utils/NotificationProvider";
 
 const { Option } = Select;
 
 const AddInStock = () => {
   const { t } = useTranslation();
+  const notify = useNotify();
   const { id } = useParams(); // Get stock ID from URL if editing
   const isEditMode = Boolean(id);
   const [stocktype, setstocktype] = useState([]);
@@ -55,9 +51,10 @@ const AddInStock = () => {
   const itemsRes = useGetAllItemsQuery({ limit: limit, page: currentPage, search: debouncedSearch, token });
   const saleItemContext = useGetAllSaleQuery(token);
   const warehouseRes = useGetAllWarehousesQuery(token);
-  const [createStock] = useCreateStockMutation();
-  const [updateStock] = useUpdateStockMutation();
+  // const [createStock] = useCreateStockMutation();
+  // const [updateStock] = useUpdateStockMutation();
   const [attributes, setAttribute] = useState([]);
+  const [errors, setErrors] = useState({});
   const { refetch: refetchItems } = useGetAllItemsQuery({ limit: 10, page: 1, search: '', token });
   const { refetch: refetchSales } = useGetAllSaleQuery({ limit: 10, page: 1, search: '', token });
 
@@ -306,8 +303,8 @@ const AddInStock = () => {
         refetchSales();
         wasteRefetch();
         setLoading(false);
-        toast.success(
-          response.data.message || `Stock ${isEditMode ? 'updated' : 'created'} successfully`
+        notify.success(
+          response.data.message || (isEditMode ? t('stockUpdatedSuccess') : t('stockCreatedSuccess'))
         );
         navigator(-1);
       } else {
@@ -315,11 +312,9 @@ const AddInStock = () => {
       }
     } catch (error) {
       setLoading(false);
-      toast.error(
-        error?.response?.data?.message ||
-        error?.message ||
-        `An error occurred while ${isEditMode ? 'updating' : 'creating'} the stock`
-      );
+      const errorMessage = error?.response?.data?.message || error?.message || t('errorProcessingStock');
+      setErrors({ general: errorMessage });
+      notify.error(errorMessage);
     }
   }
 
@@ -330,7 +325,7 @@ const AddInStock = () => {
   function handleSubmit(e) {
     e.preventDefault();
     if (selectItems.length === 0) {
-      toast.error(t("pleaseAddAtLeastOneItem"));
+      notify.error(t("pleaseAddAtLeastOneItem"));
       return;
     }
     setAlertBox(true);
@@ -385,16 +380,57 @@ const AddInStock = () => {
 
       <div className="mx-auto">
         {/* Header */}
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <MdLocalShipping className="text-2xl text-blue-600 dark:text-blue-400" />
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-              {isEditMode ? t('editStockRecord') : t('createStockIn')}
-            </h1>
-            <p className="text-gray-600 dark:text-gray-400">
-              {isEditMode ? t('updateExistingTransfer') : t('addNewItemsToInventory')}
-            </p>
+        <div className="mb-8">
+          <div className="flex justify-between items-center mb-4">
+            <div>
+              <MdLocalShipping className="text-2xl text-blue-600 dark:text-blue-400" />
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+                {isEditMode ? t('editStockRecord') : t('createStockIn')}
+              </h1>
+              <p className="text-gray-600 dark:text-gray-400">
+                {isEditMode ? t('updateExistingTransfer') : t('addNewItemsToInventory')}
+              </p>
+            </div>
+            {/* Action Buttons */}
+                  <div className="flex gap-3 justify-between items-center">
+                    <Button
+                      type="submit"
+                      disabled={selectItems.length === 0}
+                      variant={'primary'}
+                      outline={false}
+                    >
+                      {isEditMode ? <FaSave /> : <MdLocalShipping />}
+                      {isEditMode ? t('updateStock') : t('createStock')}
+                    </Button>
+                    <Link to={-1} className="flex-1">
+                      <Button
+                        type="button"
+                        variant={'danger'}
+                        outline={false}
+                      >
+                        <FaTimes />
+                        {t('cancel')}
+                      </Button>
+                    </Link>
+                  </div>
           </div>
+
+          {/* Validation Summary */}
+          {Object.keys(errors).length > 0 && (
+            <Alert
+              message={t('pleaseFixErrors')}
+              description={
+                <ul className="list-disc list-inside">
+                  {Object.values(errors).map((error, index) => (
+                    error && <li key={index}>{error}</li>
+                  ))}
+                </ul>
+              }
+              type="error"
+              showIcon
+              className="mb-6"
+            />
+          )}
         </div>
 
         <form onSubmit={handleSubmit}>
@@ -644,28 +680,7 @@ const AddInStock = () => {
                     </div>
                   </div>
 
-                  {/* Action Buttons */}
-                  <div className="flex gap-3 justify-between items-center">
-                    <Button
-                      type="submit"
-                      disabled={selectItems.length === 0}
-                      variant={'primary'}
-                      outline={false}
-                    >
-                      {isEditMode ? <FaSave /> : <MdLocalShipping />}
-                      {isEditMode ? t('updateStock') : t('createStock')}
-                    </Button>
-                    <Link to={-1} className="flex-1">
-                      <Button
-                        type="button"
-                        variant={'danger'}
-                        outline={false}
-                      >
-                        <FaTimes />
-                        {t('cancel')}
-                      </Button>
-                    </Link>
-                  </div>
+                  
                 </div>
               </div>
             </div>

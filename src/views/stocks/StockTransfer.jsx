@@ -6,8 +6,7 @@ import { useGetAllStockTypesQuery } from '../../../app/Features/stockTypesSlice'
 import { useGetItemsByStockQuery } from '../../../app/Features/itemsSlice';
 import { useGetAllWarehousesQuery } from '../../../app/Features/warehousesSlice';
 import { useCreateStockMutation, useGetAllStockQuery, useGetStockByIdQuery, useUpdateStockMutation } from '../../../app/Features/stocksSlice';
-import { DatePicker, Select, Tag } from 'antd';
-import { toast } from 'react-toastify';
+import { DatePicker, Select, Tag, Alert } from 'antd';
 import api from '../../services/api';
 import { useDebounce } from 'use-debounce';
 import { useTranslation } from 'react-i18next';
@@ -15,9 +14,11 @@ import Button from '../../utils/Button';
 import RichSearch from '../../utils/RichSearch';
 import Input from '../../utils/Input';
 import dayjs from 'dayjs';
+import { useNotify } from '../../utils/NotificationProvider';
 
 const StockTransfer = () => {
   const { t } = useTranslation();
+  const notify = useNotify();
   const asArray = (value) => (Array.isArray(value) ? value : []);
   const navigator = useNavigate();
   const [stocktype, setstocktype] = useState([]);
@@ -39,6 +40,8 @@ const StockTransfer = () => {
   const itemsRes = useGetItemsByStockQuery({ token, limit: limit, page: 1, search: debouncedSearch });
   const warehouseRes = useGetAllWarehousesQuery(token);
   const [createStock] = useCreateStockMutation(token);
+  const [errors, setErrors] = useState({});
+  const [alertError, setAlertError] = useState('');
 
   // Initialize form state
   const { id } = useParams();
@@ -112,7 +115,7 @@ const StockTransfer = () => {
         const filtered = list.filter(li => !mappedItems.find(mi => mi.item_id == li.item_id));
         setfielditems(filtered || []);
       }).catch((err) => {
-        toast.error(t('failedToFetchWarehouseItems'));
+        notify.error(t('failedToFetchWarehouseItems'));
       });
 
       const toWare = asArray(warehouseRes.data?.data).filter(
@@ -185,7 +188,7 @@ const StockTransfer = () => {
       if (response.data.status === 200) {
         refetch();
         setLoading(false);
-        toast.success(response.data.message || (isUpdate ? t('transferUpdatedSuccessfully') : t('transferCreatedSuccessfully')));
+        notify.success(response.data.message || (isUpdate ? t('transferUpdatedSuccessfully') : t('transferCreatedSuccessfully')));
 
         if (isUpdate) {
           navigator(-1);
@@ -206,29 +209,30 @@ const StockTransfer = () => {
       }
     } catch (error) {
       setLoading(false);
-      toast.error(error?.message || error || (isUpdate ? t('errorUpdatingTransfer') : t('errorCreatingTransfer')));
+      const errorMessage = error?.message || error || (isUpdate ? t('errorUpdatingTransfer') : t('errorCreatingTransfer'));
+      setErrors({ general: errorMessage });
+      notify.error(errorMessage);
     }
   }
 
   const onScrollFetch = (e) => {
-        const target = e.target;
-        const nearBottom = target.scrollHeight - target.scrollTop - target.clientHeight < 100;
-        if (!itemsRes.isFetching && nearBottom && itemsRes?.data?.pagination?.total > itemsRes?.data?.data?.length) {
-            setLimit(prev => prev + 10);
-        }
+    const target = e.target;
+    const nearBottom = target.scrollHeight - target.scrollTop - target.clientHeight < 100;
+    if (!itemsRes.isFetching && nearBottom && itemsRes?.data?.pagination?.total > itemsRes?.data?.data?.length) {
+      setLimit(prev => prev + 10);
     }
+  }
 
   function handleCancel() {
     setAlertBox(false);
   }
 
   function handleSubmit(e) {
-    console.log(selectItems);
-    
-    
     e.preventDefault();
-    if(form.from_warehouse == form.warehouse_id){
-      toast.error(t('warehouseCannotBeSame'));
+    if (form.from_warehouse == form.warehouse_id) {
+      const error = t('warehouseCannotBeSame');
+      setAlertError(error);
+      notify.error(error);
       return;
     }
     setAlertBox(true);
@@ -275,12 +279,23 @@ const StockTransfer = () => {
     }).then((res) => {
       setfielditems(res.data.data || []);
     }).catch((err) => {
-      toast.error(t('failedToFetchWarehouseItems'));
+      const error = t('failedToFetchWarehouseItems');
+      setAlertError(error);
+      notify.error(error);
     });
   }
 
   return (
     <section className='view-page p-6 bg-transparent min-h-screen'>
+      {alertError && (
+        <Alert
+          message={alertError}
+          type="error"
+          closable
+          onClose={() => setAlertError('')}
+          className="mb-6"
+        />
+      )}
       <AlertBox
         isOpen={alertBox}
         title={t('confirmStockTransfer')}
@@ -305,7 +320,7 @@ const StockTransfer = () => {
           <div className="bg-transparent rounded-xl overflow-hidden">
             <div>
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                
+
 
                 {/* Right Column - Selected Items Table */}
                 <div className="lg:col-span-2">
@@ -376,7 +391,7 @@ const StockTransfer = () => {
                                       name="quantity"
                                       onChange={(e) => {
                                         if (Number(item.stock.in_stock) < Number(e.target.value)) {
-                                          toast.warning(`${t('only')} ${item.stock.in_stock} ${t('itemsAvailableInStock')}`);
+                                          notify.warning(`${t('only')} ${item.stock.in_stock} ${t('itemsAvailableInStock')}`);
                                           return;
                                         }
                                         handleChange(index, 'quantity', e.target.value)
@@ -385,21 +400,21 @@ const StockTransfer = () => {
                                       required
                                     /> */}
                                     <Input
-                                       type='number'
-                                       min='1'
-                                       max={Number(item.stock.in_stock)}
-                                       placeholder="0"
-                                       onWheel={(e) => e.target.blur()}
-                                       name="quantity"
-                                       onChange={(value) => {
-                                         if (Number(item.stock.in_stock) < Number(value)) {
-                                           toast.warning(`${t('only')} ${item.stock.in_stock} ${t('itemsAvailableInStock')}`);
-                                           return;
-                                         }
-                                         handleChange(index, 'quantity', value)
-                                       }}
-                                       value={item.quantity ?? 1}
-                                       required
+                                      type='number'
+                                      min='1'
+                                      max={Number(item.stock.in_stock)}
+                                      placeholder="0"
+                                      onWheel={(e) => e.target.blur()}
+                                      name="quantity"
+                                      onChange={(value) => {
+                                        if (Number(item.stock.in_stock) < Number(value)) {
+                                          notify.warning(`${t('only')} ${item.stock.in_stock} ${t('itemsAvailableInStock')}`);
+                                          return;
+                                        }
+                                        handleChange(index, 'quantity', value)
+                                      }}
+                                      value={item.quantity ?? 1}
+                                      required
                                     />
                                     <span className="text-xs text-gray-500 dark:text-gray-400">
                                       / {Number(item.stock.in_stock)} {t('inStock')}
@@ -464,9 +479,9 @@ const StockTransfer = () => {
                         {t('selectItem')}
                       </span>
                     </label>
-                    
 
-                    <RichSearch 
+
+                    <RichSearch
                       data={fielditems}
                       keyFields={{
                         id: 'item_id',

@@ -10,6 +10,7 @@ const Input = ({
   step = 1,
   onChange,
   addonAfter,
+  spinner = true,
   ...props
 }) => {
   const [internalValue, setInternalValue] = useState(value ?? (type === "number" ? min : ""));
@@ -81,7 +82,7 @@ const Input = ({
         <input
           type={type === "number" ? "text" : type}
           inputMode={type === "number" ? "decimal" : "text"} // Better mobile keyboard
-          value={internalValue}
+          value={internalValue??''}
           onChange={handleInputChange}
           placeholder={placeholder}
           {...props}
@@ -94,7 +95,7 @@ const Input = ({
           `}
         />
 
-        {type === "number" && (
+        {spinner &&type === "number" && (
           <div className="absolute right-1 top-1 bottom-1 flex flex-col w-7 bg-gray-50 dark:bg-blue-900 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
             <button
               onClick={handleIncrement}

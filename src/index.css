@@ -14,7 +14,7 @@
   }
 
   .textarea-input {
-    @apply w-full px-3 py-2 border bg-transparent placeholder:text-gray-400 border-gray-300 dark:border-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none dark:text-white text-sm;
+    @apply w-full px-3 py-2 border bg-transparent placeholder:text-gray-400 border-gray-300 dark:border-gray-400 focus:outline-none resize-none dark:text-white text-sm;
   }
 
   /* .bg-primary-light {
@@ -22,6 +22,7 @@
   } */
 }
 
+    
 @theme {
   --bg-main-light: rgb(13, 26, 99);
   --bg-side-light: #1b2b50;
@@ -209,8 +210,34 @@
 }
 
 @layer components {
+  .segmented-dark {
+      @apply !bg-transparent;
+  }
+
+  .dark .segmented-dark .ant-segmented-item {
+      @apply text-gray-300;
+  }
+
+  .dark .segmented-dark .ant-segmented-item-selected {
+      @apply text-white bg-gray-700;
+  }
+
+  .dark .segmented-dark .ant-segmented-thumb {
+      @apply bg-gray-700;
+  }
+
+  .dark .segmented-dark .ant-segmented-item-label {
+      @apply text-inherit;
+  }
+  .dark .segmented-dark .ant-segmented-item .ant-segmented-item-label[aria-selected='true']:hover *{
+      @apply !text-black;
+  }
   .combined {
     box-shadow: 0px 4px 4px #00000015;
+  }
+  .dark .segmented-dark .ant-segmented-item .ant-segmented-item-label[aria-selected='false']:hover,
+  .dark .segmented-dark .ant-segmented-item .ant-segmented-item-label[aria-selected='false']:hover * {
+      color: white !important;
   }
 
   html,

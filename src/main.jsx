@@ -6,6 +6,7 @@ import App from './App.jsx'
 import { ToastContainer } from 'react-toastify'
 import { store } from "../app/store";
 import { Provider } from "react-redux";
+import NotificationProvider from './utils/NotificationProvider.jsx'
 
 createRoot(document.getElementById('root')).render(
   <>
@@ -15,7 +16,9 @@ createRoot(document.getElementById('root')).render(
         autoClose={2000}
         containerStyle={{ zIndex: 2147483647 }}
       />
-      <App />
+      <NotificationProvider>
+        <App />
+      </NotificationProvider>
     </Provider>
   </>
 
