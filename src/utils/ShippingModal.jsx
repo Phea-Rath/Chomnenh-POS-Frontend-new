@@ -114,46 +114,6 @@ const ShippingModal = ({ isShow, onClose, onConfirm, data, purchaseDate }) => {
                         />
                     </div>
 
-                    <div className=" grow">
-                        <div className="flex items-center justify-between mb-2">
-                            <span className="text-gray-600 dark:!text-gray-400 flex items-center gap-2">
-                            <FaCalendarAlt className="text-gray-400" />
-                            {t('shipTerm')} ({t('days')})
-                            </span>
-                        </div>
-                        <Input
-                            type="number"
-                            name="ship_term"
-                            value={form.ship_term}
-                            onChange={(value) => setForm((pre) => ({ ...pre, ship_term: parseFloat(value) || 0, shipping_date:  purchaseDate?dayjs(purchaseDate).add(Number(value), "day").format("YYYY-MM-DD"):'' }))}
-                            placeholder={t('shipTerm')}
-                            className={`w-full dark:!bg-gray-700 dark:!text-gray-200 dark:!border-gray-600`}
-                            min="0"
-                        />
-                    </div>
-                    <div className=" grow">
-                        <div className="flex items-center justify-between mb-2">
-                            <span className="text-gray-600 dark:!text-gray-400 flex items-center gap-2">
-                            <FaCalendarAlt className="text-gray-400" />
-                            {t('shipDate')}
-                            </span>
-                        </div>
-                        <DatePicker value={purchaseDate?dayjs(purchaseDate).add(form.ship_term, 'day'):''} className="date-picker" size="large" />
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-1">
-                            {t('remark')} <BiNote />
-                        </label>
-                        <textarea
-                            value={form.remark || ''}
-                            placeholder="Remark for shipping..."
-                            onChange={(e) => setForm((pre) => ({ ...pre, remark: e.target.value }))}
-                            className="textarea-input w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100"
-                            rows={3}
-                        />
-                    </div>
-
                     <div className="flex justify-end gap-3 pt-4">
                         <button
                             type="button"

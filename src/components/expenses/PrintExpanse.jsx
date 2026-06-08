@@ -127,6 +127,12 @@ const PrintExpanse = () => {
                   <span className="min-w-[115px] font-semibold text-gray-600">Paid By:</span>
                   <span>{data?.expense_by || 'N/A'}</span>
                 </div>
+                {data?.purchased_by && (
+                  <div className="flex gap-3">
+                    <span className="min-w-[115px] font-semibold text-gray-600">Purchased By:</span>
+                    <span>{data.purchased_by}</span>
+                  </div>
+                )}
               </div>
 
               <div className="space-y-1">
@@ -184,6 +190,19 @@ const PrintExpanse = () => {
                 </div>
               </div>
             </div>
+
+            {data?.images?.length > 0 && (
+              <div className="mt-8 border-t border-dashed border-gray-300 pt-8">
+                <h3 className="mb-4 text-lg font-bold text-slate-800">Attachments / Receipts</h3>
+                <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
+                  {data.images.map((img, idx) => (
+                    <div key={idx} className="overflow-hidden rounded-xl border border-gray-200">
+                      <img src={img.image} alt={`Attachment ${idx + 1}`} className="h-full w-full object-contain" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div className="mt-20 grid grid-cols-3 gap-8 text-center text-[15px] text-gray-700">
               <div>

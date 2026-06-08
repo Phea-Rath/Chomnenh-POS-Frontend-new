@@ -12,21 +12,37 @@ import {
     useGetAllStockQuery,
     useGetStockByIdQuery,
 } from "../../../app/Features/stocksSlice";
-import { DatePicker, Select, Tag, Avatar, Input, InputNumber, Divider } from "antd";
+import { DatePicker, Tag, Avatar, Divider, Alert } from "antd";
 import { useGetAllSaleQuery } from "../../../app/Features/salesSlice";
 import { useGetAllWasteQuery } from "../../../app/Features/notificationSlice";
 import { toast } from "react-toastify";
-import { FaTrash, FaEdit, FaSave, FaTimes, FaBox, FaPalette, FaRuler } from "react-icons/fa";
+import {
+    FaTrash,
+    FaEdit,
+    FaSave,
+    FaTimes,
+    FaBox,
+    FaPalette,
+    FaRuler,
+    FaWarehouse,
+    FaUser,
+    FaCalendarAlt,
+    FaLayerGroup,
+    FaPercent,
+    FaTruck,
+    FaFileInvoice,
+} from "react-icons/fa";
 import { MdLocalShipping } from "react-icons/md";
-import dayjs from 'dayjs'; // Import dayjs instead of moment
+import dayjs from 'dayjs';
 import { useGetAllCustomerQuery } from "../../../app/Features/customersSlice";
-import { scale } from "framer-motion";
 import { currencyFormat, totalPirceQuanDiscount } from "../../services/serviceFunction";
 import { useGetAllQuoteQuery, useGetQuoteByIdQuery } from "../../../app/Features/quoteSlice";
 import { useDebounce } from "use-debounce";
 import { useTranslation } from "react-i18next";
-
-const { Option } = Select;
+import RichSearch from "../../utils/RichSearch";
+import Input from "../../utils/Input";
+import Button from "../../utils/Button";
+import ItemTable from "../../utils/ItemTable";
 
 const QuotationForm = () => {
     const { t, i18n } = useTranslation();
@@ -408,482 +424,312 @@ const QuotationForm = () => {
     }, [selectItems.length]);
 
     return (
-        <section className="px-6 py-6 bg-transparent min-h-screen view-page">
-            <AlertBox
-                isOpen={alertBox}
-                title={t('confirmation')}
-                message={t('confirmCreateQuoteMsg', { action: isEditMode ? t('update') : t('create') })}
-                onConfirm={handleConfirm}
-                onCancel={handleCancel}
-                confirmText={isEditMode ? t('update') : t('create')}
-                cancelText={t('cancel')}
-            />
+        <div className="bg-transparent py-2 transition-colors min-h-screen">
+            <div className="px-2">
+                <AlertBox
+                    isOpen={alertBox}
+                    title={t('confirmation')}
+                    message={t('confirmCreateQuoteMsg', { action: isEditMode ? t('update') : t('create') })}
+                    onConfirm={handleConfirm}
+                    onCancel={handleCancel}
+                    confirmText={isEditMode ? t('update') : t('create')}
+                    cancelText={t('cancel')}
+                />
 
-            <div className=" mx-auto">
-                {/* Header */}
-                <div className="flex justify-between items-center mb-8">
-                    <div>
-                        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-3">
-                            {isEditMode ? t('editQuote') : t('createQuote')}
-                        </h1>
-                        <p className="text-gray-600 dark:text-gray-400">
-                            {isEditMode ? t('editingQuoteId', { id }) : t('createQuotationForCustomer')}
-                        </p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                        <span className="text-sm text-gray-500 dark:text-gray-400">
-                            {isEditMode ? t('quoteNo') + `: ${stockData?.data?.quote_number || id}` : t('newQuote')}
-                        </span>
+                <div className="mb-8">
+                    <div className="mb-4 flex items-center justify-between">
+                        <div>
+                            <h1 className="text-2xl font-bold text-gray-800 dark:!text-gray-100">
+                                {isEditMode ? t('editQuote') : t('createQuote')}
+                            </h1>
+                            <p className="mt-2 text-gray-600 dark:!text-gray-400">
+                                {isEditMode ? t('editingQuoteId', { id }) : t('createQuotationForCustomer')}
+                            </p>
+                        </div>
+                        <div className="mt-6 flex items-center justify-center gap-2">
+                            <Button type="button" onClick={handleSubmit} disabled={setLoading === true} variant="primary" outline={false}>
+                                <FaSave />
+                                {isEditMode ? t("update") : t("create")}
+                            </Button>
+                            <Button
+                                type="button"
+                                variant="danger"
+                                outline={true}
+                                onClick={() => window.history.back()}
+                            >
+                                <FaTimes />
+                                {t("back")}
+                            </Button>
+                        </div>
                     </div>
                 </div>
 
-                <form onSubmit={handleSubmit}>
-                    <div className="bg-primary rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
-                        {/* Header */}
-                        <div className="px-8 py-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-blue-50 to-gray-50 dark:from-gray-800 dark:to-gray-800">
-                            <div className="flex items-center gap-3">
-                                <MdLocalShipping className="text-2xl text-blue-600 dark:text-blue-400" />
-                                <h2 className="text-xl font-semibold text-gray-800 dark:text-white">
-                                    {isEditMode ? t('editQuoteInfo') : t('quoteInfo')}
-                                </h2>
-                            </div>
-                        </div>
-
-                        <div className="p-8">
-                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                                {/* Left Column - Form Controls */}
-                                <div className="lg:col-span-1 space-y-6">
-                                    {/* Search Items */}
-                                    <div className="space-y-2">
-                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                            <span className="text-red-500">*</span> {t('searchItems')}
-                                        </label>
-                                        <Select
-                                            onSelect={onSelectItem}
-                                            onPopupScroll={onScrollFetch}
-                                            onSearch={(value) => setSearch(value)}
-                                            showSearch
-                                            style={{ width: '100%' }}
-                                            placeholder={t('searchItemsPlaceholder')}
-                                            size="large"
-                                            filterOption={(input, option) =>
-                                                option.name.toLowerCase().indexOf(input.toLowerCase()) >= 0
-                                            }
-                                            optionLabelProp="name"
-                                        >
-                                            {fielditems?.map((item) => (
-                                                <Option key={item.id} value={item.id} name={item.name}>
-                                                    <div className="flex items-center gap-3 py-1">
-                                                        <Avatar
-                                                            size="small"
-                                                            src={item.image}
-                                                            icon={<FaBox />}
-                                                            className="border border-gray-200 dark:border-gray-700"
-                                                        />
-                                                        <div className="flex-1 min-w-0">
-                                                            <div className="font-medium text-gray-900 truncate">
-                                                                {item.name}
-                                                            </div>
-                                                            <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                                                                {item.code} • {item.brand_name}
-                                                            </div>
-                                                        </div>
-                                                        <Tag color="blue" className="ml-auto">
-                                                            {item.in_stock} {t('inStock')}
-                                                        </Tag>
-                                                    </div>
-                                                </Option>
-                                            ))}
-                                        </Select>
+                <form>
+                    <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+                        <div className="space-y-6 lg:col-span-2">
+                            <div className="!text-sm">
+                                <div>
+                                    <div className="mb-4 flex items-center gap-2">
+                                        <FaWarehouse className="text-blue-500" />
+                                        <h2 className="text-sm font-bold text-gray-800 dark:!text-gray-100">
+                                            {t("customerInformation")}
+                                        </h2>
                                     </div>
 
-                                    {/* Search Customers */}
-                                    <div className="space-y-2">
-                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                            <span className="text-red-500">*</span> {t('searchCustomers')}
-                                        </label>
-                                        <Select
-                                            value={form.customer_id || undefined}
-                                            onSelect={onSelectCustmer}
-                                            showSearch
-                                            style={{ width: '100%' }}
-                                            placeholder={t('searchCustomersPlaceholder')}
-                                            size="large"
-                                            filterOption={(input, option) =>
-                                                option.name.toLowerCase().indexOf(input.toLowerCase()) >= 0
-                                            }
-                                            optionLabelProp="name"
-                                        >
-                                            {customers?.data?.map((c) => (
-                                                <Option key={c.customer_id} value={c.customer_id} name={c.customer_name}>
-                                                    <div className="flex items-center gap-3 py-1">
-                                                        <Avatar
-                                                            size="small"
-                                                            src={c.image}
-                                                            icon={<FaBox />}
-                                                            className="border border-gray-200 dark:border-gray-700"
-                                                        />
-                                                        <div className="flex-1 min-w-0">
-                                                            <div className="font-medium text-gray-900 truncate">
-                                                                {c.customer_name}
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </Option>
-                                            ))}
-                                        </Select>
-                                    </div>
+                                    <div className="flex flex-wrap gap-4">
+                                        <div className="grow min-w-[200px]">
+                                            <label className="mb-2 block text-sm font-medium text-gray-700 dark:!text-gray-300">
+                                                <span className="flex items-center gap-2">
+                                                    <FaUser className="text-gray-400" />
+                                                    {t("customer")}
+                                                </span>
+                                            </label>
+                                            <RichSearch
+                                                data={customers?.data || []}
+                                                value={form.customer_id}
+                                                placeholder={t("selectcustomer")}
+                                                keyFields={{
+                                                    id: "customer_id",
+                                                    title: "customer_name",
+                                                    image: "image",
+                                                    subtitle: "customer_tel",
+                                                }}
+                                                onSelected={onSelectCustmer}
+                                            />
+                                        </div>
 
-                                    {/* Quote Details Card */}
-                                    <div className="bg-gradient-to-br from-gray-50 to-blue-50 dark:from-gray-900 dark:to-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 space-y-4">
-                                        <h3 className="font-medium text-gray-800 dark:text-white flex items-center gap-2">
-                                            <FaEdit className="text-blue-500 dark:text-blue-400" />
-                                            {t('quoteDetails')}
-                                        </h3>
-
-                                        <div className="space-y-4">
-                                            <div>
-                                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                                    {t('quoteDate')}
-                                                </label>
-                                                <DatePicker
-                                                    format="YYYY-MM-DD"
-                                                    value={form.date ? dayjs(form.date) : null}
-                                                    onChange={(date, dateString) => {
-                                                        setForm(prev => {
-                                                            const term = prev.credit_term || 0;
-                                                            return {
-                                                                ...prev,
-                                                                date: dateString,
-                                                                date_term: date
-                                                                    ? dayjs(date).add(term, "day").format("YYYY-MM-DD")
-                                                                    : null
-                                                            };
-                                                        });
-                                                    }}
-                                                    className="w-full dark:!bg-gray-900 dark:text-white dark:border-gray-700"
-                                                />
-                                            </div>
-
-                                            <div>
-                                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                                    {t('termDays')}
-                                                </label>
-                                                <Input
-                                                    type="number"
-                                                    min={1}
-                                                    onWheel={(e) => e.target.blur()}   // 👈 បិទ scroll change
-                                                    value={form.credit_term || ""}
-                                                    className="dark:bg-gray-900 dark:text-white dark:border-gray-700"
-                                                    onChange={(e) => {
-                                                        const term = Number(e.target.value || 0);
-                                                        setForm(prev => ({
+                                        <div>
+                                            <label className="mb-2 block text-sm font-medium text-gray-700 dark:!text-gray-300">
+                                                <span className="flex items-center gap-2">
+                                                    <FaCalendarAlt className="text-gray-400" />
+                                                    {t("quoteDate")}
+                                                </span>
+                                            </label>
+                                            <DatePicker
+                                                className="date-picker w-full"
+                                                size="middle"
+                                                value={form.date ? dayjs(form.date) : null}
+                                                onChange={(_, dateString) => {
+                                                    setForm(prev => {
+                                                        const term = prev.credit_term || 0;
+                                                        return {
                                                             ...prev,
-                                                            credit_term: term,
-                                                            date_term: prev.date
-                                                                ? dayjs(prev.date).add(term, "day").format("YYYY-MM-DD")
+                                                            date: dateString,
+                                                            date_term: dateString
+                                                                ? dayjs(dateString).add(term, "day").format("YYYY-MM-DD")
                                                                 : null
-                                                        }));
-                                                    }}
-                                                />
-                                            </div>
-
-                                            <div>
-                                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                                    {t('expireDate')}
-                                                </label>
-                                                <DatePicker
-                                                    format="YYYY-MM-DD"
-                                                    value={form.date_term ? dayjs(form.date_term) : null}
-                                                    disabled
-                                                    className="w-full dark:bg-gray-900 dark:text-white dark:border-gray-700"
-                                                />
-                                            </div>
-
-                                            <div className="grid grid-cols-2 gap-3">
-                                                <div>
-                                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                                        {t('deliveryFee')}
-                                                    </label>
-                                                    <InputNumber
-                                                        type="number"
-                                                        name='delivery_fee'
-                                                        onWheel={(e) => e.target.blur()}
-                                                        value={form.delivery_fee}
-                                                        onChange={(value) => {
-                                                            setForm(prev => ({ ...prev, delivery_fee: value }));
-                                                            calculateForm(selectItems, { ...form, delivery_fee: value });
-                                                        }}
-                                                        className="w-full dark:bg-gray-900 dark:text-white dark:border-gray-700"
-                                                    />
-                                                </div>
-                                                <div>
-                                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                                        {t('tax')}
-                                                    </label>
-                                                    <InputNumber
-                                                        type="number"
-                                                        min="0"
-                                                        max="100"
-                                                        step="0.01"
-                                                        name='tax'
-                                                        value={form.tax}
-                                                        onWheel={(e) => e.target.blur()}
-                                                        onChange={(value) => {
-                                                            setForm(prev => ({ ...prev, tax: value }));
-                                                            calculateForm(selectItems, { ...form, tax: value });
-                                                        }}
-                                                        className="w-full dark:bg-gray-900 dark:text-white dark:border-gray-700"
-                                                    />
-                                                </div>
-                                            </div>
-
-                                            {isEditMode && <div>
-                                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                                    {t('status')}
-                                                </label>
-                                                <Select
-                                                    value={form.status}
-                                                    onChange={(value) => setForm(prev => ({ ...prev, status: value }))}
-                                                    className="w-full dark:bg-gray-900 dark:text-white dark:border-gray-700"
-                                                >
-                                                    <Option value="draft">{t('draft')}</Option>
-                                                    <Option value="submitted">{t('submitted')}</Option>
-                                                    <Option value="approved">{t('approved')}</Option>
-                                                    <Option value="rejected">{t('rejected')}</Option>
-                                                    <Option value="converted">{t('converted')}</Option>
-                                                </Select>
-                                            </div>}
-
-                                            <div>
-                                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                                    {t('note')}
-                                                </label>
-                                                <Input.TextArea
-                                                    value={form.notes}
-                                                    onChange={(e) => setForm(prev => ({ ...prev, notes: e.target.value }))}
-                                                    rows={3}
-                                                    placeholder={t('notePlaceholder') || "Additional notes or comments..."}
-                                                    className="dark:bg-gray-900 dark:text-white dark:border-gray-700"
-                                                />
-                                            </div>
+                                                        };
+                                                    });
+                                                }}
+                                            />
                                         </div>
+
+                                        <div>
+                                            <label className="mb-2 block text-sm font-medium text-gray-700 dark:!text-gray-300">
+                                                <span className="flex items-center gap-2">
+                                                    <FaCalendarAlt className="text-gray-400" />
+                                                    {t("termDays")}
+                                                </span>
+                                            </label>
+                                            <Input
+                                                type="number"
+                                                value={form.credit_term}
+                                                onChange={(value) => {
+                                                    const term = Number(value || 0);
+                                                    setForm(prev => ({
+                                                        ...prev,
+                                                        credit_term: term,
+                                                        date_term: prev.date
+                                                            ? dayjs(prev.date).add(term, "day").format("YYYY-MM-DD")
+                                                            : null
+                                                    }));
+                                                }}
+                                            />
+                                        </div>
+
+                                        {isEditMode && <div>
+                                            <label className="mb-2 block text-sm font-medium text-gray-700 dark:!text-gray-300">
+                                                {t("status")}
+                                            </label>
+                                            <RichSearch
+                                                data={[
+                                                    { id: "draft", title: t('draft') },
+                                                    { id: "submitted", title: t('submitted') },
+                                                    { id: "approved", title: t('approved') },
+                                                    { id: "rejected", title: t('rejected') },
+                                                    { id: "converted", title: t('converted') },
+                                                ]}
+                                                value={form.status}
+                                                onSelected={(value) => setForm(prev => ({ ...prev, status: value }))}
+                                                keyFields={{ id: "id", title: "title" }}
+                                            />
+                                        </div>}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <div className="mb-6 flex items-center gap-2 justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <FaBox className="text-blue-500" />
+                                        <h2 className="text-sm font-bold text-gray-800 dark:!text-gray-100">
+                                            {t("orderItems")}
+                                        </h2>
                                     </div>
 
-                                    {/* Summary Card */}
-                                    <div className="bg-gradient-to-br from-purple-50 to-blue-50 dark:from-gray-900 dark:to-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 space-y-4">
-                                        <h3 className="font-medium text-gray-800 dark:text-white flex items-center gap-2">
-                                            <FaEdit className="text-purple-500 dark:text-purple-400" />
-                                            {t('summary')}
-                                        </h3>
-
-                                        <div className="space-y-3">
-                                            <div className="flex justify-between">
-                                                <span className="text-gray-600 dark:text-gray-400">{t('subtotal')}:</span>
-                                                <span className="font-semibold dark:text-white">${Number(form.order_total || 0)?.toFixed(2) || '0.00'}</span>
-                                            </div>
-                                            <div className="flex justify-between">
-                                                <span className="text-gray-600 dark:text-gray-400">{t('deliveryFee')}:</span>
-                                                <span className="font-semibold dark:text-white">${Number(form.delivery_fee || 0)?.toFixed(2) || '0.00'}</span>
-                                            </div>
-                                            <div className="flex justify-between">
-                                                <span className="text-gray-600 dark:text-gray-400">{t('discount')}:</span>
-                                                <span className="font-semibold text-green-600 dark:text-green-400">-${Number(form.total_discount || 0)?.toFixed(2) || '0.00'}</span>
-                                            </div>
-                                            <div className="flex justify-between">
-                                                <span className="text-gray-600 dark:text-gray-400">{t('tax')} ({form.tax}%):</span>
-                                                <span className="font-semibold text-orange-600 dark:text-orange-400">${Number(form.tax_amount || 0)?.toFixed(2) || '0.00'}</span>
-                                            </div>
-                                            <Divider className="my-2 dark:border-gray-700" />
-                                            <div className="flex justify-between text-lg font-bold">
-                                                <span className="text-gray-800 dark:text-white">{t('grandTotal')}:</span>
-                                                <span className="text-blue-600 dark:text-blue-400">${Number(form.grand_total || 0)?.toFixed(2) || '0.00'}</span>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* Action Buttons */}
-                                    <div className="flex gap-3 pt-4">
-                                        <button
-                                            type="submit"
-                                            disabled={selectItems.length === 0 || !form.customer_id}
-                                            className={`flex-1 py-3 px-4 rounded-xl font-medium transition-all duration-200 flex items-center justify-center gap-2 ${selectItems.length === 0 || !form.customer_id
-                                                ? 'bg-gray-300 dark:bg-gray-700 cursor-not-allowed text-gray-500 dark:text-gray-400'
-                                                : 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white shadow-lg hover:shadow-xl'
-                                                }`}
-                                        >
-                                            {isEditMode ? <FaSave /> : <MdLocalShipping />}
-                                            {isEditMode ? t('updateQuote') : t('createQuote')}
-                                        </button>
-                                        <Link to="/home/quotations" className="flex-1">
-                                            <button
-                                                type="button"
-                                                className="w-full bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 text-white py-3 px-4 rounded-xl font-medium transition-all duration-200 flex items-center justify-center gap-2"
-                                            >
-                                                <FaTimes />
-                                                {t('cancel')}
-                                            </button>
-                                        </Link>
+                                    <div className="flex flex-1 text-sm items-center gap-2">
+                                        <RichSearch
+                                            data={items}
+                                            placeholder={t("addItem")}
+                                            keyFields={{
+                                                id: "id",
+                                                title: "name",
+                                                image: "image",
+                                                subtitle: "code",
+                                                price: "price",
+                                                quantity: "in_stock",
+                                            }}
+                                            onSelected={onSelectItem}
+                                            onSearch={setSearch}
+                                            onScrollReader={onScrollFetch}
+                                        />
                                     </div>
                                 </div>
 
-                                {/* Right Column - Selected Items */}
-                                <div className="lg:col-span-2">
-                                    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden shadow-sm">
-                                        {/* Items Header */}
-                                        <div className="px-6 py-4 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-gray-800 dark:to-gray-800 border-b border-gray-200 dark:border-gray-700">
-                                            <div className="flex justify-between items-center">
-                                                <div>
-                                                    <h3 className="text-lg font-semibold text-gray-800 dark:text-white">{t('selectedItems')}</h3>
-                                                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                                                        {t('itemsSelected', { count: selectItems.length })} •
-                                                        {t('quantity')}: {selectItems?.reduce((sum, item) => sum + (parseInt(item.quantity) || 0), 0)} •
-                                                        {t('subtotal')}: ${Number(form.order_total || 0)?.toFixed(2) || '0.00'}
-                                                    </p>
-                                                </div>
-                                                <Tag color={isEditMode ? "orange" : "blue"} className="font-medium text-sm">
-                                                    {isEditMode ? t('editingMode') : t('creatingMode')}
-                                                </Tag>
-                                            </div>
-                                        </div>
+                                {selectItems.length === 0 ? (
+                                    <div className="rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 py-12 text-center dark:!border-gray-700 dark:!bg-blue-900/50">
+                                        <FaBox className="mx-auto mb-4 text-4xl text-gray-400 dark:!text-gray-400" />
+                                        <p className="mb-4 text-gray-500 dark:!text-gray-400">{t("noItemsAdded")}</p>
+                                    </div>
+                                ) : (
+                                    <ItemTable
+                                        priceLabel="price"
+                                        t={t}
+                                        data={selectItems}
+                                        onDelete={handleRemove}
+                                        onQtyChange={(index, value) => handleChange(index, 'quantity', value)}
+                                        onCostChange={(index, value) => handleChange(index, 'price', value)}
+                                        onDiscountChange={(index, value) => handleChange(index, 'discount', value)}
+                                        haedTitle={[
+                                            { title: t("item"), key: "item" },
+                                            { title: t("quantity"), key: "quantity" },
+                                            { title: t("price"), key: "price" },
+                                            { title: t("discount"), key: "discount" },
+                                            { title: t("total"), key: "total" },
+                                            { title: "", key: "action" },
+                                        ]}
+                                    />
+                                )}
+                            </div>
+                        </div>
 
-                                        {/* Items Table */}
-                                        {selectItems.length > 0 ? (
-                                            <div className="overflow-x-auto">
-                                                <table className="w-full">
-                                                    <thead className="bg-gray-50 dark:bg-gray-900/50">
-                                                        <tr>
-                                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">#</th>
-                                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">{t('item')}</th>
-                                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">{t('price')}</th>
-                                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">{t('quantity')}</th>
-                                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">{t('discount')} %</th>
-                                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">{t('total')}</th>
-                                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">{t('actions')}</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                                                        {selectItems.map((item, index) => {
-                                                            return (
-                                                                <tr key={index} className="hover:bg-blue-50/30 dark:hover:bg-gray-700/30 transition-colors text-sm">
-                                                                    <td className="px-6 py-4">
-                                                                        <div className="text-sm font-medium text-gray-900 dark:text-white">{index + 1}</div>
-                                                                    </td>
-                                                                    <td className="px-6 py-4">
-                                                                        <div className="flex items-center gap-3">
-                                                                            <Avatar
-                                                                                size="large"
-                                                                                src={item.image}
-                                                                                icon={<FaBox />}
-                                                                                className="border border-gray-200 dark:border-gray-700"
-                                                                            />
-                                                                            <div>
-                                                                                <div className="font-medium text-gray-900 dark:text-white">{item.name || item.item_name}</div>
-                                                                                <div className="text-sm text-gray-500 dark:text-gray-400">{item.code || item.item_code}</div>
-                                                                                {item.brand_name && (
-                                                                                    <div className="text-xs text-gray-400 mt-1">
-                                                                                        <Tag color="blue" size="small">{item.brand_name}</Tag>
-                                                                                    </div>
-                                                                                )}
-                                                                            </div>
-                                                                        </div>
-                                                                    </td>
-                                                                    <td className="px-6 py-4">
-                                                                        <InputNumber
-                                                                            type="number"
-                                                                            step="0.01"
-                                                                            min="0"
-                                                                            value={item.price}
-                                                                            onWheel={(e) => e.target.blur()}
-                                                                            onChange={(value) => handleChange(index, "price", value)}
-                                                                            className="w-24 dark:bg-gray-900 dark:text-white dark:border-gray-700"
-                                                                        />
-                                                                    </td>
-                                                                    <td className="px-6 py-4">
-                                                                        <InputNumber
-                                                                            type="number"
-                                                                            min="1"
-                                                                            max={item?.in_stock}
-                                                                            value={item.quantity}
-                                                                            onWheel={(e) => e.target.blur()}
-                                                                            onChange={(value) => handleChange(index, 'quantity', value)}
-                                                                            className="w-24 dark:bg-gray-900 dark:text-white dark:border-gray-700"
-                                                                        />
-                                                                    </td>
-                                                                    <td className="px-6 py-4">
-                                                                        <InputNumber
-                                                                            type="number"
-                                                                            // step="0.01"
-                                                                            min="0"
-                                                                            max="100"
-                                                                            value={item.discount}
-                                                                            onWheel={(e) => e.target.blur()}
-                                                                            onChange={(value) => handleChange(index, "discount", value)}
-                                                                            className="w-24 dark:bg-gray-900 dark:text-white dark:border-gray-700"
-                                                                        // formatter={value => `${value}%`}
-                                                                        // parser={value => value.replace('%', '')}
-                                                                        />
-                                                                    </td>
-                                                                    <td className="px-6 py-4 font-semibold dark:text-white">
-                                                                        ${item.total || '0.00'}
-                                                                    </td>
-                                                                    <td className="px-6 py-4">
-                                                                        <button
-                                                                            onClick={() => handleRemove(index)}
-                                                                            type="button"
-                                                                            className="p-2 text-red-600 hover:text-red-800 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                                                                            title={t('remove')}
-                                                                        >
-                                                                            <FaTrash />
-                                                                        </button>
-                                                                    </td>
-                                                                </tr>
-                                                            );
-                                                        })}
-                                                    </tbody>
-                                                </table>
-                                            </div>
-                                        ) : (
-                                            <div className="text-center py-16">
-                                                <div className="w-24 h-24 bg-gradient-to-r from-blue-100 to-purple-100 dark:from-blue-900 dark:to-purple-900 rounded-full flex items-center justify-center mx-auto mb-6">
-                                                    <FaBox className="text-3xl text-blue-500 dark:text-blue-400" />
-                                                </div>
-                                                <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-2">{t('noItemsSelected')}</h3>
-                                                <p className="text-gray-500 dark:text-gray-400 max-w-md mx-auto mb-6">
-                                                    {t('searchSelectItemsMsg')}
-                                                </p>
-                                            </div>
-                                        )}
+                        <div className="space-y-6 text-sm">
+                            <div>
+                                <h2 className="mb-6 flex items-center gap-2 text-sm font-bold text-gray-800 dark:!text-gray-100">
+                                    <FaLayerGroup className="text-blue-500" />
+                                    {t("summary")}
+                                </h2>
+
+                                <div className="space-y-4">
+                                    <div className="flex justify-between">
+                                        <span className="text-gray-600 dark:!text-gray-400">{t("subtotal")}</span>
+                                        <span className="font-bold text-gray-800 dark:!text-gray-100">
+                                            ${Number(form.order_total).toFixed(2)}
+                                        </span>
                                     </div>
 
-                                    {/* Summary Footer */}
-                                    {selectItems.length > 0 && (
-                                        <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-                                            <div className="bg-green-50 dark:bg-green-900/20 border border-green-100 dark:border-green-800 rounded-xl p-4">
-                                                <div className="text-sm text-green-800 dark:text-green-400 mb-1">{t('totalItems')}</div>
-                                                <div className="text-2xl font-bold text-green-900 dark:text-green-300">{selectItems.length}</div>
+                                    <div className="flex justify-between">
+                                        <span className="text-gray-600 dark:!text-gray-400">{t("discount")}</span>
+                                        <span className="font-bold text-gray-800 dark:!text-gray-100">
+                                            ${Number(form.total_discount).toFixed(2)}
+                                        </span>
+                                    </div>
+
+                                    <div className="grid text-sm grid-cols-1 sm:grid-cols-2 gap-3">
+                                        <div>
+                                            <div className="mb-2 flex items-center justify-between">
+                                                <span className="flex items-center gap-2 text-gray-600 dark:!text-gray-400">
+                                                    <FaPercent className="text-gray-400" />
+                                                    {t("tax")} (%)
+                                                </span>
                                             </div>
-                                            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 rounded-xl p-4">
-                                                <div className="text-sm text-blue-800 dark:text-blue-400 mb-1">{t('totalQuantity')}</div>
-                                                <div className="text-2xl font-bold text-blue-900 dark:text-blue-300">
-                                                    {selectItems.reduce((sum, item) => sum + (parseInt(item.quantity) || 0), 0)}
-                                                </div>
+                                            <Input
+                                                type="number"
+                                                value={form.tax}
+                                                onChange={(value) => {
+                                                    const tax = Number(value || 0);
+                                                    setForm(prev => ({ ...prev, tax }));
+                                                    calculateForm(selectItems, { ...form, tax });
+                                                }}
+                                                placeholder={t("tax")}
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <div className="mb-2 flex items-center justify-between">
+                                                <span className="flex items-center gap-2 text-gray-600 dark:!text-gray-400">
+                                                    <FaTruck className="text-gray-400" />
+                                                    {t("deliveryFee")}
+                                                </span>
                                             </div>
-                                            <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-100 dark:border-purple-800 rounded-xl p-4">
-                                                <div className="text-sm text-purple-800 dark:text-purple-400 mb-1">{t('grandTotal')}</div>
-                                                <div className="text-2xl font-bold text-purple-900 dark:text-purple-300">
-                                                    ${Number(form.grand_total || 0)?.toFixed(2) || '0.00'}
-                                                </div>
+                                            <Input
+                                                type="number"
+                                                value={form.delivery_fee}
+                                                onChange={(value) => {
+                                                    const fee = Number(value || 0);
+                                                    setForm(prev => ({ ...prev, delivery_fee: fee }));
+                                                    calculateForm(selectItems, { ...form, delivery_fee: fee });
+                                                }}
+                                                placeholder={t("deliveryFee")}
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label className="mb-2 block text-sm font-medium text-gray-700 dark:!text-gray-300">
+                                            {t("note")}
+                                        </label>
+                                        <textarea
+                                            value={form.notes}
+                                            onChange={(e) => setForm(prev => ({ ...prev, notes: e.target.value }))}
+                                            rows={3}
+                                            className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                                            placeholder={t('notePlaceholder') || "Additional notes..."}
+                                        />
+                                    </div>
+
+                                    <Divider className="my-4 dark:!border-gray-700" />
+
+                                    <div className="flex justify-between text-sm font-bold">
+                                        <span className="text-gray-700 dark:!text-gray-200">{t("grandTotal")}</span>
+                                        <span className="text-blue-600 dark:!text-blue-400">
+                                            ${Number(form.grand_total).toFixed(2)}
+                                        </span>
+                                    </div>
+
+                                    <Divider className="my-4 dark:!border-gray-700" />
+
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="rounded-lg bg-blue-50 p-3 text-center dark:!bg-blue-900/20">
+                                            <div className="text-sm text-gray-600 dark:!text-gray-400">{t("items")}</div>
+                                            <div className="text-sm font-bold text-gray-800 dark:!text-gray-100">
+                                                {selectItems.length}
                                             </div>
                                         </div>
-                                    )}
+                                        <div className="rounded-lg bg-green-50 p-3 text-center dark:!bg-green-900/20">
+                                            <div className="text-sm text-gray-600 dark:!text-gray-400">{t("quantity")}</div>
+                                            <div className="text-sm font-bold text-gray-800 dark:!text-gray-100">
+                                                {selectItems.reduce((sum, item) => sum + (parseInt(item.quantity) || 0), 0)}
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </form>
             </div>
-        </section>
+        </div>
     );
 };
 

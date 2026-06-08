@@ -55,7 +55,7 @@ const LoginForm = () => {
 
     if (permissionRes.status === 200) {
       toast.success("Login successful");
-      navigate("/dashboard");
+      navigate("/home");
     }
   };
 

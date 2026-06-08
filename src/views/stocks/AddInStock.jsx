@@ -9,10 +9,11 @@ import {
 } from "../../../app/Features/itemsSlice";
 import { useGetAllWarehousesQuery } from "../../../app/Features/warehousesSlice";
 import { useGetAllStockQuery, useGetStockByIdQuery } from "../../../app/Features/stocksSlice";
+import { useGetAllUserQuery } from "../../../app/Features/usersSlice";
 import { Select, Tag, Avatar, DatePicker, Alert } from "antd";
 import { useGetAllSaleQuery } from "../../../app/Features/salesSlice";
 import { useGetAllWasteQuery } from "../../../app/Features/notificationSlice";
-import { FaTrash, FaEdit, FaSave, FaTimes, FaBox, FaPalette, FaRuler } from "react-icons/fa";
+import { FaTrash, FaEdit, FaSave, FaTimes, FaBox, FaPalette, FaRuler, FaUser } from "react-icons/fa";
 import { MdLocalShipping } from "react-icons/md";
 import dayjs from 'dayjs'; // Import dayjs instead of moment
 import { useDebounce } from "use-debounce";
@@ -51,6 +52,7 @@ const AddInStock = () => {
   const itemsRes = useGetAllItemsQuery({ limit: limit, page: currentPage, search: debouncedSearch, token });
   const saleItemContext = useGetAllSaleQuery(token);
   const warehouseRes = useGetAllWarehousesQuery(token);
+  const {data:users} = useGetAllUserQuery(token);
   // const [createStock] = useCreateStockMutation();
   // const [updateStock] = useUpdateStockMutation();
   const [attributes, setAttribute] = useState([]);
@@ -75,6 +77,8 @@ const AddInStock = () => {
     stock_type_id: 2,
     stock_remark: "",
     order_id: null,
+    received_by: null,
+    approved_by: null,
     stock_date: dayjs().format('YYYY-MM-DD'), // Today's date
   });
 
@@ -117,6 +121,8 @@ const AddInStock = () => {
         stock_remark: data.stock_remark || "",
         order_id: data.order_id || null,
         stock_date: data.stock_date || "",
+        received_by: data.received_by || '',
+        approved_by: data.approved_by||''
       });
 
       // Set selected items
@@ -265,10 +271,14 @@ const AddInStock = () => {
   async function handleConfirm() {
     setAlertBox(false);
     setLoading(true);
+    console.log(itemLists);
+    
 
     try {
       const payload = {
         ...form,
+        received_by: form.received_by ? Number(form.received_by) : null,
+        approved_by: form.approved_by ? Number(form.approved_by) : null,
         items: itemLists.map(item => ({
           item_id: item.item_id,
           quantity: parseInt(item.quantity) || 1,
@@ -394,9 +404,10 @@ const AddInStock = () => {
             {/* Action Buttons */}
                   <div className="flex gap-3 justify-between items-center">
                     <Button
-                      type="submit"
+                      type="button"
                       disabled={selectItems.length === 0}
                       variant={'primary'}
+                      onClick={handleSubmit}
                       outline={false}
                     >
                       {isEditMode ? <FaSave /> : <MdLocalShipping />}
@@ -433,7 +444,7 @@ const AddInStock = () => {
           )}
         </div>
 
-        <form onSubmit={handleSubmit}>
+        <form>
           <div className="bg-transparent overflow-hidden">
             <div>
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -516,8 +527,8 @@ const AddInStock = () => {
                                       type="number"
                                       min="1"
                                       value={item.quantity}
-                                      onWheel={(e) => e.target.blur()}
-                                      onChange={(e) => handleChange(index, 'quantity', false, e.target.value)}
+                                      // onWheel={(e) => e.target.blur()}
+                                      onChange={(value) => handleChange(index, 'quantity', false, value)}
                                       className="!w-20 text-center dark:bg-gray-800 dark:border-gray-600 dark:text-white"
                                       size="middle"
                                     />
@@ -675,6 +686,46 @@ const AddInStock = () => {
                           className="textarea-input"
                           placeholder={t('remarksPlaceholder')}
                           rows="3"
+                        />
+                      </div>
+
+                      <div className="grow min-w-[200px]">
+                        <label className="mb-2 block text-sm font-medium text-gray-700 dark:!text-gray-300">
+                          <span className="flex items-center gap-2">
+                            <FaUser className="text-gray-400" />
+                            {t("receivedBy")}
+                          </span>
+                        </label>
+                        <RichSearch
+                          data={users?.data}
+                          value={form.received_by}
+                          placeholder={t("selectUser")}
+                          keyFields={{
+                            id: "id",
+                            title: "username",
+                            image: "image",
+                          }}
+                          onSelected={(value) => setForm(prev => ({ ...prev, received_by: value }))}
+                        />
+                      </div>
+
+                      <div className="grow min-w-[200px]">
+                        <label className="mb-2 block text-sm font-medium text-gray-700 dark:!text-gray-300">
+                          <span className="flex items-center gap-2">
+                            <FaUser className="text-gray-400" />
+                            {t("approvedBy")}
+                          </span>
+                        </label>
+                        <RichSearch
+                          data={users?.data}
+                          value={form.approved_by}
+                          placeholder={t("selectUser")}
+                          keyFields={{
+                            id: "id",
+                            title: "username",
+                            image: "image",
+                          }}
+                          onSelected={(value) => setForm(prev => ({ ...prev, approved_by: value }))}
                         />
                       </div>
                     </div>

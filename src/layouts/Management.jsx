@@ -18,6 +18,7 @@ const outletContext = createContext();
 export const useOutletsContext = () => useContext(outletContext);
 
 import logo from "../assets/logo.jpg";
+import SideBarV2 from './SideBarV2';
 
 const Management = () => {
   const token = localStorage.getItem('token');
@@ -127,11 +128,12 @@ const Management = () => {
       <ToastContainer position="top-right" autoClose={2000} />
       {loading ? <Loading /> : ""}
       <section className={`h-[100vh] flex ${darkMode ? "bg-gray-900" : "bg-sky-50"}`}>
-        {data?.data?.role_id !== 1 && <Sidebar darkMode={darkMode} />}
+        {/* {data?.data?.role_id !== 1 && <Sidebar darkMode={darkMode} />} */}
+        {data?.data?.role_id !== 1 && <SideBarV2 darkMode={darkMode} />}
         <div>
           <Header darkMode={darkMode} setDarkMode={setDarkMode} />
           <AlertMessage show={alert} message={renderAlertMessage(message)} status={alertStatus} className="z-[9999]" />
-          <main ref={topRef} className={` h-[calc(100vh)] ${data?.data?.role_id !== 1 ? (sidebar ? "lg:w-[calc(100vw-250px)]" : "lg:w-[calc(100vw-80px)]") : ""} pt-[86px] overflow-auto m-0 w-[100vw] p-4 ${darkMode ? "!bg-[#21335e] !text-white" : "!bg-[#F8FAFC] !text-black"}`}>
+          <main ref={topRef} className={` h-[calc(100vh)] ${data?.data?.role_id !== 1 ? (sidebar ? "lg:w-[calc(100vw-250px)]" : "lg:w-[calc(100vw-80px)]") : ""} pt-[86px] overflow-auto m-0 w-[100vw] p-4 ${darkMode ? "!bg-[#21335e] !text-white" : "!bg-slate-50 !text-black"}`}>
             {/* <div className='absolute -z-0 top-0 right-0 w-2/5 h-full bg-gradient-to-b from-blue-50/50 to-transparent pointer-events-none' /> */}
             <Outlet />
             <div className="absolute z-[9999] bottom-5 right-5 pointer-events-none opacity-50">

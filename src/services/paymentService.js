@@ -9,6 +9,7 @@ const PAYMENT_STATUS = [
   { value: "paid", label: "Paid" },
   { value: "credit", label: "Credit" },
   { value: "cod", label: "COD" },
+  { value: "deposit", label: "Deposit" },
   { value: "consignment", label: "Consignment" },
 ];
 

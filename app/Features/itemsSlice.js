@@ -8,7 +8,7 @@ export const itemsApi = createApi({
     }),
     endpoints: (builder) => ({
         getAllItems: builder.query({
-            query: ({ token, limit = 12, page = 1, search, category_id = 0, brand_id = 0 }) => queryData(`/items?limit=${limit}&page=${page}&search=${search}&category_id=${category_id}&brand_id=${brand_id}`, token),
+            query: ({ token, limit = 12, page = 1, search, category_id = 0, brand_id = 0, filter = 'all', supplier_id = 0 }) => queryData(`/items?limit=${limit}&page=${page}&search=${search}&category_id=${category_id}&brand_id=${brand_id}&filter=${filter}&supplier_id=${supplier_id}`, token),
         }),
         getAllItemsForMarketPlace: builder.query({
             query: ({ limit = 12, page = 1, search = '', category_id = '', brand_id = '', profile_id = '', price_range = '', is_discounted = '' }) => queryDataNoToken(`/sale-item-marketplace?limit=${limit}&page=${page}&search=${search}&category_id=${category_id}&brand_id=${brand_id}&profile_id=${profile_id}&price_range=${price_range}&is_discounted=${is_discounted}`),

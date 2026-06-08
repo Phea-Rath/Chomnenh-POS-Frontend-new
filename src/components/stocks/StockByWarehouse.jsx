@@ -15,8 +15,9 @@ import * as XLSX from 'xlsx';
 import { useTranslation } from 'react-i18next';
 import { useGetAllWarehousesQuery } from '../../../app/Features/warehousesSlice';
 import api from '../../services/api';
-import { useParams } from 'react-router';
+import { Link, useParams } from 'react-router';
 import RefreshButton from '../../utils/RefreshButton';
+import { LuList, LuPlus } from 'react-icons/lu';
 
 const STOCK_FIELDS = [
     { key: 'in_stock', label: 'In Stock', kh: 'ក្នុងស្តុក', className: 'text-blue-600 bg-blue-50 dark:bg-blue-900/20 dark:text-blue-400' },
@@ -352,6 +353,18 @@ const StockByWarehouse = () => {
                             <FaFileExport />
                             {exportLoading ? t('exporting') : t('exportExcel')}
                         </button>
+                        <Link to="/inventories/stock-list">
+                            <button className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center gap-2 transition-colors">
+                                <LuList />
+                                {t('stockList')}
+                            </button>
+                        </Link>
+                        <Link to="/inventories/stock-list/add">
+                            <button className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center gap-2 transition-colors">
+                                <LuPlus />
+                                {t('stockIn')}
+                            </button>
+                        </Link>
                     </div>
                 </div>
 

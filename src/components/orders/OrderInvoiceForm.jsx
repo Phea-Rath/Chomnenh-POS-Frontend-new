@@ -14,7 +14,11 @@ import {
   FaTruck,
   FaUser,
   FaWarehouse,
+  FaMoneyBillWave,
 } from "react-icons/fa";
+import { BsBank } from "react-icons/bs";
+import { IoIdCard } from "react-icons/io5";
+import { GiNotebook } from "react-icons/gi";
 import api from "../../services/api";
 import { useNavigate, useParams } from "react-router";
 import { useNotify } from "../../utils/NotificationProvider";
@@ -36,9 +40,8 @@ import { useGetAllUserQuery } from "../../../app/Features/usersSlice";
 import { useGetOrderByIdQuery, useGetOrderInvoiceQuery } from "../../../app/Features/ordersSlice";
 import Modal from "../../utils/Modal";
 import { LuSearch } from "react-icons/lu";
-import MiniVisaPaymentCard from "../../utils/MiniVisaCard";
-import PaymentModel from "../../utils/PaymentModal";
 import { PAYMENT_METHODS, PAYMENT_STATUS } from "../../services/paymentService";
+import AlertBox from "../../services/AlertBox";
 
 const DEFAULT_STATUS = 0;
 const ITEM_FOR_OPTIONS = [
@@ -112,13 +115,15 @@ const createInitialFormData = () => ({
   sale_type: "wholesale",
   created_by: "",
   term: 0,
-  // order_tel: "",
-  // order_address: "",
+  order_tel: "",
+  order_address: "",
   discount_total: 0,
   total_amount: 0,
   balance: 0,
   items: [],
   payments: [],
+  online: 0,
+  through: 0,
 });
 
 const toNumber = (value) => {
@@ -148,8 +153,15 @@ const OrderInvoiceForm = () => {
   const [paymentStatus, setPaymentStatus] = useState("");
   const [currentPage] = useState(1);
   const [showModal, setShowModal] = useState(false);
-  const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedInvoiceIds, setSelectedInvoiceIds] = useState([]);
+  const [showAlert, setShowAlert] = useState(false);
+  const [paymentData, setPaymentData] = useState({
+    payment_method: 'cash',
+    amount: 0,
+    transection_id: '',
+    paid_at: today,
+    remark: ''
+  });
 
   const toggleSelectInvoice = (id) => {
     setSelectedInvoiceIds((prev) =>
@@ -416,15 +428,28 @@ const OrderInvoiceForm = () => {
         discount_total: toNumber(order.order_discount),
         term: order.term || 0,
         created_by: order.created_by || "",
-        // order_tel: order.order_tel || "",
-        // order_address: order.order_address || "",
+        order_tel: order.order_tel || "",
+        order_address: order.order_address || "",
         sale_type: order.sale_type || "wholesale",
         total_amount: toNumber(order.order_total ?? order.total_amount),
         balance: toNumber(order.balance),
         items: normalizedItems,
         payments: order.payments || [],
+        online: order.online || 0,
+        through: order.through || 0,
       })
     );
+
+    if (order.payments && order.payments.length > 0) {
+      const lastPayment = order.payments[order.payments.length - 1];
+      setPaymentData({
+        payment_method: lastPayment.payment_method || 'cash',
+        amount: toNumber(lastPayment.amount),
+        transection_id: lastPayment.transection_id || '',
+        paid_at: lastPayment.paid_at || lastPayment.payment_date || today,
+        remark: lastPayment.remark || ''
+      });
+    }
   }, [isEditMode, orderByIdData]);
 
 
@@ -756,20 +781,27 @@ const OrderInvoiceForm = () => {
       return;
     }
 
+    setShowAlert(true);
+  };
+
+  const handleConfirmSubmit = async () => {
+    setShowAlert(false);
     setLoading(true);
 
     try {
       const payload = {
+        online: formData.online ? Number(formData.online) : 0,
+        through: formData.through ? Number(formData.through) : 0,
         status: Number(formData.status),
         order_customer_id: formData.order_customer_id ? Number(formData.order_customer_id) : null,
-        order_tel: null,
-        order_address: null,
+        order_tel: formData.order_tel || null,
+        order_address: formData.order_address || null,
         deliver_id: formData.deliver_id ? Number(formData.deliver_id) : null,
         delivery_fee: toNumber(formData.delivery_fee),
         order_tax: toNumber(formData.order_tax),
         payment: toNumber(formData.payment),
         term: formData.term || 0,
-        created_by: formData.created_by || null,
+        created_by: formData.created_by ? Number(formData.created_by) : null,
         sale_type: formData.sale_type || null,
         reference_no: formData.reference_no || null,
         order_payment_status: formData.order_payment_status || paymentStatus,
@@ -777,14 +809,12 @@ const OrderInvoiceForm = () => {
         order_date: formData.order_date,
         items: formData.items.map((item) => ({
           item_id: Number(item.item_id),
-          item_name: item.item_name,
-          item_for: item.item_for || null,
           item_price: toNumber(item.item_price),
-          unit_price: toNumber(item.item_price),
           quantity: Number(item.quantity),
-          discount: toNumber(item.discount).toFixed(2),
+          item_for: item.item_for || null,
+          discount: toNumber(item.discount),
         })),
-        payments: formData.payments,
+        payments: [paymentData],
       };
 
       if (isEditMode) {
@@ -838,6 +868,12 @@ const OrderInvoiceForm = () => {
   const handlePaymentStatusSelect = (value) => {
     setPaymentStatus(value);
     handleInputChange("order_payment_status", value || "");
+    if(value == 'paid'){
+      setPaymentData(prev=>({
+        ...prev,
+        amount: formData?.total_amount
+      }))
+    }
 
   };
 
@@ -896,6 +932,13 @@ const OrderInvoiceForm = () => {
           payments: [],
         })
       );
+      setPaymentData({
+        payment_method: 'cash',
+        amount: 0,
+        transection_id: '',
+        paid_at: today,
+        remark: ''
+      });
       setShowModal(false);
     } catch (error) {
       console.error("Error fetching order template:", error);
@@ -909,6 +952,15 @@ const OrderInvoiceForm = () => {
 
   return (
     <div className=" bg-transparent py-2 transition-colors">
+      <AlertBox
+        isOpen={showAlert}
+        title={isEditMode ? t('confirmUpdate') : t('confirmCreateInvoice')}
+        message={isEditMode ? t('confirmUpdateInvoiceMessage') : t('confirmCreateInvoiceMessage')}
+        onConfirm={handleConfirmSubmit}
+        onCancel={() => setShowAlert(false)}
+        confirmText={isEditMode ? t('update') : t('create')}
+        cancelText={t('cancel')}
+      />
       <div className="px-2">
         {alertError && (
           <Alert
@@ -1288,39 +1340,81 @@ const OrderInvoiceForm = () => {
                     </div>
 
                     <div>
-                        <div className="mb-2 flex items-center justify-between">
-                          <span className="flex items-center gap-2 text-gray-600 dark:!text-gray-400">
-                            <FaDollarSign className="text-gray-400" />
-                            {t("paymentAmount")} <span className="text-red-500">*</span>
-                          </span>
+                      <h3 className="text-md font-semibold mb-4 flex items-center gap-2 dark:text-white">
+                        <FaMoneyBillWave className="text-green-500" />
+                        {t('addPayment')}
+                      </h3>
+                      <div className=" flex flex-wrap gap-3">
+                        <div className="grow">
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-1">
+                            {t('paymentMethod')} <BsBank />
+                          </label>
+                          <RichSearch
+                            data={PAYMENT_METHODS}
+                            placeholder='e.g, cash or bank '
+                            keyFields={{
+                              id: 'value',
+                              title: 'label'
+                            }}
+                            value={paymentData.payment_method}
+                            onSelected={(value) => setPaymentData((pre) => ({ ...pre, payment_method: value }))}
+                          />
                         </div>
-                        <div className="cursor-pointer" onClick={() => setShowPaymentModal(true)}>
-                          <MiniVisaPaymentCard payment={formData?.payments[formData?.payments?.length - 1]} />
+                        <div className="grow">
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-1">
+                            {t('transectionId')} <IoIdCard />
+                          </label>
+                          <Input
+                            type="text"
+                            value={paymentData.transection_id}
+                            placeholder="e.g, 12345678910"
+                            onChange={(value) => setPaymentData((pre) => ({ ...pre, transection_id: value }))}
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100"
+                          />
                         </div>
-                        {fieldErrors.payment && (
-                          <div className="mt-1 text-sm text-red-500">{fieldErrors.payment}</div>
-                        )}
+                        <div className="grow">
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-1">
+                            {t('amount')} <FaDollarSign />
+                          </label>
+                          <Input
+                            type="number"
+                            value={paymentData.amount}
+                            onChange={(value) => {
+                              const val = parseFloat(value) || 0;
+                              setPaymentData((pre) => ({ ...pre, amount: val }));
+                              updateFormData({ payment: val });
+                            }}
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100"
+                            step="0.01"
+                            min="0"
+                          />
+                        </div>
+                        <div className="grow">
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('paymentDate')}</label>
+                          <DatePicker
+                            showTime
+                            value={paymentData.paid_at ? dayjs(paymentData.paid_at) : null}
+                            onChange={(_, dateString) => setPaymentData((pre) => ({ ...pre, paid_at: dateString }))}
+                            className="date-picker w-full"
+                          />
+                        </div>
+                        <div className="grow w-full">
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-1">
+                            {t('remark')} <GiNotebook />
+                          </label>
+                          <textarea
+                            value={paymentData.remark || ''}
+                            placeholder="Remark for payment. . ."
+                            onChange={(e) => setPaymentData((pre) => ({ ...pre, remark: e.target.value }))}
+                            className="textarea-input w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100"
+                            rows={2}
+                          />
+                        </div>
                       </div>
-
-                      <PaymentModel
-                        isShow={showPaymentModal}
-                        onClose={() => setShowPaymentModal(false)}
-                        data={formData?.payments[formData?.payments?.length - 1]}
-                        balance={formData?.balance}
-                        pay={formData?.payment}
-                        onPayment={(data) => {
-                          setShowPaymentModal(false);
-                          updateFormData(prev => {
-                            const newPayment = parseFloat(data.amount) || 0;
-                            return {
-                              ...prev,
-                              payment: newPayment,
-                              order_payment_method: data.payment_method,
-                              payments: [data]
-                            };
-                          });
-                        }}
-                      />
+                      {fieldErrors.payment && (
+                        <div className="mt-1 text-sm text-red-500">{fieldErrors.payment}</div>
+                      )}
+                    </div>
                     <Divider className="my-4 dark:!border-gray-700" />
 
                     <div className="flex justify-between text-sm font-bold">

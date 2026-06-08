@@ -94,6 +94,7 @@ const OrderInvoiceList = () => {
   const [alertBox, setAlertBox] = useState(false);
   const [alertBoxCancel, setAlertBoxCancel] = useState(false);
   const [alertBoxUncancel, setAlertBoxUncancel] = useState(false);
+  const [alertBoxConfirm, setAlertBoxConfirm] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentAmount, setPaymentAmount] = useState(0);
   const [balanceAmount, setBalanceAmount] = useState({ pay: 0, balance: 0 });
@@ -163,6 +164,12 @@ const OrderInvoiceList = () => {
     setAlertBox(false);
     setAlertBoxCancel(false);
     setAlertBoxUncancel(false);
+    setAlertBoxConfirm(false);
+  };
+
+  const handleOrderConfirm = (orderId) => {
+    setId(orderId);
+    setAlertBoxConfirm(true);
   };
 
   const handleConfirmDelete = async () => {
@@ -239,10 +246,11 @@ const OrderInvoiceList = () => {
     }
   };
 
-  const handleConfirmOrder = async (orderId) => {
+  const handleConfirmConfirmOrder = async () => {
     try {
+      setAlertBoxConfirm(false);
       setLoading(true);
-      const response = await api.put(`status_order/${orderId}/6`, {}, {
+      const response = await api.put(`status_order/${id}/6`, {}, {
                     headers: { Authorization: `Bearer ${token}` }
       });
       if (response?.data?.status === 200) {
@@ -364,7 +372,7 @@ const OrderInvoiceList = () => {
 
       {order.status == 1 && (
         <button
-        onClick={() => handleConfirmOrder(order.order_id)}
+        onClick={() => handleOrderConfirm(order.order_id)}
           className="rounded bg-green-100 p-2 text-green-600 transition-colors hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400"
           title={t("confirm")}
         >
@@ -387,21 +395,13 @@ const OrderInvoiceList = () => {
         </button>
       )}
 
-      {!order.is_cancelled ? (
+      {!order.is_cancelled && !order.status == 6 && (
         <button
         onClick={() => handleOrderCancel(order.order_id)}
           className="rounded bg-orange-100 p-2 text-orange-600 transition-colors hover:bg-orange-200 dark:bg-orange-900/30 dark:text-orange-400"
           title={t("cancel")}
           >
           <LuBan size={14} />
-        </button>
-      ) : (
-        <button
-        onClick={() => handleOrderUncancel(order.order_id)}
-        className="rounded bg-blue-100 p-2 text-blue-600 transition-colors hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-400"
-        title={t("uncancel")}
-        >
-          <LuRotateCcw size={14} />
         </button>
       )}
 
@@ -414,9 +414,9 @@ const OrderInvoiceList = () => {
         <LuFileText size={14} />
       </a>
 
-      {!order.is_cancelled && (
+      {!order.is_cancelled && !order.status == 6 && (
         <button
-          onClick={() => navigate(`/home/order-invoice/update/${order.order_id}`)}
+          onClick={() => navigate(`update/${order.order_id}`)}
           className="rounded bg-yellow-100 p-2 text-yellow-600 transition-colors hover:bg-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-400"
           title={t("edit")}
         >
@@ -424,13 +424,13 @@ const OrderInvoiceList = () => {
         </button>
       )}
 
-      <button
+      {!order.status == 6 &&<button
         onClick={() => handleDelete(order.order_id)}
         className="rounded bg-red-100 p-2 text-red-600 transition-colors hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400"
         title={t("delete")}
       >
         <LuTrash2 size={14} />
-      </button>
+      </button>}
     </div>
   );
 
@@ -563,6 +563,7 @@ const OrderInvoiceList = () => {
       <AlertBox isOpen={alertBox} title={t("deleteOrderTitle")} message={t("deleteOrderMessage")} onConfirm={handleConfirmDelete} onCancel={handleCancel} confirmText={t("delete")} cancelText={t("cancel")} confirmColor="error" />
       <AlertBox isOpen={alertBoxCancel} title={t("cancelOrderTitle")} message={t("cancelOrderMessage")} onConfirm={handleConfirmCancelOrder} onCancel={handleCancel} confirmText={t("cancelOrderAction")} cancelText={t("keepOrder")} confirmColor="warning" />
       <AlertBox isOpen={alertBoxUncancel} title={t("uncancelOrderTitle")} message={t("uncancelOrderMessage")} onConfirm={handleConfirmUncancelOrder} onCancel={handleCancel} confirmText={t("uncancelOrder")} cancelText={t("keepCancelled")} confirmColor="info" />
+      <AlertBox isOpen={alertBoxConfirm} title={t("confirmOrderTitle")} message={t("confirmOrderMessage")} onConfirm={handleConfirmConfirmOrder} onCancel={handleCancel} confirmText={t("confirm")} cancelText={t("cancel")} confirmColor="success" />
 
       <div className="mx-auto">
         <div className="mb-8 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
@@ -571,14 +572,14 @@ const OrderInvoiceList = () => {
               <div className="rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 p-3 shadow-sm">
                 <LuClipboardList className="text-xl text-white" />
               </div>
-              Invoice List
+              {t('wholeSaleList')}
             </motion.h1>
             <p className="text-md text-gray-600 dark:text-gray-400">Manage invoice records, balances, and follow-up actions.</p>
           </div>
 
           <div className="flex items-center gap-3">
             <RefreshButton onRefresh={refetch} />
-            <Link to="/home/order-invoice/create">
+            <Link to="create">
               <Button
                 variant="success"
               >
@@ -723,7 +724,7 @@ const OrderInvoiceList = () => {
             </div>
             <h3 className="mb-2 text-xl font-semibold text-gray-700 dark:text-white">No invoices found</h3>
             <p className="mb-6 max-w-md text-center text-gray-500 dark:text-gray-400">Try adjusting the filters or create a new invoice to get started.</p>
-            <Link to="/home/order-invoice/create">
+            <Link to="create">
               <button className="flex items-center gap-2 rounded-md bg-green-600 px-6 py-3 text-white transition-colors hover:bg-green-700">
                 <LuPlus /> Create Invoice
               </button>

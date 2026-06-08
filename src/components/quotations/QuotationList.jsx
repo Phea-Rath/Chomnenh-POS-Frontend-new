@@ -282,7 +282,7 @@ const QuotationList = () => {
     };
 
     const ListView = () => (
-        <div className="overflow-x-auto bg-primary rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 relative">
+        <div className="overflow-x-auto bg-primary rounded-lg  border border-gray-200 dark:border-gray-700 relative">
             <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                 <thead className="bg-gray-50 dark:bg-gray-900">
                     <tr>
@@ -400,7 +400,7 @@ const QuotationList = () => {
                 const StatusIcon = statusConfig.icon;
 
                 return (
-                    <div key={quote.quotation_id} className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow duration-300">
+                    <div key={quote.quotation_id} className="bg-white dark:bg-gray-800 rounded-lg  border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow duration-300">
                         <div className="p-6">
                             <div className="flex justify-between items-start mb-4">
                                 <div>
@@ -531,7 +531,7 @@ const QuotationList = () => {
                     </div>
                 </div>
 
-                <div className="bg-primary rounded-xl p-4 md:p-5 shadow-sm border text-sm border-gray-200 dark:border-gray-700">
+                <div className="bg-primary rounded-xl p-4 md:p-5  border text-sm border-gray-200 dark:border-gray-700">
                     <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                         <div className="flex flex-col md:flex-row gap-4">
                             <div className="relative flex-1 min-w-[250px]">
@@ -585,7 +585,7 @@ const QuotationList = () => {
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-3">
                 {statusOptions.map((status) => (
-                    <div key={status.value} className="bg-primary p-4 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
+                    <div key={status.value} className="bg-primary p-4 rounded-xl  border border-gray-200 dark:border-gray-700">
                         <div className="flex items-center">
                             <div className={`p-3 ${status.color.split(' ')[0]} rounded-lg`}>
                                 <status.icon className={status.color.split(' ')[1]} />
@@ -601,7 +601,7 @@ const QuotationList = () => {
                 ))}
             </div>
 
-            <div className="bg-primary rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+            <div className="bg-primary rounded-xl  border border-gray-200 dark:border-gray-700 overflow-hidden">
                 {filteredQuotations?.length === 0 ? (
                     <div className="text-center py-16 px-4">
                         <div className="w-20 h-20 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">

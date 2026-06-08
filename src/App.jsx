@@ -575,20 +575,16 @@ const router = createBrowserRouter([
         element: <ProductionDetail />,
       },
       {
-        path: "/home/order-invoice",
+        path: "/wholesale",
         element: <OrderInvoiceList />
       },
       {
-        path: "/home/order-invoice/create",
+        path: "/wholesale/create",
         element: <OrderInvoiceForm />
       },
       {
-        path: "/home/order-invoice/update/:id",
+        path: "/wholesale/update/:id",
         element: <OrderInvoiceForm />
-      },
-      {
-        path: "/home/order-invoice/",
-        element: <OrderInvoiceList />
       },
       {
         path: 'aba',

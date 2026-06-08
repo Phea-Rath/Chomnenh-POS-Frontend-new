@@ -22,6 +22,15 @@ export const menusApi = createApi({
         deleteMenu: builder.mutation({
             query: ({ id, token }) => deleteData(id, '/menus', token),
         }),
+        getCurrentMenus: builder.query({
+            query:({token})=> queryData('/menusByCurrentUser', token),
+        }),
+        getCurrentMenusWebsite: builder.query({
+            query:({token})=> queryData('/menu-website-current-user', token),
+        }),
+        getCurrentMenusByUserWebsite: builder.query({
+            query:({id, token})=> queryDataById(id, '/menu-website-by-user', token),
+        })
     }),
 });
 
@@ -30,5 +39,8 @@ export const {
     useGetMenuByIdQuery,
     useCreateMenuMutation,
     useUpdateMenuMutation,
-    useDeleteMenuMutation
+    useDeleteMenuMutation,
+    useGetCurrentMenusQuery,
+    useGetCurrentMenusWebsiteQuery,
+    useGetCurrentMenusByUserWebsiteQuery
 } = menusApi;

@@ -557,6 +557,18 @@ const RawMaterials = () => {
                             <LuDownload />
                             {t('export')}
                         </ExportExcel>
+                        <Link to="/inventories/stock-raws">
+                            <button className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center gap-2 transition-colors">
+                                <LuList />
+                                {t('stockList')}
+                            </button>
+                        </Link>
+                        <Link to="/inventories/stock-raws/add">
+                            <button className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center gap-2 transition-colors">
+                                <LuPlus />
+                                {t('stockIn')}
+                            </button>
+                        </Link>
                         <Link to="create">
                             <button className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 flex items-center gap-2 transition-colors">
                                 <LuPlus />

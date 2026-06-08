@@ -8,7 +8,7 @@ export const rawMaterialsApi = createApi({
     }),
     endpoints: (builder) => ({
         getAllRawMaterial: builder.query({
-            query: ({ limit = 10, page = 1, search, token }) => queryData(`/raw_materials?limit=${limit}&page=${page}&search=${search}`, token),
+            query: ({ limit = 10, page = 1, search, token, filter = 'all', supplier_id = 0 }) => queryData(`/raw_materials?limit=${limit}&page=${page}&search=${search}&filter=${filter}&supplier_id=${supplier_id}`, token),
         }),
         getRawMaterialById: builder.query({
             query: ({ id, token }) => queryDataById(id, '/raw_materials', token),

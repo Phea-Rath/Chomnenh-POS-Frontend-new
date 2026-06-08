@@ -120,9 +120,12 @@ const ItemTable = ({
                             className="group transition-colors hover:bg-blue-50/50 dark:hover:bg-blue-900/10"
                         >
                             <td className="px-2">
-                                <span className="font-medium text-gray-900 dark:text-gray-100">
+                                <h1 className="font-medium text-gray-900 dark:text-gray-100">
                                     {item.name}
-                                </span>
+                                </h1>
+                                <p className="font-medium text-gray-900 text-xs dark:text-gray-100">
+                                    {item.code}
+                                </p>
                             </td>
                             {showSelectField && (
                             <td className="px-1 py-2">

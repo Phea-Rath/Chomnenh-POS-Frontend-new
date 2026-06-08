@@ -1661,7 +1661,7 @@ const Sales = () => {
                         </div>
                       </div>
 
-                      <div className="space-y-2">
+                      {/* <div className="space-y-2">
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t("saleType")}</label>
                         <div className="flex gap-3">
                           <button
@@ -1683,7 +1683,7 @@ const Sales = () => {
                             {t("wholesale")}
                           </button>
                         </div>
-                      </div>
+                      </div> */}
 
                       <div className={`flex justify-between items-center ${orders?.sale_type === "sale" ? "hidden" : ""}`}>
                         <label className="text-sm text-gray-600 dark:text-gray-300">{t("tax")}</label>
@@ -1714,7 +1714,7 @@ const Sales = () => {
                         />
                       </div>
 
-                      <div className="flex justify-between items-center">
+                      {/* <div className="flex justify-between items-center">
                         <label className="text-sm text-gray-600 dark:text-gray-300">{t("paymentMethod")}</label>
                         <select
                           value={orders?.order_payment_method || "cash"}
@@ -1731,7 +1731,7 @@ const Sales = () => {
                             </option>
                           ))}
                         </select>
-                      </div>
+                      </div> */}
 
                       <div className="flex justify-between items-center">
                         <label className="text-sm text-gray-600 dark:text-gray-300">{t("payment")}</label>

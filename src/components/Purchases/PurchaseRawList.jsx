@@ -47,15 +47,14 @@ import { useTranslation } from "react-i18next";
 import { MdPayment } from "react-icons/md";
 import RichSearch from "../../utils/RichSearch";
 import { DatePicker } from "antd";
+import PaymentModel from "../../utils/PaymentModal";
 
 const PurchaseRawList = () => {
     const { t } = useTranslation();
     const [purchases, setPurchases] = useState([]);
     const [filteredPurchases, setFilteredPurchases] = useState([]);
     const [showPaymentModal, setShowPaymentModal] = useState(false);
-    const [paymentAmount, setPaymentAmount] = useState(0);
     const [balanceAmount, setBalanceAmount] = useState(0);
-    const [paymentDate, setPaymentDate] = useState("");
     const token = localStorage.getItem("token");
     const [id, setId] = useState(0);
     const [alertBox, setAlertBox] = useState(false);
@@ -251,14 +250,17 @@ const PurchaseRawList = () => {
         }
     }
 
-    const addPayment = async () => {
+    const addPayment = async (value) => {
         try {
             setLoading(true);
             const res = await api.put(
                 `purchase_payment/${id}`,
                 {
-                    amount: paymentAmount,
-                    paid_at: paymentDate,
+                    transection_id: value.transection_id,
+                    remark: value.remark,
+                    payment_method: value.payment_method,
+                    amount: value.amount,
+                    paid_at: value.payment_date,
                 },
                 {
                     headers: { Authorization: `Bearer ${token}` },
@@ -268,8 +270,6 @@ const PurchaseRawList = () => {
                 refetch();
                 toast.success(t('paymentAddedSuccess', 'Payment added successfully!'));
                 setShowPaymentModal(false);
-                setPaymentAmount(0);
-                setPaymentDate("");
             }
         } catch (error) {
             toast.error(error.message || t('paymentAddedFailed', 'Failed to add payment!'));
@@ -556,10 +556,8 @@ const PurchaseRawList = () => {
                                                             <button
                                                                 onClick={() => {
                                                                     setShowPaymentModal(true);
-                                                                    setPaymentAmount(item.balance);
-                                                                    setBalanceAmount({ "pay": item.total_paid, "balance": item.balance });
+                                                                    setBalanceAmount({ pay: item.total_paid, balance: item.balance });
                                                                     setId(item.purchase_id);
-                                                                    setPaymentDate(new Date().toISOString().split("T")[0]);
                                                                 }}
                                                                 className="p-2 bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 rounded hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors"
                                                             >
@@ -712,10 +710,8 @@ const PurchaseRawList = () => {
                                                     <button
                                                         onClick={() => {
                                                             setShowPaymentModal(true);
-                                                            setPaymentAmount(item.balance);
-                                                            setBalanceAmount({ "pay": item.total_paid, "balance": item.balance });
+                                                            setBalanceAmount({ pay: item.total_paid, balance: item.balance });
                                                             setId(item.purchase_id);
-                                                            setPaymentDate(new Date().toISOString().split("T")[0]);
                                                         }}
                                                         className="p-2 bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 rounded hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors"
                                                     >
@@ -784,63 +780,7 @@ const PurchaseRawList = () => {
                 </motion.div>
             </div>
 
-            {showPaymentModal && (
-                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        className="bg-white dark:bg-slate-800 rounded-lg p-6 max-w-md w-full border border-gray-200 dark:border-gray-700 shadow-xl"
-                    >
-                        <h3 className="text-xl font-semibold mb-4 flex items-center gap-2 dark:text-white">
-                            <FaMoneyBillWave className="text-green-500" />
-                            {t('addPayment')}
-                        </h3>
-                        <div className="flex justify-between mb-4 dark:text-gray-300">
-                            <h1>{t('balance')}: <span className="text-red-500">{parseFloat(balanceAmount?.balance).toFixed(2)}</span></h1>
-                            <h1>{t('paidAmount')}: <span className="text-green-500">{parseFloat(balanceAmount?.pay).toFixed(2)}</span></h1>
-                        </div>
-                        <div className="space-y-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-1">
-                                    {t('amount')} <FaDollarSign />
-                                </label>
-                                <input
-                                    type="number"
-                                    value={paymentAmount}
-                                    onChange={(e) => setPaymentAmount(parseFloat(e.target.value) || 0)}
-                                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100"
-                                    step="0.01"
-                                    min="0"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('paymentDate')}</label>
-                                <input
-                                    type="date"
-                                    value={paymentDate}
-                                    onChange={(e) => setPaymentDate(e.target.value)}
-                                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100"
-                                />
-                            </div>
-                            <div className="flex justify-end gap-3 pt-4">
-                                <button
-                                    onClick={() => setShowPaymentModal(false)}
-                                    className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
-                                >
-                                    {t('cancel')}
-                                </button>
-                                <button
-                                    onClick={addPayment}
-                                    disabled={loading}
-                                    className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 transition-colors"
-                                >
-                                    {loading ? t('processing') : t('addPayment')}
-                                </button>
-                            </div>
-                        </div>
-                    </motion.div>
-                </div>
-            )}
+            <PaymentModel isShow={showPaymentModal} onClose={() => setShowPaymentModal(false)} isLoading={loading} balance={parseFloat(balanceAmount?.balance).toFixed(2)} pay={parseFloat(balanceAmount?.pay).toFixed(2)} onPayment={addPayment} />
         </motion.div>
     );
 };

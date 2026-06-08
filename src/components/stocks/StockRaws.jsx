@@ -10,7 +10,7 @@ import api from '../../services/api';
 import RefreshButton from '../../utils/RefreshButton';
 import ExportExcel from '../../services/ExportExcel';
 import Button from '../../utils/Button';
-import StockList from './StockList';
+import StockList from '../../utils/StockList';
 
 const getStockItems = (stock) => (Array.isArray(stock?.items) ? stock.items : []);
 
@@ -94,25 +94,25 @@ const StockRaws = () => {
                     title: t('totalRawStockRecords'),
                     value: data?.pagination?.total || 0,
                     icon: <FaClipboardList className="text-blue-500" />,
-                    color: 'from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20',
+                    color: 'from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 shadow-xs',
                 },
                 {
                     title: t('currentPage'),
                     value: data?.pagination?.current_page || 0,
                     icon: <FaBoxOpen className="text-green-500" />,
-                    color: 'from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20',
+                    color: 'from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 shadow-xs',
                 },
                 {
                     title: t('itemsOnPage'),
                     value: stocks.length,
                     icon: <FaCubes className="text-orange-500" />,
-                    color: 'from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20',
+                    color: 'from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20 shadow-xs',
                 },
                 {
                     title: t('lastPage'),
                     value: data?.pagination?.last_page || 0,
                     icon: <FaShoppingCart className="text-purple-500" />,
-                    color: 'from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20',
+                    color: 'from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 shadow-xs',
                 },
             ]}
             toolbarActions={

@@ -84,13 +84,13 @@ const Header = ({ darkMode, setDarkMode }) => {
   const headerWidthClass = data?.data?.role_id !== 1 ? (sidebar ? "lg:w-[calc(100vw-250px)]" : "lg:w-[calc(100vw-80px)]") : "w-full";
 
   return (
-    <header className={`fixed shadow-sm no-print w-full drop-shadow-md ${headerWidthClass} top-0 z-50 ${darkMode ? "bg-primary-dark border-gray-700" : "bg-white border-gray-200"}`}>
-      <div className="flex justify-between items-center px-4 lg:px-8 py-3">
+    <header className={`fixed shadow-sm no-print w-full drop-shadow-xs ${headerWidthClass} top-0 z-49 ${darkMode ? "bg-[#0f172a] border-gray-700" : "bg-white border-gray-200"}`}>
+      <div className="flex justify-between items-center px-4 lg:pr-8 py-2">
         {/* Left Section - Logo and Menu */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center">
           <button
             onClick={toggleSidebar}
-            className={` p-2 rounded-lg transition-colors ${darkMode ? "hover:bg-gray-800" : "hover:bg-gray-100"}`}
+            className={` rounded-lg transition-colors ${darkMode ? "hover:bg-gray-800" : "hover:bg-gray-100"}`}
             title={sidebar ? t("hideSidebar") : t("showSidebar")}
           >
             {sidebar ? (

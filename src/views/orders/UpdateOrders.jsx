@@ -16,11 +16,13 @@ import { message, Tag, Card, Badge, Tooltip, Avatar, DatePicker, Alert } from "a
 import { useGetAllItemInStockQuery, useGetAllItemsQuery } from "../../../app/Features/itemsSlice";
 import { useNotify } from "../../utils/NotificationProvider";
 import { useGetAllCustomerQuery } from "../../../app/Features/customersSlice";
-import { FaPercent, FaTag, FaPalette, FaRuler, FaWeight } from "react-icons/fa";
+import { FaPercent, FaTag, FaPalette, FaRuler, FaWeight, FaMoneyBillWave, FaDollarSign } from "react-icons/fa";
 import { motion } from "framer-motion";
-import { GiSugarCane } from "react-icons/gi";
+import { GiSugarCane, GiNotebook } from "react-icons/gi";
 import { useDebounce } from "use-debounce";
 import { FaBox } from "react-icons/fa";
+import { BsBank } from "react-icons/bs";
+import { IoIdCard } from "react-icons/io5";
 
 import { useTranslation } from "react-i18next";
 import RichSearch from "../../utils/RichSearch";
@@ -28,8 +30,6 @@ import { MdDeleteSweep } from "react-icons/md";
 import Input from "../../utils/Input";
 import dayjs from "dayjs";
 import Button from "../../utils/Button";
-import MiniVisaPaymentCard from "../../utils/MiniVisaCard";
-import PaymentModel from "../../utils/PaymentModal";
 import { PAYMENT_STATUS, TAX_OPTIONS } from "../../services/paymentService";
 
 ;
@@ -52,7 +52,13 @@ const UpdateOrders = () => {
   const [debouncedSearch] = useDebounce(searchItem, 500);
   const [currentPage, setCurrentPage] = useState(1);
   const [limit, setLimit] = useState(10);
-  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [paymentData, setPaymentData] = useState({
+    payment_method: 'cash',
+    amount: 0,
+    transection_id: '',
+    paid_at: '',
+    remark: ''
+  });
 
   // API hooks
   const orderContext = useGetAllOrderQuery(token);
@@ -87,6 +93,12 @@ const UpdateOrders = () => {
     balance: 0,
     payment: 0,
     order_tax: 0,
+    status: 0,
+    online: 0,
+    through: 0,
+    term: 0,
+    created_by: null,
+    reference_no: "",
     items: [],
     payments: [],
   });
@@ -191,6 +203,12 @@ const UpdateOrders = () => {
         order_date: order.order_date || "",
         balance: order.balance || 0,
         payment: order.payment || 0,
+        status: order.status || 0,
+        online: order.online || 0,
+        through: order.through || 0,
+        term: order.term || 0,
+        created_by: order.created_by || null,
+        reference_no: order.reference_no || "",
         items: order.items || [],
         payments: order.payments || [],
       });
@@ -213,6 +231,17 @@ const UpdateOrders = () => {
       });
 
       setSelectedItems(newItems || []);
+
+      if (order.payments && order.payments.length > 0) {
+        const lastPayment = order.payments[order.payments.length - 1];
+        setPaymentData({
+          payment_method: lastPayment.payment_method || 'cash',
+          amount: parseFloat(lastPayment.amount || 0),
+          transection_id: lastPayment.transection_id || '',
+          paid_at: lastPayment.paid_at || lastPayment.payment_date || "",
+          remark: lastPayment.remark || ''
+        });
+      }
     }
   }, [
     orderLoading,
@@ -481,31 +510,31 @@ const UpdateOrders = () => {
 
   const handleConfirmUpdate = async () => {
     const payload = {
-      ...form,
-      order_payment_status: form.balance != 0 ? "cod" : "paid",
-      items: selectedItems.map((item) => {
-        const baseItem = {
-          item_id: item.item_id,
-          item_name: item.item_name,
-          quantity: item.quantity,
-          discount: item.discount || 0,
-          item_wholesale_price: parseFloat(item.item_wholesale_price || 0),
-          item_cost: parseFloat(item.item_cost || 0),
-          unit_price: parseFloat(item.price_per_unit || item.item_price),
-          price: parseFloat(item.price),
-        };
-
-        // Preserve existing attributes
-        if (item.attributes) {
-          return { ...baseItem, attributes: item.attributes };
-        }
-
-        return baseItem;
-      }),
-      payments: (form.payments || []).map((payment) => ({
-        ...payment,
-        paid_at: payment.payment_date,
+      online: form.online ? Number(form.online) : 0,
+      through: form.through ? Number(form.through) : 0,
+      status: Number(form.status),
+      order_customer_id: form.order_customer_id ? Number(form.order_customer_id) : null,
+      order_tel: form.order_tel || null,
+      order_address: form.order_address || null,
+      deliver_id: form.deliver_id ? Number(form.deliver_id) : null,
+      delivery_fee: parseFloat(form.delivery_fee || 0),
+      order_tax: parseFloat(form.order_tax || 0),
+      payment: parseFloat(form.payment || 0),
+      term: form.term || 0,
+      created_by: form.created_by ? Number(form.created_by) : null,
+      sale_type: form.sale_type || null,
+      reference_no: form.reference_no || null,
+      order_payment_status: form.order_payment_status,
+      order_payment_method: form.order_payment_method,
+      order_date: form.order_date,
+      items: selectedItems.map((item) => ({
+        item_id: Number(item.item_id),
+        item_price: parseFloat(item.price_per_unit || item.item_price || 0),
+        quantity: Number(item.quantity),
+        item_for: item.item_for || "sale",
+        discount: parseFloat(item.discount || 0),
       })),
+      payments: [paymentData],
     };
 
     const toDay = new Date();
@@ -930,8 +959,63 @@ const UpdateOrders = () => {
                     {t("paymentInfo")}
                   </h3>
                   <div className="space-y-4 flex flex-wrap gap-3">
-                    {/* Payment Card */}
-                      <MiniVisaPaymentCard  onClick={() => setShowPaymentModal(true)} payment={form.payments[form.payments.length - 1]} />
+                    <div className="grow">
+                      <label className={`block text-sm font-medium mb-2 ${darkMode ? "text-gray-400" : "text-gray-700"}`}>
+                        {t('paymentMethod')} <BsBank />
+                      </label>
+                      <RichSearch
+                        data={PAYMENT_METHODS}
+                        placeholder='e.g, cash or bank '
+                        keyFields={{
+                          id: 'value',
+                          title: 'label'
+                        }}
+                        value={paymentData.payment_method}
+                        onSelected={(value) => setPaymentData((pre) => ({ ...pre, payment_method: value }))}
+                      />
+                    </div>
+                    <div className="grow">
+                      <label className={`block text-sm font-medium mb-2 ${darkMode ? "text-gray-400" : "text-gray-700"}`}>
+                        {t('transectionId')} <IoIdCard />
+                      </label>
+                      <Input
+                        type="text"
+                        value={paymentData.transection_id}
+                        placeholder="e.g, 12345678910"
+                        onChange={(value) => setPaymentData((pre) => ({ ...pre, transection_id: value }))}
+                        className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${darkMode ? "bg-gray-700 border-gray-600 text-white" : "bg-white border-gray-300 text-gray-900"}`}
+                      />
+                    </div>
+                    <div className="grow">
+                      <label className={`block text-sm font-medium mb-2 ${darkMode ? "text-gray-400" : "text-gray-700"}`}>
+                        {t('amount')} <FaDollarSign />
+                      </label>
+                      <Input
+                        type="number"
+                        value={paymentData.amount}
+                        onChange={(value) => {
+                          const val = parseFloat(value) || 0;
+                          setPaymentData((pre) => ({ ...pre, amount: val }));
+                          setForm(prev => ({
+                            ...prev,
+                            payment: val,
+                            balance: prev.order_total - val
+                          }));
+                        }}
+                        className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${darkMode ? "bg-gray-700 border-gray-600 text-white" : "bg-white border-gray-300 text-gray-900"}`}
+                        step="0.01"
+                        min="0"
+                      />
+                    </div>
+                    <div className="grow">
+                      <label className={`block text-sm font-medium mb-2 ${darkMode ? "text-gray-400" : "text-gray-700"}`}>{t('paymentDate')}</label>
+                      <DatePicker
+                        showTime
+                        value={paymentData.paid_at ? dayjs(paymentData.paid_at) : null}
+                        onChange={(_, dateString) => setPaymentData((pre) => ({ ...pre, paid_at: dateString }))}
+                        className="date-picker w-full"
+                      />
+                    </div>
 
                     {/* Tax (for wholesale) */}
                     <div className={form.sale_type === "wholesale" ? "block grow" : "hidden"}>
@@ -942,7 +1026,7 @@ const UpdateOrders = () => {
                         <RichSearch
                           name="order_tax"
                           value={form.order_tax}
-                          onChange={handleFormChange}
+                          onSelected={(value) => handleFormChange({ target: { name: 'order_tax', value } })}
                           data={TAX_OPTIONS}
                           keyFields={{
                             id: "value",
@@ -966,7 +1050,7 @@ const UpdateOrders = () => {
                           min="0"
                           step="0.01"
                           value={form.delivery_fee}
-                          onChange={handleFormChange}
+                          onChange={(value) => handleFormChange({ target: { name: 'delivery_fee', value } })}
                           className={`w-full pl-8 pr-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${darkMode
                               ? "bg-gray-700 border-gray-600 text-white"
                               : "bg-white border-gray-300"
@@ -975,30 +1059,20 @@ const UpdateOrders = () => {
                         />
                       </div>
                     </div>
+                    <div className="grow w-full">
+                      <label className={`block text-sm font-medium mb-2 ${darkMode ? "text-gray-400" : "text-gray-700"}`}>
+                        {t('remark')} <GiNotebook />
+                      </label>
+                      <textarea
+                        value={paymentData.remark || ''}
+                        placeholder="Remark for payment. . ."
+                        onChange={(e) => setPaymentData((pre) => ({ ...pre, remark: e.target.value }))}
+                        className="textarea-input w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100"
+                        rows={2}
+                      />
+                    </div>
                   </div>
                 </div>
-                <PaymentModel
-                  isShow={showPaymentModal}
-                  onClose={() => setShowPaymentModal(false)}
-                  data={form.payments[form.payments.length - 1]}
-                  balance={form.balance}
-                  pay={form.payment}
-                  onPayment={(data) => {
-                    setShowPaymentModal(false);
-                    setForm(prev => {
-                      const newPayment = parseFloat(data.amount) || 0;
-                      const updatedForm = {
-                        ...prev,
-                        payment: newPayment,
-                        order_payment_method: data.payment_method,
-                        payments: [data]
-                      };
-                      // Recalculate balance
-                      updatedForm.balance = updatedForm.order_total - newPayment;
-                      return updatedForm;
-                    });
-                  }}
-                />
                 <div>
                   <h3 className={`text-lg font-semibold mb-4 ${darkMode ? "text-gray-200" : "text-gray-700"}`}>
                     {t("orderSummary")}

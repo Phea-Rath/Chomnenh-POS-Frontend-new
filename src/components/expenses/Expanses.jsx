@@ -5,6 +5,7 @@ import React, {
   useState,
 } from "react";
 import { IoIosSearch, IoIosGrid, IoIosList } from "react-icons/io";
+import { FaImage } from "react-icons/fa";
 import { MdAttachMoney, MdCalendarToday, MdPerson } from "react-icons/md";
 import AlertBox from "../../services/AlertBox";
 import { useOutletsContext } from "../../layouts/Management";
@@ -153,12 +154,23 @@ const Expanses = () => {
       <div className="space-y-3 mb-4">
         <div className={`flex items-center gap-2 text-sm ${darkMode ? "text-gray-300" : "text-gray-600"}`}>
           <MdPerson className="text-gray-400" />
-          <span>{expense.expense_by}</span>
+          <div className="flex flex-col">
+            <span>{t('paidBy')}: {expense.expense_by}</span>
+            {expense.purchased_by && (
+              <span className="text-xs opacity-75">{t('purchasedBy')}: {expense.purchased_by}</span>
+            )}
+          </div>
         </div>
         <div className={`flex items-center gap-2 text-sm ${darkMode ? "text-gray-300" : "text-gray-600"}`}>
           <MdCalendarToday className="text-gray-400" />
           <span>{formatDate(expense.expense_date)}</span>
         </div>
+        {expense.images?.length > 0 && (
+          <div className={`flex items-center gap-2 text-sm ${darkMode ? "text-gray-300" : "text-gray-600"}`}>
+            <FaImage className="text-blue-500" />
+            <span>{expense.images.length} {t('attachments', 'Attachments')}</span>
+          </div>
+        )}
         <div className={`flex items-center gap-2 text-sm ${darkMode ? "text-gray-300" : "text-gray-600"}`}>
           <MdAttachMoney className="text-gray-400" />
           <span className="truncate">{expense.expense_other || t('noRemarks')}</span>
@@ -317,6 +329,7 @@ const Expanses = () => {
                     <th className={`px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider ${darkMode ? "text-gray-300" : "text-gray-700"}`}>{t('expenseNo')}</th>
                     <th className={`px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider ${darkMode ? "text-gray-300" : "text-gray-700"}`}>{t('supplier')}</th>
                     <th className={`px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider ${darkMode ? "text-gray-300" : "text-gray-700"}`}>{t('paidBy')}</th>
+                    <th className={`px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider ${darkMode ? "text-gray-300" : "text-gray-700"}`}>{t('purchasedBy', 'Purchased By')}</th>
                     <th className={`px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider ${darkMode ? "text-gray-300" : "text-gray-700"}`}>{t('date')}</th>
                     <th className={`px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider ${darkMode ? "text-gray-300" : "text-gray-700"}`}>{t('description')}</th>
                     <th className={`px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider ${darkMode ? "text-gray-300" : "text-gray-700"}`}>{t('amount')}</th>
@@ -351,7 +364,13 @@ const Expanses = () => {
                         <td className={`px-6 py-4 whitespace-nowrap text-sm font-medium ${darkMode ? "text-gray-200" : "text-gray-900"}`}>{index + 1}</td>
                         <td className={`px-6 py-4 whitespace-nowrap text-sm font-semibold ${darkMode ? "text-gray-100" : "text-gray-900"}`}>{exp.expense_no}</td>
                         <td className={`px-6 py-4 whitespace-nowrap text-sm ${darkMode ? "text-gray-300" : "text-gray-700"}`}>{exp.expense_supplier || "-"}</td>
-                        <td className={`px-6 py-4 whitespace-nowrap text-sm ${darkMode ? "text-gray-300" : "text-gray-700"}`}>{exp.expense_by}</td>
+                        <td className={`px-6 py-4 whitespace-nowrap text-sm ${darkMode ? "text-gray-300" : "text-gray-700"}`}>
+                          <div className="flex items-center gap-2">
+                            {exp.expense_by}
+                            {exp.images?.length > 0 && <FaImage className="text-blue-500" title={t('hasAttachments', 'Has attachments')} />}
+                          </div>
+                        </td>
+                        <td className={`px-6 py-4 whitespace-nowrap text-sm ${darkMode ? "text-gray-300" : "text-gray-700"}`}>{exp.purchased_by || "-"}</td>
                         <td className={`px-6 py-4 whitespace-nowrap text-sm ${darkMode ? "text-gray-300" : "text-gray-700"}`}>{formatDate(exp.expense_date)}</td>
                         <td className={`px-6 py-4 text-sm max-w-xs truncate ${darkMode ? "text-gray-300" : "text-gray-700"}`}>{exp.expense_other || t('noRemarks')}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-green-600">{formatCurrency(exp.amount)}</td>

@@ -6,6 +6,7 @@ import { useGetAllStockTypesQuery } from '../../../app/Features/stockTypesSlice'
 import { useGetItemsByStockQuery } from '../../../app/Features/itemsSlice';
 import { useGetAllWarehousesQuery } from '../../../app/Features/warehousesSlice';
 import { useCreateStockMutation, useGetAllStockQuery, useGetStockByIdQuery, useUpdateStockMutation } from '../../../app/Features/stocksSlice';
+import { useGetAllUserQuery } from '../../../app/Features/usersSlice';
 import { DatePicker, Select, Tag, Alert } from 'antd';
 import api from '../../services/api';
 import { useDebounce } from 'use-debounce';
@@ -15,6 +16,7 @@ import RichSearch from '../../utils/RichSearch';
 import Input from '../../utils/Input';
 import dayjs from 'dayjs';
 import { useNotify } from '../../utils/NotificationProvider';
+import { FaUser } from 'react-icons/fa';
 
 const StockTransfer = () => {
   const { t } = useTranslation();
@@ -42,6 +44,7 @@ const StockTransfer = () => {
   const [createStock] = useCreateStockMutation(token);
   const [errors, setErrors] = useState({});
   const [alertError, setAlertError] = useState('');
+    const {data:users} = useGetAllUserQuery(token);
 
   // Initialize form state
   const { id } = useParams();
@@ -53,7 +56,9 @@ const StockTransfer = () => {
     warehouse_id: '',
     stock_type_id: '',
     stock_remark: '',
-    order_id: null
+    order_id: null,
+    received_by: null,
+    approved_by: null
   });
 
   /* Fetch stock when in update mode */
@@ -91,6 +96,8 @@ const StockTransfer = () => {
         stock_type_id: stock.stock_type_id,
         stock_remark: stock.stock_remark,
         stock_date: stock.stock_date,
+        received_by: stock.received_by || null,
+        approved_by: stock.approved_by || null,
         order_id: stock.order_id
       }));
 
@@ -174,7 +181,12 @@ const StockTransfer = () => {
 
     try {
       let response;
-      const payload = { ...form, items: selectItems };
+      const payload = { 
+        ...form, 
+        received_by: form.received_by ? Number(form.received_by) : null,
+        approved_by: form.approved_by ? Number(form.approved_by) : null,
+        items: selectItems 
+      };
       if (isUpdate) {
         response = await api.put(`stock-transfer/${id}`, payload, {
           headers: { Authorization: `Bearer ${token}` }
@@ -625,6 +637,46 @@ const StockTransfer = () => {
                         value={form.stock_remark}
                         onChange={(e) => setForm(prev => { return { ...prev, stock_remark: e.target.value } })}
                       ></textarea>
+                    </div>
+
+                    <div className="grow min-w-[200px]">
+                      <label className="mb-2 block text-sm font-medium text-gray-700 dark:!text-gray-300">
+                        <span className="flex items-center gap-2">
+                          <FaUser className="text-gray-400" />
+                          {t("receivedBy")}
+                        </span>
+                      </label>
+                      <RichSearch
+                        data={users?.data}
+                        value={form.received_by}
+                        placeholder={t("selectUser")}
+                        keyFields={{
+                          id: "id",
+                          title: "username",
+                          image: "image",
+                        }}
+                        onSelected={(value) => setForm(prev => ({ ...prev, received_by: value }))}
+                      />
+                    </div>
+
+                    <div className="grow min-w-[200px]">
+                      <label className="mb-2 block text-sm font-medium text-gray-700 dark:!text-gray-300">
+                        <span className="flex items-center gap-2">
+                          <FaUser className="text-gray-400" />
+                          {t("approvedBy")}
+                        </span>
+                      </label>
+                      <RichSearch
+                        data={users?.data}
+                        value={form.approved_by}
+                        placeholder={t("selectUser")}
+                        keyFields={{
+                          id: "id",
+                          title: "username",
+                          image: "image",
+                        }}
+                        onSelected={(value) => setForm(prev => ({ ...prev, approved_by: value }))}
+                      />
                     </div>
                   </div>
 

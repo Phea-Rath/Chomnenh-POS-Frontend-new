@@ -12,11 +12,12 @@ import {
     useUpdateStockRawMutation,
     useGetStockRawByIdQuery,
 } from "../../../app/Features/stocksSlice";
+import { useGetAllUserQuery } from "../../../app/Features/usersSlice";
 import { DatePicker, Select, Tag, Avatar, Alert } from "antd";
 import { useDebounce } from "use-debounce";
 import dayjs from 'dayjs';
 import { useTranslation } from "react-i18next";
-import { FaTrash, FaEdit, FaSave, FaTimes, FaBox, FaFlask } from "react-icons/fa";
+import { FaTrash, FaEdit, FaSave, FaTimes, FaBox, FaFlask, FaUser } from "react-icons/fa";
 import { MdLocalShipping } from "react-icons/md";
 import Button from "../../utils/Button";
 import RichSearch from "../../utils/RichSearch";
@@ -52,6 +53,8 @@ const StockRawForm = () => {
 
     const rawMaterialRes = useGetAllRawMaterialQuery({ limit: limit, page: currentPage, search: debouncedSearch, token });
     const warehouseRes = useGetAllWarehousesQuery(token);
+    const { data: usersData } = useGetAllUserQuery(token);
+    const users = usersData?.data || [];
     const [createStockRaw] = useCreateStockRawMutation();
     const [updateStockRaw] = useUpdateStockRawMutation();
 
@@ -73,6 +76,8 @@ const StockRawForm = () => {
         warehouse_id: 5,
         stock_type_id: 2,
         stock_remark: "",
+        received_by: null,
+        approved_by: null,
         stock_date: dayjs().format('YYYY-MM-DD'),
     });
 
@@ -113,6 +118,8 @@ const StockRawForm = () => {
                 warehouse_id: data.warehouse_id || 1,
                 stock_type_id: data.stock_type_id || 2,
                 stock_remark: data.stock_remark || "",
+                received_by: data.received_by || null,
+                approved_by: data.approved_by || null,
                 stock_date: data.stock_date || "",
             });
 
@@ -223,6 +230,8 @@ const StockRawForm = () => {
         try {
             const payload = {
                 ...form,
+                received_by: form.received_by ? Number(form.received_by) : null,
+                approved_by: form.approved_by ? Number(form.approved_by) : null,
                 items: materialLists.map(item => ({
                     raw_material_id: item.raw_material_id,
                     quantity: parseFloat(item.quantity) || 1,
@@ -587,6 +596,46 @@ const StockRawForm = () => {
                                                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-400 rounded-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none text-sm dark:text-white"
                                                     placeholder={t('remarksPlaceholder')}
                                                     rows="3"
+                                                />
+                                            </div>
+
+                                            <div className="grow min-w-[200px]">
+                                                <label className="mb-2 block text-sm font-medium text-gray-700 dark:!text-gray-300">
+                                                    <span className="flex items-center gap-2">
+                                                        <FaUser className="text-gray-400" />
+                                                        {t("receivedBy")}
+                                                    </span>
+                                                </label>
+                                                <RichSearch
+                                                    data={users}
+                                                    value={form.received_by}
+                                                    placeholder={t("selectUser")}
+                                                    keyFields={{
+                                                        id: "id",
+                                                        title: "username",
+                                                        image: "image",
+                                                    }}
+                                                    onSelected={(value) => setForm(prev => ({ ...prev, received_by: value }))}
+                                                />
+                                            </div>
+
+                                            <div className="grow min-w-[200px]">
+                                                <label className="mb-2 block text-sm font-medium text-gray-700 dark:!text-gray-300">
+                                                    <span className="flex items-center gap-2">
+                                                        <FaUser className="text-gray-400" />
+                                                        {t("approvedBy")}
+                                                    </span>
+                                                </label>
+                                                <RichSearch
+                                                    data={users}
+                                                    value={form.approved_by}
+                                                    placeholder={t("selectUser")}
+                                                    keyFields={{
+                                                        id: "id",
+                                                        title: "username",
+                                                        image: "image",
+                                                    }}
+                                                    onSelected={(value) => setForm(prev => ({ ...prev, approved_by: value }))}
                                                 />
                                             </div>
                                         </div>

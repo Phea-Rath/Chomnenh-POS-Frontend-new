@@ -1439,10 +1439,24 @@ const resources = {
       truck: "Truck",
       air: "Air",
       sea: "Sea",
+      quickActions: 'Quick Actions',
+      wholeSaleList: 'Whole Sale List',
+      allowed: 'allowed',
+      proportion: "Proportion",
+      proportionAnalytics: "Proportion Analyst",
+      dueTerm: 'Due Term',
+      shippingVia: 'Shipping Vai'
     }
   },
   kh: {
     translation: {
+      shippingVia: 'ដឹកជញ្ជូនតាមរយៈ',
+      dueTerm: 'រយៈពេលកំណត់',
+      proportion: 'សមាមាត្រ',
+      proportionAnalytics: 'វិភាគសមាមាត្រ',
+      allowed: 'អនុញ្ញាត',
+      wholeSaleList: "បញ្ជីលក់ដុំ",
+      quickActions: "សកម្មភាពរហ័ស",
       checkingInStock: "កំពុងពិនិត្យស្តុក...",
       pleaseSelectARawMaterialAndQuantity: "សូមជ្រើសរើសវត្ថុធាតុដើម និងបញ្ចូលបរិមាណដែលត្រឹមត្រូវ",
       ok: "យល់ព្រម",
