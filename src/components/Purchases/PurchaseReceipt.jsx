@@ -1,11 +1,12 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router";
-import { FaArrowLeft, FaFileExcel, FaPrint } from "react-icons/fa";
+import { FaDownload, FaPrint } from "react-icons/fa";
+import { IoArrowBackCircle } from "react-icons/io5";
 import { useReactToPrint } from "react-to-print";
-import * as XLSX from "xlsx";
-import { Button } from "antd";
 import { motion } from "framer-motion";
 import api from "../../services/api";
+import handleDownload from "../../services/imageDowload";
+import Button from "../../utils/Button";
 import { useGetUserProfileQuery } from "../../../app/Features/usersSlice";
 
 const PurchaseReceipt = () => {
@@ -32,7 +33,8 @@ const PurchaseReceipt = () => {
       image: profileData?.data?.image,
       address: profileData?.data?.address,
       tel: profileData?.data?.telephone,
-      taxId: "VAT TIN",
+      email: profileData?.data?.email,
+      taxId: profileData?.data?.tax_id || "VAT TIN",
     });
   }, [profileData]);
 
@@ -50,20 +52,22 @@ const PurchaseReceipt = () => {
         const purchaseData = purchaseResponse.data.data;
         setPurchase({
           ...purchaseData,
-          sub_total: parseFloat(purchaseData.sub_total || 0),
-          tax_rate: parseFloat(purchaseData.tax_rate || 0),
+          purchase_date: purchaseData.purchase_date || purchaseData.created_at,
+          sub_total: parseFloat(purchaseData.subtotal || purchaseData.sub_total || 0),
+          tax_rate: parseFloat(purchaseData.tax_percent || purchaseData.tax_rate || 0),
           tax_amount: parseFloat(purchaseData.tax_amount || 0),
-          shipping_fee: parseFloat(purchaseData.shipping_fee || 0),
-          discount: parseFloat(purchaseData.discount || 0),
-          total_amount: parseFloat(purchaseData.total_amount || 0),
-          total_paid: parseFloat(purchaseData.total_paid || 0),
+          shipping_fee: parseFloat(purchaseData.shippings?.fee || purchaseData.shipping_fee || 0),
+          discount: parseFloat(purchaseData.discount_amount || purchaseData.discount || 0),
+          total_amount: parseFloat(purchaseData.grand_total || purchaseData.total_amount || 0),
+          total_paid: parseFloat(purchaseData.paymented || purchaseData.total_paid || 0),
           balance: parseFloat(purchaseData.balance || 0),
-          exchange_rate: parseFloat(purchaseData.exchange_rate || 4000),
-          details: (purchaseData.details || []).map((detail) => ({
+          exchange_rate: parseFloat(purchaseData.exchange_rate || 1),
+          total_amount_khr: parseFloat(purchaseData.grand_total_khr || 0),
+          details: (purchaseData.items || purchaseData.details || []).map((detail) => ({
             ...detail,
             quantity: parseFloat(detail.quantity || 0),
-            unit_price: parseFloat(detail.unit_price || 0),
-            subtotal: parseFloat(detail.subtotal || 0),
+            price: parseFloat(detail.price || detail.unit_price || detail.item_cost || 0),
+            total: parseFloat(detail.total || detail.subtotal || 0),
           })),
           payments: (purchaseData.payments || []).map((payment) => ({
             ...payment,
@@ -90,65 +94,38 @@ const PurchaseReceipt = () => {
     contentRef: componentRef,
   });
 
-  const handleExportExcel = () => {
-    if (!purchase || !supplier) return;
+  const formatUSD = (amount) =>
+    new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(Number(amount || 0));
 
-    const workbook = XLSX.utils.book_new();
+  const formatKHR = (amount) =>
+    `${Number(amount || 0).toLocaleString("en-US", {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    })} ៛`;
 
-    const purchaseInfo = [
-      ["Purchase Receipt"],
-      ["Purchase No", purchase.purchase_no],
-      ["Purchase Date", purchase.purchase_date],
-      ["Supplier Name", supplier.supplier_name],
-      ["Supplier Address", supplier.supplier_address],
-      ["Supplier Phone", supplier.supplier_tel || "N/A"],
-      ["Sub Total", `$${purchase.sub_total.toFixed(2)}`],
-      ["Tax Rate", `${purchase.tax_rate.toFixed(2)}%`],
-      ["Tax Amount", `$${purchase.tax_amount.toFixed(2)}`],
-      ["Total Amount", `$${purchase.total_amount.toFixed(2)}`],
-      ["Total Paid", `$${purchase.total_paid.toFixed(2)}`],
-      ["Balance", `$${purchase.balance.toFixed(2)}`],
-      ["Created At", purchase.created_at],
-    ];
-
-    const purchaseSheet = XLSX.utils.aoa_to_sheet(purchaseInfo);
-    XLSX.utils.book_append_sheet(workbook, purchaseSheet, "Purchase Info");
-
-    const itemsData = [
-      ["No", "Item", "Qty", "Unit Price", "Amount"],
-      ...purchase.details.map((item, index) => [
-        index + 1,
-        isRawReceipt ? item.material_name : item.item_name,
-        `${item.quantity} ${item.unit || ""}`,
-        item.unit_price,
-        item.subtotal,
-      ]),
-    ];
-
-    const itemsSheet = XLSX.utils.aoa_to_sheet(itemsData);
-    XLSX.utils.book_append_sheet(workbook, itemsSheet, "Items");
-    XLSX.writeFile(workbook, `Purchase_Receipt_${purchase.purchase_no}.xlsx`);
-  };
-
-  const formatKHR = (amount) => `${Number(amount || 0).toFixed(2)} ៛`;
-  const formatUSD = (amount) => `${Number(amount || 0).toLocaleString("en-US")} $`;
   const formatQty = (amount) =>
     Number(amount || 0).toLocaleString("en-US", {
       minimumFractionDigits: 0,
       maximumFractionDigits: 2,
     });
+
+  const formatDate = (date) => {
+    if (!date) return "N/A";
+    const parsedDate = new Date(date);
+    if (Number.isNaN(parsedDate.getTime())) return date;
+    return parsedDate.toLocaleDateString("en-GB").replaceAll("/", "-");
+  };
+
   const formatDateTime = (date) => {
     if (!date) return "N/A";
-    return new Date(date).toLocaleString("sv-SE").replace("T", " ");
-  };
-  const calculateUSD = (rielAmount) => {
-    if (!purchase?.exchange_rate) return 0;
-    return Number(rielAmount || 0) / purchase.exchange_rate;
-  };
-  const getPaymentStatusText = (balance) => {
-    if (Number(balance || 0) === 0) return "Paid";
-    if (Number(balance || 0) > 0) return "Partial";
-    return "Pending";
+    const parsedDate = new Date(date);
+    if (Number.isNaN(parsedDate.getTime())) return date;
+    return parsedDate.toLocaleString("sv-SE").replace("T", " ");
   };
 
   if (loading) {
@@ -168,8 +145,11 @@ const PurchaseReceipt = () => {
         <div className="max-w-md rounded-lg bg-white p-8 shadow-md">
           <h3 className="mb-2 text-lg font-semibold text-gray-900">Error</h3>
           <p className="mb-4 text-gray-600">{error}</p>
-          <Button type="primary" onClick={() => navigate(-1)}>
-            <FaArrowLeft className="mr-2" />
+          <Button
+            onClick={() => navigate(-1)}
+            className="flex items-center rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
+          >
+            <IoArrowBackCircle className="mr-2" size={22} />
             Back
           </Button>
         </div>
@@ -179,209 +159,320 @@ const PurchaseReceipt = () => {
 
   if (!purchase || !supplier) return null;
 
+  const shipping = purchase.shippings || {};
+  const documentTotalKhr = purchase.total_amount * purchase.exchange_rate;
   const summaryRows = [
-    { label: "Subtotal", value: formatUSD(purchase.sub_total) },
+    { label: "Total", value: formatUSD(purchase.sub_total), strong: true },
+    {
+      label: `Tax${purchase.tax_rate ? ` (${purchase.tax_rate.toFixed(0)}%)` : ""}`,
+      value: formatUSD(purchase.tax_amount),
+    },
     { label: "Shipping", value: formatUSD(purchase.shipping_fee) },
-    { label: "Discount", value: formatUSD(purchase.discount) },
-    { label: "Grand Total", value: formatUSD(purchase.total_amount), strong: true },
-    { label: "Paid", value: formatUSD(purchase.total_paid), strong: true },
+    { label: "Discounts", value: formatUSD(purchase.discount) },
+    { label: "Grand total", value: formatUSD(purchase.total_amount), strong: true },
+    { label: "Paid", value: formatUSD(purchase.total_paid) },
     { label: "Balance", value: formatUSD(purchase.balance), strong: true },
-    { label: "USD Total", value: formatUSD(purchase.total_amount), strong: true },
-    { label: "KHR Total", value: formatKHR(purchase.total_amount * purchase.exchange_rate), strong: true },
   ];
 
   return (
-    <div className="min-h-screen bg-transparent py-8">
+    <div className="print:bg-white print:py-0">
+      {/* <style>
+        {`
+          @media print {
+            @page { size: A4; margin: 8mm; }
+            body { -webkit-print-color-adjust: exact; print-color-adjust: exact; background: #ffffff !important; }
+            .purchase-order-page { box-shadow: none !important; border: 1px solid #d8d8d8 !important; width: 100% !important; min-height: auto !important; }
+            .purchase-order-table th { background: #2f73c8 !important; color: #ffffff !important; }
+          }
+        `}
+      </style> */}
+
       <div className="mx-auto max-w-5xl px-4">
-        <div className="mb-6 print:hidden">
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div>
-              <button
-                onClick={() => navigate(-1)}
-                className="mb-2 flex items-center text-blue-600 hover:text-blue-800"
-              >
-                <FaArrowLeft className="mr-2" />
-                Back
-              </button>
-              <h1 className="text-lg font-bold text-gray-900">Purchase Receipt #{purchase.purchase_no}</h1>
-            </div>
-            <div className="flex gap-2">
-              <Button
-                onClick={handleExportExcel}
-                icon={<FaFileExcel />}
-                className="border-0 bg-green-500 text-white hover:!bg-green-600 hover:!text-white"
-              >
-                Export Excel
-              </Button>
-              <Button onClick={handlePrint} icon={<FaPrint />} type="primary">
-                Print
-              </Button>
-            </div>
-          </div>
+        <button
+          onClick={() => navigate(-1)}
+          className="mb-4 flex items-center text-blue-600 hover:text-blue-800 print:hidden"
+        >
+          <IoArrowBackCircle className="mr-2" size={24} />
+          Back
+        </button>
+
+        <div className="mb-6 flex flex-wrap justify-end gap-3 print:hidden">
+          <Button
+            onClick={handlePrint}
+            className="flex items-center rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
+          >
+            <FaPrint className="mr-2" /> Print
+          </Button>
+          <Button
+            onClick={() => handleDownload(componentRef, "pdf", "purchase-order", purchase?.purchase_no || id)}
+            className="flex items-center rounded-lg bg-green-600 px-4 py-2 text-white hover:bg-green-700"
+          >
+            <FaDownload className="mr-2" /> Download PDF
+          </Button>
+          <Button
+            onClick={() => handleDownload(componentRef, "png", "purchase-order", purchase?.purchase_no || id)}
+            className="flex items-center rounded-lg bg-purple-600 px-4 py-2 text-white hover:bg-purple-700"
+          >
+            <FaDownload className="mr-2" /> Download PNG
+          </Button>
+          <Button
+            onClick={() => handleDownload(componentRef, "jpg", "purchase-order", purchase?.purchase_no || id)}
+            className="flex items-center rounded-lg bg-teal-600 px-4 py-2 text-white hover:bg-teal-700"
+          >
+            <FaDownload className="mr-2" /> Download JPG
+          </Button>
         </div>
 
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
+          transition={{ duration: 0.25 }}
         >
           <div
             ref={componentRef}
-            className="mx-auto overflow-hidden rounded-[28px] border border-gray-200 bg-white shadow-[0_20px_60px_-28px_rgba(15,23,42,0.35)] print:rounded-none print:border-0 print:shadow-none"
+            className="purchase-order-page mx-auto min-h-[1122px] w-full max-w-[920px] border border-gray-300 bg-white p-8 text-[13px] leading-relaxed text-gray-900 shadow-[0_18px_45px_rgba(15,23,42,0.14)] sm:p-10"
           >
-            <div className="bg-white px-6 py-8 sm:px-10">
-              <div className="mx-auto max-w-3xl border-b-2 border-gray-800 pb-8 text-center">
-                {businessInfo?.image ? (
-                  <img
-                    className="mx-auto mb-3 h-20 w-20 object-contain"
-                    src={businessInfo.image}
-                    alt={businessInfo.name || "Business logo"}
-                  />
-                ) : null}
-                <h2 className="text-lg font-bold tracking-tight text-gray-900 sm:text-xl">
-                  {businessInfo?.name}
-                </h2>
-                <p className="mt-2 text-sm text-gray-600 sm:text-base">{businessInfo?.address}</p>
-                <p className="text-sm text-gray-600 sm:text-base">Tel: {businessInfo?.tel || "N/A"}</p>
-                <h1 className="mt-7 text-xl font-bold tracking-[0.08em] text-gray-700 sm:text-2xl">
-                  PURCHASE RECEIPT
+            <header className="grid gap-8 grid-cols-2 md:items-start">
+              <div>
+                <div className="flex items-center gap-4">
+                  {businessInfo?.image ? (
+                    <img
+                      className="h-16 w-16 object-contain"
+                      src={businessInfo.image}
+                      alt={businessInfo.name || "Business logo"}
+                    />
+                  ) : (
+                    <div className="flex h-16 w-16 items-center justify-center border border-gray-300 text-2xl font-bold text-blue-700">
+                      {businessInfo?.name?.[0] || "B"}
+                    </div>
+                  )}
+                  <div>
+                    <h2 className="text-[22px] font-bold leading-tight text-gray-800">
+                      {businessInfo?.name || "Business Name"}
+                    </h2>
+                    <p className="text-sm font-medium text-blue-600">Purchase Department</p>
+                  </div>
+                </div>
+                <div className="mt-4 max-w-[360px] text-[14px] text-gray-800">
+                  <p>{businessInfo?.address || "Address not available"}</p>
+                  <p>Tel: {businessInfo?.tel || "N/A"}</p>
+                  {businessInfo?.email ? <p>Email: {businessInfo.email}</p> : null}
+                </div>
+              </div>
+
+              <div className="text-right">
+                <h1 className="text-[34px] font-light uppercase tracking-[0.02em] text-gray-500">
+                  Purchase Order
                 </h1>
+                <div className="inline-grid grid-cols-[88px,1fr] gap-x-4 gap-y-1 text-left text-[14px]">
+                  <pre>
+                    <span className="font-bold mr-2">PO No:</span>
+                    <span className="text-right">{purchase.purchase_no || "N/A"}</span>
+                  </pre>
+                  <pre>
+                    <span className="font-bold mr-2">PO Date:</span>
+                    <span className="text-right">{formatDate(purchase.purchase_date)}</span>
+                  </pre>
+                  <pre>
+                    <span className="font-bold mr-2">Due Term:</span>
+                    <span className="text-right">{purchase.due_term ? `${purchase.due_term} days` : "N/A"}</span>
+                  </pre>
+                </div>
               </div>
+            </header>
 
-              <div className="mx-auto mt-6 max-w-3xl">
-                <div className="grid grid-cols-1 gap-8 text-[15px] leading-7 text-gray-800 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <div className="flex gap-3">
-                      <span className="min-w-[120px] font-semibold text-gray-600">Receipt No:</span>
-                      <span className="font-medium">{purchase.purchase_no}</span>
-                    </div>
-                    <div className="flex gap-3">
-                      <span className="min-w-[120px] font-semibold text-gray-600">Date:</span>
-                      <span>{formatDateTime(purchase.purchase_date || purchase.created_at)}</span>
-                    </div>
-                    <div className="flex gap-3">
-                      <span className="min-w-[120px] font-semibold text-gray-600">Supplier:</span>
-                      <span>{supplier.supplier_name}</span>
-                    </div>
-                    <div className="flex gap-3">
-                      <span className="min-w-[120px] font-semibold text-gray-600">Phone:</span>
-                      <span>{supplier.supplier_tel || "N/A"}</span>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <div className="flex gap-3">
-                      <span className="min-w-[120px] font-semibold text-gray-600">Address:</span>
-                      <span>{supplier.supplier_address || "N/A"}</span>
-                    </div>
-                    <div className="flex gap-3">
-                      <span className="min-w-[120px] font-semibold text-gray-600">Payment:</span>
-                      <span>{purchase.payments?.[0]?.payment_method || "PP"}</span>
-                    </div>
-                    <div className="flex gap-3">
-                      <span className="min-w-[120px] font-semibold text-gray-600">Status:</span>
-                      <span>{getPaymentStatusText(purchase.balance)}</span>
-                    </div>
-                    <div className="flex gap-3">
-                      <span className="min-w-[120px] font-semibold text-gray-600">Exchange:</span>
-                      <span>1 USD = {purchase.exchange_rate.toLocaleString("en-US")} ៛</span>
-                    </div>
-                  </div>
+            <section className="mt-2 grid gap-8 grid-cols-2">
+              <div className="border border-gray-300">
+                <div className="bg-[#2f73c8] px-5 py-2 font-bold text-white">Vendor</div>
+                <div className="space-y-1 px-5 py-4 text-[14px]">
+                  <p>
+                    <span className="font-bold">Supplier Name:</span> {supplier.supplier_name || "N/A"}
+                  </p>
+                  <p>
+                    <span className="font-bold">Address:</span> {supplier.supplier_address || "N/A"}
+                  </p>
+                  <p>
+                    <span className="font-bold">Supplier Code:</span>{" "}
+                    {supplier.supplier_code || `VNDR-${supplier.supplier_id || purchase.supplier_id || "N/A"}`}
+                  </p>
+                  <p>
+                    <span className="font-bold">Contact:</span> {supplier.supplier_tel || "N/A"}
+                  </p>
+                  <p>
+                    <span className="font-bold">Email:</span> {supplier.supplier_email || "N/A"}
+                  </p>
                 </div>
               </div>
 
-              <div className="mx-auto mt-8 max-w-3xl">
-                <table className="w-full border-collapse text-[15px]">
-                  <thead>
-                    <tr className="border-b-2 border-gray-700 bg-gray-100">
-                      <th className="px-3 py-3 text-left font-bold text-gray-800">Item</th>
-                      <th className="px-3 py-3 text-center font-bold text-gray-800">Qty</th>
-                      <th className="px-3 py-3 text-right font-bold text-gray-800">Price</th>
-                      <th className="px-3 py-3 text-right font-bold text-gray-800">Amount</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {purchase.details.map((item, index) => (
-                      <tr key={index} className="border-b border-gray-100 align-top">
-                        <td className="px-3 py-4">
-                          <div className="font-semibold text-gray-900">
-                            {isRawReceipt ? item.material_name : item.item_name}
-                          </div>
-                          {item.item_code ? <div className="mt-1 text-sm text-gray-500">{item.item_code}</div> : null}
-                        </td>
-                        <td className="px-3 py-4 text-center">
-                          {formatQty(item.quantity)} {item.unit || ""}
-                        </td>
-                        <td className="px-3 py-4 text-right">
-                          {formatUSD(item.item_cost)}
-                        </td>
-                        <td className="px-3 py-4 text-right font-medium">
-                          {formatUSD(item.subtotal)}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <div className="border border-gray-300">
+                <div className="bg-[#2f73c8] px-5 py-2 font-bold text-white">Ship To:</div>
+                <div className="space-y-1 px-5 py-4 text-[14px]">
+                  <p className="font-bold">{businessInfo?.name || "Business Name"}</p>
+                  <p>{businessInfo?.address || "Address not available"}</p>
+                  <p>
+                    <span className="font-bold">Tax ID:</span> {businessInfo?.taxId || "N/A"}
+                  </p>
+                  <p>Contact: {businessInfo?.tel || "N/A"}</p>
+                  <p>Email: {businessInfo?.email || "N/A"}</p>
+                </div>
+              </div>
+            </section>
 
-                <div className="mt-8 flex justify-end">
-                  <div className="w-full max-w-[320px] space-y-2 text-[15px]">
-                    {summaryRows.map((row) => (
-                      <div
-                        key={row.label}
-                        className={`flex items-baseline justify-between gap-4 ${row.strong ? "pt-2 font-bold text-gray-900" : "text-gray-700"}`}
-                      >
-                        <span className={row.strong ? "font-bold" : "font-medium"}>{row.label}:</span>
-                        <span className={row.strong ? "text-[17px]" : ""}>{row.value}</span>
-                      </div>
-                    ))}
+            <section className="mt-2 overflow-hidden border border-gray-300">
+              <div className="grid divide-gray-300 grid-cols-4 divide-x divide-y-0">
+                <div>
+                  <div className="bg-[#2f73c8] px-5 py-2 font-bold text-white">Requisitioner</div>
+                  <div className="px-5 py-3">{purchase.created_by_name || "N/A"}</div>
+                </div>
+                <div>
+                  <div className="bg-[#2f73c8] px-5 py-2 font-bold text-white">Ship via</div>
+                  <div className="px-5 py-3 capitalize">{shipping.vai || shipping.carrier || "N/A"}</div>
+                </div>
+                <div>
+                  <div className="bg-[#2f73c8] px-5 py-2 font-bold text-white">Carrier</div>
+                  <div className="px-5 py-3">{shipping.carrier || "N/A"}</div>
+                </div>
+                <div>
+                  <div className="bg-[#2f73c8] px-5 py-2 font-bold text-white">Shipping terms</div>
+                  <div className="px-5 py-3">
+                    {shipping.tracking_number ? `Tracking ${shipping.tracking_number}` : "Free shipping to destination"}
                   </div>
                 </div>
-
-                {purchase.payments && purchase.payments.length > 0 ? (
-                  <div className="mt-8 rounded-2xl border border-gray-200 bg-gray-50 p-4">
-                    <h4 className="mb-3 text-sm font-bold uppercase tracking-[0.14em] text-gray-700">
-                      Payment History
-                    </h4>
-                    <div className="space-y-2 text-sm text-gray-700">
-                      {purchase.payments.map((payment, index) => (
-                        <div
-                          key={index}
-                          className="grid grid-cols-[40px,1fr,1fr] gap-3 border-b border-gray-200 pb-2 last:border-0 last:pb-0"
-                        >
-                          <span>{index + 1}.</span>
-                          <span>{formatUSD(payment.amount)}</span>
-                          <span className="text-right">{formatDateTime(payment.paid_at || payment.created_at)}</span>
-                        </div>
-                      ))}
-                    </div>
+              </div>
+            </section>
+            <section className="mt-2 overflow-hidden">
+                {purchase.payments?.length ? (
+                  <div>
+                    <div className="bg-[#2f73c8] px-4 py-2 font-bold text-white">Payment History</div>
+                    <table className="w-full">
+                      <thead>
+                        <tr className="bg-gray-100">
+                          <th className="border border-gray-200 px-3 py-2 text-left">Method</th>
+                          <th className="border border-gray-200 px-3 py-2 text-left">Transaction</th>
+                          <th className="border border-gray-200 px-3 py-2 text-right">Amount</th>
+                          <th className="border border-gray-200 px-3 py-2 text-left">Paid At</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {purchase.payments.map((payment, index) => (
+                          <tr key={`${payment.transection_id || "payment"}-${index}`}>
+                            <td className="border border-gray-200 px-3 py-2 capitalize">
+                              {payment.payment_method || "N/A"}
+                            </td>
+                            <td className="border border-gray-200 px-3 py-2">
+                              {payment.transection_id || payment.remark || "N/A"}
+                            </td>
+                            <td className="border border-gray-200 px-3 py-2 text-right">
+                              {formatUSD(payment.amount)}
+                            </td>
+                            <td className="border border-gray-200 px-3 py-2">
+                              {formatDateTime(payment.paid_at || payment.created_at)}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
                 ) : null}
+            </section>
 
-                <div className="mt-16 grid grid-cols-2 gap-8 text-center text-[15px] text-gray-700">
-                  <div>
-                    <p className="mb-16 font-medium">Supplier Signature</p>
-                    <div className="mx-auto w-44 border-t border-gray-400 pt-3">
-                      <p className="font-semibold">{supplier.supplier_name || "Supplier"}</p>
-                    </div>
-                  </div>
-                  <div>
-                    <p className="mb-16 font-medium">Receiver Signature</p>
-                    <div className="mx-auto w-44 border-t border-gray-400 pt-3">
-                      <p className="font-semibold">{businessInfo?.name || "Receiver"}</p>
-                    </div>
-                  </div>
+            <section className="mt-2 overflow-x-auto">
+              <table className="purchase-order-table w-full border-collapse text-[13px]">
+                <thead>
+                  <tr>
+                    <th className="border border-gray-300 bg-[#2f73c8] px-2 py-2 text-center font-bold text-white">
+                      S.No
+                    </th>
+                    <th className="border border-gray-300 bg-[#2f73c8] px-2 py-2 text-center font-bold text-white">
+                      Product Code
+                    </th>
+                    <th className="border border-gray-300 bg-[#2f73c8] px-3 py-2 text-left font-bold text-white">
+                      Product Name
+                    </th>
+                    <th className="border border-gray-300 bg-[#2f73c8] px-2 py-2 text-center font-bold text-white">
+                      Quantity
+                    </th>
+                    <th className="border border-gray-300 bg-[#2f73c8] px-2 py-2 text-center font-bold text-white">
+                      Units
+                    </th>
+                    <th className="border border-gray-300 bg-[#2f73c8] px-2 py-2 text-right font-bold text-white">
+                      Rate
+                    </th>
+                    <th className="border border-gray-300 bg-[#2f73c8] px-2 py-2 text-right font-bold text-white">
+                      Tax
+                    </th>
+                    <th className="border border-gray-300 bg-[#2f73c8] px-2 py-2 text-right font-bold text-white">
+                      Amount
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {purchase.details.map((item, index) => (
+                    <tr key={item.item_id || item.item_code || index}>
+                      <td className="border border-gray-300 px-2 py-2 text-center">{index + 1}</td>
+                      <td className="border border-gray-300 px-2 py-2 text-center">
+                        {item.item_id || item.item_code || "-"}
+                      </td>
+                      <td className="border border-gray-300 px-3 py-2">
+                        {isRawReceipt ? item.material_name || item.item_name : item.item_name}
+                      </td>
+                      <td className="border border-gray-300 px-2 py-2 text-center">{formatQty(item.quantity)}</td>
+                      <td className="border border-gray-300 px-2 py-2 text-center">{item.unit || "pcs"}</td>
+                      <td className="border border-gray-300 px-2 py-2 text-right">{formatUSD(item.price)}</td>
+                      <td className="border border-gray-300 px-2 py-2 text-right">
+                        {purchase.tax_rate ? `${purchase.tax_rate.toFixed(0)}%` : "-"}
+                      </td>
+                      <td className="border border-gray-300 px-2 py-2 text-right">{formatUSD(item.total)}</td>
+                    </tr>
+                  ))}
+                  {summaryRows.map((row) => (<tr>
+                      <th colSpan={7} className="px-3 py-2 text-right">{row.label}</th>
+                      <td className="border border-gray-300 px-3 py-2 text-right">{row.value}</td>
+                    </tr>))}
+                    <tr>
+                      <th colSpan={7} className="px-3 py-2 text-right">KHR Total</th>
+                      <td className="border border-gray-300 px-3 py-2 text-right">{formatKHR(documentTotalKhr)}</td>
+                    </tr>
+                  {purchase.details.length === 0 ? (
+                    <tr>
+                      <td className="border border-gray-300 px-3 py-8 text-center text-gray-500" colSpan="8">
+                        No purchase items found
+                      </td>
+                    </tr>
+                  ) : null}
+                </tbody>
+              </table>
+            </section>
+
+            <footer className="mt-8 grid gap-0 md:grid-cols-[1fr,260px]">
+              <div className="bg-blue-50 px-7 py-4 text-[11px] leading-snug text-gray-800">
+                <p className="font-bold">Terms and conditions:</p>
+                <ol className="list-decimal pl-4">
+                  <li>We reserve the right to cancel the purchase order anytime before product shipment.</li>
+                  <li>Invoice raised to us should contain purchase order details with date mentioned.</li>
+                  <li>Adherence to agreed product specifications is required during delivery.</li>
+                  <li>Packing and shipping charges are to be borne by the supplier unless stated.</li>
+                  <li>Delivery should be done within the agreed purchase order due term.</li>
+                </ol>
+              </div>
+              <div>
+                <div className="bg-[#2f73c8] px-4 py-2 text-center font-bold text-white">
+                  For {businessInfo?.name || "Business Name"}
                 </div>
-
-                <div className="mx-auto mt-14 max-w-xs border-t border-gray-300 pt-4 text-center text-sm font-semibold text-gray-700">
-                  Thank you
+                <div className="flex h-[102px] items-end justify-center border-b border-gray-300 px-4 pb-3 text-center text-xs italic text-gray-500">
+                  Authorized signatory
                 </div>
               </div>
+            </footer>
+
+            <div className="mt-4 text-[12px] text-gray-800">
+              Mark any communications to {businessInfo?.email || "purchase-team@example.com"}
             </div>
           </div>
         </motion.div>
 
         <div className="mt-4 text-center text-sm text-gray-500 print:hidden">
-          <p>Use the Print button to print this receipt.</p>
+          <p>Use the Print button to print this purchase order.</p>
         </div>
       </div>
     </div>

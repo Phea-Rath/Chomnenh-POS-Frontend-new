@@ -123,7 +123,7 @@ const CreatePurchase = () => {
     payment_method: '',
     amount: 0,
     transection_id: '',
-    paid_at: '',
+    paid_at: dayjs(new Date()).format('YYYY-MM-DD'),
     remark: ''
   });
   const [shippingData, setShippingData] = useState({
@@ -151,20 +151,24 @@ const CreatePurchase = () => {
     new Date().toISOString().split("T")[0]
   );
   const [loading, setLoading] = useState(false);
-  const { data: purchaseTemplates, isFetching: templateLoading, refetch } = useGetAllPurchaseQuery({ 
-    token, 
-    limit: templatePagination.pageSize, 
-    page: templatePagination.current, 
+
+  const { refetch: refetchPurchases } = useGetAllPurchaseQuery({ token, limit: 10, page: 1, search: "" }, { skip: !token });
+  const { refetch: refetchRawPurchases } = useGetAllPurchaseRawQuery({ token, limit: 10, page: 1, search: "" }, { skip: !token });
+
+  const { data: purchaseTemplates, isFetching: templateLoading, refetch: refetchTemplates } = useGetAllPurchaseQuery({
+    token,
+    limit: templatePagination.pageSize,
+    page: templatePagination.current,
     search: debouncedTemplateSearch,
     ...templateFilters
-  }, { skip: !showTemplateModal || itemType != 0 });
-  const { data: purchaseRawTemplates, isFetching: templateRawLoading, refetch: refetchRawMaterials } = useGetAllPurchaseRawQuery({ 
-    token, 
-    limit: templatePagination.pageSize, 
-    page: templatePagination.current, 
+  }, { skip: itemType != 0 });
+  const { data: purchaseRawTemplates, isFetching: templateRawLoading, refetch: refetchRawTemplates } = useGetAllPurchaseRawQuery({
+    token,
+    limit: templatePagination.pageSize,
+    page: templatePagination.current,
     search: debouncedTemplateSearch,
     ...templateFilters
-  }, { skip: !showTemplateModal || itemType != 1 });
+  }, { skip: itemType != 1 });
 
   const templates = itemType === 0 ? purchaseTemplates?.data || [] : purchaseRawTemplates?.data || [];
   const totalTemplates = itemType === 0 ? purchaseTemplates?.pagination?.total || 0 : purchaseRawTemplates?.pagination?.total || 0;
@@ -264,7 +268,7 @@ const CreatePurchase = () => {
       const purchase = response.data.data;
 
       const normalizedItems = purchase.details.map((detail) => ({
-        item_id: itemType === 0 ? detail.item_id : detail.id,
+        item_id: itemType === 0 ? detail.item_id : detail.raw_material_id,
         quantity: parseFloat(detail.quantity),
         item_cost: parseFloat(detail.item_cost),
         attributes: detail.attributes || [],
@@ -293,7 +297,7 @@ const CreatePurchase = () => {
   };
 
   const [errors, setErrors] = useState({});
-  const {data: delivers} = useGetAllDeliverQuery(token);
+  const { data: delivers } = useGetAllDeliverQuery(token);
 
   const onChangeItemType = ({ target: { value } }) => {
     setValue4(value);
@@ -376,7 +380,7 @@ const CreatePurchase = () => {
             vai: purchase?.shippings?.vai || 'truck'
           });
 
-          setPaymentData(purchase.payments[purchase.payments?.length-1]||{});
+          setPaymentData(purchase.payments[purchase.payments?.length - 1] || {});
 
           setLoading(false);
         } catch (err) {
@@ -400,7 +404,7 @@ const CreatePurchase = () => {
             supplier_id: purchase.supplier_id || "",
             purchase_date: purchase.purchase_date,
             sub_total: parseFloat(purchase.sub_total) || 0,
-            description:purchase.description|| '',
+            description: purchase.description || '',
             due_term: parseFloat(purchase.due_term) || 0,
             tax_rate: parseFloat(purchase.tax_rate) || 0,
             tax_amount: parseFloat(purchase.tax_amount) || 0,
@@ -411,8 +415,8 @@ const CreatePurchase = () => {
             exchange_rate: parseFloat(purchase.exchange_rate) || 0,
             quote_no: purchase.quote_no || '',
             status: purchase.status === 1 ? 'Completed' : purchase.status === 2 ? 'Cancelled' : 'Pending',
-            items: purchase.details.map((detail) => ({
-              item_id: detail.id,
+            items: purchase?.details.map((detail) => ({
+              item_id: detail.raw_material_id,
               quantity: parseFloat(detail.quantity),
               item_cost: parseFloat(detail.item_cost),
               attributes: detail.attributes || [],
@@ -432,7 +436,7 @@ const CreatePurchase = () => {
             // },
             payment_status: purchase.payment_status || 'cash'
           });
-          
+
 
           setShippingData({
             fee: parseFloat(purchase?.shippings?.fee) || 0,
@@ -441,7 +445,7 @@ const CreatePurchase = () => {
             vai: purchase?.shippings?.vai || 'truck'
           });
 
-          setPaymentData(purchase.payments[purchase.payments?.length-1]||{});
+          setPaymentData(purchase.payments[purchase.payments?.length - 1] || {});
           setLoading(false);
         } catch (err) {
           notify.error(t('failedToLoadPurchaseData'));
@@ -471,8 +475,6 @@ const CreatePurchase = () => {
       case 'purchase_date':
         if (!value) {
           newFieldErrors.purchase_date = t('required');
-          // } else if (!isEditMode && new Date(value) > new Date()) {
-          //   newFieldErrors.purchase_date = t('purchaseDateCannotBeInFuture');
         } else {
           delete newFieldErrors.purchase_date;
         }
@@ -491,6 +493,20 @@ const CreatePurchase = () => {
           delete newFieldErrors.fee;
         }
         break;
+      case 'quote_no':
+        if (value && value.length > 50) {
+          newFieldErrors.quote_no = t('max50Characters');
+        } else {
+          delete newFieldErrors.quote_no;
+        }
+        break;
+      case 'due_term':
+        if (value && (isNaN(value) || !Number.isInteger(parseFloat(value)) || parseFloat(value) < 0)) {
+          newFieldErrors.due_term = t('invalidDueTerm');
+        } else {
+          delete newFieldErrors.due_term;
+        }
+        break;
       default:
         break;
     }
@@ -500,36 +516,15 @@ const CreatePurchase = () => {
 
   const validateForm = () => {
     const newErrors = {};
-    const newFieldErrors = { ...fieldErrors };
+    const newFieldErrors = {};
 
+    // Supplier
     if (!formData.supplier_id) {
       newErrors.supplier = t('selectSupplier');
       newFieldErrors.supplier_id = t('required');
     }
 
-    if (formData.items.length === 0) {
-      newErrors.items = t('noItemsAdded');
-    }
-
-    formData.items.forEach((item, index) => {
-      if (item.quantity <= 0) {
-        newErrors.items = `${t('item')} ${index + 1} ${t('invalidQuantity')}`;
-      }
-      if (item.item_cost <= 0) {
-        newErrors.items = `${t('item')} ${index + 1} ${t('invalidUnitPrice')}`;
-      }
-    });
-
-    if (paymentData?.amount > 0) {
-      if (paymentData.amount <= 0 || !paymentData.paid_at) {
-        newErrors.payments = t('invalidPaymentData');
-      }
-
-      if (Number(formData.total_paid) > Number(formData.total_amount)) {
-        setFormData(prev => ({ ...prev, total_paid: prev.total_amount, balance: 0 }));
-      }
-    }
-
+    // Purchase Date
     if (!formData.purchase_date) {
       newErrors.purchase_date = t('required');
       newFieldErrors.purchase_date = t('required');
@@ -538,8 +533,62 @@ const CreatePurchase = () => {
       newFieldErrors.purchase_date = t('purchaseDateCannotBeInFuture');
     }
 
-    if (formData.total_amount <= 0) {
+    // Items
+    if (formData.items.length === 0) {
+      newErrors.items = t('noItemsAdded');
+    } else {
+      formData.items.forEach((item, index) => {
+        if (!item.item_id) {
+          newErrors.items = `${t('item')} ${index + 1}: ${t('required')}`;
+        }
+        if (item.quantity <= 0) {
+          newErrors.items = `${t('item')} ${index + 1}: ${t('invalidQuantity')}`;
+        }
+        if (item.item_cost < 0) {
+          newErrors.items = `${t('item')} ${index + 1}: ${t('invalidUnitPrice')}`;
+        } else {
+          const costStr = String(item.item_cost);
+          if (!/^\d{1,8}(\.\d{1,2})?$/.test(costStr)) {
+            newErrors.items = `${t('item')} ${index + 1}: ${t('invalidCostFormat')}`;
+          }
+        }
+      });
+    }
+
+    // Financials
+    if (formData.total_amount <= 0 && formData.items.length > 0) {
       newErrors.financial = t('financialError');
+    }
+
+    // Payments
+    if (paymentData?.amount > 0) {
+      if (paymentData.amount < 0) {
+        newErrors.payments = t('invalidPaymentAmount');
+      }
+      if (!paymentData.paid_at) {
+        newErrors.payments = t('selectPaymentDate');
+      }
+    }
+
+    // Shipping
+    if (shippingData?.fee < 0) {
+      newFieldErrors.fee = t('shippingFeeNonNegative');
+      newErrors.shipping = t('shippingFeeNonNegative');
+    }
+    if (shippingData?.vai && !['truck', 'air', 'sea'].includes(shippingData.vai)) {
+      newErrors.shipping = t('invalidShippingMethod');
+    }
+
+    // Quote No
+    if (formData.quote_no && formData.quote_no.length > 50) {
+      newFieldErrors.quote_no = t('max50Characters');
+      newErrors.quote_no = t('max50Characters');
+    }
+
+    // Due Term
+    if (formData.due_term && (isNaN(formData.due_term) || !Number.isInteger(parseFloat(formData.due_term)) || formData.due_term < 0)) {
+      newFieldErrors.due_term = t('invalidDueTerm');
+      newErrors.due_term = t('invalidDueTerm');
     }
 
     setFieldErrors(newFieldErrors);
@@ -722,7 +771,7 @@ const CreatePurchase = () => {
     } else if (name === "tax_rate") {
       setFormData((prev) => ({ ...prev, [name]: parseFloat(value) || 0 }));
     } else if (name === "payment_status") {
-      const dueTerm = value == 'paid' ? 0 : formData.due_term; 
+      const dueTerm = value == 'paid' ? 0 : formData.due_term;
       setFormData((prev) => ({ ...prev, [name]: value, due_term: dueTerm }));
     } else {
       setFormData((prev) => ({ ...prev, [name]: value }));
@@ -850,10 +899,12 @@ const CreatePurchase = () => {
       return;
     }
 
-    if (Number(Number(paymentData?.amount)?.toFixed(0)) > Number(formData?.balance.toFixed(0))) {
-      setErrors({ paymentModal: t('paymentExceedBalance') });
-      return;
-    }
+    // console.log(paymentData?.amount, formData?.balance);
+    
+    // if (Number(Number(paymentData?.amount)?.toFixed(0)) > Number(formData?.balance.toFixed(0))) {
+    //   setErrors({ paymentModal: t('paymentExceedBalance') });
+    //   return;
+    // }
     if (!validateForm()) {
       notify.error(t('pleaseFixErrors'));
       const firstErrorField = Object.keys(fieldErrors)[0];
@@ -869,12 +920,11 @@ const CreatePurchase = () => {
 
     setShowAlert(true);
   };
-  
+
   const handleConfirmSubmit = async () => {
     setShowAlert(false);
     setLoading(true);
-    
-    console.log(paymentData);
+
     try {
       const payload = {
         ...formData,
@@ -903,19 +953,19 @@ const CreatePurchase = () => {
         shippings: [shippingData],
         payment_status: formData?.payment_status || 'cash'
       };
-      
+
 
       if (isEditMode) {
         if (itemType != 0) {
           await api.put(`/purchase_raw/${purchaseId}`, payload, {
             headers: { Authorization: `Bearer ${token}` },
           });
-          refetchRawMaterials();
+          refetchRawTemplates();
         } else {
           await api.put(`/purchase/${purchaseId}`, payload, {
             headers: { Authorization: `Bearer ${token}` },
           });
-          refetch();
+          refetchTemplates();
         }
 
         notify.success(t('updatePurchaseSuccess'));
@@ -925,19 +975,21 @@ const CreatePurchase = () => {
             headers: { Authorization: `Bearer ${token}` },
           });
 
-          refetchRawMaterials();
+          refetchRawTemplates();
         } else {
           await api.post("/purchase", payload, {
             headers: { Authorization: `Bearer ${token}` },
           });
-          refetch();
+          refetchTemplates();
         }
 
         notify.success(t('createPurchaseSuccess'));
       }
       navigator(-1);
     } catch (err) {
-      const errorMessage = err.response?.data?.message || t('errorProcessingPurchase');
+      console.log(err);
+      
+      const errorMessage = err?.response?.data?.message || t('errorProcessingPurchase');
       setErrors({ general: errorMessage });
       notify.error(errorMessage);
     } finally {
@@ -1112,8 +1164,8 @@ const CreatePurchase = () => {
                         </span>
                       </div>
                       <Radio.Group
+                        className="dark:[&_.ant-radio-wrapper]:text-white"
                         name="radiogroup"
-                        defaultValue={1}
                         value={formData?.tax_rate}
                         options={TAX_OPTIONS}
                         onChange={(e) => handleInputChange('tax_rate', e.target.value)}
@@ -1160,7 +1212,7 @@ const CreatePurchase = () => {
                       />
                     </div>
 
-                   {formData?.payment_status!="paid" && <div className="grid grid-cols-2">
+                    {formData?.payment_status != "paid" && <div className="grid grid-cols-2">
                       <div className=" grow">
                         <div className="flex items-center justify-between mb-2">
                           <span className="text-gray-600 dark:!text-gray-400 flex items-center gap-2">
@@ -1205,21 +1257,20 @@ const CreatePurchase = () => {
                         <FaBox className="text-blue-500" />
                         <h2 className="text-lg font-bold text-gray-800 dark:!text-gray-100">{t('purchaseItems')}</h2>
                       </div>
-                      <Checkbox 
-                        value={'supplier'}
+                      <Checkbox
                         className="dark:!text-white"
-                        onChange={(e)=>{
-                          if(!e.target.checked){
+                        onChange={(e) => {
+                          if (!e.target.checked) {
                             setItemFilter('all')
-                          }else{
-                            setItemFilter(e.target.value)
+                          } else {
+                            setItemFilter('supplier')
                           }
                         }}
                       >Only Supplier</Checkbox>
                     </div>
 
                     <div className="flex items-center grow gap-2">
-                      
+
                       <RichSearch
                         data={itemType == 1 ? rawMaterials : items}
                         placeholder={t('addItem')}
@@ -1341,7 +1392,7 @@ const CreatePurchase = () => {
                 <MiniVisaPaymentCard onClick={()=>setShowPaymentModal(true)} payment={formData?.payments[formData?.payments?.length - 1]}/>
                 <MiniShippingCard onClick={() => setShowShippingModal(true)} shipping={formData.shipping_details} />
               </div> */}
-              
+
             </div>
 
             {/* Right Column - Summary */}
@@ -1352,7 +1403,7 @@ const CreatePurchase = () => {
                 transition={{ duration: 0.3 }}
               >
                 <div className="">
-                  
+
                   <div>
 
                     <h3 className="text-md font-semibold mb-4 flex items-center gap-2 dark:text-white">
@@ -1435,16 +1486,24 @@ const CreatePurchase = () => {
                               setShippingData((pre) => ({ ...pre, fee: val }));
                               setFormData(prev => ({ ...prev, fee: val }));
                             }}
-                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100"
+                            className={`w-full px-3 py-2 border ${fieldErrors.fee ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100`}
                             step="0.01"
                             min="0"
                           />
+                          {fieldErrors.fee && (
+                            <div className="text-red-500 text-sm mt-1">{fieldErrors.fee}</div>
+                          )}
                         </div>
                       </div>
-                        <h3 className="text-md font-semibold mb-4 flex items-center gap-2 dark:text-white">
-                          <FaMoneyBillWave className="text-green-500" />
-                          {t('addPayment')}
-                        </h3>
+                      <h3 className="text-md font-semibold mb-4 flex items-center gap-2 dark:text-white">
+                        <FaMoneyBillWave className="text-green-500" />
+                        {t('addPayment')}
+                      </h3>
+                      {errors.payments && (
+                        <div className="text-red-500 text-sm mb-4 p-3 bg-red-50 dark:!bg-red-900/10 rounded-lg">
+                          {errors.payments}
+                        </div>
+                      )}
                       <div className=" flex flex-wrap gap-3">
                         <div>
                           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-1">
@@ -1492,7 +1551,6 @@ const CreatePurchase = () => {
                             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100"
                             step="0.01"
                             min="0"
-                            readOnly={formData.balance == 0}
                           />
                         </div>
                         <div>
@@ -1536,9 +1594,9 @@ const CreatePurchase = () => {
 
                     <Divider className=" dark:!border-gray-700" />
                     <h2 className="text-lg font-bold text-gray-800 dark:!text-gray-100 flex items-center gap-2">
-                    <FaLayerGroup className="text-blue-500" />
-                    {t('purchaseSummary')}
-                  </h2>
+                      <FaLayerGroup className="text-blue-500" />
+                      {t('purchaseSummary')}
+                    </h2>
 
                     <div className="flex justify-between items-center">
                       <span className="text-gray-600 dark:!text-gray-400">{t('subtotal')}</span>
@@ -1718,8 +1776,8 @@ const CreatePurchase = () => {
                       <tr
                         key={id}
                         className={`transition-colors group cursor-pointer ${isSelected
-                            ? 'bg-blue-50 dark:bg-blue-900/20'
-                            : 'bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800'
+                          ? 'bg-blue-50 dark:bg-blue-900/20'
+                          : 'bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800'
                           }`}
                         onClick={() => toggleSelectTemplate(id)}
                       >

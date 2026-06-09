@@ -12,7 +12,7 @@ import {
   HiOutlineCubeTransparent
 } from "react-icons/hi";
 import { useTranslation } from "react-i18next";
-import { useGetUserProfileQuery } from "../../app/Features/usersSlice";
+import { useGetUserLoginQuery, useGetUserProfileQuery } from "../../app/Features/usersSlice";
 import { useOutletsContext } from "../layouts/Management";
 
 const Home = () => {
@@ -21,7 +21,7 @@ const Home = () => {
   const token = localStorage.getItem("token");
   const proId = localStorage.getItem("profileId");
 
-  const { data: profileResponse } = useGetUserProfileQuery({ id: proId, token });
+  const { data: profileResponse } = useGetUserLoginQuery(token );
   const user = profileResponse?.data;
   const isKhmer = i18n.language === "kh";
 
@@ -72,7 +72,7 @@ const Home = () => {
               </span>
               <h1 className="text-4xl md:text-5xl font-black text-white leading-tight">
                 {isKhmer ? "រីករាយដែលបានជួបអ្នកវិញ" : "Welcome back"}, <br />
-                <span className="text-blue-200">{user?.profile_name || "Admin"}</span>!
+                <span className="text-blue-200">{user?.username || "Admin"}</span>!
               </h1>
               <p className="text-blue-50 text-lg font-medium opacity-90">
                 {isKhmer 

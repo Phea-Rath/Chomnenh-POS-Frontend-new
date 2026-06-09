@@ -33,6 +33,7 @@ import {
   FaClock,
   FaCheck,
 } from "react-icons/fa";
+import { FiInfo } from "react-icons/fi";
 import { LuCalendar, LuRefreshCw } from "react-icons/lu";
 import { FaXmark } from "react-icons/fa6";
 import dayjs from "dayjs";
@@ -567,6 +568,11 @@ const Purchases = () => {
                                 <MdPayment />
                               </button>
                             )}
+                            <Link to={`detail/${item.purchase_id}`}>
+                              <button className="p-2 bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 rounded hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors" title={t('details')}>
+                                <FiInfo />
+                              </button>
+                            </Link>
                             <Link to={`receipt/${item.purchase_id}`}>
                               <button className="p-2 bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400 rounded hover:bg-purple-200 dark:hover:bg-purple-900/50 transition-colors">
                                 <FaReceipt />
@@ -695,6 +701,11 @@ const Purchases = () => {
                             <MdPayment />
                           </button>
                         )}
+                        <Link to={`detail/${item.purchase_id}`}>
+                          <button className="p-2 bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 rounded hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors" title={t('details')}>
+                            <FiInfo />
+                          </button>
+                        </Link>
                         <Link to={`receipt/${item.purchase_id}`}>
                           <button className="p-2 bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400 rounded hover:bg-purple-200 dark:hover:bg-purple-900/50 transition-colors">
                             <FaReceipt />

@@ -199,6 +199,11 @@
     filter: brightness(0) invert(1) !important;
   }
 
+  .dark .ant-radio-wrapper,
+  .dark .ant-radio-wrapper span {
+      color: #fff !important;
+  }
+
   .white-icon {
     filter: brightness(0) invert(0.3) !important;
 

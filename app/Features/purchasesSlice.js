@@ -71,4 +71,5 @@ export const {
   useGetAllPurchaseRawQuery,
   useConfirmPurchaseRawMutation,
   useDeletePurchaseRawMutation,
+  useGetPurchaseRawByIdQuery,
 } = purchasesApi;

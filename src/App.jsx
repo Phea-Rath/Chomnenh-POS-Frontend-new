@@ -44,6 +44,7 @@ import SaleReportByCustomer from "./components/Reports/SaleReportByCustomer";
 import SaleReportByItem from "./components/Reports/SaleReportByItem";
 import Purchases from "./components/Purchases/PurchaseList";
 import CreatePurchase from "./views/Purchases/CreatePurchase";
+import PurchaseDetails from "./components/Purchases/PurchaseDetails";
 import SupplierList from "./components/Suppliers/SupplierList";
 import SupplierForm from "./views/Suppliers/SupplierForm";
 import PurchaseReceipt from "./components/Purchases/PurchaseReceipt";
@@ -476,8 +477,16 @@ const router = createBrowserRouter([
         element: <PurchaseReceipt />,
       },
       {
+        path: "/inventories/purchases/detail/:id",
+        element: <PurchaseDetails />,
+      },
+      {
         path: "/inventories/purchase-raw/receipt-raw/:id",
         element: <PurchaseReceipt />,
+      },
+      {
+        path: "/inventories/purchase-raw/detail-raw/:id",
+        element: <PurchaseDetails />,
       },
 
       {
