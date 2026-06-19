@@ -60,8 +60,8 @@ import { PAYMENT_METHODS, PAYMENT_STATUS, SHIPPING_METHODS, TAX_OPTIONS } from "
 import { MdPayment } from "react-icons/md";
 import { useGetAllDeliverQuery } from "../../../app/Features/deliversSlice";
 import { GiNotebook } from "react-icons/gi";
-import Modal from "../../utils/Modal";
-import { LuSearch } from "react-icons/lu";
+
+import OldTemplateModal from "../../utils/OldTemplateModal";
 
 const CreatePurchase = () => {
   const { t } = useTranslation();
@@ -83,6 +83,7 @@ const CreatePurchase = () => {
     exchange_rate: 0,
     quote_no: '',
     due_term: 0,
+    discount_total: 0,
     total_amount: 0,
     total_paid: 0,
     balance: 0,
@@ -94,17 +95,18 @@ const CreatePurchase = () => {
       fee: 0,
       carrier: '',
       tracking_number: '',
-      vai: 'truck'
+      via: 'truck'
     },
     payment_status: 'cash',
   });
-  const targetFields = ["code", "quantity", "cost"];
+  const targetFields = ["code", "quantity", "cost", "discount"];
 
   const navigator = useNavigate();
   const token = localStorage.getItem("token");
   const { pathname } = useLocation();
   const [items, setItems] = useState([]);
   const [itemType, setValue4] = useState(pathname.includes('purchase-raw') ? 1 : 0);
+  const MENU_ID = pathname.includes('purchase-raw') ? 39 : 28;
   const [suppliers, setSuppliers] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredItems, setFilteredItems] = useState([]);
@@ -130,7 +132,7 @@ const CreatePurchase = () => {
     fee: 0,
     carrier: '',
     tracking_number: '',
-    vai: 'truck'
+    via: 'truck'
   });
   const [rawMaterials, setRawMaterials] = useState([]);
   const [debouncedSearch] = useDebounce(searchTerm, 500);
@@ -213,6 +215,7 @@ const CreatePurchase = () => {
           item_id: itemType === 0 ? detail.item_id : detail.id,
           quantity: parseFloat(detail.quantity),
           item_cost: parseFloat(detail.item_cost),
+          discount: parseFloat(detail.discount || 0),
           attributes: detail.attributes || [],
           name: itemType === 0 ? detail.item_name : detail.material_name,
           code: itemType === 0 ? detail.item_code : detail.material_code,
@@ -271,6 +274,7 @@ const CreatePurchase = () => {
         item_id: itemType === 0 ? detail.item_id : detail.raw_material_id,
         quantity: parseFloat(detail.quantity),
         item_cost: parseFloat(detail.item_cost),
+        discount: parseFloat(detail.discount || 0),
         attributes: detail.attributes || [],
         name: itemType === 0 ? detail.item_name : detail.material_name,
         code: itemType === 0 ? detail.item_code : detail.material_code,
@@ -365,6 +369,7 @@ const CreatePurchase = () => {
               item_id: detail.item_id,
               quantity: parseFloat(detail.quantity),
               item_cost: parseFloat(detail.item_cost),
+              discount: parseFloat(detail.discount || 0),
               attributes: detail.attributes || [],
               name: detail.item_name,
               code: detail.item_code,
@@ -377,7 +382,7 @@ const CreatePurchase = () => {
             fee: parseFloat(purchase?.shippings?.fee) || 0,
             tracking_number: purchase?.shippings?.tracking_number || '',
             carrier: purchase?.shippings?.carrier || '',
-            vai: purchase?.shippings?.vai || 'truck'
+            via: purchase?.shippings?.via || 'truck'
           });
 
           setPaymentData(purchase.payments[purchase.payments?.length - 1] || {});
@@ -419,6 +424,7 @@ const CreatePurchase = () => {
               item_id: detail.raw_material_id,
               quantity: parseFloat(detail.quantity),
               item_cost: parseFloat(detail.item_cost),
+              discount: parseFloat(detail.discount || 0),
               attributes: detail.attributes || [],
               name: detail.material_name,
               code: detail.material_code,
@@ -432,7 +438,7 @@ const CreatePurchase = () => {
             //   shipping_date: purchase?.shippings?.date || null,
             //   due_term: purchase?.shippings?.term || null,
             //   remark: purchase?.shippings?.remark || '',
-            //   vai: purchase?.shippings?.vai || 'truck'
+            //   via: purchase?.shippings?.via || 'truck'
             // },
             payment_status: purchase.payment_status || 'cash'
           });
@@ -442,7 +448,7 @@ const CreatePurchase = () => {
             fee: parseFloat(purchase?.shippings?.fee) || 0,
             tracking_number: purchase?.shippings?.tracking_number || '',
             carrier: purchase?.shippings?.carrier || '',
-            vai: purchase?.shippings?.vai || 'truck'
+            via: purchase?.shippings?.via || 'truck'
           });
 
           setPaymentData(purchase.payments[purchase.payments?.length - 1] || {});
@@ -575,7 +581,7 @@ const CreatePurchase = () => {
       newFieldErrors.fee = t('shippingFeeNonNegative');
       newErrors.shipping = t('shippingFeeNonNegative');
     }
-    if (shippingData?.vai && !['truck', 'air', 'sea'].includes(shippingData.vai)) {
+    if (shippingData?.via && !['truck', 'air', 'sea'].includes(shippingData.via)) {
       newErrors.shipping = t('invalidShippingMethod');
     }
 
@@ -632,6 +638,7 @@ const CreatePurchase = () => {
         item_id: id,
         quantity: 1,
         item_cost: 0,
+        discount: 0,
         attributes,
         name: itemType == 0 ? item.name : item.material_name,
         code: itemType == 0 ? item.code : item.material_code,
@@ -671,38 +678,39 @@ const CreatePurchase = () => {
       return;
     }
 
-    setFormData((prev) => {
-      const updatedItems = [...prev.items];
-      updatedItems[index].quantity = newQty;
-      updatedItems[index].total_amount = newQty * updatedItems[index].item_cost;
-      const total = updatedItems.reduce((sum, item) => sum + item.total_amount, 0);
-      return {
-        ...prev,
-        items: updatedItems,
-        total_amount: total,
-        balance: total - prev.total_paid,
-      };
-    });
+    setFormData((prev) => ({
+      ...prev,
+      items: prev.items.map((item, i) =>
+        i === index ? { ...item, quantity: newQty } : item
+      ),
+    }));
   };
 
   const handleCostChange = (index, newCost) => {
-    if (newCost <= 0) {
+    if (newCost < 0) {
       setErrors({ items: t('invalidCost') });
       return;
     }
 
-    setFormData((prev) => {
-      const updatedItems = [...prev.items];
-      updatedItems[index].item_cost = newCost;
-      updatedItems[index].total_amount = newCost * updatedItems[index].quantity;
-      const total = updatedItems.reduce((sum, item) => sum + item.total_amount, 0);
-      return {
-        ...prev,
-        items: updatedItems,
-        total_amount: total,
-        balance: total - prev.total_paid,
-      };
-    });
+    setFormData((prev) => ({
+      ...prev,
+      items: prev.items.map((item, i) =>
+        i === index ? { ...item, item_cost: newCost } : item
+      ),
+    }));
+  };
+
+  const handleDiscountChange = (index, newDiscount) => {
+    if (newDiscount < 0 || newDiscount > 100) {
+      return;
+    }
+
+    setFormData((prev) => ({
+      ...prev,
+      items: prev.items.map((item, i) =>
+        i === index ? { ...item, discount: newDiscount } : item
+      ),
+    }));
   };
 
   const onAddPayment = async (value) => {
@@ -738,13 +746,20 @@ const CreatePurchase = () => {
       0
     );
 
-    const taxAmount = subTotal * (formData.tax_rate / 100);
-    const totalAmount = subTotal + taxAmount + parseFloat(formData.fee || 0);
+    const discountTotal = formData.items.reduce(
+      (sum, item) => sum + (item.quantity * item.item_cost * (item.discount || 0)) / 100,
+      0
+    );
+
+    const discountedSubtotal = subTotal - discountTotal;
+    const taxAmount = discountedSubtotal * (formData.tax_rate / 100);
+    const totalAmount = discountedSubtotal + taxAmount + parseFloat(formData.fee || 0);
     const balance = totalAmount - (formData.total_paid || 0);
 
     setFormData((prev) => ({
       ...prev,
       sub_total: subTotal,
+      discount_total: discountTotal,
       tax_amount: taxAmount,
       total_amount: totalAmount,
       balance: balance < 0 ? 0 : balance,
@@ -824,11 +839,13 @@ const CreatePurchase = () => {
             // console.log(Number(row.quantity));
 
             const itemCost = Number(row.cost ?? row.price) || 0;
+            const discount = Number(row.discount) || 0;
 
             return {
               item_id: row.id,
               quantity,
               item_cost: itemCost,
+              discount: discount,
               total_amount: quantity * itemCost,
               attributes: [],
               name: itemType === 1 ? row.material_name : row.name,
@@ -840,7 +857,7 @@ const CreatePurchase = () => {
 
         if (importedItems.length === 0) {
           notify.error(t('noMatchingItemsFound'));
-          setErrors(prev => ({ ...prev, items: t('codesNotFound', { codes: res.data.missing_codes }) }));
+          setErrors(prev => ({ ...prev, items: t('noMatchingItemsFound') }));
           return;
         }
 
@@ -857,6 +874,7 @@ const CreatePurchase = () => {
                 ...mergedItems[existingIndex],
                 quantity: Number(mergedItems[existingIndex].quantity || 0) + importedItem.quantity,
                 item_cost: importedItem.item_cost || mergedItems[existingIndex].item_cost,
+                discount: importedItem.discount || mergedItems[existingIndex].discount,
               };
               return;
             }
@@ -899,12 +917,6 @@ const CreatePurchase = () => {
       return;
     }
 
-    // console.log(paymentData?.amount, formData?.balance);
-    
-    // if (Number(Number(paymentData?.amount)?.toFixed(0)) > Number(formData?.balance.toFixed(0))) {
-    //   setErrors({ paymentModal: t('paymentExceedBalance') });
-    //   return;
-    // }
     if (!validateForm()) {
       notify.error(t('pleaseFixErrors'));
       const firstErrorField = Object.keys(fieldErrors)[0];
@@ -940,7 +952,6 @@ const CreatePurchase = () => {
         total_paid: parseFloat(formData.total_paid) || 0,
         purchase_type: itemType,
         balance: parseFloat(formData.balance) || 0,
-        // exchange_rate: parseFloat(formData.exchange_rate) || 0,
         quote_no: formData.quote_no || '',
         status: formData.status === 'Completed' ? 1 : formData.status === 'Cancelled' ? 2 : 0,
         items: formData.items.map((item) => ({
@@ -948,47 +959,64 @@ const CreatePurchase = () => {
           quantity: parseInt(item.quantity),
           attributes: item.attributes,
           item_cost: parseFloat(item.item_cost),
+          discount: parseFloat(item.discount || 0),
         })),
         payments: [paymentData],
         shippings: [shippingData],
         payment_status: formData?.payment_status || 'cash'
       };
 
+      console.log(payload);
+      
 
       if (isEditMode) {
         if (itemType != 0) {
-          await api.put(`/purchase_raw/${purchaseId}`, payload, {
+          const res = await api.put(`/purchase_raw/${purchaseId}`, payload, {
             headers: { Authorization: `Bearer ${token}` },
           });
-          refetchRawTemplates();
+          console.log(res);
+          
+          if(res.data.status == 200){
+            refetchRawTemplates();
+            navigator(`/inventories/purchase-raw/receipt-raw/${purchaseId}`)
+          }
         } else {
-          await api.put(`/purchase/${purchaseId}`, payload, {
+          const res = await api.put(`/purchase/${purchaseId}`, payload, {
             headers: { Authorization: `Bearer ${token}` },
           });
-          refetchTemplates();
+          
+         if(res.data.status == 200){
+            refetchTemplates(); 
+            navigator(`/inventories/purchases/receipt/${purchaseId}`)
+          }
         }
 
         notify.success(t('updatePurchaseSuccess'));
       } else {
         if (itemType != 0) {
-          await api.post("/purchase_raw", payload, {
+          const res = await api.post("/purchase_raw", payload, {
             headers: { Authorization: `Bearer ${token}` },
           });
 
-          refetchRawTemplates();
+          if(res.data.status == 201){
+            refetchRawTemplates();
+            navigator(`/inventories/purchase-raw/receipt-raw/${res.data.id}`)
+          }
         } else {
-          await api.post("/purchase", payload, {
+          const res = await api.post("/purchase", payload, {
             headers: { Authorization: `Bearer ${token}` },
           });
-          refetchTemplates();
+          if(res.data.status == 201){
+            refetchTemplates();
+            navigator(`/inventories/purchases/receipt/${res.data.id}`)
+          }
         }
 
         notify.success(t('createPurchaseSuccess'));
       }
-      navigator(-1);
     } catch (err) {
       console.log(err);
-      
+
       const errorMessage = err?.response?.data?.message || t('errorProcessingPurchase');
       setErrors({ general: errorMessage });
       notify.error(errorMessage);
@@ -1024,7 +1052,7 @@ const CreatePurchase = () => {
   };
 
   return (
-    <div className="view-page bg-transparent py-8 transition-colors">
+    <div className="view-page bg-transparent transition-colors">
       <AlertBox
         isOpen={showAlert}
         title={isEditMode ? t('confirmUpdate') : t('confirmCreatePurchase')}
@@ -1034,15 +1062,15 @@ const CreatePurchase = () => {
         confirmText={isEditMode ? t('update') : t('create')}
         cancelText={t('cancel')}
       />
-      <div className="">
+      <div>
         {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-4">
+        <div>
+          <div className="flex items-center justify-between border-b-0 border-x p-4 dark:border-gray-500 border-gray-200 bg-white dark:bg-gray-600">
             <div>
-              <h1 className="text-3xl font-bold text-gray-800 dark:!text-gray-100">
+              <h1 className="text-xl font-bold text-gray-800 dark:!text-gray-100">
                 {isEditMode ? t('editPurchaseOrder') : t('createNewPurchase')}
               </h1>
-              <p className="text-gray-600 dark:!text-gray-400 mt-2">
+              <p className="text-gray-600 text-xs dark:!text-gray-400 mt-2">
                 {isEditMode ? t('updatePurchaseOrderDetails') : t('addNewPurchaseToSystem')}
               </p>
             </div>
@@ -1052,7 +1080,7 @@ const CreatePurchase = () => {
                   type="button"
                   onClick={() => setShowTemplateModal(true)}
                   disabled={loading}
-                  variant='success'
+                  variant='primary'
                   outline={false}
                 >
                   <FaCloudUploadAlt className="text-lg" />
@@ -1060,17 +1088,18 @@ const CreatePurchase = () => {
               )}
               <Button
                 type="button"
+                actionType="is_modify"
+                menuId={MENU_ID}
                 onClick={handleSubmit}
                 disabled={loading}
-                variant='primary'
+                variant='save'
                 outline={false}
               >
                 <FaSave />{loading ? t('processing') : isEditMode ? t('update') : t('create')}
               </Button>
               <Button
                 type="button"
-                variant='danger'
-                outline={true}
+                variant='cancel'
                 onClick={() => navigator(-1)}
               >
                 <FaTimes />{t('back')}
@@ -1102,320 +1131,87 @@ const CreatePurchase = () => {
         </div>
 
         <form>
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1">
             {/* Left Column - Form Sections */}
-            <div className="lg:col-span-2 space-y-6">
+            <div>
               {/* Supplier & Date Section */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3 }}
               >
-                <div className="">
-                  {/* <div className="flex items-center gap-2 mb-4">
-                    <FaWarehouse className="text-blue-500" />
-                    <h2 className="text-lg font-bold text-gray-800 dark:!text-gray-100">{t('supplierInformation')}</h2>
-                  </div> */}
+                <div className=" flex justify-between">
+                  
 
-                  <div className="grid grid-cols-1 md:grid-cols-2  lg:grid-cols-3 gap-6">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:!text-gray-300 mb-2">
-                        <span className="flex items-center gap-2">
-                          <FaTag className="text-gray-400" />
-                          {t('supplier')} <span className="text-red-500">*</span>
-                        </span>
-                      </label>
-                      <RichSearch
-                        data={suppliers}
-                        value={formData.supplier_id}
-                        placeholder={t('selectSupplier')}
-                        keyFields={{
-                          id: 'supplier_id',
-                          title: 'supplier_name',
-                          image: 'image',
-                          subtitle: 'supplier_tel',
-                        }}
-                        onScrollReader={onScrollFetch}
-                        onSelected={(value) => handleInputChange('supplier_id', value)}
-                      />
-
-                      {fieldErrors.supplier_id && (
-                        <div className="text-red-500 text-sm mt-1">{fieldErrors.supplier_id}</div>
-                      )}
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:!text-gray-300 mb-2">
-                        <span className="flex items-center gap-2">
-                          <FaCalendarAlt className="text-gray-400" />
-                          {t('purchaseDate')} <span className="text-red-500">*</span>
-                        </span>
-                      </label>
-                      <DatePicker showTime value={formData.purchase_date ? dayjs(formData.purchase_date) : ''} className="date-picker" size="large" onChange={(date, dateString) => handleInputChange('purchase_date', dateString)} />
-                      {fieldErrors.purchase_date && (
-                        <div className="text-red-500 text-sm mt-1">{fieldErrors.purchase_date}</div>
-                      )}
-                    </div>
-                    <div className=" grow">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-gray-600 dark:!text-gray-400 flex items-center gap-2">
-                          <FaPercent className="text-gray-400" />
-                          {t('tax')}
-                        </span>
+                  <div className="flex gap-2 justify-between p-4">
+                    <div className="flex items-end gap-5">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:!text-gray-300 mb-2">
+                          <span className="flex items-center text-sm font-semibold gap-2">
+                            <FaTag className="text-gray-400" />
+                            {t('supplier')} <span className="text-red-500">*</span>
+                          </span>
+                        </label>
+                        <RichSearch
+                          data={suppliers}
+                          value={formData.supplier_id}
+                          placeholder={t('selectSupplier')}
+                          keyFields={{
+                            id: 'supplier_id',
+                            title: 'supplier_name',
+                            image: 'image',
+                            subtitle: 'supplier_tel',
+                          }}
+                          onScrollReader={onScrollFetch}
+                          onSelected={(value) => handleInputChange('supplier_id', value)}
+                        />
+                        {fieldErrors.supplier_id && (
+                          <div className="text-red-500 text-sm mt-1">{fieldErrors.supplier_id}</div>
+                        )}
                       </div>
-                      <Radio.Group
-                        className="dark:[&_.ant-radio-wrapper]:text-white"
-                        name="radiogroup"
-                        value={formData?.tax_rate}
-                        options={TAX_OPTIONS}
-                        onChange={(e) => handleInputChange('tax_rate', e.target.value)}
-                      />
-                      {fieldErrors.tax_rate && (
-                        <div className="text-red-500 text-sm mt-1">{fieldErrors.tax_rate}</div>
-                      )}
-                    </div>
-                    <div className=" grow">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-gray-600 dark:!text-gray-400 flex items-center gap-2">
-                          <FaMoneyBillWave className="text-gray-400" />
-                          {t('paymentStatus')}
-                        </span>
-                      </div>
-                      <RichSearch
-                        data={PAYMENT_STATUS}
-                        keyFields={{
-                          id: 'value',
-                          title: 'label',
-                        }}
-                        placeholder={t('paymentStatus')}
-                        onSelected={(value) => handleInputChange('payment_status', value)}
-                        value={formData.payment_status}
-                      />
-                      {fieldErrors.payment_status && (
-                        <div className="text-red-500 text-sm mt-1">{fieldErrors.payment_status}</div>
-                      )}
-                    </div>
-                    <div className=" grow">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-gray-600 dark:!text-gray-400 flex items-center gap-2">
-                          <FaFileInvoice className="text-gray-400" />
-                          {t('quoteNo')}
-                        </span>
-                      </div>
-                      <Input
-                        type="text"
-                        name="quote_no"
-                        value={formData.quote_no}
-                        onChange={(value) => handleInputChange('quote_no', value)}
-                        placeholder={t('quoteNo')}
-                        className={`w-full ${fieldErrors.quote_no ? 'border-red-500' : ''} dark:!bg-gray-700 dark:!text-gray-200 dark:!border-gray-600`}
-                      />
-                    </div>
-
-                    {formData?.payment_status != "paid" && <div className="grid grid-cols-2">
-                      <div className=" grow">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-gray-600 dark:!text-gray-400 flex items-center gap-2">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:!text-gray-300 mb-2">
+                          <span className="flex items-center text-sm font-semibold gap-2">
                             <FaCalendarAlt className="text-gray-400" />
-                            {t('dueTerm')} ({t('days')})
+                            {t('purchaseDate')} <span className="text-red-500">*</span>
+                          </span>
+                        </label>
+                        <DatePicker showTime value={formData.purchase_date ? dayjs(formData.purchase_date) : ''} className="date-picker" size="large" onChange={(date, dateString) => handleInputChange('purchase_date', dateString)} />
+                        {fieldErrors.purchase_date && (
+                          <div className="text-red-500 text-sm mt-1">{fieldErrors.purchase_date}</div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex items-end gap-5">
+                      
+                      <div className=" ">
+                      
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-gray-600 text-sm font-semibold dark:!text-gray-400 flex items-center gap-2">
+                            <FaFileInvoice className="text-gray-400" />
+                            {t('quoteNo')}
                           </span>
                         </div>
                         <Input
-                          type="number"
-                          name="due_term"
-                          value={formData.due_term}
-                          onChange={(value) => handleInputChange('due_term', value)}
-                          placeholder={t('shipTerm')}
-                          className={`w-full dark:!bg-gray-700 dark:!text-gray-200 dark:!border-gray-600`}
-                          min="0"
+                          type="text"
+                          name="quote_no"
+                          value={formData.quote_no}
+                          onChange={(value) => handleInputChange('quote_no', value)}
+                          placeholder={t('quoteNo')}
+                          className={`w-full ${fieldErrors.quote_no ? 'border-red-500' : ''} text-input`}
                         />
                       </div>
-                      <div className=" grow">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-gray-600 dark:!text-gray-400 flex items-center gap-2">
-                            <FaCalendarAlt className="text-gray-400" />
-                            {t('dueDate')}
-                          </span>
-                        </div>
-                        <DatePicker value={formData.purchase_date ? dayjs(formData.purchase_date).add(formData.due_term || 0, 'day') : ''} className="date-picker" size="large" />
-                      </div>
-                    </div>}
-                  </div>
-                </div>
-              </motion.div>
-
-              {/* Items Section */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, delay: 0.1 }}
-              >
-                <div className="">
-                  <div className="flex items-center justify-between mb-6">
-                    <div className="flex items-center flex-col gap-2 mr-2">
-                      <div className="flex items-center gap-2">
-                        <FaBox className="text-blue-500" />
-                        <h2 className="text-lg font-bold text-gray-800 dark:!text-gray-100">{t('purchaseItems')}</h2>
-                      </div>
-                      <Checkbox
-                        className="dark:!text-white"
-                        onChange={(e) => {
-                          if (!e.target.checked) {
-                            setItemFilter('all')
-                          } else {
-                            setItemFilter('supplier')
-                          }
-                        }}
-                      >Only Supplier</Checkbox>
                     </div>
 
-                    <div className="flex items-center grow gap-2">
-
-                      <RichSearch
-                        data={itemType == 1 ? rawMaterials : items}
-                        placeholder={t('addItem')}
-                        keyFields={{
-                          id: 'id',
-                          title: itemType == 1 ? 'material_name' : 'name',
-                          image: itemType == 1 ? 'material_image' : 'image',
-                          subtitle: itemType == 1 ? 'material_code' : 'code',
-                        }}
-                        onSelected={(value) => addItemToPurchase(value)}
-                        onSearch={(value) => setSearchTerm(value)}
-                        onScrollReader={onScrollFetch}
-                      />
-                      <ImportItemInList
-                        onSelected={handleImportItems}
-                      />
-                    </div>
 
                   </div>
-
-                  {formData.items.length === 0 ? (
-                    <div className="text-center py-12 bg-gray-50 dark:!bg-blue-900/50 rounded-lg border-2 border-dashed border-gray-300 dark:!border-gray-700">
-                      <FaBox className="text-gray-400 dark:!text-gray-400 text-4xl mx-auto mb-4" />
-                      <p className="text-gray-500 dark:!text-gray-400 mb-4">{t('noItemsAdded')}</p>
-                      <div className="flex items-center justify-center gap-4">
-                        <Button
-                          onClick={(e) => {
-                            e.preventDefault();
-                            downloadTemplate(targetFields, itemType == 1 ? "Import Raw Materials" : "Import Items");
-                          }}
-                          className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
-                        >
-                          <FaFileExcel className="text-white" size={18} />
-                          <span>{t('downloadTemplate')}</span>
-                        </Button>
-                      </div>
-                    </div>
-                  ) : (
-                    <ItemTable
-                      priceLabel='item_cost'
-                      t={t}
-                      data={formData.items}
-                      onDelete={removeItem}
-                      onQtyChange={handleQtyChange}
-                      onCostChange={handleCostChange}
-                      haedTitle={[{ title: t('item'), key: 'item' }, { title: t('quantity'), key: 'quantity' }, { title: t('price'), key: 'price' }, { title: t('total'), key: 'total' }, { title: '', key: 'action' }]}
-                    />
-                  )}
-                  {errors.items && (
-                    <div className="text-red-500 text-sm mt-2 p-3 bg-red-50 dark:!bg-red-900/10 rounded-lg">
-                      {errors.items}
-                    </div>
-                  )}
-                </div>
-              </motion.div>
-
-              {/* Payments Section */}
-              {/* <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, delay: 0.2 }}
-              >
-                <div className="">
-                  <div className="flex items-center justify-between mb-6">
-                    <div className="flex items-center gap-2">
-                      <FaDollarSign className="text-green-500" />
-                      <h2 className="text-lg font-bold text-gray-800 dark:!text-gray-100">{t('payment')}</h2>
-                    </div>
-                  </div>
-                  <div className="p-6 space-y-6 flex gap-3 flex-wrap">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:!text-gray-300 mb-2">
-                        {t('paymentAmount')}
-                      </label>
-                      <Input
-                        type="number"
-                        value={paymentAmount}
-                        onChange={(value) => {
-                          setPaymentAmount(parseFloat(value) || 0);
-                          setFormData(prev => ({
-                            ...prev,
-                            total_paid: parseFloat(value) || 0
-                          }))
-                        }}
-                        size="large"
-                        min="0"
-                        max={formData.balance}
-                        step="1"
-                        placeholder={t('enterAmount')}
-                        prefix={<FaDollarSign className="text-gray-400" />}
-                        className="dark:!bg-gray-700 dark:!text-gray-200 dark:!border-gray-600"
-                      />
-                      <div className="text-sm text-gray-500 dark:!text-gray-400 mt-2">
-                        {t('remainingBalance')}: <span className="font-bold dark:!text-gray-200">${formData.balance.toFixed(2)}</span>
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:!text-gray-300 mb-2">
-                        {t('paymentDate')}
-                      </label>
-                      <DatePicker
-                        value={paymentDate ? dayjs(paymentDate) : null}
-                        onChange={(date, dateString) => setPaymentDate(dateString)}
-                        className="date-picker"
-                        size="large"
-                        format="YYYY-MM-DD"
-                      />
-                    </div>
-                  </div>   
-                  {errors.payments && (
-                    <div className="text-red-500 text-sm mt-2 p-3 bg-red-50 dark:!bg-red-900/10 rounded-lg">
-                      {errors.payments}
-                    </div>
-                  )}
-                </div>
-              </motion.div> */}
-              {/* <div className="flex gap-4 items-end">
-                <MiniVisaPaymentCard onClick={()=>setShowPaymentModal(true)} payment={formData?.payments[formData?.payments?.length - 1]}/>
-                <MiniShippingCard onClick={() => setShowShippingModal(true)} shipping={formData.shipping_details} />
-              </div> */}
-
-            </div>
-
-            {/* Right Column - Summary */}
-            <div className="space-y-6">
-              <motion.div
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.3 }}
-              >
-                <div className="">
-
-                  <div>
-
-                    <h3 className="text-md font-semibold mb-4 flex items-center gap-2 dark:text-white">
-                      <FaTruck className="text-blue-500" />
-                      {t('shippingDetails')}
-                    </h3>
-                    <div>
-
-                      <div className="flex flex-wrap gap-3 mb-2">
+                  <div className="  p-4 ">
+                    <div className="flex flex-wrap justify-between gap-5 mb-2">
+                      <div className="flex gap-5">
                         <div>
                           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-1">
-                            {t('shippingMethod')} <FaBox />
+                            {t('shippingCarrier')} <FaBox />
                           </label>
                           <RichSearch
                             data={delivers?.data}
@@ -1428,211 +1224,220 @@ const CreatePurchase = () => {
                             onSelected={(value) => setShippingData((pre) => ({ ...pre, carrier: value }))}
                           />
                         </div>
-
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-1">
-                            {t('shippingVia')}
-                          </label>
-                          <div className="flex gap-4">
-                            <Radio.Group
-                              name="vaiGroup"
-                              defaultValue={1}
-                              value={shippingData?.vai}
-                              onChange={(e) => setShippingData((pre) => ({ ...pre, vai: e.target.value }))}
-                              options={[
-                                { value: 'truck', label: t('truck') },
-                                { value: 'air', label: t('air') },
-                                { value: 'sea', label: t('sea') },
-                              ]}
-                            />
-                            {/* {['truck', 'air', 'sea'].map((v) => (
-                              <label key={v} className="flex items-center gap-2 cursor-pointer text-gray-700 dark:text-gray-300">
-                                <input
-                                  type="radio"
-                                  name="vai"
-                                  value={v}
-                                  checked={shippingData.vai == v}
-                                  onChange={(e) => setShippingData((pre) => ({ ...pre, vai: e.target.value }))}
-                                  className="w-4 h-4 text-blue-600 focus:ring-blue-500"
-                                />
-                                <span className="capitalize">{t(v)}</span>
-                              </label>
-                            ))} */}
-                          </div>
-                        </div>
-
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-1">
-                            {t('trackingNumber')} <IoIdCard />
-                          </label>
-                          <Input
-                            type="text"
-                            value={shippingData.tracking_number}
-                            placeholder="e.g, TRK123456789"
-                            onChange={(value) => setShippingData((pre) => ({ ...pre, tracking_number: value }))}
-                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-1">
-                            {t('shippingFee')} <FaDollarSign />
-                          </label>
-                          <Input
-                            type="number"
-                            value={shippingData.fee}
-                            onChange={(value) => {
-                              const val = parseFloat(value) || 0;
-                              setShippingData((pre) => ({ ...pre, fee: val }));
-                              setFormData(prev => ({ ...prev, fee: val }));
-                            }}
-                            className={`w-full px-3 py-2 border ${fieldErrors.fee ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100`}
-                            step="0.01"
-                            min="0"
-                          />
-                          {fieldErrors.fee && (
-                            <div className="text-red-500 text-sm mt-1">{fieldErrors.fee}</div>
-                          )}
-                        </div>
+                        
                       </div>
-                      <h3 className="text-md font-semibold mb-4 flex items-center gap-2 dark:text-white">
-                        <FaMoneyBillWave className="text-green-500" />
-                        {t('addPayment')}
-                      </h3>
-                      {errors.payments && (
-                        <div className="text-red-500 text-sm mb-4 p-3 bg-red-50 dark:!bg-red-900/10 rounded-lg">
-                          {errors.payments}
-                        </div>
-                      )}
-                      <div className=" flex flex-wrap gap-3">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-1">
-                            {t('paymentMethod')} <BsBank />
-                          </label>
-                          <RichSearch
-                            data={PAYMENT_METHODS}
-                            placeholder='e.g, cash or bank '
-                            keyFields={{
-                              id: 'value',
-                              title: 'label'
-                            }}
-                            value={paymentData.payment_method}
-                            onSelected={(value) => setPaymentData((pre) => ({ ...pre, payment_method: value }))}
 
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-1">
-                            {t('transectionId')} <IoIdCard />
-                          </label>
-                          <Input
-                            type="text"
-                            value={paymentData.transection_id}
-                            placeholder="e.g, 12345678910"
-                            onChange={(value) => setPaymentData((pre) => ({ ...pre, transection_id: value }))}
-                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100"
-                            step="0.01"
-                            min="0"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-1">
-                            {t('amount')} <FaDollarSign />
-                          </label>
-                          <Input
-                            type="number"
-                            value={paymentData.amount}
-                            onChange={(value) => {
-                              const val = parseFloat(value) || 0;
-                              const totalVal = parseFloat(value + (formData.total_paid - paymentData.amount)) || 0;
-                              setPaymentData((pre) => ({ ...pre, amount: val }));
-                              setFormData(prev => ({ ...prev, total_paid: totalVal }));
-                            }}
-                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100"
-                            step="0.01"
-                            min="0"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('paymentDate')}</label>
-
-                          <DatePicker
-                            showTime
-                            value={paymentData.paid_at ? dayjs(paymentData.paid_at) : ''}
-                            onChange={(date, dateString) => setPaymentData((pre) => ({ ...pre, paid_at: dateString }))}
-                            className="date-picker"
-                          />
-                        </div>
-                        <div className="grow">
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-1">
-                            {t('remark')} <GiNotebook />
-                          </label>
-                          <textarea
-                            type='textarea'
-                            value={paymentData.remark || ''}
-                            placeholder="Remark for payment. . ."
-                            onChange={(e) => setPaymentData((pre) => ({ ...pre, remark: e.target.value }))}
-                            className="textarea-input"
-                            step="0.01"
-                            min="0"
-                          />
-                        </div>
-                      </div>
-                      <div className="grow">
+                      <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-1">
-                          {t('description')} <GiNotebook />
+                          {t('shippingVia')}
                         </label>
-                        <textarea
-                          value={formData.description || ''}
-                          placeholder="Description for purchase..."
-                          onChange={(e) => setFormData((pre) => ({ ...pre, description: e.target.value }))}
-                          className="textarea-input w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100"
-                          rows={3}
+                        <div className="flex gap-4">
+                          <Radio.Group
+                            name="viaGroup"
+                            defaultValue={1}
+                            value={shippingData?.via}
+                            onChange={(e) => setShippingData((pre) => ({ ...pre, via: e.target.value }))}
+                            options={[
+                              { value: 'truck', label: t('truck') },
+                              { value: 'air', label: t('air') },
+                              { value: 'sea', label: t('sea') },
+                            ]}
+                          />
+
+                        </div>
+                      </div>
+
+
+
+                      
+                    </div>
+
+
+                  </div>
+                </div>
+              </motion.div>
+
+              {/* Items Section */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: 0.1 }}
+              >
+                <div className="border-t-0 px-4 border-x bg-gradient-to-b from-gray-50 to-gray-100 dark:bg-transparent dark:from-transparent dark:to-transparent border-gray-200 dark:border-gray-500">
+                  <div className="flex items-center justify-between  px-4 py-2 ">
+                    <div className="flex items-center flex-col gap-2 mr-2">
+                      
+                      <Checkbox
+                        className="dark:!text-white"
+                        onChange={(e) => {
+                          if (!e.target.checked) {
+                            setItemFilter('all')
+                          } else {
+                            setItemFilter('supplier')
+                          }
+                        }}
+                      ><span className="text-xs">Only Supplier</span></Checkbox>
+                    </div>
+
+                    <div className="flex items-center grow gap-2">
+
+                      <RichSearch
+                        data={itemType == 1 ? rawMaterials : items}
+                        placeholder={'--- ' + t('addItem') + ' ---'}
+                        keyFields={{
+                          id: 'id',
+                          title: itemType == 1 ? 'material_name' : 'name',
+                          image: itemType == 1 ? 'material_image' : 'image',
+                          subtitle: itemType == 1 ? 'material_code' : 'code',
+                        }}
+                        onSelected={(value) => addItemToPurchase(value)}
+                        onSearch={(value) => setSearchTerm(value)}
+                        onScrollReader={onScrollFetch}
+                      />
+                      <Button
+                        onClick={(e) => {
+                          e.preventDefault();
+                          downloadTemplate(targetFields, itemType == 1 ? "Import Raw Materials" : "Import Items");
+                        }}
+                        className="flex items-center gap-2 px-4 py-2 bg-gradient-to-b from-green-400 to-green-600 text-white hover:bg-green-600 transition-colors"
+                      >
+                        <pre className="flex items-center">
+                          <FaFileExcel className="text-white" size={18} />
+                          <span>{t('downloadTemplate')}</span>
+                        </pre>
+                      </Button>
+                      <ImportItemInList
+                        onSelected={handleImportItems}
+                      />
+                    </div>
+
+                  </div>
+
+
+                  <ItemTable
+                    data={formData.items}
+                    onDelete={removeItem}
+                    onCellChange={(index, key, value) => {
+                      if (key === 'quantity' && value <= 0) {
+                        setErrors({ items: t('invalidQuantity') });
+                        return;
+                      }
+                      if (key === 'item_cost' && value < 0) {
+                        setErrors({ items: t('invalidCost') });
+                        return;
+                      }
+                      setFormData(prev => ({
+                        ...prev,
+                        items: prev.items.map((item, i) => i === index ? { ...item, [key]: value } : item)
+                      }));
+                    }}
+                    columns={[
+                      { title: t('item'), key: 'name', type: 'item', subKey: 'code' },
+                      { title: t('quantity'), key: 'quantity', type: 'number' },
+                      { title: t('price'), key: 'item_cost', type: 'number' },
+                      { title: t('discount'), key: 'discount', type: 'discount', priceLabel: 'item_cost' },
+                      { 
+                        title: t('total'), 
+                        type: 'showonly', 
+                        render: (item) => `$${((item.quantity * item.item_cost) * (1 - (item.discount || 0) / 100)).toFixed(2)}` 
+                      }
+                    ]}
+                  />
+
+                  {errors.items && (
+                    <div className="text-red-500 text-sm mt-2 p-3 bg-red-50 dark:!bg-red-900/10 rounded-lg">
+                      {errors.items}
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            </div>
+
+
+            {/* Right Column - Summary */}
+            <div>
+              <motion.div
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.3 }}
+              >
+                <div className=" flex justify-between gap-10 p-4 mx-4 border bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-800">
+                  <div className="max-w grow">
+                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-1">
+                      {t('description')} <GiNotebook />
+                    </label>
+                    <textarea
+                      value={formData.description || ''}
+                      placeholder="--- Description for purchase... ---"
+                      onChange={(e) => setFormData((pre) => ({ ...pre, description: e.target.value }))}
+                      className="textarea-input"
+                      rows={3}
+                    />
+                  </div>
+                  <div className="max-w-96 grow">
+                    <div className="flex justify-between w-full text-slate-500">
+                        <span className="text-[13px] font-semibold uppercase">{t('subTotal')}</span>
+                        <span className="text-[13px] ">${formData.sub_total.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between w-full  text-slate-500">
+                        <span className="text-[13px] font-semibold uppercase">{t('discount')}</span>
+                        <span className="text-[13px] ">${Number(formData.discount_total).toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between w-full  text-slate-500">
+                        <span className="text-[13px] font-semibold uppercase">{t('tax')}</span>
+                        <span className="text-[13px] ">${Number(formData.tax_amount).toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between w-full text-slate-500">
+                        <span className="text-[13px] font-semibold uppercase">{t('totalPaid')}</span>
+                        <span className="text-[13px] ">${formData.total_paid.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between w-full text-slate-500">
+                        <span className="text-[13px] font-semibold uppercase">{t('balance')}</span>
+                        <span className={`text-[13px] ${formData.balance > 0 ? 'text-orange-600 dark:!text-orange-400' : 'text-green-600 dark:!text-green-400'}`}>${formData.balance.toFixed(2)}</span>
+                    </div>
+                    <div className="flex items-center">
+                      <div className=" grow">
+                        <Checkbox
+                            checked={formData?.tax_rate == 10}
+                            onChange={(e) => {
+                                if(e.target.checked){
+                                    setFormData(prev => ({ ...prev, tax_rate: 10 }))
+                                }else{
+                                    setFormData(prev => ({ ...prev, tax_rate: 0 }))
+                                }
+                            }}
+                        >
+                            <span className="text-[11px] font-bold uppercase text-slate-800 dark:text-slate-50">Tax Include</span>
+                        </Checkbox>
+                      
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-1">
+                          <pre>{t('shippingFee')}</pre>
+                        </label>
+                        <Input
+                          type="number"
+                          value={shippingData.fee}
+                          onChange={(value) => {
+                            const val = parseFloat(value) || 0;
+                            setShippingData((pre) => ({ ...pre, fee: val }));
+                            setFormData(prev => ({ ...prev, fee: val }));
+                          }}
+                          className={`max-w-30 px-3 py-2 border ${fieldErrors.fee ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'}`}
+                          step="0.01"
+                          min="0"
                         />
+                        {fieldErrors.fee && (
+                          <div className="text-red-500 text-sm mt-1">{fieldErrors.fee}</div>
+                        )}
                       </div>
                     </div>
-
-                    <Divider className=" dark:!border-gray-700" />
-                    <h2 className="text-lg font-bold text-gray-800 dark:!text-gray-100 flex items-center gap-2">
-                      <FaLayerGroup className="text-blue-500" />
-                      {t('purchaseSummary')}
-                    </h2>
-
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-600 dark:!text-gray-400">{t('subtotal')}</span>
-                      <span className="font-bold text-gray-800 dark:!text-gray-100">${formData.sub_total.toFixed(2)}</span>
+                    
+                    <div className="flex justify-between w-full max-w-[350px] text-slate-800 dark:text-white pt-4 border-t border-slate-200 dark:border-slate-700 mt-2">
+                        <span className="text-sm font-bold uppercase">{t('totalAmount')}</span>
+                        <span className="text-xl font-bold text-[#13b5ea]">${formData.total_amount.toFixed(2)}</span>
                     </div>
-                    <div className="flex justify-between items-center text-lg font-bold">
-                      <span className="text-gray-700 dark:!text-gray-200">{t('totalAmount')}</span>
-                      <span className="text-blue-600 dark:!text-blue-400">${Number(formData.total_amount).toFixed(2)}</span>
-                    </div>
-
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-600 dark:!text-gray-400">{t('totalPaid')}</span>
-                      <span className="font-bold text-green-600 dark:!text-green-400">${formData.total_paid.toFixed(2)}</span>
-                    </div>
-
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-600 dark:!text-gray-400">{t('remainingBalance')}</span>
-                      <span className={`font-bold ${formData.balance > 0 ? 'text-orange-600 dark:!text-orange-400' : 'text-green-600 dark:!text-green-400'}`}>
-                        ${formData.balance.toFixed(2)}
-                      </span>
-                    </div>
-
-                    <Divider className="my-4 dark:!border-gray-700" />
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="bg-blue-50 dark:!bg-blue-900/20 p-3 rounded-lg text-center">
-                        <div className="text-sm text-gray-600 dark:!text-gray-400">{t('items')}</div>
-                        <div className="text-xl font-bold text-gray-800 dark:!text-gray-100">{formData.items.length}</div>
-                      </div>
-                      {/* <div className="bg-green-50 dark:!bg-green-900/20 p-3 rounded-lg text-center">
-                        <div className="text-sm text-gray-600 dark:!text-gray-400">{t('payment')}s</div>
-                        <div className="text-xl font-bold text-gray-800 dark:!text-gray-100">{formData.payments.length}</div>
-                      </div> */}
-                    </div>
-
-
+                    
                   </div>
                 </div>
               </motion.div>
@@ -1640,212 +1445,72 @@ const CreatePurchase = () => {
           </div>
         </form>
       </div>
-      <Modal
+      {/* Template Modal */}
+      <OldTemplateModal
         open={showTemplateModal}
         onClose={() => setShowTemplateModal(false)}
-        width={1000}
-      >
-        <div className="flex flex-col max-h-[85vh]">
-          {/* Modal Header */}
-          <div className="p-4 border-b dark:border-gray-700">
-            <h3 className="text-lg font-bold text-gray-800 dark:!text-gray-100">
-              {t("selectOldPurchaseTemplate")}
-            </h3>
-          </div>
-
-          {/* Filters Area */}
-          <div className="p-4 bg-gray-50 dark:bg-gray-800/40 border-b dark:border-gray-700">
-            <div className="grid grid-cols-1 gap-3 lg:grid-cols-12">
-              <div className="lg:col-span-4">
-                <div className="relative">
-                  <LuSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                  <input
-                    type="text"
-                    placeholder={t("searchPurchases")}
-                    value={templateSearch}
-                    onChange={(e) => setTemplateSearch(e.target.value)}
-                    className="w-full border border-gray-300 bg-white py-1.5 pl-10 pr-4 text-sm text-gray-900 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-900 dark:text-white rounded-md"
-                  />
-                </div>
-              </div>
-              <div className="lg:col-span-4">
-                <RichSearch
-                  data={[{ supplier_id: "", supplier_name: t("allSuppliers") }, ...suppliers]}
-                  keyFields={{ id: "supplier_id", title: "supplier_name", image: 'image' }}
-                  value={templateFilters?.supplier_id}
-                  onSelected={(id) =>
-                    setTemplateFilters((prev) => ({ ...prev, supplier_id: id }))
-                  }
-                  placeholder={t("allSuppliers")}
-                />
-              </div>
-              <div className="lg:col-span-2">
-                <DatePicker
-                  value={templateFilters?.start_date ? dayjs(templateFilters.start_date) : null}
-                  onChange={(_, dateString) =>
-                    setTemplateFilters((prev) => ({ ...prev, start_date: dateString || "" }))
-                  }
-                  format="YYYY-MM-DD"
-                  className="date-picker w-full"
-                  placeholder={t("startDate")}
-                />
-              </div>
-              <div className="lg:col-span-2">
-                <DatePicker
-                  value={templateFilters?.end_date ? dayjs(templateFilters.end_date) : null}
-                  onChange={(_, dateString) =>
-                    setTemplateFilters((prev) => ({ ...prev, end_date: dateString || "" }))
-                  }
-                  format="YYYY-MM-DD"
-                  className="date-picker w-full"
-                  placeholder={t("endDate")}
-                />
-              </div>
+        title={t("selectOldPurchaseTemplate")}
+        searchTerm={templateSearch}
+        onSearchChange={setTemplateSearch}
+        filters={
+          <div className="flex gap-5 w-full">
+            <div className="lg:col-span-4 grow">
+              <RichSearch
+                data={[{ supplier_id: "", supplier_name: t("allSuppliers") }, ...suppliers]}
+                keyFields={{ id: "supplier_id", title: "supplier_name", image: 'image' }}
+                value={templateFilters?.supplier_id}
+                onSelected={(id) =>
+                  setTemplateFilters((prev) => ({ ...prev, supplier_id: id }))
+                }
+                placeholder={t("allSuppliers")}
+              />
+            </div>
+            <div className="lg:col-span-2">
+              <DatePicker
+                value={templateFilters?.start_date ? dayjs(templateFilters.start_date) : null}
+                onChange={(_, dateString) =>
+                  setTemplateFilters((prev) => ({ ...prev, start_date: dateString || "" }))
+                }
+                format="YYYY-MM-DD"
+                className="date-picker"
+                placeholder={t("startDate")}
+              />
+            </div>
+            <div className="lg:col-span-2">
+              <DatePicker
+                value={templateFilters?.end_date ? dayjs(templateFilters.end_date) : null}
+                onChange={(_, dateString) =>
+                  setTemplateFilters((prev) => ({ ...prev, end_date: dateString || "" }))
+                }
+                format="YYYY-MM-DD"
+                className="date-picker"
+                placeholder={t("endDate")}
+              />
             </div>
           </div>
-
-          {/* Selected Templates Summary */}
-          {selectedTemplateIds.length > 0 && (
-            <div className="px-4 py-2 bg-blue-50 dark:bg-blue-900/30 border-b dark:border-gray-700 flex justify-between items-center animate-in fade-in slide-in-from-top-2">
-              <div className="flex items-center gap-2 text-sm text-blue-700 dark:text-blue-300">
-                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-600 text-[10px] font-bold text-white">
-                  {selectedTemplateIds.length}
-                </span>
-                <span>{t("templatesSelected")}</span>
-              </div>
-              <div className="flex gap-2">
-                <Button
-                  onClick={() => setSelectedTemplateIds([])}
-                  variant="danger"
-                  outline={true}
-                >
-                  {t("clearAll")}
-                </Button>
-                <Button
-                  onClick={handleImportTemplates}
-                  variant="primary"
-                >
-                  <FaCloudUploadAlt />
-                  {t("importItems")}
-                </Button>
-              </div>
-            </div>
-          )}
-
-          {/* Table Area */}
-          <div className="flex-1 overflow-y-auto min-h-[300px]">
-            <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400 border-collapse">
-              <thead className="text-xs text-gray-700 uppercase bg-gray-100 dark:bg-gray-800 dark:text-gray-400 sticky top-0 z-10 shadow-sm">
-                <tr>
-                  <th className="px-4 py-3 bg-gray-100 dark:bg-gray-800 w-12">
-                    <Checkbox
-                      type="checkbox"
-                      onChange={toggleSelectAllTemplatesOnPage}
-                      checked={templates.length > 0 && templates.every(t => selectedTemplateIds.includes(t.purchase_id || t.id))}
-                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
-                    />
-                  </th>
-                  <th className="px-4 py-3 bg-gray-100 dark:bg-gray-800">{t("purchaseNo")}</th>
-                  <th className="px-4 py-3 bg-gray-100 dark:bg-gray-800">{t("supplier")}</th>
-                  <th className="px-4 py-3 bg-gray-100 dark:bg-gray-800">{t("date")}</th>
-                  <th className="px-4 py-3 bg-gray-100 dark:bg-gray-800">{t("total")}</th>
-                  <th className="px-4 py-3 bg-gray-100 dark:bg-gray-800 text-right">{t("action")}</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                {templateLoading || templateRawLoading ? (
-                  <tr>
-                    <td colSpan="6" className="px-4 py-10 text-center">
-                      <div className="flex flex-col items-center gap-2">
-                        <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-                        <span>{t("loading")}...</span>
-                      </div>
-                    </td>
-                  </tr>
-                ) : templates.length === 0 ? (
-                  <tr>
-                    <td colSpan="6" className="px-4 py-10 text-center italic text-gray-400">
-                      {t("noTemplatesFound")}
-                    </td>
-                  </tr>
-                ) : (
-                  templates.map((template) => {
-                    const id = template.purchase_id || template.id;
-                    const isSelected = selectedTemplateIds.includes(id);
-                    return (
-                      <tr
-                        key={id}
-                        className={`transition-colors group cursor-pointer ${isSelected
-                          ? 'bg-blue-50 dark:bg-blue-900/20'
-                          : 'bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800'
-                          }`}
-                        onClick={() => toggleSelectTemplate(id)}
-                      >
-                        <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
-                          <Checkbox
-                            type="checkbox"
-                            checked={isSelected}
-                            onChange={() => toggleSelectTemplate(id)}
-                            className="rounded !bg-transparent border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
-                          />
-                        </td>
-                        <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">
-                          {template.purchase_no || template.id}
-                        </td>
-                        <td className="px-4 py-3">{template.supplier_name}</td>
-                        <td className="px-4 py-3">{dayjs(template.purchase_date).format("YYYY-MM-DD")}</td>
-                        <td className="px-4 py-3 font-semibold text-gray-700 dark:text-gray-200">
-                          ${parseFloat(template.total_amount).toFixed(2)}
-                        </td>
-                        <td className="px-4 py-3 text-right" onClick={(e) => e.stopPropagation()}>
-                          <Button
-                            onClick={() => handleSelectOneTemplate(template)}
-                            variant="primary"
-                            outline={true}
-                            size="small"
-                          >
-                            {t("useAsBase")}
-                          </Button>
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Modal Footer / Pagination */}
-          <div className="p-4 border-t dark:border-gray-700 bg-gray-50 dark:bg-gray-800/40">
-            <div className="flex flex-col sm:flex-row justify-between items-center gap-4 text-sm font-medium">
-              <div className="text-gray-600 dark:text-gray-400">
-                {t("totalRecords")}: <span className="text-gray-900 dark:text-white">{templatePagination.total}</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <Button
-                  disabled={templatePagination.current === 1 || templateLoading || templateRawLoading}
-                  onClick={() => setTemplatePagination(p => ({ ...p, current: p.current - 1 }))}
-                  variant="primary"
-                  outline={true}
-                >
-                  {t("previous")}
-                </Button>
-                <div className="px-3 py-1 bg-white dark:bg-gray-700 border dark:border-gray-600 rounded shadow-sm text-gray-700 dark:text-gray-200">
-                  {templatePagination.current} / {Math.ceil(templatePagination.total / templatePagination.pageSize) || 1}
-                </div>
-                <Button
-                  disabled={templatePagination.current * templatePagination.pageSize >= templatePagination.total || templateLoading || templateRawLoading}
-                  onClick={() => setTemplatePagination(p => ({ ...p, current: p.current + 1 }))}
-                  variant="primary"
-                  outline={true}
-                >
-                  {t("next")}
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </Modal>
+        }
+        selectedIds={selectedTemplateIds}
+        onToggleSelect={toggleSelectTemplate}
+        onSelectAll={toggleSelectAllTemplatesOnPage}
+        onClearSelection={() => setSelectedTemplateIds([])}
+        onImport={handleImportTemplates}
+        data={templates}
+        isLoading={templateLoading || templateRawLoading}
+        columns={[
+          { title: t("purchaseNo"), render: (template) => template.purchase_no || template.id },
+          { title: t("supplier"), key: "supplier_name" },
+          { title: t("date"), render: (template) => dayjs(template.purchase_date).format("YYYY-MM-DD") },
+          { 
+            title: t("total"), 
+            render: (template) => `$${parseFloat(template.total_amount).toFixed(2)}`,
+            dataClassName: "font-semibold text-gray-700 dark:text-gray-200"
+          }
+        ]}
+        pagination={templatePagination}
+        onPaginationChange={(page) => setTemplatePagination(p => ({ ...p, current: page }))}
+        onUseTemplate={handleSelectOneTemplate}
+        t={t}
+      />
     </div>
   );
 };

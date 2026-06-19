@@ -16,14 +16,22 @@ import {
     FaTimes,
     FaTruck,
     FaUser,
+    FaHistory,
+    FaInfoCircle,
 } from 'react-icons/fa';
 import { TbPackage } from 'react-icons/tb';
 import { toast } from 'react-toastify';
+import { motion } from 'framer-motion';
+import dayjs from 'dayjs';
+import { useTranslation } from 'react-i18next';
 import api from '../../services/api';
 import { useGetAllDeliverQuery } from '../../../app/Features/deliversSlice';
 import { useGetOrderByIdQuery } from '../../../app/Features/ordersSlice';
 import { useGetAllSaleQuery } from '../../../app/Features/salesSlice';
 import { useGetAllWasteQuery } from '../../../app/Features/notificationSlice';
+import Button from '../../utils/Button';
+import Input from '../../utils/Input';
+import RichSearch from '../../utils/RichSearch';
 
 const statusOptions = [
     { id: 1, label: 'Pending', icon: FaClock, color: 'bg-yellow-100 text-yellow-800 border-yellow-200' },
@@ -37,6 +45,7 @@ const statusOptions = [
 const money = (value) => `$${Number(value || 0).toFixed(2)}`;
 
 const OrderDetail = () => {
+    const { t } = useTranslation();
     const { id } = useParams();
     const navigate = useNavigate();
     const token = localStorage.getItem('token');
@@ -54,7 +63,7 @@ const OrderDetail = () => {
 
     const statusMeta = useMemo(() => {
         return statusOptions.find((status) => status.id === Number(order?.status)) || statusOptions[0];
-    }, [order?.status]);
+    }, [order?.status]); 
 
     const handleEditClick = (field, value) => {
         setEditingField({ field });
@@ -107,14 +116,14 @@ const OrderDetail = () => {
                 await refetch();
                 refetchWaste();
                 saleItemContext.refetch();
-                toast.success('Order updated successfully');
+                toast.success(t('orderUpdatedSuccessfully') || 'Order updated successfully');
                 setEditingField({});
                 setShowField((prev) => ({ ...prev, [field]: false }));
             } else {
-                toast.error('Failed to update order');
+                toast.error(t('failedToUpdateOrder') || 'Failed to update order');
             }
         } catch (error) {
-            toast.error(error?.response?.data?.message || 'Error updating order');
+            toast.error(error?.response?.data?.message || t('errorUpdatingOrder') || 'Error updating order');
         } finally {
             setEditingOrder(null);
         }
@@ -128,7 +137,7 @@ const OrderDetail = () => {
             <div className="flex min-h-screen items-center justify-center bg-transparent">
                 <div className="text-center">
                     <div className="mx-auto h-12 w-12 animate-spin rounded-full border-b-2 border-blue-600" />
-                    <p className="mt-4 text-sm text-slate-600">Loading order...</p>
+                    <p className="mt-4 text-sm text-slate-600">{t('loadingOrder') || 'Loading order...'}</p>
                 </div>
             </div>
         );
@@ -138,7 +147,7 @@ const OrderDetail = () => {
         return (
             <div className="mx-auto max-w-5xl p-4">
                 <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm">
-                    <p className="text-sm text-red-600">Order not found.</p>
+                    <p className="text-sm text-red-600">{t('orderNotFound') || 'Order not found.'}</p>
                 </div>
             </div>
         );
@@ -147,109 +156,153 @@ const OrderDetail = () => {
     const StatusIcon = statusMeta.icon;
 
     return (
-        <div className="min-h-screen bg-transparent p-4 md:p-6">
-            <div className="mx-auto max-w-6xl space-y-4">
-                <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                    <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                        <div className="flex items-start gap-3">
-                            <button
-                                onClick={() => navigate(-1)}
-                                className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 text-slate-600 transition hover:bg-slate-50"
-                                title="Back"
-                            >
-                                <FaArrowLeft className="h-4 w-4" />
-                            </button>
-                            <div>
-                                <div className="flex flex-wrap items-center gap-2">
-                                    <h1 className="text-lg font-semibold text-slate-900">{order.order_no}</h1>
-                                    <div className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium ${statusMeta.color}`}>
-                                        <StatusIcon className="h-3.5 w-3.5" />
-                                        <span>{statusMeta.label}</span>
-                                    </div>
+        <div className="view-page bg-transparent p-4 md:p-6 transition-colors">
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3 }}
+                className="mx-auto max-w-7xl space-y-6"
+            >
+                {/* Header Section */}
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b-0 border-x p-4 dark:border-gray-500 border-gray-200 bg-white dark:bg-gray-600 rounded-t-2xl shadow-sm">
+                    <div className="flex items-center gap-4">
+                        <Button
+                            variant="cancel"
+                            onClick={() => navigate(-1)}
+                            className="!p-2.5"
+                        >
+                            <FaArrowLeft className="h-4 w-4" />
+                        </Button>
+                        <div>
+                            <div className="flex flex-wrap items-center gap-3">
+                                <h1 className="text-xl font-bold text-gray-800 dark:!text-gray-100">{order.order_no}</h1>
+                                <div className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-semibold ${statusMeta.color}`}>
+                                    <StatusIcon className="h-3.5 w-3.5" />
+                                    <span>{statusMeta.label.toUpperCase()}</span>
                                 </div>
-                                <p className="mt-1 text-xs text-slate-500">Order ID: {order.order_id}</p>
                             </div>
+                            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                {t('orderID') || 'Order ID'}: {order.order_id} | {t('date')}: {dayjs(order.order_date).format('YYYY-MM-DD HH:mm')}
+                            </p>
                         </div>
+                    </div>
 
-                        <div className="flex items-center gap-2 self-end sm:self-start">
-                            <Link
-                                to={`/order-list/receipt/${order.order_id}`}
-                                title="Receipt"
-                                className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 text-slate-600 transition hover:bg-slate-50 hover:text-blue-600"
-                            >
-                                <FaReceipt className="h-4 w-4" />
-                            </Link>
-                        </div>
+                    <div className="flex items-center gap-2">
+                        <Link to={`/order-list/receipt/${order.order_id}`}>
+                            <Button variant="primary">
+                                <FaReceipt className="mr-2 h-4 w-4" />
+                                {t('receipt') || 'Receipt'}
+                            </Button>
+                        </Link>
                     </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-                    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                        <div className="text-xs text-slate-500">Total</div>
-                        <div className="mt-1 text-lg font-bold text-slate-900">{money(order.order_total)}</div>
+                {/* Stats Grid */}
+                <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+                    <div className="rounded-2xl border border-slate-200 dark:border-gray-500 bg-white dark:bg-gray-700 p-5 shadow-sm">
+                        <div className="text-xs font-medium text-slate-500 dark:text-gray-400 uppercase tracking-wider">{t('totalAmount') || 'Total Amount'}</div>
+                        <div className="mt-2 text-2xl font-bold text-slate-900 dark:text-white">{money(order.order_total)}</div>
                     </div>
-                    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                        <div className="text-xs text-slate-500">Payment</div>
-                        <div className="mt-1 text-lg font-bold text-emerald-600">{money(order.payment)}</div>
+                    <div className="rounded-2xl border border-slate-200 dark:border-gray-500 bg-white dark:bg-gray-700 p-5 shadow-sm">
+                        <div className="text-xs font-medium text-slate-500 dark:text-gray-400 uppercase tracking-wider">{t('payment') || 'Payment'}</div>
+                        <div className="mt-2 text-2xl font-bold text-emerald-600 dark:text-emerald-400">{money(order.payment)}</div>
                     </div>
-                    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                        <div className="text-xs text-slate-500">Balance</div>
-                        <div className="mt-1 text-lg font-bold text-orange-600">{money(order.balance)}</div>
+                    <div className="rounded-2xl border border-slate-200 dark:border-gray-500 bg-white dark:bg-gray-700 p-5 shadow-sm">
+                        <div className="text-xs font-medium text-slate-500 dark:text-gray-400 uppercase tracking-wider">{t('balance') || 'Balance'}</div>
+                        <div className="mt-2 text-2xl font-bold text-orange-600 dark:text-orange-400">{money(order.balance)}</div>
                     </div>
-                    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                        <div className="text-xs text-slate-500">Items</div>
-                        <div className="mt-1 text-lg font-bold text-slate-900">
+                    <div className="rounded-2xl border border-slate-200 dark:border-gray-500 bg-white dark:bg-gray-700 p-5 shadow-sm">
+                        <div className="text-xs font-medium text-slate-500 dark:text-gray-400 uppercase tracking-wider">{t('items') || 'Items'}</div>
+                        <div className="mt-2 text-2xl font-bold text-blue-600 dark:text-blue-400">
                             {order.items?.reduce((sum, item) => sum + Number(item.quantity || 0), 0) || 0}
                         </div>
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1.1fr_0.9fr]">
-                    <div className="space-y-4">
-                        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                            <div className="mb-4 flex items-center justify-between">
-                                <h2 className="text-sm font-semibold text-slate-900">Order Items</h2>
-                                <span className="text-xs text-slate-500">{order.items?.length || 0} product(s)</span>
+                <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
+                    {/* Left Column: Items */}
+                    <div className="xl:col-span-2 space-y-6">
+                        <div className="rounded-2xl border border-slate-200 dark:border-gray-500 bg-white dark:bg-gray-700 shadow-sm overflow-hidden">
+                            <div className="bg-slate-50 dark:bg-gray-800/50 px-5 py-4 border-b border-slate-200 dark:border-gray-600 flex items-center justify-between">
+                                <h2 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2 uppercase tracking-wide">
+                                    <TbPackage className="text-blue-500" />
+                                    {t('orderItems') || 'Order Items'}
+                                </h2>
+                                <span className="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-3 py-1 rounded-full text-[11px] font-bold">
+                                    {order.items?.length || 0} {t('products') || 'Products'}
+                                </span>
                             </div>
 
-                            <div className="space-y-3">
+                            <div className="divide-y divide-slate-100 dark:divide-gray-600">
                                 {order.items?.map((item) => (
-                                    <div key={item.id} className="flex gap-3 rounded-2xl border border-slate-200 p-3">
-                                        {item.item_image || item.images?.[0]?.image ? (
-                                            <img
-                                                src={item.item_image || item.images?.[0]?.image}
-                                                alt={item.item_name}
-                                                className="h-16 w-16 rounded-xl border border-slate-200 object-cover"
-                                            />
-                                        ) : (
-                                            <div className="flex h-16 w-16 items-center justify-center rounded-xl border border-dashed border-slate-300 bg-slate-50 text-[10px] text-slate-400">
-                                                No Image
-                                            </div>
-                                        )}
+                                    <div key={item.id} className="p-5 flex gap-4 hover:bg-slate-50 dark:hover:bg-gray-600/30 transition-colors">
+                                        <div className="relative">
+                                            {item.item_image || item.image ? (
+                                                <img
+                                                    src={item.item_image || item.image}
+                                                    alt={item.item_name}
+                                                    className="h-20 w-20 rounded-xl border border-slate-200 dark:border-gray-500 object-cover shadow-sm"
+                                                />
+                                            ) : (
+                                                <div className="flex h-20 w-20 items-center justify-center rounded-xl border border-dashed border-slate-300 dark:border-gray-500 bg-slate-50 dark:bg-gray-800 text-[10px] text-slate-400">
+                                                    No Image
+                                                </div>
+                                            )}
+                                        </div>
 
                                         <div className="min-w-0 flex-1">
-                                            <div className="flex items-start justify-between gap-3">
-                                                <div className="min-w-0">
-                                                    <h3 className="truncate text-sm font-semibold text-slate-900">{item.item_name}</h3>
-                                                    <p className="mt-0.5 text-xs text-slate-500">
-                                                        {item.item_code} {item.category_name ? `| ${item.category_name}` : ''}
-                                                    </p>
+                                            <div className="flex items-start justify-between gap-4">
+                                                <div>
+                                                    <h3 className="text-base font-bold text-slate-900 dark:text-white leading-tight">{item.item_name}</h3>
+                                                    <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-500 dark:text-gray-400">
+                                                        <span className="font-mono bg-slate-100 dark:bg-gray-800 px-1.5 py-0.5 rounded">{item.item_code}</span>
+                                                        {item.category_name && (
+                                                            <>
+                                                                <span className="text-slate-300">|</span>
+                                                                <span>{item.category_name}</span>
+                                                            </>
+                                                        )}
+                                                        {item.scale_name && (
+                                                            <>
+                                                                <span className="text-slate-300">|</span>
+                                                                <span>{item.scale_name}</span>
+                                                            </>
+                                                        )}
+                                                    </div>
                                                 </div>
                                                 <div className="text-right">
-                                                    <div className="text-sm font-bold text-blue-700">{money(Number(item.price || 0) * Number(item.quantity || 0))}</div>
-                                                    <div className="text-[11px] text-slate-500">{money(item.item_price)} each</div>
+                                                    <div className="text-lg font-bold text-blue-700 dark:text-blue-400">
+                                                        {money(Number(item.price || 0) * Number(item.quantity || 0))}
+                                                    </div>
+                                                    <div className="text-[11px] font-medium text-slate-400 uppercase tracking-tighter">
+                                                        {money(item.item_price)} × {item.quantity}
+                                                    </div>
                                                 </div>
                                             </div>
 
-                                            <div className="mt-3 grid grid-cols-3 gap-2 text-xs">
-                                                <div className="rounded-xl bg-slate-50 px-3 py-2 text-slate-700">
-                                                    Qty: <span className="font-semibold">{item.quantity}</span>
+                                            {/* Attributes */}
+                                            {item.attributes && item.attributes.length > 0 && (
+                                                <div className="mt-2 flex flex-wrap gap-2">
+                                                    {item.attributes.map((attr, idx) => (
+                                                        <span key={idx} className="inline-flex items-center gap-1 bg-slate-100 dark:bg-gray-800 px-2 py-0.5 rounded text-[10px] font-medium text-slate-600 dark:text-gray-400 border border-slate-200 dark:border-gray-700">
+                                                            <span className="font-bold">{attr.name}:</span> {attr.value}
+                                                        </span>
+                                                    ))}
                                                 </div>
-                                                <div className="rounded-xl bg-slate-50 px-3 py-2 text-slate-700">
-                                                    Stock: <span className="font-semibold">{item.stock?.in_stock ?? item.in_stock ?? 0}</span>
+                                            )}
+
+                                            <div className="mt-4 grid grid-cols-3 gap-3">
+                                                <div className="rounded-xl border border-slate-100 dark:border-gray-600 bg-slate-50/50 dark:bg-gray-800/30 px-3 py-2">
+                                                    <div className="text-[10px] text-slate-400 uppercase font-bold tracking-tight">{t('quantity') || 'Qty'}</div>
+                                                    <div className="text-sm font-bold text-slate-700 dark:text-gray-200">{item.quantity}</div>
                                                 </div>
-                                                <div className="rounded-xl bg-slate-50 px-3 py-2 text-slate-700">
-                                                    Discount: <span className="font-semibold">{Number(item.discount || 0)}%</span>
+                                                <div className="rounded-xl border border-slate-100 dark:border-gray-600 bg-slate-50/50 dark:bg-gray-800/30 px-3 py-2">
+                                                    <div className="text-[10px] text-slate-400 uppercase font-bold tracking-tight">{t('stock') || 'Stock'}</div>
+                                                    <div className="text-sm font-bold text-slate-700 dark:text-gray-200">{item.stock?.in_stock ?? item.in_stock ?? 0}</div>
+                                                </div>
+                                                <div className="rounded-xl border border-slate-100 dark:border-gray-600 bg-slate-50/50 dark:bg-gray-800/30 px-3 py-2">
+                                                    <div className="text-[10px] text-slate-400 uppercase font-bold tracking-tight">{t('discount') || 'Disc'}</div>
+                                                    <div className="text-sm font-bold text-emerald-600 dark:text-emerald-400">{Number(item.discount || 0)}%</div>
                                                 </div>
                                             </div>
                                         </div>
@@ -257,51 +310,111 @@ const OrderDetail = () => {
                                 ))}
                             </div>
                         </div>
+
+                        {/* Status History */}
+                        {order.status_details && order.status_details.length > 0 && (
+                            <div className="rounded-2xl border border-slate-200 dark:border-gray-500 bg-white dark:bg-gray-700 shadow-sm">
+                                <div className="bg-slate-50 dark:bg-gray-800/50 px-5 py-4 border-b border-slate-200 dark:border-gray-600">
+                                    <h2 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2 uppercase tracking-wide">
+                                        <FaHistory className="text-orange-500" />
+                                        {t('statusHistory') || 'Status History'}
+                                    </h2>
+                                </div>
+                                <div className="p-5">
+                                    <div className="space-y-4">
+                                        {order.status_details.map((detail, idx) => (
+                                            <div key={idx} className="flex gap-4 relative">
+                                                {idx !== order.status_details.length - 1 && (
+                                                    <div className="absolute left-2 top-6 bottom-[-16px] w-0.5 bg-slate-100 dark:bg-gray-600" />
+                                                )}
+                                                <div className={`mt-1 h-4 w-4 rounded-full border-2 border-white dark:border-gray-700 z-10 flex-shrink-0 ${
+                                                    detail.status === 'completed' ? 'bg-green-500' :
+                                                    detail.status === 'cancelled' ? 'bg-red-500' : 'bg-blue-500'
+                                                }`} />
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="flex items-center justify-between gap-2">
+                                                        <span className="text-sm font-bold text-slate-800 dark:text-white uppercase tracking-tight">{detail.status}</span>
+                                                        <span className="text-[11px] text-slate-400">{dayjs(detail.created_at).format('YYYY-MM-DD HH:mm:ss')}</span>
+                                                    </div>
+                                                    <div className="mt-1 text-xs text-slate-500 dark:text-gray-400 flex items-center gap-1">
+                                                        <FaUser className="h-3 w-3" />
+                                                        {detail.created_by_name || 'System'}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                     </div>
 
-                    <div className="space-y-4">
-                        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                            <h2 className="mb-4 text-sm font-semibold text-slate-900">Customer</h2>
-                            <div className="space-y-3 text-sm text-slate-700">
-                                <div className="flex items-center gap-3 rounded-xl bg-slate-50 px-3 py-2.5">
-                                    <FaUser className="h-3.5 w-3.5 text-slate-400" />
-                                    <span>{order.customer_name || 'Unknown'}</span>
+                    {/* Right Column: Customer & Update */}
+                    <div className="space-y-6">
+                        {/* Customer Information */}
+                        <div className="rounded-2xl border border-slate-200 dark:border-gray-500 bg-white dark:bg-gray-700 shadow-sm overflow-hidden">
+                            <div className="bg-slate-50 dark:bg-gray-800/50 px-5 py-4 border-b border-slate-200 dark:border-gray-600">
+                                <h2 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2 uppercase tracking-wide">
+                                    <FaUser className="text-indigo-500" />
+                                    {t('customer') || 'Customer'}
+                                </h2>
+                            </div>
+                            <div className="p-5 space-y-4">
+                                <div className="flex items-center gap-3 bg-slate-50 dark:bg-gray-800/50 p-3 rounded-xl border border-slate-100 dark:border-gray-600">
+                                    <div className="h-10 w-10 rounded-full bg-white dark:bg-gray-700 flex items-center justify-center text-slate-400 border border-slate-100 dark:border-gray-600">
+                                        <FaUser className="h-4 w-4" />
+                                    </div>
+                                    <div className="min-w-0">
+                                        <div className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">{t('name') || 'Name'}</div>
+                                        <div className="text-sm font-bold text-slate-800 dark:text-white truncate">{order.customer_name || 'Unknown'}</div>
+                                    </div>
                                 </div>
-                                <div className="flex items-center gap-3 rounded-xl bg-slate-50 px-3 py-2.5">
-                                    <FaPhone className="h-3.5 w-3.5 text-slate-400" />
-                                    <span>{order.order_tel || 'Unknown'}</span>
+                                <div className="flex items-center gap-3 bg-slate-50 dark:bg-gray-800/50 p-3 rounded-xl border border-slate-100 dark:border-gray-600">
+                                    <div className="h-10 w-10 rounded-full bg-white dark:bg-gray-700 flex items-center justify-center text-slate-400 border border-slate-100 dark:border-gray-600">
+                                        <FaPhone className="h-4 w-4" />
+                                    </div>
+                                    <div className="min-w-0">
+                                        <div className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">{t('phone') || 'Phone'}</div>
+                                        <div className="text-sm font-bold text-slate-800 dark:text-white">{order.order_tel || 'Unknown'}</div>
+                                    </div>
                                 </div>
-                                <div className="flex items-start gap-3 rounded-xl bg-slate-50 px-3 py-2.5">
-                                    <FaMapMarkerAlt className="mt-0.5 h-3.5 w-3.5 text-slate-400" />
-                                    <span>{order.order_address || 'Unknown'}</span>
-                                </div>
-                                <div className="flex items-center gap-3 rounded-xl bg-slate-50 px-3 py-2.5">
-                                    <FaCalendarAlt className="h-3.5 w-3.5 text-slate-400" />
-                                    <span>{order.order_date}</span>
+                                <div className="flex items-start gap-3 bg-slate-50 dark:bg-gray-800/50 p-3 rounded-xl border border-slate-100 dark:border-gray-600">
+                                    <div className="h-10 w-10 rounded-full bg-white dark:bg-gray-700 flex items-center justify-center text-slate-400 border border-slate-100 dark:border-gray-600 flex-shrink-0">
+                                        <FaMapMarkerAlt className="h-4 w-4" />
+                                    </div>
+                                    <div className="min-w-0">
+                                        <div className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">{t('address') || 'Address'}</div>
+                                        <div className="text-sm font-bold text-slate-800 dark:text-white leading-snug">{order.order_address || 'No address provided'}</div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
-                        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                            <div className="mb-4 flex items-center justify-between">
-                                <h2 className="text-sm font-semibold text-slate-900">Quick Update</h2>
+                        {/* Quick Update */}
+                        <div className="rounded-2xl border border-slate-200 dark:border-gray-500 bg-white dark:bg-gray-700 shadow-sm overflow-hidden">
+                            <div className="bg-slate-50 dark:bg-gray-800/50 px-5 py-4 border-b border-slate-200 dark:border-gray-600">
+                                <h2 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2 uppercase tracking-wide">
+                                    <FaEdit className="text-blue-500" />
+                                    {t('quickUpdate') || 'Quick Update'}
+                                </h2>
                             </div>
-
-                            <div className="space-y-4">
+                            <div className="p-5 space-y-6">
+                                {/* Status Update */}
                                 <div>
-                                    <div className="mb-2 flex items-center justify-between">
-                                        <label className="text-[11px] font-medium text-slate-700">Status</label>
-                                        <button
-                                            onClick={() => handleEditClick('status', order.status)}
-                                            className="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-blue-600"
-                                            title="Edit status"
-                                        >
-                                            <FaEdit className="h-3.5 w-3.5" />
-                                        </button>
+                                    <div className="mb-3 flex items-center justify-between">
+                                        <label className="text-[11px] font-bold text-slate-500 dark:text-gray-400 uppercase tracking-widest">{t('status') || 'Status'}</label>
+                                        {!isEditing('status') && (
+                                            <button
+                                                onClick={() => handleEditClick('status', order.status)}
+                                                className="text-blue-500 hover:text-blue-700 transition"
+                                            >
+                                                <FaEdit className="h-3.5 w-3.5" />
+                                            </button>
+                                        )}
                                     </div>
 
                                     {isEditing('status') ? (
-                                        <div className="space-y-2 rounded-2xl border border-blue-100 bg-blue-50 p-3">
+                                        <div className="space-y-3 rounded-2xl border border-blue-100 dark:border-blue-900/30 bg-blue-50/50 dark:bg-blue-900/10 p-4">
                                             <div className="grid grid-cols-2 gap-2">
                                                 {statusOptions.map((option) => {
                                                     const Icon = option.icon;
@@ -310,123 +423,128 @@ const OrderDetail = () => {
                                                             key={option.id}
                                                             onClick={() => handleSaveField('status', option.id, option.id)}
                                                             disabled={editingOrder === order.order_id}
-                                                            className={`inline-flex items-center justify-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-medium transition hover:opacity-90 ${option.color}`}
+                                                            className={`inline-flex items-center justify-center gap-1.5 rounded-xl border px-3 py-2 text-[10px] font-bold transition hover:opacity-80 active:scale-95 ${option.color} ${Number(order.status) === option.id ? 'ring-2 ring-blue-500 ring-offset-1' : ''}`}
                                                         >
-                                                            <Icon className="h-3.5 w-3.5" />
-                                                            {option.label}
+                                                            <Icon className="h-3 w-3" />
+                                                            {option.label.toUpperCase()}
                                                         </button>
                                                     );
                                                 })}
                                             </div>
-                                            <button
+                                            <Button
+                                                variant="cancel"
                                                 onClick={handleCancelEdit}
-                                                className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-white px-3 py-2 text-xs font-medium text-slate-600 transition hover:bg-slate-100"
+                                                className="w-full text-[10px] font-bold uppercase"
                                             >
-                                                <FaTimes className="h-3.5 w-3.5" />
-                                                Cancel
-                                            </button>
+                                                <FaTimes className="mr-2 h-3 w-3" />
+                                                {t('cancel') || 'Cancel'}
+                                            </Button>
                                         </div>
                                     ) : (
-                                        <div className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-medium ${statusMeta.color}`}>
-                                            <StatusIcon className="h-3.5 w-3.5" />
-                                            {statusMeta.label}
+                                        <div className={`inline-flex items-center gap-1.5 rounded-xl border px-4 py-2 text-[11px] font-bold shadow-sm ${statusMeta.color}`}>
+                                            <StatusIcon className="h-4 w-4" />
+                                            {statusMeta.label.toUpperCase()}
                                         </div>
                                     )}
                                 </div>
 
+                                {/* Delivery Fee Update */}
                                 <div>
-                                    <div className="mb-2 flex items-center justify-between">
-                                        <label className="flex items-center gap-2 text-[11px] font-medium text-slate-700">
-                                            <FaMoneyBillWave className="h-3.5 w-3.5" />
-                                            Delivery Fee
+                                    <div className="mb-3 flex items-center justify-between">
+                                        <label className="flex items-center gap-2 text-[11px] font-bold text-slate-500 dark:text-gray-400 uppercase tracking-widest">
+                                            <FaMoneyBillWave className="h-3.5 w-3.5 text-green-500" />
+                                            {t('deliveryFee') || 'Delivery Fee'}
                                         </label>
-                                        <button
-                                            onClick={() => handleEditClick('delivery_fee', order.delivery_fee)}
-                                            className="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-blue-600"
-                                            title="Edit delivery fee"
-                                        >
-                                            <FaEdit className="h-3.5 w-3.5" />
-                                        </button>
+                                        {!isFieldVisible('delivery_fee') && (
+                                            <button
+                                                onClick={() => handleEditClick('delivery_fee', order.delivery_fee)}
+                                                className="text-blue-500 hover:text-blue-700 transition"
+                                            >
+                                                <FaEdit className="h-3.5 w-3.5" />
+                                            </button>
+                                        )}
                                     </div>
 
                                     {isFieldVisible('delivery_fee') ? (
                                         <div className="flex items-center gap-2">
-                                            <input
+                                            <Input
                                                 type="number"
-                                                min="0"
-                                                step="0.01"
                                                 value={tempValues.delivery_fee ?? order.delivery_fee ?? 0}
-                                                onChange={(event) => handleInputChange('delivery_fee', event.target.value)}
-                                                className="flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none transition focus:border-blue-500"
+                                                onChange={(value) => handleInputChange('delivery_fee', value)}
+                                                className="flex-1"
+                                                step="0.01"
+                                                min="0"
                                             />
-                                            <button
-                                                onClick={() => handleSaveField('delivery_fee')}
-                                                className="rounded-xl bg-green-50 p-2.5 text-green-700 transition hover:bg-green-100"
-                                                disabled={editingOrder === order.order_id}
-                                                title="Save"
-                                            >
-                                                <FaCheck className="h-4 w-4" />
-                                            </button>
-                                            <button
-                                                onClick={handleCancelEdit}
-                                                className="rounded-xl bg-red-50 p-2.5 text-red-700 transition hover:bg-red-100"
-                                                title="Cancel"
-                                            >
-                                                <FaTimes className="h-4 w-4" />
-                                            </button>
+                                            <div className="flex gap-1">
+                                                <button
+                                                    onClick={() => handleSaveField('delivery_fee')}
+                                                    className="h-10 w-10 rounded-xl bg-emerald-500 text-white flex items-center justify-center hover:bg-emerald-600 transition"
+                                                    disabled={editingOrder === order.order_id}
+                                                >
+                                                    <FaCheck className="h-3.5 w-3.5" />
+                                                </button>
+                                                <button
+                                                    onClick={handleCancelEdit}
+                                                    className="h-10 w-10 rounded-xl bg-red-500 text-white flex items-center justify-center hover:bg-red-600 transition"
+                                                >
+                                                    <FaTimes className="h-3.5 w-3.5" />
+                                                </button>
+                                            </div>
                                         </div>
                                     ) : (
-                                        <div className="rounded-xl bg-slate-50 px-3 py-2.5 text-sm text-slate-700">{money(order.delivery_fee)}</div>
+                                        <div className="bg-slate-50 dark:bg-gray-800/50 p-3 rounded-xl border border-slate-100 dark:border-gray-600 text-sm font-bold text-slate-700 dark:text-gray-200">
+                                            {money(order.delivery_fee)}
+                                        </div>
                                     )}
                                 </div>
 
+                                {/* Delivery Service Update */}
                                 <div>
-                                    <div className="mb-2 flex items-center justify-between">
-                                        <label className="flex items-center gap-2 text-[11px] font-medium text-slate-700">
-                                            <FaTruck className="h-3.5 w-3.5" />
-                                            Delivery Service
+                                    <div className="mb-3 flex items-center justify-between">
+                                        <label className="flex items-center gap-2 text-[11px] font-bold text-slate-500 dark:text-gray-400 uppercase tracking-widest">
+                                            <FaTruck className="h-3.5 w-3.5 text-blue-500" />
+                                            {t('deliveryService') || 'Delivery Service'}
                                         </label>
-                                        <button
-                                            onClick={() => handleEditClick('deliver_id', order.deliver_id)}
-                                            className="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-blue-600"
-                                            title="Edit delivery service"
-                                        >
-                                            <FaEdit className="h-3.5 w-3.5" />
-                                        </button>
+                                        {!isFieldVisible('deliver_id') && (
+                                            <button
+                                                onClick={() => handleEditClick('deliver_id', order.deliver_id)}
+                                                className="text-blue-500 hover:text-blue-700 transition"
+                                            >
+                                                <FaEdit className="h-3.5 w-3.5" />
+                                            </button>
+                                        )}
                                     </div>
 
                                     {isFieldVisible('deliver_id') ? (
                                         <div className="flex items-center gap-2">
-                                            <select
+                                            <RichSearch
+                                                data={delivers?.data || []}
                                                 value={tempValues.deliver_id ?? order.deliver_id ?? ''}
-                                                onChange={(event) => handleInputChange('deliver_id', event.target.value)}
-                                                className="flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none transition focus:border-blue-500"
-                                            >
-                                                <option value="">Delivery service</option>
-                                                {delivers?.data?.map((service) => (
-                                                    <option key={service.deliver_id} value={service.deliver_id}>
-                                                        {service.deliver_name}
-                                                    </option>
-                                                ))}
-                                            </select>
-                                            <button
-                                                onClick={() => handleSaveField('deliver_id')}
-                                                className="rounded-xl bg-green-50 p-2.5 text-green-700 transition hover:bg-green-100"
-                                                disabled={editingOrder === order.order_id}
-                                                title="Save"
-                                            >
-                                                <FaCheck className="h-4 w-4" />
-                                            </button>
-                                            <button
-                                                onClick={handleCancelEdit}
-                                                className="rounded-xl bg-red-50 p-2.5 text-red-700 transition hover:bg-red-100"
-                                                title="Cancel"
-                                            >
-                                                <FaTimes className="h-4 w-4" />
-                                            </button>
+                                                placeholder={t('selectService') || 'Select Service'}
+                                                keyFields={{
+                                                    id: 'deliver_id',
+                                                    title: 'deliver_name',
+                                                }}
+                                                onSelected={(value) => handleInputChange('deliver_id', value)}
+                                            />
+                                            <div className="flex gap-1">
+                                                <button
+                                                    onClick={() => handleSaveField('deliver_id')}
+                                                    className="h-10 w-10 rounded-xl bg-emerald-500 text-white flex items-center justify-center hover:bg-emerald-600 transition"
+                                                    disabled={editingOrder === order.order_id}
+                                                >
+                                                    <FaCheck className="h-3.5 w-3.5" />
+                                                </button>
+                                                <button
+                                                    onClick={handleCancelEdit}
+                                                    className="h-10 w-10 rounded-xl bg-red-500 text-white flex items-center justify-center hover:bg-red-600 transition"
+                                                >
+                                                    <FaTimes className="h-3.5 w-3.5" />
+                                                </button>
+                                            </div>
                                         </div>
                                     ) : (
-                                        <div className="rounded-xl bg-slate-50 px-3 py-2.5 text-sm text-slate-700">
+                                        <div className="bg-slate-50 dark:bg-gray-800/50 p-3 rounded-xl border border-slate-100 dark:border-gray-600 text-sm font-bold text-slate-700 dark:text-gray-200">
                                             {order.deliver_name || `Service #${order.deliver_id || 'N/A'}`}
                                         </div>
                                     )}
@@ -434,42 +552,82 @@ const OrderDetail = () => {
                             </div>
                         </div>
 
-                        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                            <h2 className="mb-4 text-sm font-semibold text-slate-900">Payment Summary</h2>
-                            <div className="space-y-2 text-sm">
-                                <div className="flex justify-between text-slate-600">
-                                    <span>Subtotal</span>
-                                    <span className="font-medium">{money(order.order_subtotal)}</span>
+                        {/* Payment Summary */}
+                        <div className="rounded-2xl border border-slate-200 dark:border-gray-500 bg-white dark:bg-gray-700 shadow-sm overflow-hidden">
+                            <div className="bg-slate-50 dark:bg-gray-800/50 px-5 py-4 border-b border-slate-200 dark:border-gray-600">
+                                <h2 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2 uppercase tracking-wide">
+                                    <FaMoneyBillWave className="text-emerald-500" />
+                                    {t('paymentSummary') || 'Payment Summary'}
+                                </h2>
+                            </div>
+                            <div className="p-5 space-y-3">
+                                <div className="flex justify-between text-xs font-medium">
+                                    <span className="text-slate-500 dark:text-gray-400 uppercase tracking-tight">{t('subtotal') || 'Subtotal'}</span>
+                                    <span className="text-slate-800 dark:text-white">{money(order.order_subtotal)}</span>
                                 </div>
-                                <div className="flex justify-between text-slate-600">
-                                    <span>Discount</span>
-                                    <span className="font-medium text-green-600">-{money(order.order_discount)}</span>
+                                <div className="flex justify-between text-xs font-medium">
+                                    <span className="text-slate-500 dark:text-gray-400 uppercase tracking-tight">{t('discount') || 'Discount'}</span>
+                                    <span className="text-emerald-600 dark:text-emerald-400">-{money(order.order_discount)}</span>
                                 </div>
-                                <div className="flex justify-between text-slate-600">
-                                    <span>Delivery Fee</span>
-                                    <span className="font-medium">{money(order.delivery_fee)}</span>
+                                <div className="flex justify-between text-xs font-medium">
+                                    <span className="text-slate-500 dark:text-gray-400 uppercase tracking-tight">{t('deliveryFee') || 'Delivery Fee'}</span>
+                                    <span className="text-slate-800 dark:text-white">{money(order.delivery_fee)}</span>
                                 </div>
-                                <div className="flex justify-between text-slate-600">
-                                    <span>Tax</span>
-                                    <span className="font-medium">{money(order.order_tax)}</span>
+                                <div className="flex justify-between text-xs font-medium">
+                                    <span className="text-slate-500 dark:text-gray-400 uppercase tracking-tight">{t('tax') || 'Tax'}</span>
+                                    <span className="text-slate-800 dark:text-white">{money(order.order_tax)}</span>
                                 </div>
-                                <div className="flex justify-between text-slate-600">
-                                    <span>Method</span>
-                                    <span className="font-medium capitalize">{order.order_payment_method || 'cash'}</span>
+                                <div className="h-px bg-slate-100 dark:bg-gray-600 my-2" />
+                                <div className="flex justify-between text-xs font-medium">
+                                    <span className="text-slate-500 dark:text-gray-400 uppercase tracking-tight">{t('method') || 'Method'}</span>
+                                    <span className="bg-slate-100 dark:bg-gray-800 px-2 py-0.5 rounded font-bold text-[10px] uppercase text-slate-700 dark:text-gray-300 border border-slate-200 dark:border-gray-700">
+                                        {order.order_payment_method || 'cash'}
+                                    </span>
                                 </div>
-                                <div className="flex justify-between text-slate-600">
-                                    <span>Status</span>
-                                    <span className="font-medium capitalize">{order.order_payment_status || 'unknown'}</span>
+                                <div className="flex justify-between text-xs font-medium">
+                                    <span className="text-slate-500 dark:text-gray-400 uppercase tracking-tight">{t('paymentStatus') || 'Payment Status'}</span>
+                                    <span className={`px-2 py-0.5 rounded font-bold text-[10px] uppercase border ${
+                                        order.order_payment_status === 'paid' 
+                                        ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 border-emerald-100 dark:border-emerald-800' 
+                                        : 'bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400 border-orange-100 dark:border-orange-800'
+                                    }`}>
+                                        {order.order_payment_status || 'unknown'}
+                                    </span>
                                 </div>
-                                <div className="flex justify-between border-t border-slate-100 pt-2 text-base font-bold text-slate-900">
-                                    <span>Total</span>
-                                    <span className="text-blue-700">{money(order.order_total)}</span>
+                                <div className="pt-4 mt-4 border-t border-slate-100 dark:border-gray-600 flex justify-between items-center">
+                                    <span className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">{t('total') || 'Total'}</span>
+                                    <span className="text-2xl font-black text-blue-700 dark:text-blue-400">{money(order.order_total)}</span>
                                 </div>
                             </div>
                         </div>
+
+                        {/* Additional Info / Note */}
+                        {(order.description || order.reference_no) && (
+                            <div className="rounded-2xl border border-slate-200 dark:border-gray-500 bg-white dark:bg-gray-700 shadow-sm p-5 space-y-4">
+                                {order.reference_no && (
+                                    <div>
+                                        <h2 className="text-[11px] font-bold text-slate-500 dark:text-gray-400 uppercase tracking-widest mb-1 flex items-center gap-2">
+                                            {t('referenceNo') || 'Reference No'}
+                                        </h2>
+                                        <p className="text-sm font-mono text-slate-700 dark:text-gray-200">{order.reference_no}</p>
+                                    </div>
+                                )}
+                                {order.description && (
+                                    <div>
+                                        <h2 className="text-[11px] font-bold text-slate-500 dark:text-gray-400 uppercase tracking-widest mb-2 flex items-center gap-2">
+                                            <FaInfoCircle className="text-blue-400" />
+                                            {t('note') || 'Note'}
+                                        </h2>
+                                        <p className="text-sm text-slate-600 dark:text-gray-300 leading-relaxed italic">
+                                            "{order.description}"
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
+                        )}
                     </div>
                 </div>
-            </div>
+            </motion.div>
         </div>
     );
 };

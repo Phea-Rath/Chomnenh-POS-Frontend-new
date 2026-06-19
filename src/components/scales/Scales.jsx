@@ -8,7 +8,8 @@ import CreateScales from '../../views/scales/CreateScales';
 import UpdateScales from '../../views/scales/UpdateScales';
 import AlertBox from '../../services/AlertBox';
 import { useTranslation } from 'react-i18next';
-
+import { definePermission } from '../../services/serviceFunction';
+const MENU_ID = 11;
 const Scales = () => {
   const { t } = useTranslation();
   const [scales, setScales] = useState([]);
@@ -98,7 +99,7 @@ const Scales = () => {
   };
 
   // Custom components
-  const Button = ({ children, onClick, variant = 'default', icon, disabled, className = '' }) => {
+  const Button = ({ children, onClick, variant = 'default', icon, disabled, className = '', ...props }) => {
     const base = 'inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 active:scale-95';
     const variants = {
       default: 'bg-gray-100 hover:bg-gray-200 text-gray-700 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-200',
@@ -110,6 +111,7 @@ const Scales = () => {
       <button
         onClick={onClick}
         disabled={disabled}
+        {...props}
         className={`${base} ${variants[variant]} ${disabled ? 'opacity-50 cursor-not-allowed' : ''} ${className}`}
       >
         {icon && <span className="text-base">{icon}</span>}
@@ -157,7 +159,7 @@ const Scales = () => {
           : t('defineMeasurementUnits')}
       </p>
       {!searchTerm && (
-        <Button onClick={onCreate} variant="success" icon={<FaPlus />}>
+        <Button disabled={!definePermission(MENU_ID).is_modify} onClick={onCreate} variant="success" icon={<FaPlus />} title={definePermission(MENU_ID).is_modify?t('createFirstScale'):t('notAllowedPermission')}>
           {t('createFirstScale')}
         </Button>
       )}
@@ -217,18 +219,22 @@ const Scales = () => {
 
       <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
         <Button
+          disabled={!definePermission(MENU_ID).is_modify}
           onClick={() => handleUpdate(scale.scale_name, scale.scale_id)}
           variant="primary"
           icon={<FaEdit />}
           className="flex-1 py-1.5"
+          title={definePermission(MENU_ID).is_modify?t('edit'):t('notAllowedPermission')}
         >
           {t('edit')}
         </Button>
         <Button
+          disabled={!definePermission(MENU_ID).is_drop}
           onClick={() => handleDelete(scale.scale_id)}
           variant="danger"
           icon={<FaTrash />}
           className="flex-1 py-1.5"
+          title={definePermission(MENU_ID).is_drop?t('delete'):t('notAllowedPermission')}
         >
           {t('delete')}
         </Button>
@@ -252,7 +258,7 @@ const Scales = () => {
           </h1>
           <p className="text-gray-500 dark:text-gray-400 mt-1 font-medium">{t('manageMeasurementUnits')}</p>
         </div>
-        <Button onClick={() => addModalRef.current?.showModal()} variant="success" icon={<FaPlus />} className="shadow-lg shadow-green-200/50 dark:shadow-none">
+        <Button disabled={!definePermission(MENU_ID).is_modify} onClick={() => addModalRef.current?.showModal()} variant="success" icon={<FaPlus />} className="shadow-lg shadow-green-200/50 dark:shadow-none">
           {t('addNewScale')}
         </Button>
       </div>
@@ -350,16 +356,18 @@ const Scales = () => {
                     <td className="px-6 py-4">
                       <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button
+                          disabled={!definePermission(MENU_ID).is_modify}
                           onClick={() => handleUpdate(scale.scale_name, scale.scale_id)}
                           className="p-2 text-orange-600 dark:text-orange-400 hover:bg-orange-100 dark:hover:bg-orange-900/30 rounded-xl transition-colors"
-                          title={t('edit')}
+                          title={definePermission(MENU_ID).is_modify?t('edit'):t('notAllowedPermission')}
                         >
                           <FaEdit size={16} />
                         </button>
                         <button
+                          disabled={!definePermission(MENU_ID).is_drop}
                           onClick={() => handleDelete(scale.scale_id)}
                           className="p-2 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-xl transition-colors"
-                          title={t('delete')}
+                          title={definePermission(MENU_ID).is_drop?t('delete'):t('notAllowedPermission')}
                         >
                           <FaTrash size={16} />
                         </button>

@@ -4,7 +4,7 @@ import api from "../../services/api";
 import { Link, useNavigate } from "react-router";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import logo from "../../assets/logo.jpg";
+import logo from "../../assets/logo-v2.jpg";
 import TelegramLogin from "./TelegramLogin";
 
 const LoginForm = () => {
@@ -22,7 +22,7 @@ const LoginForm = () => {
 
     const [permissionRes, sidebarRes, homeRes, reportRes, settingRes] =
       await Promise.all([
-        api.get(`/permission/${userId}`, { headers: authHeaders }),
+        api.get(`/permission`, { headers: authHeaders }),
         api.get("/menu-sidebar", { headers: authHeaders }),
         api.get("/menu-home", { headers: authHeaders }),
         api.get("/menu-report", { headers: authHeaders }),
@@ -33,7 +33,7 @@ const LoginForm = () => {
     localStorage.setItem("userId", userId);
     localStorage.setItem("token", token);
     localStorage.setItem(
-      "menus",
+      "permissions",
       JSON.stringify(permissionRes?.data?.data ?? [])
     );
     localStorage.setItem(
@@ -99,7 +99,7 @@ const LoginForm = () => {
 
   const onOtpSubmit = (otp) => {
     console.log("Login Successful", otp);
-    navigate("/dashboard");
+    navigate("/home");
   };
 
   const handleLogin = async (e) => {
@@ -206,7 +206,7 @@ const LoginForm = () => {
                 letterSpacing: "0.5px",
               }}
             >
-              CHOMNECH APP
+              CHOMNECH TECHNOLOGY
             </h1>
             <p style={{ margin: 0, fontSize: "11px", color: "#93c5fd" }}>
               Point of Sale System

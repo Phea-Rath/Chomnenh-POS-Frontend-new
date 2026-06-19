@@ -8,7 +8,6 @@ import {
   LuPlus,
   LuRefreshCw,
   LuSave,
-  LuSearch,
   LuTrash2,
   LuX
 } from 'react-icons/lu';
@@ -19,12 +18,11 @@ import dayjs from 'dayjs';
 import { FaBox } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import { useTranslation } from 'react-i18next';
-import { DatePicker, Checkbox, Spin } from 'antd';
+import { DatePicker, Spin } from 'antd';
 import api from '../../services/api';
 import Input from '../../utils/Input';
 import RichSearch from '../../utils/RichSearch';
 import Button from '../../utils/Button';
-import Modal from '../../utils/Modal';
 import { useGetAllItemsQuery } from '../../../app/Features/itemsSlice';
 import { useGetAllRawMaterialQuery } from '../../../app/Features/RawMaterialSlice';
 import { useGetAllProductionQuery } from '../../../app/Features/productSlice';
@@ -32,9 +30,13 @@ import { MdWarning } from 'react-icons/md';
 import { BiCheckCircle } from 'react-icons/bi';
 import { LoadingOutlined } from '@ant-design/icons';
 
+import OldTemplateModal from '../../utils/OldTemplateModal';
+import ItemTable from '../../utils/ItemTable';
+
 const defaultForm = {
   item_id: '',
   quantity: '',
+  waste_quantity: 0,
   production_date: dayjs().format('YYYY-MM-DD'),
   notes: '',
 };
@@ -45,7 +47,7 @@ const defaultModalState = {
   unit: '',
   total_cost: '',
 };
-
+const MENU_ID = 21;
 const ProductionForm = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -157,6 +159,7 @@ const ProductionForm = () => {
       setForm({
         item_id: production.item_id || '',
         quantity: production.quantity || '',
+        waste_quantity: production.waste_quantity || 0,
         production_date: dayjs().format('YYYY-MM-DD'),
         notes: production.notes || '',
       });
@@ -379,6 +382,7 @@ const ProductionForm = () => {
         setForm({
           item_id: production?.item_id || '',
           quantity: production?.quantity || '',
+          waste_quantity: production?.waste_quantity || '',
           production_date: production?.production_date
             ? dayjs(production.production_date).format('YYYY-MM-DD')
             : dayjs().format('YYYY-MM-DD'),
@@ -645,7 +649,7 @@ const ProductionForm = () => {
   };
 
   const handleSubmit = async (event) => {
-    event.preventDefault();
+    if (event) event.preventDefault();
 
     if (!validateForm()) {
       return;
@@ -657,6 +661,7 @@ const ProductionForm = () => {
       const payload = {
         item_id: form.item_id,
         quantity: Number(form.quantity),
+        waste_quantity: Number(form.waste_quantity),
         production_date: form.production_date,
         notes: form.notes,
         total_cost: Number(totalCost.toFixed(2)),
@@ -714,94 +719,114 @@ const ProductionForm = () => {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.35 }}
-      className="view-page min-h-screen bg-transparent p-4 md:p-6"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="view-page  px-4 md:px-6 font-sans antialiased text-slate-900 dark:text-slate-100"
     >
-      <div className="mx-auto max-w-7xl">
-        <div className="mb-8 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <button
-              type="button"
-              onClick={() => navigate(-1)}
-              className="mb-4 inline-flex items-center gap-2 text-sm text-gray-600 transition-colors hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200"
-            >
-              <LuArrowLeft />
-              {t('backToProduction')}
-            </button>
+      <div className="">
+        {/* Header Section */}
+        <div className="border-b border-slate-200 dark:border-slate-800 p-4 md:p-6">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <button
+                type="button"
+                onClick={() => navigate(-1)}
+                className="mb-2 inline-flex items-center gap-1 text-xs font-semibold uppercase tracking-wider text-[#13b5ea] hover:underline"
+              >
+                <LuArrowLeft size={14} />
+                {t('backToProduction')}
+              </button>
 
-            <div className="flex items-center gap-3">
-              <div className={`rounded-xl p-3 ${isEditMode ? 'bg-yellow-100 dark:bg-yellow-900/30' : 'bg-blue-100 dark:bg-blue-900/30'}`}>
-                <LuPackage className={`text-2xl ${isEditMode ? 'text-yellow-600 dark:text-yellow-400' : 'text-blue-600 dark:text-blue-400'}`} />
-              </div>
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+              <div className="flex items-center gap-3">
+                <h1 className="text-2xl font-bold text-slate-800 dark:text-white">
                   {isEditMode ? t('editProductionRecord') : t('createNewProduction')}
                 </h1>
-                <p className="text-gray-600 dark:text-gray-400">
-                  {isEditMode ? t('updateProductionDetails') : t('recordNewProductionBatch')}
-                </p>
+                {isEditMode && currentProduction && (
+                   <span className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-2 py-0.5 rounded-[2px] text-xs  border border-slate-200 dark:border-slate-700">
+                    #{currentProduction.id}
+                  </span>
+                )}
               </div>
             </div>
-          </div>
 
-          <div className="flex items-center gap-3">
-            {!isEditMode && (
+            <div className="flex flex-wrap items-center gap-2">
+              {!isEditMode && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setShowTemplateModal(true)}
+                  disabled={loading}
+                  className="rounded-[2px] border-slate-300 text-slate-700 hover:bg-slate-50"
+                >
+                  <LuRefreshCw className={loading ? 'animate-spin' : ''} />
+                  {t('useTemplate')}
+                </Button>
+              )}
+
+              <button
+                type="button"
+                onClick={handleReset}
+                className="px-4 py-2 text-[13px] font-bold uppercase tracking-wider text-slate-500 hover:text-slate-700 transition-colors"
+              >
+                {t('reset')}
+              </button>
               <Button
                 type="button"
-                variant="success"
-                onClick={() => setShowTemplateModal(true)}
-                disabled={loading}
-                outline={false}
+                variant='cancel'
+                onClick={() => navigate(-1)}
+                
               >
-                <LuRefreshCw className={loading ? 'animate-spin' : ''} />
-                {t('useTemplate')}
+                {t('cancel')}
               </Button>
-            )}
-            {isEditMode && currentProduction ? (
-              <div className="flex flex-wrap gap-3">
-                <span className="rounded-full bg-blue-100 px-3 py-1 text-sm font-medium text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
-                  ID: {currentProduction.id}
-                </span>
-                <span className="rounded-full bg-green-100 px-3 py-1 text-sm font-medium text-green-700 dark:bg-green-900/30 dark:text-green-300">
+              <Button
+                type="button"
+                actionType='is_modify'
+                menuId={MENU_ID}
+                onClick={() => handleSubmit()}
+                disabled={saving}
+              >
+                {saving ? <LuRefreshCw className="animate-spin" /> : <LuSave />}
+                {saving ? t('saving') : isEditMode ? t('updateProduction') : t('saveProduction')}
+              </Button>
+
+              {isEditMode && currentProduction && (
+                <span className="bg-green-50 text-green-700 border border-green-200 px-3 py-1 text-xs font-bold uppercase rounded-[2px]">
                   {dayjs(currentProduction.production_date).format('MMM D, YYYY')}
                 </span>
-              </div>
-            ) : null}
+              )}
+            </div>
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="p-4 md:p-6 space-y-8">
+          {/* Information Section */}
           <div>
-            <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-gray-800 dark:text-gray-100">
-              <LuCalendar className="text-blue-500" />
+            <h2 className="mb-4 text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 border-b border-slate-100 dark:border-slate-800 pb-2">
               {t('productionInformation')}
             </h2>
 
-            <div className="grid gap-4 md:grid-cols-3">
-              <div className="flex flex-col gap-2">
-                <label htmlFor="production_date" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+            <div className="grid gap-6 md:grid-cols-12">
+              <div className="md:col-span-3 flex flex-col gap-1.5">
+                <label htmlFor="production_date" className="text-[13px] font-semibold text-slate-700 dark:text-slate-300">
                   {t('productionDate')}
                 </label>
                 <DatePicker
                   id="production_date"
-                  type="date"
                   showTime
-                  value={form.production_date?dayjs(form.production_date) : null}
+                  value={form.production_date ? dayjs(form.production_date) : null}
                   onChange={(date, dateString) => {
                     setForm((prev) => ({ ...prev, production_date: dateString }));
                     setFormErrors((prev) => ({ ...prev, production_date: '' }));
                   }}
-                  className="date-picker"
+                  className="w-full rounded-[2px] border-slate-300 h-[38px]"
                 />
-                {formErrors.production_date ? (
-                  <p className="text-sm text-red-500">{formErrors.production_date}</p>
-                ) : null}
+                {formErrors.production_date && (
+                  <p className="text-xs text-red-500 mt-1">{formErrors.production_date}</p>
+                )}
               </div>
 
-              <div className="flex flex-col gap-2 md:col-span-2">
-                <label htmlFor="item" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              <div className="md:col-span-6 flex flex-col gap-1.5">
+                <label htmlFor="item" className="text-[13px] font-semibold text-slate-700 dark:text-slate-300">
                   {t('item')}
                 </label>
                 <RichSearch
@@ -818,14 +843,14 @@ const ProductionForm = () => {
                   onSelected={handleItemSelect}
                   onSearch={setItemSearch}
                   onScrollReader={onScrollFetch}
-                  placeholder={t('item')}
+                  placeholder={t('selectAnItem')}
                 />
-                {formErrors.item_id ? <p className="text-sm text-red-500">{formErrors.item_id}</p> : null}
+                {formErrors.item_id && <p className="text-xs text-red-500 mt-1">{formErrors.item_id}</p>}
               </div>
 
-              <div className="flex flex-col gap-2">
-                <label htmlFor="quantity" className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  {t('quantity')}
+              <div className="md:col-span-3 flex flex-col gap-1.5">
+                <label htmlFor="quantity" className="text-[13px] font-semibold text-slate-700 dark:text-slate-300">
+                  {t('quantityToProduce')}
                 </label>
                 <Input
                   id="quantity"
@@ -837,202 +862,130 @@ const ProductionForm = () => {
                     setForm((prev) => ({ ...prev, quantity: value }));
                     setFormErrors((prev) => ({ ...prev, quantity: '' }));
                   }}
-                  addonAfter={<span className="text-sm dark:text-gray-300">{selectedItem?.primary_unit || selectedItem?.unit || t('unitsCount')}</span>}
+                  addonAfter={selectedItem?.primary_unit || selectedItem?.unit || t('units')}
                 />
-                {formErrors.quantity ? <p className="text-sm text-red-500">{formErrors.quantity}</p> : null}
+                {formErrors.quantity && <p className="text-xs text-red-500 mt-1">{formErrors.quantity}</p>}
               </div>
-
-              {selectedItem ? (
-                <div className="rounded-xl border border-blue-100 bg-blue-50/70 p-4 dark:border-blue-900/40 dark:bg-blue-900/10 md:col-span-2">
-                  <p className="text-sm font-semibold text-blue-800 dark:text-blue-300">{selectedItem.name}</p>
-                  <p className="text-sm text-blue-600 dark:text-blue-400">{selectedItem.code}</p>
-                </div>
-              ) : null}
             </div>
           </div>
 
+          {/* Line Items Section */}
           <div>
             <div className="mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <h2 className="flex items-center gap-2 text-lg font-semibold text-gray-800 dark:text-gray-100">
-                <LuListChecks className="text-green-500" />
+              <h2 className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 border-b border-slate-100 dark:border-slate-800 pb-2 flex-1">
                 {t('rawMaterialsConsumption')}
               </h2>
-
-              <div className="flex items-center gap-2">
-                <div className="relative flex-1 sm:min-w-64">
-                  <LuSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                  <input
-                    type="text"
-                    placeholder={t('searchRawMaterials')}
-                    value={rawSearch}
-                    onChange={(e) => setRawSearch(e.target.value)}
-                    className="w-full border border-gray-300 bg-white py-1.5 pl-10 pr-4 text-sm text-gray-900 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-900 dark:text-white rounded-md"
-                  />
-                  {rawSearch && (
-                    <button
-                      type="button"
-                      onClick={() => setRawSearch('')}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                    >
-                      <LuX size={14} />
-                    </button>
-                  )}
-                </div>
-                <Button
-                  type="button"
-                  onClick={() => setRawMaterialModalVisible(true)}
-                  disabled={!availableRawMaterials.length && !rawSearch}
-                >
-                  <LuPlus />
-                  {t('add')}
-                </Button>
-              </div>
             </div>
 
-            {formErrors.raw_materials ? (
-              <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/40 dark:bg-red-900/20 dark:text-red-300">
-                {formErrors.raw_materials}
+            <div className="border border-slate-200 dark:border-slate-800 rounded-[2px] overflow-hidden">
+              <ItemTable
+                data={selectedRawMaterials}
+                onDelete={(index) => handleRemoveRawMaterial(selectedRawMaterials[index].key)}
+                onCellChange={(index, key, value) => handleUpdateRawMaterial(selectedRawMaterials[index].key, key, value)}
+                columns={[
+                  { title: t('material'), key: 'material_name', type: 'item', subKey: 'material_code' },
+                  { 
+                    title: t('quantity'), 
+                    key: 'quantity', 
+                    type: 'number',
+                    render: (item) => (
+                      <span className="text-[10px] text-slate-400">
+                        {t('available')}: {item.in_stock} {item.primary_unit}
+                      </span>
+                    )
+                  },
+                  // { 
+                  //   title: t('unitCost'), 
+                  //   type: 'showonly', 
+                  //   render: (item) => `$${(Number(item.cost_per_unit) || 0).toFixed(4)}` 
+                  // },
+                  { 
+                    title: t('total'), 
+                    type: 'showonly', 
+                    render: (item) => `$${((Number(item.quantity) || 0) * (Number(item.cost_per_unit) || 0)).toFixed(2)}` 
+                  }
+                ]}
+              />
+              <div className="bg-slate-50 dark:bg-slate-800/20 px-4 py-3 border-t border-slate-200 dark:border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setRawMaterialModalVisible(true)}
+                  className="flex items-center gap-2 text-[13px] font-bold text-[#13b5ea] hover:text-[#0f92bd] transition-colors uppercase tracking-tight"
+                >
+                  <LuPlus size={16} />
+                  {t('addNewLine')}
+                </button>
               </div>
-            ) : null}
-
-            {selectedRawMaterials.length ? (
-              <div className="overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700">
-                <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                    <thead className="bg-gray-50 dark:bg-gray-900/40">
-                      <tr>
-                        <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('material')}</th>
-                        <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('quantity')}</th>
-                        <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('costPerUnit')}</th>
-                        <th className="px-4 py-3 text-right text-sm font-semibold text-gray-700 dark:text-gray-300">{t('total')}</th>
-                        <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700 dark:text-gray-300">{t('actions')}</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-800">
-                      {selectedRawMaterials
-                        .filter(m => !rawSearch || 
-                          m.material_name?.toLowerCase().includes(rawSearch.toLowerCase()) || 
-                          m.material_code?.toLowerCase().includes(rawSearch.toLowerCase()))
-                        .map((material) => {
-                        const rowTotal = (Number(material.quantity) || 0) * (Number(material.cost_per_unit) || 0);
-                        return (
-                          <tr key={material.key} className="align-top">
-                            <td className="px-4 py-3">
-                              <div className="font-medium text-gray-900 dark:text-gray-100">{material.material_name}</div>
-                              <div className="text-xs text-gray-500 dark:text-gray-400">{material.material_code}</div>
-                            </td>
-                            <td className="px-4 py-3 min-w-48">
-                              <div className="flex flex-col gap-1">
-                                <Input
-                                  type="number"
-                                  min={0.01}
-                                  step={0.01}
-                                  max={material.in_stock}
-                                  value={material.quantity}
-                                  onChange={(value) => handleUpdateRawMaterial(material.key, 'quantity', value)}
-                                  addonAfter={<span className="text-sm dark:text-gray-300">{t(String(material.primary_unit).toUpperCase())}</span>}
-                                />
-                                <span className="text-[10px] text-gray-400">
-                                  {t('stock') || 'Stock'}: {material.in_stock}
-                                </span>
-                              </div>
-                            </td>
-                            <td className="px-4 py-3 min-w-40">
-                              <Input
-                                type="number"
-                                readOnly
-                                min={0.01}
-                                step={0.01}
-                                value={material.cost_per_unit}
-                                onChange={(value) => handleUpdateRawMaterial(material.key, 'cost_per_unit', value)}
-                                className="bg-gray-50 dark:bg-gray-900/30 cursor-not-allowed"
-                              />
-                            </td>
-                            <td className="px-4 py-3 text-right font-semibold text-green-600 dark:text-green-400">
-                              ${rowTotal.toFixed(2)}
-                            </td>
-                            <td className="px-4 py-3 text-center">
-                              <button
-                                type="button"
-                                onClick={() => handleRemoveRawMaterial(material.key)}
-                                className="inline-flex rounded-lg p-2 text-red-500 transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20"
-                              >
-                                <LuTrash2 />
-                              </button>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
+              
+              {/* Table Footer / Totals */}
+              <div className="flex flex-col items-end gap-2 p-6 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-800">
+                <div className="flex justify-between w-full max-w-[300px] text-slate-500">
+                  <span className="text-[13px] font-semibold uppercase">{t('subTotal')}</span>
+                  <span className="text-[13px] ">${totalCost.toFixed(2)}</span>
                 </div>
-
-                <div className="flex items-center justify-between border-t border-gray-200 bg-gray-50 px-4 py-4 dark:border-gray-700 dark:bg-gray-900/30">
-                  <span className="text-lg font-semibold text-gray-800 dark:text-gray-200">{t('totalCost')}</span>
-                  <span className="text-2xl font-bold text-green-600 dark:text-green-400">${totalCost.toFixed(2)}</span>
+                <div className="flex justify-between w-full max-w-[300px] text-slate-800 dark:text-white pt-2 border-t border-slate-200 dark:border-slate-700">
+                  <span className="text-sm font-bold uppercase">{t('totalProductionCost')}</span>
+                  <span className="text-xl font-bold  text-[#13b5ea]">${totalCost.toFixed(2)}</span>
                 </div>
               </div>
-            ) : (
-              <div className="rounded-xl border-2 border-dashed border-gray-300 bg-gray-50/70 py-10 text-center dark:border-gray-700 dark:bg-gray-900/20">
-                <LuPackage className="mx-auto mb-3 h-12 w-12 text-gray-400" />
-                <p className="text-gray-600 dark:text-gray-400">{t('noRawMaterials')}</p>
-                <p className="mb-4 text-sm text-gray-500 dark:text-gray-500">{t('rawMaterials')}</p>
-                
-              </div>
+            </div>
+            {formErrors.raw_materials && (
+              <p className="text-xs text-red-500 mt-2">{formErrors.raw_materials}</p>
             )}
           </div>
 
-          <div>
-            <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-gray-800 dark:text-gray-100">
-              <LuFileText className="text-sky-500" />
-              {t('Note')}
-            </h2>
-
-            <textarea
-              rows={4}
-              value={form.notes}
-              onChange={(event) => setForm((prev) => ({ ...prev, notes: event.target.value }))}
-              placeholder={t('enterNotesPlaceholder')}
-              className="textarea-input"
-            />
-          </div>
-
-          <div className="flex flex-col justify-end gap-3 border-t border-gray-200 pt-6 dark:border-gray-700 sm:flex-row">
-            <Button type="button" variant="danger" outline onClick={() => navigate(-1)}>
-              <LuArrowLeft />
-              {t('cancel')}
-            </Button>
-            <Button type="button" variant="primary" outline onClick={handleReset}>
-              <LuRefreshCw />
-              {t('reset')}
-            </Button>
-            <Button type="submit" disabled={saving}>
-              <LuSave />
-              {saving ? t('saving') : isEditMode ? t('updateProduction') : t('createProduction')}
-            </Button>
+          {/* Notes Section */}
+          <div className="grid md:grid-cols-2 gap-8">
+            <div className="space-y-2">
+              <label htmlFor="notes" className="text-[13px] font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                <LuFileText className="text-slate-400" size={14} />
+                {t('notes')}
+              </label>
+              <textarea
+                id="notes"
+                rows={4}
+                value={form.notes}
+                onChange={(event) => setForm((prev) => ({ ...prev, notes: event.target.value }))}
+                placeholder={t('enterNotesPlaceholder')}
+                className="w-full px-3 py-2 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 border border-slate-300 dark:border-slate-700 rounded-[2px] outline-none focus:border-[#13b5ea] transition-all resize-none text-[13px]"
+              />
+            </div>
+            
+            <div className="flex flex-col gap-4">
+                <label className="text-[13px] font-semibold text-slate-700 dark:text-slate-300">
+                  {t('wasteQuantity')}
+                </label>
+                <Input
+                  id="waste_quantity"
+                  type="number"
+                  min={0}
+                  step={1}
+                  value={form.waste_quantity}
+                  onChange={(value) => {
+                    setForm((prev) => ({ ...prev, waste_quantity: value }));
+                  }}
+                  addonAfter={selectedItem?.primary_unit || selectedItem?.unit || t('units')}
+                />
+                <p className="text-[11px] text-slate-400 italic">
+                  {t('wasteQuantityDescription') || 'Record any material lost or damaged during this production batch.'}
+                </p>
+            </div>
           </div>
         </form>
       </div>
 
-      {rawMaterialModalVisible ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-2xl rounded-2xl border border-gray-200 bg-white p-6 shadow-xl dark:border-gray-700 dark:bg-gray-800">
-            <div className="mb-6 flex items-center justify-between">
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-white">{t('addRawMaterial')}</h3>
-              <button
-                type="button"
-                onClick={resetModal}
-                className="rounded-lg p-2 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-800 dark:hover:bg-gray-700 dark:hover:text-gray-200"
-              >
-                <LuX />
-              </button>
+      {/* Raw Material Modal */}
+      {rawMaterialModalVisible && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+          <div className="w-full max-w-lg bg-white dark:bg-slate-900 rounded-[2px] shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden">
+            <div className="bg-slate-50 dark:bg-slate-800/50 px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+              <h3 className="text-sm font-bold uppercase tracking-widest text-slate-700 dark:text-slate-200">{t('addRawMaterial')}</h3>
+              <button onClick={resetModal} className="text-slate-400 hover:text-slate-600 transition-colors"><LuX size={20} /></button>
             </div>
 
-            <div className="space-y-4">
-              <div>
-                <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  {t('selectRawMaterial')}
-                </label>
+            <div className="p-6 space-y-5">
+              <div className="space-y-1.5">
+                <label className="text-[13px] font-semibold text-slate-700 dark:text-slate-300">{t('selectMaterial')}</label>
                 <RichSearch
                   data={availableRawMaterials}
                   keyFields={{
@@ -1045,311 +998,151 @@ const ProductionForm = () => {
                   value={modalForm.raw_material_id}
                   onSelected={handleRawMaterialSelect}
                   onSearch={setRawSearch}
-                  placeholder={t('selectRawMaterial')}
+                  placeholder={t('searchMaterial')}
                 />
               </div>
 
-              {selectedRawMaterialForModal ? (
-                <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-900/20">
-                  <div className="flex items-center gap-3">
-                    {selectedRawMaterialForModal.material_image ? (
-                      <img
-                        src={selectedRawMaterialForModal.material_image}
-                        alt={selectedRawMaterialForModal.material_name}
-                        className="h-10 w-10 rounded-md border border-gray-200 object-cover dark:border-gray-700"
-                        onError={(event) => {
-                          event.currentTarget.style.display = 'none';
-                        }}
-                      />
-                    ) : (
-                      <div className="flex h-10 w-10 items-center justify-center rounded-md bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-300">
-                        <FaBox />
-                      </div>
-                    )}
-                    <div>
-                      <p className="font-medium text-gray-900 dark:text-gray-100">{selectedRawMaterialForModal.material_name}</p>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">
-                        {selectedRawMaterialForModal.material_code} | {Number(selectedRawMaterialForModal.in_stock || 0).toFixed(2)} {selectedRawMaterialForModal.primary_unit}
-                      </p>
-                    </div>
+              {selectedRawMaterialForModal && (
+                <div className="bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 p-3 flex items-center gap-3">
+                  <div className="h-10 w-10 bg-slate-200 dark:bg-slate-700 flex items-center justify-center rounded-[1px] text-slate-400">
+                    <FaBox size={18} />
+                  </div>
+                  <div className="flex-1">
+                    <div className="text-[13px] font-bold text-slate-800 dark:text-slate-200">{selectedRawMaterialForModal.material_name}</div>
+                    <div className="text-[11px] text-slate-500 uppercase ">{selectedRawMaterialForModal.material_code}</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-[10px] uppercase font-bold text-slate-400">{t('stock')}</div>
+                    <div className="text-[13px]  font-bold text-slate-700 dark:text-slate-300">{selectedRawMaterialForModal.in_stock} {selectedRawMaterialForModal.primary_unit}</div>
                   </div>
                 </div>
-              ) : null}
+              )}
 
-              <div className="grid gap-4 md:grid-cols-2">
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    {t('quantity')}
-                  </label>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-[13px] font-semibold text-slate-700 dark:text-slate-300">{t('quantity')}</label>
                   <Input
                     type="number"
                     min={0.01}
-                    spinner={false}
                     disabled={!selectedRawMaterialForModal}
-                    step={0.01}
-                    max={selectedRawMaterialForModal?.in_stock}
                     value={modalForm.quantity}
                     onChange={(value) => setModalForm((prev) => ({ ...prev, quantity: value }))}
                     onBlur={() => handleModalQuantityCostRefresh()}
                   />
-                  {selectedRawMaterialForModal && (
-                    <span className="text-[10px] text-gray-400 mt-1">
-                      {t('stock') || 'Stock'}: {selectedRawMaterialForModal.in_stock}
-                    </span>
-                  )}
                 </div>
-
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    {t('unit')}
-                  </label>
+                <div className="space-y-1.5">
+                  <label className="text-[13px] font-semibold text-slate-700 dark:text-slate-300">{t('unit')}</label>
                   <select
                     value={modalForm.unit}
                     disabled={!selectedRawMaterialForModal}
-                    onChange={async (event) => {
-                      const nextState = { ...modalForm, unit: event.target.value };
-                      setModalForm(nextState);
-                      await handleModalQuantityCostRefresh(nextState);
+                    onChange={async (e) => {
+                      const next = { ...modalForm, unit: e.target.value };
+                      setModalForm(next);
+                      await handleModalQuantityCostRefresh(next);
                     }}
-                    className="w-full rounded-sm border border-gray-300 bg-transparent px-4 py-2 text-gray-900 outline-none transition-all focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-400 dark:text-white"
+                    className="w-full h-[38px] px-3 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 text-[13px] rounded-[2px] outline-none focus:border-[#13b5ea]"
                   >
                     <option value="">{t('selectUnit')}</option>
                     {[selectedRawMaterialForModal?.primary_unit, selectedRawMaterialForModal?.secondary_unit]
                       .filter(Boolean)
-                      .filter((value, index, array) => array.indexOf(value) === index)
-                      .map((unit) => (
-                        <option key={unit} value={unit} className="text-gray-900">
-                          {unit}
-                        </option>
-                      ))}
+                      .filter((v, i, a) => a.indexOf(v) === i)
+                      .map((unit) => <option key={unit} value={unit}>{unit}</option>)}
                   </select>
                 </div>
               </div>
 
-              <div>
-                {/* <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  {t('costPerUnit')}
-                </label> */}
-                <div className="text-xs">
-                  {costLoading ?<span className='flex items-center gap-1 text-gray-400'> <Spin indicator={<LoadingOutlined spin />} size="middle" /> {t('checkingInStock')+'...'}</span> : !modalForm.total_cost ?<span className='flex items-center text-yellow-500 gap-1'> <MdWarning className='text-xl'/> {t('pleaseSelectARawMaterialAndQuantity')}</span> : modalForm.total_cost > 0? <span className='flex items-center text-green-500 gap-1'> <BiCheckCircle className='text-xl'/> {t('inStock')}</span> : <span  className='flex items-center text-orange-500 gap-1'> <MdWarning className='text-xl'/> {t('outOfStock')}</span>}
-                </div>
+              <div className="flex items-center gap-2 pt-2">
+                 {costLoading ? (
+                    <div className="flex items-center gap-2 text-slate-400 text-xs italic">
+                      <Spin size="small" /> {t('checkingAvailability')}...
+                    </div>
+                  ) : modalForm.total_cost > 0 ? (
+                    <div className="flex items-center gap-1.5 text-green-600 text-[11px] font-bold uppercase tracking-tight">
+                      <BiCheckCircle size={16} /> {t('stockAvailable')}
+                    </div>
+                  ) : selectedRawMaterialForModal ? (
+                    <div className="flex items-center gap-1.5 text-orange-500 text-[11px] font-bold uppercase tracking-tight">
+                      <MdWarning size={16} /> {t('insufficientStock')}
+                    </div>
+                  ) : null}
               </div>
 
-              {modalError ? (
-                <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/40 dark:bg-red-900/20 dark:text-red-300">
-                  {modalError}
-                </div>
-              ) : null}
+              {modalError && <div className="p-3 bg-red-50 text-red-600 border border-red-100 text-[12px] font-medium">{modalError}</div>}
 
-              <div className="flex justify-end gap-3 pt-2">
-                <Button type="button" variant="danger" outline onClick={resetModal}>
+              <div className="flex justify-end gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={resetModal}
+                  className="px-4 py-2 text-[13px] font-bold uppercase text-slate-500 hover:text-slate-700"
+                >
                   {t('cancel')}
-                </Button>
-                <Button type="button" onClick={handleAddRawMaterial}>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleAddRawMaterial}
+                  className="px-6 py-2 bg-[#13b5ea] hover:bg-[#0f92bd] text-white text-[13px] font-bold uppercase rounded-[2px] transition-all"
+                >
                   {t('addMaterial')}
-                </Button>
+                </button>
               </div>
             </div>
           </div>
         </div>
-      ) : null}
+      )}
 
-      <Modal
+      {/* Template Modal */}
+      <OldTemplateModal
         open={showTemplateModal}
         onClose={() => setShowTemplateModal(false)}
-        width={1000}
-      >
-        <div className="flex flex-col max-h-[85vh]">
-          {/* Modal Header */}
-          <div className="p-4 border-b dark:border-gray-700">
-            <h3 className="text-lg font-bold text-gray-800 dark:!text-gray-100">
-              {t('selectProductionTemplate')}
-            </h3>
-          </div>
-
-          {/* Filters Area */}
-          <div className="p-4 bg-gray-50 dark:bg-gray-800/40 border-b dark:border-gray-700">
-            <div className="grid grid-cols-1 gap-3 lg:grid-cols-12">
-              <div className="lg:col-span-6">
-                <div className="relative">
-                  <LuSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                  <input
-                    type="text"
-                    placeholder={t('searchProductions')}
-                    value={templateSearchTerm}
-                    onChange={(e) => setTemplateSearchTerm(e.target.value)}
-                    className="w-full border border-gray-300 bg-white py-1.5 pl-10 pr-4 text-sm text-gray-900 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-900 dark:text-white rounded-md"
-                  />
-                </div>
-              </div>
-              <div className="lg:col-span-3">
-                <DatePicker
-                  value={templateFilters.start_date ? dayjs(templateFilters.start_date) : null}
-                  onChange={(_, dateString) =>
-                    setTemplateFilters((prev) => ({ ...prev, start_date: dateString || '' }))
-                  }
-                  format="YYYY-MM-DD"
-                  className="date-picker w-full"
-                  placeholder={t('startDate')}
-                />
-              </div>
-              <div className="lg:col-span-3">
-                <DatePicker
-                  value={templateFilters.end_date ? dayjs(templateFilters.end_date) : null}
-                  onChange={(_, dateString) =>
-                    setTemplateFilters((prev) => ({ ...prev, end_date: dateString || '' }))
-                  }
-                  format="YYYY-MM-DD"
-                  className="date-picker w-full"
-                  placeholder={t('endDate')}
-                />
-              </div>
+        title={t('selectProductionTemplate')}
+        searchTerm={templateSearchTerm}
+        onSearchChange={setTemplateSearchTerm}
+        filters={
+          <>
+            <div className="col-span-6 lg:col-span-3">
+              <DatePicker
+                value={templateFilters.start_date ? dayjs(templateFilters.start_date) : null}
+                onChange={(_, s) => setTemplateFilters(p => ({ ...p, start_date: s || '' }))}
+                className="w-full h-10 rounded-[2px]"
+                placeholder={t('startDate')}
+              />
             </div>
-          </div>
-
-          {/* Selected Summary */}
-          {selectedTemplateIds.length > 0 && (
-            <div className="px-4 py-2 bg-blue-50 dark:bg-blue-900/30 border-b dark:border-gray-700 flex justify-between items-center">
-              <div className="flex items-center gap-2 text-sm text-blue-700 dark:text-blue-300">
-                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-600 text-[10px] font-bold text-white">
-                  {selectedTemplateIds.length}
-                </span>
-                <span>{t('productionsSelected')}</span>
-              </div>
-              <div className="flex gap-2">
-                <Button 
-                  onClick={() => setSelectedTemplateIds([])} 
-                  variant="danger" 
-                  outline={true}
-                  size="small"
-                >
-                  {t('clearAll')}
-                </Button>
-                <Button 
-                  onClick={handleImportTemplates} 
-                  variant="primary"
-                  size="small"
-                >
-                  <LuPlus />
-                  {t('importMaterials')}
-                </Button>
-              </div>
+            <div className="col-span-6 lg:col-span-3">
+              <DatePicker
+                value={templateFilters.end_date ? dayjs(templateFilters.end_date) : null}
+                onChange={(_, s) => setTemplateFilters(p => ({ ...p, end_date: s || '' }))}
+                className="w-full h-10 rounded-[2px]"
+                placeholder={t('endDate')}
+              />
             </div>
-          )}
-
-          {/* Table Area */}
-          <div className="flex-1 overflow-y-auto min-h-[300px]">
-            <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400 border-collapse">
-              <thead className="text-xs text-gray-700 uppercase bg-gray-100 dark:bg-gray-800 dark:text-gray-400 sticky top-0 z-10 shadow-sm">
-                <tr>
-                  <th className="px-4 py-3 bg-gray-100 dark:bg-gray-800 w-12 text-center">
-                    <Checkbox 
-                      onChange={toggleSelectAllTemplatesOnPage}
-                      checked={productionHistoryData?.data?.length > 0 && productionHistoryData.data.every(p => selectedTemplateIds.includes(p.id))}
-                    />
-                  </th>
-                  <th className="px-4 py-3 bg-gray-100 dark:bg-gray-800">{t('id')}</th>
-                  <th className="px-4 py-3 bg-gray-100 dark:bg-gray-800">{t('item')}</th>
-                  <th className="px-4 py-3 bg-gray-100 dark:bg-gray-800">{t('quantity')}</th>
-                  <th className="px-4 py-3 bg-gray-100 dark:bg-gray-800">{t('date')}</th>
-                  <th className="px-4 py-3 bg-gray-100 dark:bg-gray-800 text-right">{t('action')}</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                {historyLoading ? (
-                  <tr>
-                    <td colSpan="6" className="px-4 py-10 text-center">
-                      <div className="flex flex-col items-center gap-2">
-                        <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-                        <span>{t('loading')}...</span>
-                      </div>
-                    </td>
-                  </tr>
-                ) : productionHistoryData?.data?.length === 0 ? (
-                  <tr>
-                    <td colSpan="6" className="px-4 py-10 text-center italic text-gray-400">
-                      {t('noProductionsFound')}
-                    </td>
-                  </tr>
-                ) : (
-                  productionHistoryData?.data?.map((prod) => {
-                    const isSelected = selectedTemplateIds.includes(prod.id);
-                    return (
-                      <tr 
-                        key={prod.id} 
-                        className={`transition-colors group cursor-pointer ${
-                          isSelected 
-                            ? 'bg-blue-50 dark:bg-blue-900/20' 
-                            : 'bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800'
-                        }`}
-                        onClick={() => toggleSelectTemplate(prod.id)}
-                      >
-                        <td className="px-4 py-3 text-center" onClick={(e) => e.stopPropagation()}>
-                          <Checkbox 
-                            checked={isSelected}
-                            onChange={() => toggleSelectTemplate(prod.id)}
-                          />
-                        </td>
-                        <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">
-                          #{prod.id}
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="font-medium text-gray-800 dark:text-gray-200">{prod.item_name}</div>
-                          <div className="text-xs text-gray-500">{prod.item_code}</div>
-                        </td>
-                        <td className="px-4 py-3 font-semibold">{prod.quantity}</td>
-                        <td className="px-4 py-3">{dayjs(prod.production_date).format('YYYY-MM-DD')}</td>
-                        <td className="px-4 py-3 text-right" onClick={(e) => e.stopPropagation()}>
-                          <Button
-                            onClick={() => handleSelectTemplate(prod)}
-                            variant="primary"
-                            outline={true}
-                            size="small"
-                          >
-                            {t('useAsBase')}
-                          </Button>
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Modal Footer / Pagination */}
-          <div className="p-4 border-t dark:border-gray-700 bg-gray-50 dark:bg-gray-800/40">
-            <div className="flex flex-col sm:flex-row justify-between items-center gap-4 text-sm font-medium">
-              <div className="text-gray-600 dark:text-gray-400">
-                {t('totalRecords')}: <span className="text-gray-900 dark:text-white">{templatePagination.total}</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <Button
-                  disabled={templatePagination.current === 1 || historyLoading}
-                  onClick={() => setTemplatePagination(p => ({ ...p, current: p.current - 1 }))}
-                  variant="primary"
-                  outline={true}
-                  size="small"
-                >
-                  {t('previous')}
-                </Button>
-                <div className="px-3 py-1 bg-white dark:bg-gray-700 border dark:border-gray-600 rounded shadow-sm text-gray-700 dark:text-gray-200">
-                  {templatePagination.current} / {Math.ceil(templatePagination.total / templatePagination.pageSize) || 1}
-                </div>
-                <Button
-                  disabled={templatePagination.current * templatePagination.pageSize >= templatePagination.total || historyLoading}
-                  onClick={() => setTemplatePagination(p => ({ ...p, current: p.current + 1 }))}
-                  variant="primary"
-                  outline={true}
-                  size="small"
-                >
-                  {t('next')}
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </Modal>
+          </>
+        }
+        selectedIds={selectedTemplateIds}
+        onToggleSelect={toggleSelectTemplate}
+        onSelectAll={toggleSelectAllTemplatesOnPage}
+        onClearSelection={() => setSelectedTemplateIds([])}
+        onImport={handleImportTemplates}
+        data={productionHistoryData?.data}
+        isLoading={historyLoading}
+        columns={[
+          { title: t('id'), render: (prod) => <span className="font-bold">#{prod.id}</span> },
+          { 
+            title: t('item'), 
+            render: (prod) => (
+              <>
+                <div className="text-[13px] font-bold text-slate-800 dark:text-slate-200">{prod.item_name}</div>
+                <div className="text-[10px] text-slate-400">{prod.item_code}</div>
+              </>
+            )
+          },
+          { title: t('quantity'), key: 'quantity', dataClassName: 'font-bold text-[#13b5ea]' },
+          { title: t('date'), render: (prod) => dayjs(prod.production_date).format('YYYY-MM-DD'), dataClassName: 'text-slate-500' }
+        ]}
+        pagination={templatePagination}
+        onPaginationChange={(page) => setTemplatePagination(p => ({ ...p, current: page }))}
+        onUseTemplate={handleSelectTemplate}
+        t={t}
+      />
     </motion.div>
   );
 };

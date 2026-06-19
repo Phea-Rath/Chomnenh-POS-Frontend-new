@@ -44,7 +44,7 @@ const useDebounce = (value, delay) => {
   }, [value, delay]);
   return debouncedValue;
 };
-
+const MENNU_ID = 23;
 const StockTransferList = () => {
   const { t } = useTranslation();
   const [data, setData] = useState([]);
@@ -567,11 +567,6 @@ const StockTransferList = () => {
       <LuTruck className="text-5xl text-gray-400 dark:text-gray-600 mx-auto mb-4" />
       <h3 className="text-xl font-semibold text-gray-700 dark:text-white mb-2">{t('noRecordsFound')}</h3>
       <p className="text-gray-500 dark:text-gray-400 mb-6">{t('tryAdjustingSearch')}</p>
-      <Link to="/transfer-stock">
-        <button className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2 mx-auto transition-colors">
-          <LuPlus /> {t('createTransfer')}
-        </button>
-      </Link>
     </div>
   );
 
@@ -607,7 +602,7 @@ const StockTransferList = () => {
               <LuDownload /> {!isMobile && (exportLoading ? t('exporting') : t('export'))}
             </button> */}
             <Link to="/transfer-stock">
-              <Button variant="success" >
+              <Button variant="save" actionType="is_modify" menuId={MENNU_ID} >
                 <LuPlus /> {!isMobile && t('newTransfer')}
               </Button>
             </Link>

@@ -29,9 +29,12 @@ import { useGetAllRawMaterialQuery } from '../../../app/Features/RawMaterialSlic
 import { useDebounce } from 'use-debounce';
 import { toast } from 'react-toastify';
 import { useTranslation } from 'react-i18next';
+import Button from '../../utils/Button';
+import RefreshButton from '../../utils/RefreshButton';
 
 dayjs.extend(relativeTime);
-
+const MENU_ID = 16;
+const LIST_MENU_ID = 48;
 const RawMaterials = () => {
     const { t } = useTranslation();
     const navigate = useNavigate();
@@ -172,7 +175,8 @@ const RawMaterials = () => {
         { key: 'stock_in', label: t('stockIn'), tone: 'text-emerald-600 dark:text-emerald-400' },
         { key: 'stock_return', label: t('returned'), tone: 'text-sky-600 dark:text-sky-400' },
         { key: 'stock_out', label: t('stockOut'), tone: 'text-orange-500 dark:text-orange-400' },
-        { key: 'stock_wasted', label: t('wasted'), tone: 'text-rose-500 dark:text-rose-400' },
+        // { key: 'stock_wasted', label: t('wasted'), tone: 'text-rose-500 dark:text-rose-400' },
+        { key: 'used', label: t('used'), tone: 'text-yellow-500 dark:text-yellow-400' },
     ];
     
     const stockFields = [
@@ -180,7 +184,8 @@ const RawMaterials = () => {
         { key: 'stock_in', label: t('stockIn') },
         { key: 'stock_out', label: t('stockOut') },
         { key: 'stock_return', label: t('returned') },
-        { key: 'stock_wasted', label: t('wasted') },
+        // { key: 'stock_wasted', label: t('wasted') },
+        { key: 'used', label: t('used') },
     ];
 
     // Export data
@@ -541,14 +546,7 @@ const RawMaterials = () => {
                     </div>
 
                     <div className="flex text-sm items-center gap-2">
-                        <button
-                            onClick={() => refetch()}
-                            disabled={loading || queryLoading}
-                            className="px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 flex items-center gap-2 transition-colors"
-                        >
-                            <LuRefreshCw className={loading || queryLoading ? 'animate-spin' : ''} />
-                            {t('refresh')}
-                        </button>
+                        <RefreshButton onRefresh={refetch}/>
                         <ExportExcel
                             data={exportData}
                             title="Raw_Materials_Report"
@@ -557,23 +555,19 @@ const RawMaterials = () => {
                             <LuDownload />
                             {t('export')}
                         </ExportExcel>
-                        <Link to="/inventories/stock-raws">
-                            <button className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center gap-2 transition-colors">
-                                <LuList />
-                                {t('stockList')}
-                            </button>
-                        </Link>
-                        <Link to="/inventories/stock-raws/add">
-                            <button className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center gap-2 transition-colors">
-                                <LuPlus />
-                                {t('stockIn')}
-                            </button>
-                        </Link>
+                        <Button  variant='primary' onClick={()=>navigate('/inventories/stock-raws')} actionType='is_view' menuId={LIST_MENU_ID}>
+                            <LuList />
+                            {t('stockList')}
+                        </Button>
+                        <Button variant='save' onClick={()=>navigate('/inventories/stock-raws/add')} actionType='is_modify' menuId={LIST_MENU_ID}>
+                            <LuPlus />
+                            {t('stockIn')}
+                        </Button>
                         <Link to="create">
-                            <button className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 flex items-center gap-2 transition-colors">
+                            <Button variant='save' actionType='is_modify' menuId={MENU_ID}>
                                 <LuPlus />
                                 {t('new')}
-                            </button>
+                            </Button>
                         </Link>
                     </div>
                 </div>

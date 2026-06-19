@@ -37,6 +37,7 @@ import RichSearch from '../../utils/RichSearch';
 
 const statusOptions = [
     { id: 1, label: 'Pending', icon: FaClock, color: 'bg-yellow-100 text-yellow-800 border-yellow-200' },
+    { id: 2, label: 'Approved', icon: FaClock, color: 'bg-cyan-100 text-cyan-800 border-cyan-200' },
     { id: 3, label: 'Packaged', icon: TbPackage, color: 'bg-blue-100 text-blue-800 border-blue-200' },
     { id: 4, label: 'Ready for Pickup', icon: FaBoxOpen, color: 'bg-purple-100 text-purple-800 border-purple-200' },
     { id: 5, label: 'Delivering', icon: FaShippingFast, color: 'bg-indigo-100 text-indigo-800 border-indigo-200' },

@@ -35,6 +35,7 @@ import {
 import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
 import TelegramBot, { buildAttendanceTelegramMessage, getTelegramChatIdFromCompany, sendTelegramMessage } from "./TelegramBot";
+import ToastNotification from "../../utils/ToastNotification";
 
 const firebaseConfig = {
     apiKey: "AIzaSyA-auJnr3_rXmJr468jpbwF506nF9Xa0Ho",
@@ -250,6 +251,7 @@ const resolveAttendanceActionStates = (attendanceDoc, scanState, timeZone = DEFA
 
 const ScanAttendance = () => {
     const { t } = useTranslation();
+    const [toast, setToast] = useState({ isVisible: false, type: 'success', message: '' });
     const [authUser, setAuthUser] = useState(null);
     const [currentUser, setCurrentUser] = useState(null);
     const [loginForm, setLoginForm] = useState({ identifier: "", password: "" });
@@ -397,8 +399,8 @@ const ScanAttendance = () => {
             const scanner = html5QrCodeRef.current || new Html5Qrcode(scannerId);
             html5QrCodeRef.current = scanner;
             setIsScanning(true);
-            await scanner.start({ facingMode: "environment" }, { fps: 15, qrbox: 250 }, handleScanSuccess, () => { });
-        } catch (e) { toast.error(getCameraErrorMessage(e)); await stopScanner(); } finally {
+            await scanner.start({ facingMode: "environment" }, { fps: 15}, handleScanSuccess, () => { });
+        } catch (e) {setToast({ isVisible: true, type: 'success', message: getCameraErrorMessage(e)}); await stopScanner(); } finally {
             isStartingRef.current = false; setIsStarting(false);
         }
     };
@@ -406,7 +408,7 @@ const ScanAttendance = () => {
     const submitAction = async (key) => {
         if (!scanState) return;
         const state = scanState.actionStates?.[key];
-        if (!state?.enabled) return toast.error(state?.reason);
+        if (!state?.enabled) return setToast({ isVisible: true, type: 'success', message: state?.reason});
         setActionLoading(key);
         try {
             const companyLocation = resolveCompanyLocationConfig(scanState.company);
@@ -451,17 +453,23 @@ const ScanAttendance = () => {
                 );
             } catch (telegramError) {
                 console.error(telegramError);
-                toast.warning("Attendance saved, but Telegram notification failed");
+                setToast({ isVisible: true, type: 'success', message: "Attendance saved, but Telegram notification failed" });
             }
 
-            toast.success("Success");
+            setToast({ isVisible: true, type: 'success', message: 'Check attendance success.' });
             const next = await resolveScanPayload(scanState.scannedValue);
             setScanState(next);
-        } catch (error) { toast.error(error?.message || "Update failed"); } finally { setActionLoading(""); }
+        } catch (error) { setToast({ isVisible: true, type: 'fail', message: 'Update failed.' });; } finally { setActionLoading(""); }
     };
 
     return (
         <div className="min-h-screen bg-[#0e1621] p-4 text-[#f5f5f5] font-sans antialiased selection:bg-[#24a1de]/30">
+            <ToastNotification 
+                isOpen={toast.isVisible}
+                type={toast.type}
+                message={toast.message}
+                onClose={() => setToast({ ...toast, isVisible: false })}
+            />
             <div className="mx-auto max-w-md">
                 {/* Header */}
                 <header className="mb-6 flex items-center justify-between">

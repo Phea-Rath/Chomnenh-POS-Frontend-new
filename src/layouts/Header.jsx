@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import { Badge, Space } from "antd";
 import { useTranslation } from "react-i18next";
 import api from "../services/api";
+import { GoSun } from "react-icons/go";
 
 const Header = ({ darkMode, setDarkMode }) => {
   const { t, i18n } = useTranslation();
@@ -77,6 +78,36 @@ const Header = ({ darkMode, setDarkMode }) => {
     }
   }, [i18n]);
 
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  
+    const toggleFullscreen = () => {
+      // ប្រសិនបើមិនទាន់ Full Screen ទេ -> ឱ្យវា Full Screen
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen()
+          .then(() => setIsFullscreen(true))
+          .catch((err) => {
+            alert(`មិនអាចបើក Full Screen បានទេ: ${err.message}`);
+          });
+      } else {
+        // ប្រសិនបើកំពុង Full Screen -> ឱ្យវាចាកចេញមកវិញ
+        document.exitFullscreen();
+        setIsFullscreen(false);
+      }
+    };
+  
+    // តាមដានករណីអ្នកប្រើប្រាស់ចុចប៊ូតុង "Esc" លើ Keyboard ដើម្បីចាកចេញ
+    useEffect(() => {
+      const handleFullscreenChange = () => {
+        setIsFullscreen(!!document.fullscreenElement);
+      };
+  
+      document.addEventListener('fullscreenchange', handleFullscreenChange);
+  
+      // Cleanup event listener ពេល Component នេះត្រូវបាន unmount
+      return () => {
+        document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      };
+    }, []);
   function toggleSidebar() {
     setSidebar(!sidebar);
   }
@@ -84,8 +115,8 @@ const Header = ({ darkMode, setDarkMode }) => {
   const headerWidthClass = data?.data?.role_id !== 1 ? (sidebar ? "lg:w-[calc(100vw-250px)]" : "lg:w-[calc(100vw-80px)]") : "w-full";
 
   return (
-    <header className={`fixed shadow-sm no-print w-full drop-shadow-xs ${headerWidthClass} top-0 z-49 ${darkMode ? "bg-[#0f172a] border-gray-700" : "bg-white border-gray-200"}`}>
-      <div className="flex justify-between items-center px-4 lg:pr-8 py-2">
+    <header className={`fixed no-print w-full border-b ${headerWidthClass} top-0 z-49 ${darkMode ? "bg-gray-800 border-gray-600" : "bg-slate-50 border-gray-300"}`}>
+      <div className="flex justify-between items-center px-4 lg:pr-8">
         {/* Left Section - Logo and Menu */}
         <div className="flex items-center">
           <button
@@ -105,19 +136,34 @@ const Header = ({ darkMode, setDarkMode }) => {
 
         {/* Right Section - User and Notifications */}
         <div className="flex items-center gap-2">
+          <button onClick={toggleFullscreen} className="text-gray-800 dark:text-gray-100">
+            {/* ប្តូរ Icon ទៅតាមស្ថានភាព Full Screen */}
+            {isFullscreen ? (
+              // Icon ព្រួញរួមតូច (Minimize)
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M4 14h6v6m10-6h-6v6M4 10h6V4m10 6h-6V4" />
+              </svg>
+            ) : (
+              // Icon ព្រួញរីកធំ (Maximize)
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
+              </svg>
+            )}
+            {/* <span>{isFullscreen ? 'Exit Full Screen' : 'Full Screen'}</span> */}
+          </button>
           {/* Dark Mode Toggle */}
           <button
             onClick={() => setDarkMode(!darkMode)}
-            className={`p-2 rounded-lg transition-colors ${darkMode ? "hover:bg-gray-800 text-yellow-400" : "hover:bg-gray-100 text-gray-600"}`}
+            className={`p-2 rounded-lg transition-colors dark:text-gray-100 text-gray-600`}
             title={darkMode ? t("lightMode") : t("darkMode")}
           >
-            {darkMode ? <FaSun className="text-xl" /> : <FaMoon className="text-xl" />}
+            {darkMode ? <GoSun className="text-xl" /> : <FaMoon className="text-xl" />}
           </button>
 
           {/* Language Toggle */}
           <button
             onClick={toggleLanguage}
-            className={`px-3 py-2 rounded-lg font-medium text-sm transition-colors ${darkMode ? "hover:bg-gray-800 bg-gray-800 text-white" : "hover:bg-gray-100 bg-gray-100 text-gray-700"}`}
+            className={`px-3 py-2 rounded-lg font-medium text-sm transition-colors dark:text-white text-gray-700`}
             title={i18n.language === "en" ? t("switchToKhmer") : t("switchToEnglish")}
           >
             {i18n.language === "en" ? "KH" : "EN"}
@@ -141,9 +187,9 @@ const Header = ({ darkMode, setDarkMode }) => {
           <div className="dropdown dropdown-end">
             <button
               tabIndex={0}
-              className={`flex items-center gap-2 p-2 rounded-lg transition-colors ${darkMode ? "hover:bg-gray-800" : "hover:bg-gray-100"}`}
+              className={`flex items-center gap-2 rounded-lg transition-colors ${darkMode ? "hover:bg-gray-800" : "hover:bg-gray-100"}`}
             >
-              <div className="flex items-center gap-3">
+              <div className="flex border-l pl-2 border-gray-400 items-center gap-3">
                 {!profile?.image ? (
                   <IoPersonCircleOutline className={`text-3xl ${darkMode ? "text-gray-500" : "text-gray-500"}`} />
                 ) : (

@@ -71,7 +71,7 @@ const PrintExpanse = () => {
   const usdAmount = totalAmount * 4000;
 
   return (
-    <section className="min-h-screen bg-transparent px-4 py-8 text-gray-800">
+    <section className="max-h-screen bg-transparent px-4 py-8 text-gray-800 overflow-auto">
       <div className="mx-auto max-w-5xl">
         <div className="mb-6 flex flex-wrap justify-center gap-3 print:hidden">
           <button
@@ -196,8 +196,8 @@ const PrintExpanse = () => {
                 <h3 className="mb-4 text-lg font-bold text-slate-800">Attachments / Receipts</h3>
                 <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
                   {data.images.map((img, idx) => (
-                    <div key={idx} className="overflow-hidden rounded-xl border border-gray-200">
-                      <img src={img.image} alt={`Attachment ${idx + 1}`} className="h-full w-full object-contain" />
+                    <div key={idx} className="overflow-hidden rounded-xl border w-50 h-50 border-gray-200">
+                      <img src={img.image} alt={`Attachment ${idx + 1}`} className="h-full w-full object-cover" />
                     </div>
                   ))}
                 </div>

@@ -29,16 +29,21 @@ import { useGetAllQuoteQuery } from '../../../app/Features/quoteSlice';
 import api from '../../services/api';
 import { toast } from 'react-toastify';
 import AlertBox from '../../services/AlertBox';
-import { Button, Dropdown, Space } from 'antd';
+import { Dropdown, Space, Button as AntButton } from 'antd';
 import { useGetAllSaleQuery } from '../../../app/Features/salesSlice';
 import { useTranslation } from 'react-i18next';
 import RefreshButton from '../../utils/RefreshButton';
-
+import ActionButton from '../../utils/ActionButton';
+import { motion } from 'framer-motion';
+import Button from '../../utils/Button';
+import { FaPlus } from 'react-icons/fa';
+import { definePermission } from '../../services/serviceFunction';
+const MENU_ID = 18;
 const QuotationList = () => {
     const { t, i18n } = useTranslation();
     const navigator = useNavigate();
     const token = localStorage.getItem('token');
-    const { data, refetch, isLoading } = useGetAllQuoteQuery(token);
+    const { data, refetch, isLoading } = useGetAllQuoteQuery({token, start_date:'', end_date:''});
     const { refetch: saleFetch } = useGetAllSaleQuery(token);
     const [viewMode, setViewMode] = useState('list');
     const [quotations, setQuotations] = useState([]);
@@ -101,13 +106,14 @@ const QuotationList = () => {
     ];
 
     const handleMenuClick = async e => {
+        console.log(e);
+        
         try {
             const res = await api.put(`/quote_status/${id}/${e.key}`, {}, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                 }
             });
-            console.log(res);
 
             if (res.status === 200) {
                 refetch();
@@ -123,10 +129,10 @@ const QuotationList = () => {
         }
     };
 
-    const menuProps = {
+    const menuProps =({
         items: menuItems,
         onClick: handleMenuClick,
-    };
+    });
 
     useEffect(() => {
         if (data?.data) {
@@ -230,10 +236,11 @@ const QuotationList = () => {
             return;
         }
 
+        
         if (window.confirm(t('confirmUpdate'))) {
             try {
-                const updates = selectedQuotations.map(async (id) => {
-                    await api.put(`/quote_status/${id}/${newStatus}`, {}, {
+                const updates = selectedQuotations.map(async (quotation_id) => {
+                    await api.put(`/quote_status/${quotation_id}/${newStatus}`, {}, {
                         headers: {
                             Authorization: `Bearer ${token}`,
                         }
@@ -342,11 +349,11 @@ const QuotationList = () => {
                                         {quote.order_total || '0.00'} + {quote.delivery_fee || '0.00'} {t('delivery')}
                                     </div>
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap">
+                                <td  onMouseUp={() => setId(quote.quotation_id)} className="px-6 py-4 whitespace-nowrap">
                                     <Space.Compact>
-                                        <Button className="dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600">{t(quote.status)}</Button>
-                                        <Dropdown disabled={quote.status == 'approved'} menu={menuProps} onChange={() => setId(quote.quotation_id)} placement="bottomRight">
-                                            <Button className="dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600" icon={<StatusIcon />} />
+                                        <AntButton className="dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600">{t(quote.status)}</AntButton>
+                                        <Dropdown disabled={quote.status == 'approved'||!definePermission(MENU_ID).is_execute} menu={menuProps} placement="bottomRight">
+                                            <AntButton className="dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600" icon={<StatusIcon />} />
                                         </Dropdown>
                                     </Space.Compact>
                                 </td>
@@ -354,36 +361,39 @@ const QuotationList = () => {
                                     {quote.date_term ? new Date(quote.date_term).toLocaleDateString() : 'N/A'}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                    <div className="flex space-x-3">
-                                        <button
-                                            onClick={() => navigator(`detail/${quote.quotation_id}`)}
-                                            className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors p-1 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded"
-                                            title={t('viewDetails')}
-                                        >
-                                            <FaEye className="w-4 h-4" />
-                                        </button>
-                                        <button
-                                            onClick={() => navigator(`edit/${quote.quotation_id}`)}
-                                            className="text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-300 transition-colors p-1 hover:bg-green-50 dark:hover:bg-green-900/30 rounded"
-                                            title={t('edit')}
-                                        >
-                                            <FaEdit className="w-4 h-4" />
-                                        </button>
-                                        <button
-                                            onClick={() => navigator(`receipt/${quote.quotation_id}`)}
-                                            className="text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 transition-colors p-1 hover:bg-purple-50 dark:hover:bg-purple-900/30 rounded"
-                                            title={t('printReceipt')}
-                                        >
-                                            <FaPrint className="w-4 h-4" />
-                                        </button>
-                                        <button
-                                            onClick={() => handleDelete(quote.quotation_id)}
-                                            className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 transition-colors p-1 hover:bg-red-50 dark:hover:bg-red-900/30 rounded"
-                                            title={t('delete')}
-                                        >
-                                            <FaTrash className="w-4 h-4" />
-                                        </button>
-                                    </div>
+                                    <ActionButton
+                                        menuId={MENU_ID}
+                                        actions={[
+                                            {
+                                                type: 'view',
+                                                icon: <FaEye />,
+                                                onClick: () => navigator(`detail/${quote.quotation_id}`),
+                                                title: t('viewDetails'),
+                                                label: t('viewDetails')
+                                            },
+                                            {
+                                                type: 'modify',
+                                                icon: <FaEdit />,
+                                                onClick: () => navigator(`edit/${quote.quotation_id}`),
+                                                title: t('edit'),
+                                                label: t('edit')
+                                            },
+                                            {
+                                                type: 'execute',
+                                                icon: <FaPrint />,
+                                                onClick: () => navigator(`receipt/${quote.quotation_id}`),
+                                                title: t('printReceipt'),
+                                                label: t('print')
+                                            },
+                                            {
+                                                type: 'drop',
+                                                icon: <FaTrash />,
+                                                onClick: () => handleDelete(quote.quotation_id),
+                                                title: t('delete'),
+                                                label: t('delete')
+                                            }
+                                        ]}
+                                    />
                                 </td>
                             </tr>
                         );
@@ -410,9 +420,9 @@ const QuotationList = () => {
                                     <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{quote.notes}</p>
                                 </div>
                                 <Space.Compact>
-                                    <Button className="dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600">{t(quote.status)}</Button>
+                                    <AntButton className="dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600">{t(quote.status)}</AntButton>
                                     <Dropdown disabled={quote.status == 'approved'} menu={menuProps} onChange={() => setId(quote.quotation_id)} placement="bottomRight">
-                                        <Button className="dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600" icon={<StatusIcon />} />
+                                        <AntButton className="dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600" icon={<StatusIcon />} />
                                     </Dropdown>
                                 </Space.Compact>
                             </div>
@@ -465,22 +475,40 @@ const QuotationList = () => {
                                 </div>
                             </div>
 
-                            <div className="flex justify-between mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
-                                <button onClick={() => navigator(`detail/${quote.quotation_id}`)} className="flex items-center text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 text-sm font-medium hover:bg-blue-50 dark:hover:bg-blue-900/30 px-2 py-1 rounded">
-                                    <FaEye className="mr-1" /> {t('viewDetails')}
-                                </button>
-                                <button onClick={() => navigator(`edit/${quote.quotation_id}`)} className="flex items-center text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-300 text-sm font-medium hover:bg-green-50 dark:hover:bg-green-900/30 px-2 py-1 rounded">
-                                    <FaEdit className="mr-1" /> {t('edit')}
-                                </button>
-                                <button onClick={() => navigator(`receipt/${quote.quotation_id}`)} className="flex items-center text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 text-sm font-medium hover:bg-purple-50 dark:hover:bg-purple-900/30 px-2 py-1 rounded">
-                                    <FaPrint className="mr-1" /> {t('print')}
-                                </button>
-                                <button
-                                    onClick={() => handleDelete(quote.quotation_id)}
-                                    className="flex items-center text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 text-sm font-medium hover:bg-red-50 dark:hover:bg-red-900/30 px-2 py-1 rounded"
-                                >
-                                    <FaTrash className="mr-1" /> {t('delete')}
-                                </button>
+                            <div className="flex justify-end mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+                                <ActionButton
+                                menuId={MENU_ID}
+                                    actions={[
+                                        {
+                                            type: 'view',
+                                            icon: <FaEye />,
+                                            onClick: () => navigator(`detail/${quote.quotation_id}`),
+                                            title: t('viewDetails'),
+                                            label: t('viewDetails')
+                                        },
+                                        {
+                                            type: 'modify',
+                                            icon: <FaEdit />,
+                                            onClick: () => navigator(`edit/${quote.quotation_id}`),
+                                            title: t('edit'),
+                                            label: t('edit')
+                                        },
+                                        {
+                                            type: 'execute',
+                                            icon: <FaPrint />,
+                                            onClick: () => navigator(`receipt/${quote.quotation_id}`),
+                                            title: t('printReceipt'),
+                                            label: t('print')
+                                        },
+                                        {
+                                            type: 'drop',
+                                            icon: <FaTrash />,
+                                            onClick: () => handleDelete(quote.quotation_id),
+                                            title: t('delete'),
+                                            label: t('delete')
+                                        }
+                                    ]}
+                                />
                             </div>
                         </div>
                     </div>
@@ -501,7 +529,7 @@ const QuotationList = () => {
     }
 
     return (
-        <div className="p-4 md:p-6 lg:p-8 min-h-screen">
+        <div className="view-page bg-transparent transition-colors">
             <AlertBox
                 isOpen={alertBox}
                 title={t('deleteQuotation')}
@@ -513,133 +541,155 @@ const QuotationList = () => {
                 confirmColor="error"
             />
 
-            <div className="mb-3">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-3">
+            <div className="">
+                {/* Header */}
+                <div className="flex items-center justify-between border-b-0 border-x p-4 dark:border-gray-500 border-gray-200 bg-white dark:bg-gray-600">
                     <div>
-                        <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">{t('quotations')}</h1>
-                        <p className="text-gray-600 dark:text-gray-400 mt-1">{t('manageTrackQuotations')}</p>
+                        <h1 className="text-xl font-bold text-gray-800 dark:!text-gray-100">
+                            {t('quotations')}
+                        </h1>
+                        <p className="text-gray-600 text-xs dark:!text-gray-400 mt-2">
+                            {t('manageTrackQuotations')}
+                        </p>
                     </div>
-                    <div className="flex items-center gap-3">
+                    <div className="mt-6 flex justify-center items-center gap-2">
                         <RefreshButton onRefresh={refetch} />
-                        <button
+                        <Button
+                        actionType='is_modify'
+                        menuId={MENU_ID}
                             onClick={() => navigator('create')}
-                            className="inline-flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 shadow-md hover:shadow-lg transition-all duration-300 font-medium"
                         >
-                            <FaEdit className="w-4 h-4" />
+                            <FaPlus className="w-3 h-3 mr-1" />
                             {t('newQuotation')}
-                        </button>
+                        </Button>
                     </div>
                 </div>
 
-                <div className="bg-primary rounded-xl p-4 md:p-5  border text-sm border-gray-200 dark:border-gray-700">
-                    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                        <div className="flex flex-col md:flex-row gap-4">
-                            <div className="relative flex-1 min-w-[250px]">
-                                <FaSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-4 h-4" />
-                                <input
-                                    type="text"
-                                    placeholder={t('searchQuotationPlaceholder')}
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                    className="w-full pl-12 pr-4 py-3 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-gray-900 dark:text-gray-200"
-                                />
+                {/* Filters Section */}
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3 }}
+                >
+                    <div className="bg-gray-100 dark:bg-transparent dark:border-gray-500 p-4 border border-gray-200 border-t-0">
+                        <div className="flex flex-wrap items-end gap-5">
+                            <div className="grow max-w-xs">
+                                <label className="block text-sm font-medium text-gray-700 dark:!text-gray-300 mb-2">
+                                    <span className="flex items-center text-sm font-semibold gap-2 uppercase text-[11px] tracking-wider">
+                                        <FaSearch className="text-gray-400" />
+                                        {t('search')}
+                                    </span>
+                                </label>
+                                <div className="relative">
+                                    <input
+                                        type="text"
+                                        placeholder={t('searchQuotationPlaceholder')}
+                                        value={searchTerm}
+                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                        className="w-full bg-white dark:bg-gray-800 px-4 py-2 rounded border border-gray-300 dark:border-gray-600 text-xs text-gray-700 dark:text-gray-200 h-10 outline-none focus:ring-2 focus:ring-blue-500/50"
+                                    />
+                                </div>
                             </div>
-                            <div className="flex items-center gap-3">
-                                <div className="flex items-center gap-2">
-                                    <FaFilter className="text-gray-500 dark:text-gray-400 w-4 h-4" />
-                                    <select
-                                        value={statusFilter}
-                                        onChange={(e) => setStatusFilter(e.target.value)}
-                                        className="border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-gray-200"
+                            <div className="grow max-w-xs">
+                                <label className="block text-sm font-medium text-gray-700 dark:!text-gray-300 mb-2">
+                                    <span className="flex items-center text-sm font-semibold gap-2 uppercase text-[11px] tracking-wider">
+                                        <FaFilter className="text-gray-400" />
+                                        {t('status')}
+                                    </span>
+                                </label>
+                                <select
+                                    value={statusFilter}
+                                    onChange={(e) => setStatusFilter(e.target.value)}
+                                    className="w-full bg-white dark:bg-gray-800 px-4 py-2 rounded border border-gray-300 dark:border-gray-600 text-xs text-gray-700 dark:text-gray-200 h-10 outline-none focus:ring-2 focus:ring-blue-500/50 appearance-none"
+                                >
+                                    <option value="all">{t('allStatus')}</option>
+                                    {statusOptions.map(option => (
+                                        <option key={option.value} value={option.value}>
+                                            {option.label}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <div className="flex items-center h-10">
+                                <div className="flex border border-gray-300 dark:border-gray-600 rounded overflow-hidden">
+                                    <button
+                                        onClick={() => setViewMode('list')}
+                                        className={`p-3 h-full flex items-center justify-center transition-colors ${viewMode === 'list' ? 'bg-blue-600 text-white' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'}`}
                                     >
-                                        <option value="all">{t('allStatus')}</option>
-                                        {statusOptions.map(option => (
-                                            <option key={option.value} value={option.value}>
-                                                {option.label}
-                                            </option>
-                                        ))}
-                                    </select>
+                                        <FaList className="w-3.5 h-3.5" />
+                                    </button>
+                                    <button
+                                        onClick={() => setViewMode('grid')}
+                                        className={`p-3 h-full flex items-center justify-center transition-colors ${viewMode === 'grid' ? 'bg-blue-600 text-white' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'}`}
+                                    >
+                                        <FaTh className="w-3.5 h-3.5" />
+                                    </button>
                                 </div>
                             </div>
                         </div>
+                    </div>
+                </motion.div>
+            </div>
 
-                        <div className="flex items-center gap-3">
-                            <div className="flex border border-gray-300 dark:border-gray-700 rounded-lg overflow-hidden">
-                                <button
-                                    onClick={() => setViewMode('list')}
-                                    className={`p-3 ${viewMode === 'list' ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'}`}
-                                >
-                                    <FaList className="w-4 h-4" />
-                                </button>
-                                <button
-                                    onClick={() => setViewMode('grid')}
-                                    className={`p-3 ${viewMode === 'grid' ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'}`}
-                                >
-                                    <FaTh className="w-4 h-4" />
-                                </button>
+            <div className="p-4">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                    {statusOptions.map((status) => (
+                        <div key={status.value} className="bg-primary p-4 rounded-sm border border-gray-200 dark:border-gray-700 shadow-sm transition-all hover:shadow-md">
+                            <div className="flex items-center">
+                                <div className={`p-3 ${status.color.split(' ')[0]} rounded-lg`}>
+                                    <status.icon className={status.color.split(' ')[1]} />
+                                </div>
+                                <div className="ml-4">
+                                    <p className="text-sm text-gray-600 dark:text-gray-400">{status.label}</p>
+                                    <p className="text-2xl font-bold dark:text-white">
+                                        {quotations?.filter(q => q.status === status.value).length || 0}
+                                    </p>
+                                </div>
                             </div>
                         </div>
-                    </div>
+                    ))}
                 </div>
-            </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-3">
-                {statusOptions.map((status) => (
-                    <div key={status.value} className="bg-primary p-4 rounded-xl  border border-gray-200 dark:border-gray-700">
-                        <div className="flex items-center">
-                            <div className={`p-3 ${status.color.split(' ')[0]} rounded-lg`}>
-                                <status.icon className={status.color.split(' ')[1]} />
+                <div className="bg-primary rounded-sm border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm">
+                    {filteredQuotations?.length === 0 ? (
+                        <div className="text-center py-16 px-4">
+                            <div className="w-20 h-20 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <FaTag className="w-10 h-10 text-gray-400 dark:text-gray-500" />
                             </div>
-                            <div className="ml-4">
-                                <p className="text-sm text-gray-600 dark:text-gray-400">{status.label}</p>
-                                <p className="text-2xl font-bold dark:text-white">
-                                    {quotations?.filter(q => q.status === status.value).length || 0}
-                                </p>
-                            </div>
+                            <h3 className="text-lg font-medium text-gray-700 dark:text-gray-200 mb-2">{t('noQuotationsFound')}</h3>
+                            <p className="text-gray-500 dark:text-gray-400 mb-6 max-w-md mx-auto">
+                                {searchTerm || statusFilter !== 'all'
+                                    ? t('noQuotationsMatchSearch')
+                                    : t('noQuotationsCreated')
+                                }
+                            </p>
+                            <Button
+                                onClick={() => navigator('create')}
+                            >
+                                <FaEdit className="w-4 h-4 mr-2" />
+                                {t('createFirstQuotation')}
+                            </Button>
                         </div>
-                    </div>
-                ))}
-            </div>
+                    ) : (
+                        <>
+                            <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-500 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-gray-50/50 dark:bg-gray-800/50">
+                                <div>
+                                    <span className="text-sm text-gray-600 dark:text-gray-400">
+                                        {t('showing')} <span className="font-bold text-gray-800 dark:text-white">{filteredQuotations?.length}</span> {t('of')} <span className="font-bold text-gray-800 dark:text-white">{quotations?.length}</span> {t('quotations')}
+                                    </span>
+                                </div>
+                                <div className="text-sm font-semibold text-gray-800 dark:text-gray-200">
+                                    {t('totalValue')}: <span className="text-lg text-blue-600 dark:text-blue-400 font-bold">${filteredQuotations?.reduce((sum, quote) => sum + parseFloat(quote.grand_total || 0), 0).toFixed(2)}</span>
+                                </div>
+                            </div>
 
-            <div className="bg-primary rounded-xl  border border-gray-200 dark:border-gray-700 overflow-hidden">
-                {filteredQuotations?.length === 0 ? (
-                    <div className="text-center py-16 px-4">
-                        <div className="w-20 h-20 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <FaTag className="w-10 h-10 text-gray-400 dark:text-gray-500" />
-                        </div>
-                        <h3 className="text-lg font-medium text-gray-700 dark:text-gray-200 mb-2">{t('noQuotationsFound')}</h3>
-                        <p className="text-gray-500 dark:text-gray-400 mb-6 max-w-md mx-auto">
-                            {searchTerm || statusFilter !== 'all'
-                                ? t('noQuotationsMatchSearch')
-                                : t('noQuotationsCreated')
-                            }
-                        </p>
-                        <button
-                            onClick={() => navigator('create')}
-                            className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 shadow-md hover:shadow-lg transition-all duration-300 font-medium"
-                        >
-                            <FaEdit className="w-4 h-4" />
-                            {t('createFirstQuotation')}
-                        </button>
-                    </div>
-                ) : (
-                    <>
-                        <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-500 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                            <div>
-                                <span className="text-sm text-gray-600 dark:text-gray-400">
-                                    {t('showing')} {filteredQuotations?.length} {t('of')} {quotations?.length} {t('quotations')}
-                                </span>
+                            <div className="p-0">
+                                {viewMode === 'list' ? <ListView /> : <div className="p-4"><GridView /></div>}
                             </div>
-                            <div className="text-sm font-semibold text-gray-800 dark:text-gray-200">
-                                {t('totalValue')}: {filteredQuotations?.reduce((sum, quote) => sum + parseFloat(quote.grand_total || 0), 0).toFixed(2)}
-                            </div>
-                        </div>
-
-                        <div className="p-4">
-                            {viewMode === 'list' ? <ListView /> : <GridView />}
-                        </div>
-                    </>
-                )}
+                        </>
+                    )}
+                </div>
             </div>
         </div>
     );

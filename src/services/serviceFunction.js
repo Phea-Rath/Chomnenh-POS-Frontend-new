@@ -37,4 +37,11 @@ const convertImageToBase64 = async (image) => {
   // console.log(res?.data);
   return res?.data;
 }
-export { currencyFormat, totalSum, convertToBase64, totalPirceQuanDiscount, convertImageToBase64 };
+
+
+const definePermission=(MENU_ID)=>{
+  const permissions = JSON.parse(localStorage.getItem('permissions'));
+  return permissions.find(p=>p.menu_id == MENU_ID);
+}
+
+export { currencyFormat, totalSum, convertToBase64, totalPirceQuanDiscount, convertImageToBase64, definePermission };

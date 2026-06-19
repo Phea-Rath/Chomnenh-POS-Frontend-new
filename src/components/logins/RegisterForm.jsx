@@ -1,29 +1,42 @@
 import React, { useEffect, useState } from "react";
 import { IoMdCloudUpload } from "react-icons/io";
-import { FiUser, FiPhone, FiLock, FiCalendar } from "react-icons/fi";
+import { 
+  FaUser, 
+  FaPhone, 
+  FaLock, 
+  FaCalendarAlt, 
+  FaSave, 
+  FaTimes, 
+  FaCloudUploadAlt,
+  FaImage,
+  FaShieldAlt,
+  FaInfoCircle
+} from "react-icons/fa";
 import AlertBox from "../../services/AlertBox";
 import { useOutletsContext } from "../../layouts/Management";
 import api from "../../services/api";
 import { useNavigate } from "react-router";
-import { Button, DatePicker, InputNumber, Space, message, Card } from "antd";
+import { DatePicker, InputNumber, Alert } from "antd";
 import dayjs from "dayjs";
-import { useGetAllUserQuery, useGetUserLoginQuery } from "../../../app/Features/usersSlice";
+import { useGetAllUserQuery } from "../../../app/Features/usersSlice";
 import { toast } from "react-toastify";
 import { useGetAllRoleQuery } from "../../../app/Features/rolesSlice";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
+import Button from "../../utils/Button";
+import Input from "../../utils/Input";
 
 const RegisterForm = () => {
   const { t } = useTranslation();
-  const { darkMode } = useOutletsContext();
+  const { darkMode, setLoading, reload, setReload } = useOutletsContext();
 
   const [viewImage, setViewImage] = useState(null);
   const [fileImage, setFileImage] = useState();
   const navigator = useNavigate();
   const toDay = new Date();
 
-  const { setLoading, reload, setReload } = useOutletsContext();
   const [alertBox, setAlertBox] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [users, setUsers] = useState({
     profile_id: 0,
     created_by: 0,
@@ -34,7 +47,6 @@ const RegisterForm = () => {
   });
 
   const token = localStorage.getItem("token");
-  const { data } = useGetUserLoginQuery(token);
   const { data: roles } = useGetAllRoleQuery(token);
   const { refetch } = useGetAllUserQuery(token);
 
@@ -60,12 +72,12 @@ const RegisterForm = () => {
     else if (!/^[0-9+\-\s]+$/.test(users.phone_number)) newErrors.phone_number = "Invalid phone number";
     if (!users.role_id) newErrors.role_id = "Please select a role";
     if (users.role_id == 3 && !users.start_date) newErrors.start_date = "Start date is required";
-    // if (!fileImage) newErrors.image = "Profile image is required";
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleStartDateChange = (date) => {
+    if (!date) return;
     setStartDate(date);
     const dateObj = new Date(date);
     setUsers(prev => ({ ...prev, start_date: `${dateObj.getFullYear()}-${dateObj.getMonth() + 1}-${dateObj.getDate()}` }));
@@ -77,6 +89,7 @@ const RegisterForm = () => {
   };
 
   const handleEndDateChange = (date) => {
+    if (!date) return;
     const dateObj = new Date(date);
     setUsers(prev => ({ ...prev, end_date: `${dateObj.getFullYear()}-${dateObj.getMonth() + 1}-${dateObj.getDate()}` }));
     setEndDate(date);
@@ -101,13 +114,12 @@ const RegisterForm = () => {
     setAlertBox(true);
   }
 
-  function handleCancel() { setAlertBox(false); }
-
   async function handleConfirm() {
     setAlertBox(false);
     setLoading(true);
+    setSubmitting(true);
     const formData = new FormData();
-    formData.append("image", fileImage);
+    if (fileImage) formData.append("image", fileImage);
     formData.append("username", users?.username);
     formData.append("password", users?.password);
     formData.append("phone_number", users?.phone_number);
@@ -126,11 +138,13 @@ const RegisterForm = () => {
         setReload(!reload); refetch();
         toast.success(response.data.message || "User created successfully");
         setLoading(false);
+        setSubmitting(false);
         navigator(-1);
       }
     } catch (error) {
       toast.error(error?.response?.data?.message || error.message || "An error occurred while creating the user");
       setLoading(false);
+      setSubmitting(false);
     }
   }
 
@@ -147,225 +161,279 @@ const RegisterForm = () => {
     if (errors.role_id) setErrors(prev => ({ ...prev, role_id: undefined }));
   };
 
-  const inputCls = (err) =>
-    `w-full px-4 py-3 border rounded-lg outline-none transition-all text-sm
-     bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100
-     placeholder-gray-400 dark:placeholder-gray-500
-     ${err ? 'border-red-500 focus:ring-2 focus:ring-red-200' : 'border-gray-300 dark:border-gray-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900/30'}`;
-
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-      className="min-h-screen bg-transparent py-8"
-    >
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        <AlertBox
-          isOpen={alertBox}
-          title={t('confirmation')}
-          message="Are you sure you want to create this user?"
-          onConfirm={handleConfirm}
-          onCancel={handleCancel}
-          confirmText={t('createUser')}
-          cancelText={t('cancel')}
-        />
+    <div className="view-page bg-transparent transition-colors">
+      <AlertBox
+        isOpen={alertBox}
+        title={t('confirmation')}
+        message="Are you sure you want to create this user?"
+        onConfirm={handleConfirm}
+        onCancel={() => setAlertBox(false)}
+        confirmText={t('createUser')}
+        cancelText={t('cancel')}
+      />
 
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-800 dark:text-white">{t('createNewUser')}</h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-2">{t('createNewUserSubtitle')}</p>
-        </div>
-
+      {/* Header */}
+      <div className="flex items-center justify-between border-b-0 border-x p-4 dark:border-gray-500 border-gray-200 bg-white dark:bg-gray-600">
         <div>
-          <div className="p-6">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-
-              {/* Left — Profile Image */}
-              <div className="lg:col-span-1">
-                <div className="sticky top-6 space-y-4">
-                  <div>
-                    <h2 className="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-4 flex items-center gap-2">
-                      <FiUser className="text-blue-500" />{t('profilePicture')}
-                    </h2>
-
-                    <div className="space-y-3">
-                      <div
-                        onClick={() => document.getElementById("image-item").click()}
-                        className={`relative group cursor-pointer border-2 rounded-xl p-4 transition-all duration-200 hover:shadow-md
-                          ${errors.image ? 'border-red-500' : 'border-dashed border-gray-300 dark:border-gray-600 hover:border-blue-400'}`}
-                      >
-                        {viewImage ? (
-                          <div className="relative">
-                            <img src={viewImage} alt="Profile preview" className="w-full h-64 object-cover rounded-lg" />
-                            <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all duration-200 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100">
-                              <div className="text-white text-center">
-                                <IoMdCloudUpload className="text-3xl mx-auto mb-2" />
-                                <p className="text-sm">{t('clickToChange')}</p>
-                              </div>
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="flex flex-col items-center justify-center py-12">
-                            <IoMdCloudUpload className="text-5xl text-gray-400 mb-4" />
-                            <p className="text-gray-600 dark:text-gray-400 text-center mb-2">{t('uploadProfilePicture')}</p>
-                            <p className="text-sm text-gray-500 dark:text-gray-500 text-center">{t('supportsFormats')}</p>
-                            <p className="text-sm text-gray-500 dark:text-gray-500">{t('maxFileSize')}</p>
-                            <button className="mt-4 px-4 py-2 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors text-sm">
-                              {t('browseFiles')}
-                            </button>
-                          </div>
-                        )}
-                      </div>
-
-                      {errors.image && <p className="text-red-500 text-sm">• {errors.image}</p>}
-
-                      {viewImage && (
-                        <button
-                          onClick={() => { setViewImage(null); setFileImage(null); document.getElementById("image-item").value = ""; }}
-                          className="w-full py-2 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex items-center justify-center gap-2 text-sm"
-                        >
-                          {t('removeImage')}
-                        </button>
-                      )}
-                    </div>
-
-                    <input type="file" accept="image/*" onChange={changeUpload} id="image-item" hidden name="image-item" />
-                  </div>
-
-                  {/* Quick Tips */}
-                  <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4 border border-blue-100 dark:border-blue-800">
-                    <h3 className="font-medium text-blue-800 dark:text-blue-300 mb-2">{t('quickTips')}</h3>
-                    <ul className="text-sm text-blue-700 dark:text-blue-400 space-y-1">
-                      {[t('tipClearPicture'), t('tipPassword'), t('tipRole')].map((tip, i) => (
-                        <li key={i} className="flex items-start gap-2"><span className="text-blue-500">•</span><span>{tip}</span></li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-              </div>
-
-              {/* Right — Form */}
-              <div className="lg:col-span-2">
-                <h2 className="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-6 flex items-center gap-2">
-                  <FiUser className="text-blue-500" />{t('userInformation')}
-                </h2>
-
-                <div className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* Username */}
-                    <div className="space-y-2">
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                        <span className="flex items-center gap-2"><FiUser className="text-gray-400" />{t('usernameLabel')} *</span>
-                      </label>
-                      <input type="text" value={users.username || ''} onChange={e => handleInputChange('username', e.target.value)}
-                        className={inputCls(errors.username)} placeholder={t('usernameLabel')} />
-                      {errors.username && <p className="text-red-500 text-sm">{errors.username}</p>}
-                    </div>
-
-                    {/* Phone */}
-                    <div className="space-y-2">
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                        <span className="flex items-center gap-2"><FiPhone className="text-gray-400" />{t('phoneNumber')} *</span>
-                      </label>
-                      <input type="tel" value={users.phone_number || ''} onChange={e => handleInputChange('phone_number', e.target.value)}
-                        className={inputCls(errors.phone_number)} placeholder={t('phoneNumber')} />
-                      {errors.phone_number && <p className="text-red-500 text-sm">{errors.phone_number}</p>}
-                    </div>
-
-                    {/* Password */}
-                    <div className="space-y-2">
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                        <span className="flex items-center gap-2"><FiLock className="text-gray-400" />{t('passwordLabel')} *</span>
-                      </label>
-                      <input type="password" value={users.password || ''} onChange={e => handleInputChange('password', e.target.value)}
-                        className={inputCls(errors.password)} placeholder={t('passwordLabel')} />
-                      {errors.password && <p className="text-red-500 text-sm">{errors.password}</p>}
-                    </div>
-
-                    {/* Confirm Password */}
-                    <div className="space-y-2">
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                        <span className="flex items-center gap-2"><FiLock className="text-gray-400" />{t('confirmPasswordLabel')} *</span>
-                      </label>
-                      <input type="password" value={users.confirm_password || ''} onChange={e => handleInputChange('confirm_password', e.target.value)}
-                        className={inputCls(errors.confirm_password)} placeholder={t('confirmPasswordLabel')} />
-                      {errors.confirm_password && <p className="text-red-500 text-sm">{errors.confirm_password}</p>}
-                    </div>
-                  </div>
-
-                  {/* Role */}
-                  <div className="space-y-2">
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                      <span className="flex items-center gap-2"><FiUser className="text-gray-400" />{t('roleLabel')} *</span>
-                    </label>
-                    <select value={users.role_id || ''} onChange={e => handleRoleChange(e.target.value)}
-                      className={inputCls(errors.role_id) + ' bg-white dark:bg-gray-700'}>
-                      <option value="">{t('selectRole')}</option>
-                      {data?.data?.role_id == 1
-                        ? roles?.data?.filter(r => r.role_id != 1).map(r => <option key={r.role_id} value={r.role_id}>{r.role_name}</option>)
-                        : roles?.data?.filter(r => r.role_id != 1 && r.role_id != 2).map(r => <option key={r.role_id} value={r.role_id}>{r.role_name}</option>)}
-                    </select>
-                    {errors.role_id && <p className="text-red-500 text-sm">{errors.role_id}</p>}
-                  </div>
-
-                  {/* Contract Period */}
-                  {users.role_id == 3 && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: 'auto' }}
-                      transition={{ duration: 0.3 }}
-                      className="space-y-4 p-5 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-100 dark:border-blue-800"
-                    >
-                      <div className="flex items-center gap-2">
-                        <FiCalendar className="text-blue-500" />
-                        <h3 className="font-medium text-blue-800 dark:text-blue-300">{t('contractPeriod')}</h3>
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div className="space-y-2">
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('startDate')} *</label>
-                          <DatePicker size="large" className="w-full" value={startDate} onChange={handleStartDateChange} format="YYYY-MM-DD" />
-                        </div>
-                        <div className="space-y-2">
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('termMonths')}</label>
-                          <InputNumber size="large" min={1} max={36} value={term} onChange={handleTermChange} className="w-full" />
-                        </div>
-                        <div className="space-y-2">
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('endDate')}</label>
-                          <DatePicker size="large" className="w-full" value={endDate} onChange={handleEndDateChange} format="YYYY-MM-DD" />
-                        </div>
-                      </div>
-                      <div className="text-sm text-gray-600 dark:text-gray-400 mt-2">
-                        <p>{t('contractExpires')} <span className="font-semibold">{endDate.format('MMMM D, YYYY')}</span></p>
-                      </div>
-                    </motion.div>
-                  )}
-                </div>
-
-                {/* Actions */}
-                <div className="flex flex-col sm:flex-row gap-3 mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
-                  <button
-                    onClick={handleSubmit}
-                    className="flex-1 px-6 py-3 bg-[#1e3a5f] hover:bg-[#163057] text-white font-medium rounded-lg transition-colors flex items-center justify-center gap-2 shadow-sm text-sm"
-                  >
-                    {t('createUser')}
-                  </button>
-                  <button
-                    onClick={() => navigator(-1)}
-                    className="flex-1 px-6 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-sm"
-                  >
-                    {t('cancel')}
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
+          <h1 className="text-xl font-bold text-gray-800 dark:!text-gray-100">
+            {t('createNewUser')}
+          </h1>
+          <p className="text-gray-600 text-xs dark:!text-gray-400 mt-2">
+            {t('createNewUserSubtitle')}
+          </p>
         </div>
-
-        <div className="mt-6 text-sm text-gray-500 dark:text-gray-400">
-          <p className="flex items-center gap-2"><span className="text-red-500">*</span>{t('requiredFields')}</p>
+        <div className="mt-6 flex justify-center items-center gap-2">
+          <Button
+            type="button"
+            onClick={handleSubmit}
+            disabled={submitting}
+            variant='save'
+            outline={false}
+          >
+            <FaSave />{submitting ? t('processing') : t('create')}
+          </Button>
+          <Button
+            type="button"
+            variant='cancel'
+            onClick={() => navigator(-1)}
+          >
+            <FaTimes />{t('back')}
+          </Button>
         </div>
       </div>
-    </motion.div>
+
+      <form>
+        <div className="grid grid-cols-1">
+          {/* User Details Section */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <div className="">
+              <div className=" bg-gray-100 p-4 border dark:bg-transparent dark:border-gray-500 border-gray-200">
+                <h3 className="text-md font-semibold mb-4 flex items-center gap-2 dark:text-white">
+                  <FaUser className="text-blue-500" />
+                  {t('userInformation')}
+                </h3>
+
+                <div className="flex flex-col lg:flex-row gap-6">
+                  {/* Image Part */}
+                  <div className="w-50 shrink-0">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-1">
+                      {t('profilePicture')} <FaImage className="text-gray-400" />
+                    </label>
+                    <div
+                      onClick={() => document.getElementById("image-item").click()}
+                      className={`relative group cursor-pointer border-2 rounded-[2px] transition-all duration-200 aspect-square flex flex-col items-center justify-center overflow-hidden
+                        ${errors.image ? 'border-red-500' : 'border-dashed border-gray-300 dark:border-gray-600 hover:border-blue-400'}`}
+                    >
+                      {viewImage ? (
+                        <>
+                          <img src={viewImage} alt="Profile" className="w-full h-full object-cover" />
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white">
+                            <FaCloudUploadAlt size={24} />
+                            <span className="text-[10px] font-bold uppercase mt-1">Change</span>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="text-center p-2">
+                          <FaUser size={32} className="mx-auto text-gray-300 dark:text-gray-500 mb-2" />
+                          <p className="text-[10px] font-bold text-gray-500 uppercase">Upload</p>
+                        </div>
+                      )}
+                    </div>
+                    <input type="file" accept="image/*" onChange={changeUpload} id="image-item" hidden />
+                    {viewImage && (
+                      <button
+                        type="button"
+                        onClick={() => { setViewImage(null); setFileImage(null); }}
+                        className="w-full mt-2 py-1 text-[10px] font-bold uppercase text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 border border-red-100 dark:border-red-900/40 rounded-[2px] transition-all"
+                      >
+                        {t('removeImage')}
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Inputs Part */}
+                  <div className="grow">
+                    <div className="grid grid-cols-2 md:grid-cols-2 gap-x-6 gap-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:!text-gray-300 mb-2">
+                          <span className="flex items-center text-sm font-semibold gap-2">
+                            <FaUser className="text-gray-400" />
+                            {t('usernameLabel')} <span className="text-red-500">*</span>
+                          </span>
+                        </label>
+                        <Input
+                          type="text"
+                          value={users.username}
+                          onChange={val => handleInputChange('username', val)}
+                          placeholder={t('usernameLabel')}
+                          className={`w-full ${errors.username ? 'border-red-500' : ''} text-input`}
+                        />
+                        {errors.username && <p className="text-[10px] font-bold text-red-500 uppercase mt-1">{errors.username}</p>}
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:!text-gray-300 mb-2">
+                          <span className="flex items-center text-sm font-semibold gap-2">
+                            <FaPhone className="text-gray-400" />
+                            {t('phoneNumber')} <span className="text-red-500">*</span>
+                          </span>
+                        </label>
+                        <Input
+                          type="tel"
+                          value={users.phone_number}
+                          onChange={val => handleInputChange('phone_number', val)}
+                          placeholder={t('phoneNumber')}
+                          className={`w-full ${errors.phone_number ? 'border-red-500' : ''} text-input`}
+                        />
+                        {errors.phone_number && <p className="text-[10px] font-bold text-red-500 uppercase mt-1">{errors.phone_number}</p>}
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:!text-gray-300 mb-2">
+                          <span className="flex items-center text-sm font-semibold gap-2">
+                            <FaLock className="text-gray-400" />
+                            {t('passwordLabel')} <span className="text-red-500">*</span>
+                          </span>
+                        </label>
+                        <Input
+                          type="password"
+                          value={users.password}
+                          onChange={val => handleInputChange('password', val)}
+                          placeholder="••••••••"
+                          className={`w-full ${errors.password ? 'border-red-500' : ''} text-input`}
+                        />
+                        {errors.password && <p className="text-[10px] font-bold text-red-500 uppercase mt-1">{errors.password}</p>}
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:!text-gray-300 mb-2">
+                          <span className="flex items-center text-sm font-semibold gap-2">
+                            <FaLock className="text-gray-400" />
+                            {t('confirmPasswordLabel')} <span className="text-red-500">*</span>
+                          </span>
+                        </label>
+                        <Input
+                          type="password"
+                          value={users.confirm_password}
+                          onChange={val => handleInputChange('confirm_password', val)}
+                          placeholder="••••••••"
+                          className={`w-full ${errors.confirm_password ? 'border-red-500' : ''} text-input`}
+                        />
+                        {errors.confirm_password && <p className="text-[10px] font-bold text-red-500 uppercase mt-1">{errors.confirm_password}</p>}
+                      </div>
+
+                      <div className="md:col-span-2">
+                        <label className="block text-sm font-medium text-gray-700 dark:!text-gray-300 mb-2">
+                          <span className="flex items-center text-sm font-semibold gap-2">
+                            <FaShieldAlt className="text-gray-400" />
+                            {t('roleLabel')} <span className="text-red-500">*</span>
+                          </span>
+                        </label>
+                        <select 
+                          value={users.role_id || ''} 
+                          onChange={e => handleRoleChange(e.target.value)}
+                          className="w-full px-3 py-1.5 bg-white dark:bg-gray-600/70 text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-gray-600 rounded-[2px] transition-all outline-none focus:border-[#13b5ea] text-[13px] h-[38px]"
+                        >
+                          <option value="">{t('selectRole')}</option>
+                          {roles?.data?.map(r => <option key={r.role_id} value={r.role_id}>{r.role_name}</option>)}
+                        </select>
+                        {errors.role_id && <p className="text-[10px] font-bold text-red-500 uppercase mt-1">{errors.role_id}</p>}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-2 justify-between bg-gray-100 dark:bg-transparent dark:border-gray-500 p-4 border border-gray-200 border-t-0">
+                 <div className="flex items-center gap-3">
+                    <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-full text-blue-600 dark:text-blue-400">
+                      <FaInfoCircle size={20} />
+                    </div>
+                    <div>
+                      <h4 className="text-[11px] font-black uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                        {t('securityRequirements')}
+                      </h4>
+                      <p className="text-[10px] text-slate-500 dark:text-slate-500 uppercase font-bold tracking-tighter mt-0.5">
+                        {t('reqUsername')} • {t('reqPassword')} • {t('reqRole')}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-[10px] font-bold uppercase text-slate-400 tracking-widest hidden sm:block">
+                    {t('fieldsMarkedWith')} <span className="text-red-500">*</span> {t('required')}
+                  </div>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Contract Section */}
+          {users.role_id == 3 && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: 0.1 }}
+            >
+              <div className="mt-4 bg-gray-100 p-4 border dark:bg-transparent dark:border-gray-500 border-gray-200">
+                <h3 className="text-md font-semibold mb-4 flex items-center gap-2 dark:text-white">
+                  <FaCalendarAlt className="text-blue-500" />
+                  {t('contractPeriod')}
+                </h3>
+
+                <div className="flex flex-wrap gap-5 mb-2">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-1">
+                      {t('startDate')} <FaCalendarAlt className="text-gray-400" />
+                    </label>
+                    <DatePicker 
+                      className="date-picker w-full" 
+                      size="large"
+                      value={startDate} 
+                      onChange={handleStartDateChange} 
+                      format="YYYY-MM-DD" 
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-1">
+                      {t('termMonths')}
+                    </label>
+                    <InputNumber 
+                      min={1} 
+                      max={36} 
+                      value={term} 
+                      onChange={handleTermChange} 
+                      className="w-full h-[40px] flex items-center no-spinner border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-white" 
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-1">
+                      {t('endDate')}
+                    </label>
+                    <DatePicker 
+                      className="date-picker w-full" 
+                      size="large"
+                      value={endDate} 
+                      onChange={handleEndDateChange} 
+                      format="YYYY-MM-DD" 
+                    />
+                  </div>
+                </div>
+
+                <div className="mt-4 flex items-center gap-2 p-2 bg-white dark:bg-gray-800 border border-slate-100 dark:border-gray-700 rounded-[2px] w-fit">
+                  <div className="w-1.5 h-1.5 bg-[#13b5ea] rounded-full"></div>
+                  <span className="text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
+                    {t('contractExpires')}: <span className="text-[#13b5ea]">{endDate.format('YYYY-MM-DD')}</span>
+                  </span>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </div>
+      </form>
+    </div>
   );
 };
 

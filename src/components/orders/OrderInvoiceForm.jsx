@@ -3,26 +3,21 @@ import {
   FaBox,
   FaCalendarAlt,
   FaCloudUploadAlt,
-  FaDollarSign,
-  FaExclamationTriangle,
   FaFileInvoice,
   FaLayerGroup,
   FaPercent,
   FaSave,
-  FaTag,
   FaTimes,
   FaTruck,
   FaUser,
   FaWarehouse,
-  FaMoneyBillWave,
 } from "react-icons/fa";
-import { BsBank } from "react-icons/bs";
-import { IoIdCard } from "react-icons/io5";
 import { GiNotebook } from "react-icons/gi";
+import { motion } from "framer-motion";
 import api from "../../services/api";
 import { useNavigate, useParams } from "react-router";
 import { useNotify } from "../../utils/NotificationProvider";
-import { Badge, Divider, DatePicker, Checkbox, Alert } from "antd";
+import { Divider, DatePicker, Alert, Radio, Checkbox } from "antd";
 import dayjs from "dayjs";
 import { useDebounce } from "use-debounce";
 import { useTranslation } from "react-i18next";
@@ -38,10 +33,10 @@ import { useGetAllSaleQuery } from "../../../app/Features/salesSlice";
 import { useGetAllDeliverQuery } from "../../../app/Features/deliversSlice";
 import { useGetAllUserQuery } from "../../../app/Features/usersSlice";
 import { useGetOrderByIdQuery, useGetOrderInvoiceQuery } from "../../../app/Features/ordersSlice";
-import Modal from "../../utils/Modal";
-import { LuSearch } from "react-icons/lu";
-import { PAYMENT_METHODS, PAYMENT_STATUS } from "../../services/paymentService";
+import { PAYMENT_METHODS, PAYMENT_STATUS, TAX_OPTIONS } from "../../services/paymentService";
 import AlertBox from "../../services/AlertBox";
+
+import OldTemplateModal from "../../utils/OldTemplateModal";
 
 const DEFAULT_STATUS = 0;
 const ITEM_FOR_OPTIONS = [
@@ -72,7 +67,7 @@ const STATUS_OPTIONS = [
 ];
 
 const DEFAULT_FILTERS = {
-  created_by: "",
+  seller_id: "",
   customer_id: "",
   item_for: "",
   start_date: "",
@@ -113,7 +108,7 @@ const createInitialFormData = () => ({
   reference_no: "",
   sub_total: 0,
   sale_type: "wholesale",
-  created_by: "",
+  seller_id: "",
   term: 0,
   order_tel: "",
   order_address: "",
@@ -124,6 +119,7 @@ const createInitialFormData = () => ({
   payments: [],
   online: 0,
   through: 0,
+  description: "",
 });
 
 const toNumber = (value) => {
@@ -155,13 +151,36 @@ const OrderInvoiceForm = () => {
   const [showModal, setShowModal] = useState(false);
   const [selectedInvoiceIds, setSelectedInvoiceIds] = useState([]);
   const [showAlert, setShowAlert] = useState(false);
-  const [paymentData, setPaymentData] = useState({
-    payment_method: 'cash',
-    amount: 0,
-    transection_id: '',
-    paid_at: today,
-    remark: ''
-  });
+  const MENU_ID = 54;
+  const columns = useMemo(() => [
+    { title: t("item"), key: "item_name", type: "item", subKey: "code" },
+    {
+      title: t("itemFor"),
+      key: "item_for",
+      type: "select",
+      selectOptions: ITEM_FOR_OPTIONS
+    },
+    { title: t("quantity"), key: "quantity", type: "number" },
+    { title: t("price"), key: "item_price", type: "number" },
+    { title: t("discount"), key: "discount", type: "discount", priceLabel: "item_price" },
+    {
+      title: t("total"),
+      type: "showonly",
+      render: (item) => `$${(toNumber(item.quantity) * toNumber(item.item_price) * (1 - (toNumber(item.discount) || 0) / 100)).toFixed(2)}`
+    }
+  ], [t]);
+
+  const handleCellChange = (index, key, value) => {
+    if (key === "quantity") {
+      handleQtyChange(index, value);
+    } else if (key === "item_price") {
+      handleCostChange(index, value);
+    } else if (key === "discount") {
+      handleDiscountChange(index, value);
+    } else if (key === "item_for") {
+      handleItemForChange(index, value);
+    }
+  };
 
   const toggleSelectInvoice = (id) => {
     setSelectedInvoiceIds((prev) =>
@@ -361,7 +380,7 @@ const OrderInvoiceForm = () => {
       return sum + (lineSubtotal * toNumber(item.discount)) / 100;
     }, 0);
 
-    const orderTax = toNumber(nextFormData.order_tax);
+    const orderTax = toNumber((subTotal*(nextFormData.order_tax/100)));
     const deliveryFee = toNumber(nextFormData.delivery_fee);
     const payment = toNumber(nextFormData.payment);
     const totalAmount = subTotal - discountTotal + orderTax + deliveryFee;
@@ -370,6 +389,7 @@ const OrderInvoiceForm = () => {
     return {
       ...nextFormData,
       sub_total: subTotal,
+      tax_total: orderTax,
       discount_total: discountTotal,
       total_amount: totalAmount,
       balance,
@@ -427,7 +447,7 @@ const OrderInvoiceForm = () => {
         sub_total: toNumber(order.order_subtotal ?? order.sub_total),
         discount_total: toNumber(order.order_discount),
         term: order.term || 0,
-        created_by: order.created_by || "",
+        seller_id: order.seller || order.created_by || "",
         order_tel: order.order_tel || "",
         order_address: order.order_address || "",
         sale_type: order.sale_type || "wholesale",
@@ -437,19 +457,9 @@ const OrderInvoiceForm = () => {
         payments: order.payments || [],
         online: order.online || 0,
         through: order.through || 0,
+        description: order.description || "",
       })
     );
-
-    if (order.payments && order.payments.length > 0) {
-      const lastPayment = order.payments[order.payments.length - 1];
-      setPaymentData({
-        payment_method: lastPayment.payment_method || 'cash',
-        amount: toNumber(lastPayment.amount),
-        transection_id: lastPayment.transection_id || '',
-        paid_at: lastPayment.paid_at || lastPayment.payment_date || today,
-        remark: lastPayment.remark || ''
-      });
-    }
   }, [isEditMode, orderByIdData]);
 
 
@@ -585,7 +595,12 @@ const OrderInvoiceForm = () => {
   const handleQtyChange = (index, quantity) => {
     const item = formData.items[index];
     if (quantity <= 0) {
-      setErrors((prev) => ({ ...prev, items: t("invalidQuantity") }));
+      updateFormData((prev) => ({
+        ...prev,
+        items: prev.items.map((item, itemIndex) =>
+          itemIndex === index ? { ...item, quantity: 0 } : item
+        ),
+      }));
       return;
     }
 
@@ -604,7 +619,12 @@ const OrderInvoiceForm = () => {
 
   const handleCostChange = (index, itemPrice) => {
     if (itemPrice < 0) {
-      setErrors((prev) => ({ ...prev, items: t("invalidCost") }));
+      updateFormData((prev) => ({
+        ...prev,
+        items: prev.items.map((item, itemIndex) =>
+          itemIndex === index ? { ...item, item_price: 0 } : item
+        ),
+      }));
       return;
     }
 
@@ -618,7 +638,12 @@ const OrderInvoiceForm = () => {
 
   const handleDiscountChange = (index, discount) => {
     if (discount < 0) {
-      setErrors((prev) => ({ ...prev, items: t("pleaseFixErrors") }));
+      updateFormData((prev) => ({
+        ...prev,
+        items: prev.items.map((item, itemIndex) =>
+          itemIndex === index ? { ...item, discount: 0 } : item
+        ),
+      }));
       return;
     }
 
@@ -801,12 +826,13 @@ const OrderInvoiceForm = () => {
         order_tax: toNumber(formData.order_tax),
         payment: toNumber(formData.payment),
         term: formData.term || 0,
-        created_by: formData.created_by ? Number(formData.created_by) : null,
+        seller: formData.seller_id ? Number(formData.seller_id) : null,
         sale_type: formData.sale_type || null,
         reference_no: formData.reference_no || null,
         order_payment_status: formData.order_payment_status || paymentStatus,
         order_payment_method: formData.order_payment_method,
         order_date: formData.order_date,
+        description: formData.description,
         items: formData.items.map((item) => ({
           item_id: Number(item.item_id),
           item_price: toNumber(item.item_price),
@@ -814,16 +840,16 @@ const OrderInvoiceForm = () => {
           item_for: item.item_for || null,
           discount: toNumber(item.discount),
         })),
-        payments: [paymentData],
+        payments: [],
       };
 
       if (isEditMode) {
-        await api.put(`/order_masters/${orderId}`, payload, {
+        await api.put(`/wholesale/${orderId}`, payload, {
           headers: { Authorization: `Bearer ${token}` },
         });
         notify.success(t("updateOrderSuccess"));
       } else {
-        await api.post("/order_masters", payload, {
+        await api.post("/wholesale", payload, {
           headers: { Authorization: `Bearer ${token}` },
         });
         notify.success(t("createOrderSuccess"));
@@ -861,20 +887,13 @@ const OrderInvoiceForm = () => {
   const handleUserSelect = (value) => {
     updateFormData((prev) => ({
       ...prev,
-      created_by: value ? Number(value) : "",
+      seller_id: value ? Number(value) : "",
     }));
   };
 
   const handlePaymentStatusSelect = (value) => {
     setPaymentStatus(value);
     handleInputChange("order_payment_status", value || "");
-    if(value == 'paid'){
-      setPaymentData(prev=>({
-        ...prev,
-        amount: formData?.total_amount
-      }))
-    }
-
   };
 
   const handlePaymentMethodSelect = (value) => {
@@ -930,6 +949,7 @@ const OrderInvoiceForm = () => {
           balance: 0,
           items: normalizedItems,
           payments: [],
+          description: order.description || "",
         })
       );
       setPaymentData({
@@ -951,7 +971,7 @@ const OrderInvoiceForm = () => {
   };
 
   return (
-    <div className=" bg-transparent py-2 transition-colors">
+    <div className="view-page bg-transparent transition-colors">
       <AlertBox
         isOpen={showAlert}
         title={isEditMode ? t('confirmUpdate') : t('confirmCreateInvoice')}
@@ -961,327 +981,271 @@ const OrderInvoiceForm = () => {
         confirmText={isEditMode ? t('update') : t('create')}
         cancelText={t('cancel')}
       />
-      <div className="px-2">
-        {alertError && (
-          <Alert
-            message={alertError}
-            type="error"
-            closable
-            onClose={() => setAlertError("")}
-            className="mb-6"
-          />
-        )}
-        <div className="mb-8">
-          <div className="mb-4 flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-800 dark:!text-gray-100">
-                {isEditMode ? t("editSaleInvoice") : t("createSaleInvoice")}
-              </h1>
-              <p className="mt-2 text-gray-600 dark:!text-gray-400">
-                {isEditMode ? t("updateSaleInvoiceDetails") : t("addNewSaleInvoiceToSystem")}
-              </p>
-            </div>
-            <div className="mt-6 flex items-center justify-center gap-2">
-              {!orderId && <Button type="button" onClick={() => setShowModal(true)} disabled={loading || orderByIdLoading} variant="success" outline={false}>
-                <FaCloudUploadAlt className="text-lg" />
-
-              </Button>}
-              <Button type="button" onClick={handleSubmit} disabled={loading || orderByIdLoading} variant="primary" outline={false}>
-                <FaSave />
-                {isEditMode ? t("update") : t("create")}
-              </Button>
-              <Button
-                type="button"
-                variant="danger"
-                outline={true}
-                onClick={() => window.history.back()}
-              >
-                <FaTimes />
-                {t("back")}
-              </Button>
-            </div>
+      <div>
+        {/* Header */}
+        <div className="flex items-center justify-between border-b-0 border-x p-4 dark:border-gray-500 border-gray-200 bg-white dark:bg-gray-600">
+          <div>
+            <h1 className="text-xl font-bold text-gray-800 dark:!text-gray-100">
+              {isEditMode ? t("editSaleInvoice") : t("createSaleInvoice")}
+            </h1>
+            <p className="text-gray-600 text-xs dark:!text-gray-400 mt-2">
+              {isEditMode ? t("updateSaleInvoiceDetails") : t("addNewSaleInvoiceToSystem")}
+            </p>
           </div>
+          <div className="mt-6 flex justify-center items-center gap-2">
+            {!orderId && (
+              <Button type="button" onClick={() => setShowModal(true)} disabled={loading || orderByIdLoading} variant="primary" outline={false}>
+                <FaCloudUploadAlt className="text-lg" />
+              </Button>
+            )}
+            <Button actionType="is_modify" menuId={MENU_ID} type="button" onClick={handleSubmit} disabled={loading || orderByIdLoading} variant="save" outline={false}>
+              <FaSave />
+              {loading ? t('processing') : isEditMode ? t("update") : t("create")}
+            </Button>
+            <Button
+              type="button"
+              variant="cancel"
+              outline={false}
+              onClick={() => navigator(-1)}
+            >
+              <FaTimes />
+              {t("back")}
+            </Button>
+          </div>
+        </div>
 
-          {/* {Object.keys(errors).length > 0 && (
-            <div className="mb-6">
-              <div className="border-red-200 bg-red-50 shadow-sm dark:!border-red-800 dark:!bg-red-900/10">
-                <div className="flex items-start gap-3">
-                  <div className="rounded-lg bg-red-100 p-2 dark:!bg-red-900/30">
-                    <FaExclamationTriangle className="text-red-600 dark:!text-red-400" />
+        {alertError && (
+          <div className="p-4 border-x border-gray-200 dark:border-gray-500 bg-white dark:bg-gray-600">
+            <Alert
+              message={alertError}
+              type="error"
+              closable
+              onClose={() => setAlertError("")}
+            />
+          </div>
+        )}
+
+        <form>
+          <div className="grid grid-cols-1">
+            {/* Top Section - Customer & Order Details */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              <div className="bg-gray-100 dark:bg-transparent dark:border-gray-500 p-4 border border-gray-200">
+                <h3 className="text-md font-semibold mb-4 flex items-center gap-2 dark:text-white">
+                  <FaWarehouse className="text-blue-500" />
+                  {t("orderInformation")}
+                </h3>
+                
+                <div className="flex flex-wrap gap-5">
+                  <div className="grow min-w-[250px]">
+                    <label className="block text-sm font-medium text-gray-700 dark:!text-gray-300 mb-2">
+                      <span className="flex items-center text-sm font-semibold gap-2">
+                        <FaUser className="text-gray-400" />
+                        {t("customer")}
+                      </span>
+                    </label>
+                    <RichSearch
+                      data={customers}
+                      value={formData.order_customer_id}
+                      placeholder={t("selectcustomer")}
+                      keyFields={{
+                        id: "customer_id",
+                        title: "customer_name",
+                        image: "image",
+                        subtitle: "customer_tel",
+                      }}
+                      onSelected={handleCustomerSelect}
+                    />
                   </div>
+
                   <div>
-                    <h3 className="mb-2 font-semibold text-red-800 dark:!text-red-300">
-                      {t("pleaseFixErrors")}
-                    </h3>
-                    <ul className="list-inside list-disc space-y-1 text-sm text-red-700 dark:!text-red-400">
-                      {Object.values(errors).map((error, index) =>
-                        error ? <li key={index}>{error}</li> : null
-                      )}
-                    </ul>
+                    <label className="block text-sm font-medium text-gray-700 dark:!text-gray-300 mb-2">
+                      <span className="flex items-center text-sm font-semibold gap-2">
+                        <FaCalendarAlt className="text-gray-400" />
+                        {t("OrderDate")}
+                      </span>
+                    </label>
+                    <DatePicker
+                      className="date-picker"
+                      size="large"
+                      value={formData.order_date ? dayjs(formData.order_date) : null}
+                      onChange={(_, dateString) => handleInputChange("order_date", dateString)}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:!text-gray-300 mb-2">
+                      {t("paymentMethod")} <span className="text-red-500">*</span>
+                    </label>
+                    <RichSearch
+                      data={PAYMENT_STATUS}
+                      value={formData.order_payment_status}
+                      placeholder={t("status")}
+                      keyFields={{
+                        id: "value",
+                        title: "label",
+                      }}
+                      onSelected={handlePaymentStatusSelect}
+                    />
+                  </div>
+
+                  {formData.order_payment_status !== 'paid' && (
+                    <div className="flex gap-5">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:!text-gray-300 mb-2">
+                          <span className="flex items-center text-sm font-semibold gap-2">
+                            <FaCalendarAlt className="text-gray-400" />
+                            {t("term")}
+                          </span>
+                        </label>
+                        <Input
+                          type="number"
+                          value={formData.term}
+                          onChange={(value) => handleInputChange("term", value)}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:!text-gray-300 mb-2">
+                          <span className="flex items-center text-sm font-semibold gap-2">
+                            <FaCalendarAlt className="text-gray-400" />
+                            {t("dueDate")}
+                          </span>
+                        </label>
+                        <DatePicker
+                          readOnly
+                          className="date-picker"
+                          size="large"
+                          value={formData.term ? dayjs(formData.order_date).add(formData.term, 'day') : null}
+                          onChange={(_, dateString) => handleInputChange("due_date", dateString)}
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="grow min-w-[200px]">
+                    <label className="block text-sm font-medium text-gray-700 dark:!text-gray-300 mb-2">
+                      <span className="flex items-center text-sm font-semibold gap-2">
+                        <FaUser className="text-gray-400" />
+                        {t("seller")}
+                      </span>
+                    </label>
+                    <RichSearch
+                      data={createUser}
+                      value={formData.seller_id}
+                      placeholder={t("selectSeller")}
+                      keyFields={{
+                        id: "id",
+                        title: "username",
+                        image: "image",
+                      }}
+                      onSelected={handleUserSelect}
+                    />
                   </div>
                 </div>
               </div>
-            </div>
-          )} */}
-        </div>
+            </motion.div>
 
-        <form>
-          <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
-            <div className="space-y-6 lg:col-span-2">
-              <div className="!text-sm">
-                <div>
-                  <div className="mb-4 flex items-center gap-2">
-                    <FaWarehouse className="text-blue-500" />
+            {/* Items Section */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: 0.1 }}
+            >
+              <div className="border-t-0 px-4 border-x bg-gradient-to-b from-gray-50 to-gray-100 dark:bg-transparent dark:from-transparent dark:to-transparent border-gray-200 dark:border-gray-500">
+                <div className="flex items-center justify-between px-4 py-2">
+                  <div className="flex items-center gap-2">
+                    <FaBox className="text-blue-500" />
                     <h2 className="text-sm font-bold text-gray-800 dark:!text-gray-100">
-                      {t("customerInformation")}
+                      {t("orderItems")}
                     </h2>
                   </div>
 
-                  <div className="flex flex-wrap gap-4">
-                    <div className="grow">
-                      <label className="mb-2 block text-sm font-medium text-gray-700 dark:!text-gray-300">
-                        <span className="flex items-center gap-2">
-                          <FaUser className="text-gray-400" />
-                          {t("customer")}
-                        </span>
-                      </label>
-                      <RichSearch
-                        data={customers}
-                        value={formData.order_customer_id}
-                        placeholder={t("selectcustomer")}
-                        keyFields={{
-                          id: "customer_id",
-                          title: "customer_name",
-                          image: "image",
-                          subtitle: "customer_tel",
-                        }}
-                        onSelected={handleCustomerSelect}
-                      />
-                    </div>
-
-                    <div>
-                      <label className="mb-2 block text-sm font-medium text-gray-700 dark:!text-gray-300">
-                        <span className="flex items-center gap-2">
-                          <FaCalendarAlt className="text-gray-400" />
-                          {t("OrderDate")}
-                        </span>
-                      </label>
-                      <DatePicker
-                        className="date-picker w-full"
-                        size="middle"
-                        value={formData.order_date ? dayjs(formData.order_date) : null}
-                        onChange={(_, dateString) => handleInputChange("order_date", dateString)}
-                      />
-                    </div>
-
-                    {/* <div>
-                      <label className="mb-2 block text-sm font-medium text-gray-700 dark:!text-gray-300">
-                        {t("delivery")}
-                      </label>
-                      <select
-                        name="deliver_id"
-                        value={formData.deliver_id}
-                        onChange={(event) => handleInputChange("deliver_id", event.target.value)}
-                        className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white"
-                      >
-                        <option value="">{t("deliveryService")}</option>
-                        {delivers.map((deliver) => (
-                          <option key={deliver.deliver_id} value={deliver.deliver_id}>
-                            {deliver.deliver_name}
-                          </option>
-                        ))}
-                      </select>
-                    </div> */}
-
-                    <div>
-                      <label className="mb-2 block text-sm font-medium text-gray-700 dark:!text-gray-300">
-                        {t("status")} <span className="text-red-500">*</span>
-                      </label>
-                      <RichSearch
-                        data={PAYMENT_STATUS}
-                        value={formData.order_payment_status}
-                        placeholder={t("status")}
-                        keyFields={{
-                          id: "value",
-                          title: "label",
-                        }}
-                        onSelected={handlePaymentStatusSelect}
-                      />
-                    </div>
-
-                    <div>
-                      <label className="mb-2 block text-sm font-medium text-gray-700 dark:!text-gray-300">
-                        {t("paymentMethod")}
-                      </label>
-                      <RichSearch
-                        data={PAYMENT_METHODS}
-                        value={formData.order_payment_method}
-                        placeholder={t("paymentMethod")}
-                        keyFields={{
-                          id: "value",
-                          title: "label",
-                        }}
-                        onSelected={handlePaymentMethodSelect}
-                      />
-                    </div>
-                    {formData.order_payment_status != 'paid' && <div>
-                      <label className="mb-2 block text-sm font-medium text-gray-700 dark:!text-gray-300">
-                        <span className="flex items-center gap-2">
-                          <FaCalendarAlt className="text-gray-400" />
-                          {t("term")}
-                        </span>
-                      </label>
-                      <Input
-                        type="number"
-                        value={formData.term}
-                        onChange={(value) => handleInputChange("term", value)}
-                      />
-                    </div>}
-                    {formData.order_payment_status != 'paid' && <div>
-                      <label className="mb-2 block text-sm font-medium text-gray-700 dark:!text-gray-300">
-                        <span className="flex items-center gap-2">
-                          <FaCalendarAlt className="text-gray-400" />
-                          {t("dueDate")}
-                        </span>
-                      </label>
-                      <DatePicker
-                        readOnly
-                        className="date-picker w-full"
-                        size="middle"
-                        value={formData.term ? dayjs(formData.order_date).add(formData.term, 'day') : null}
-                        onChange={(_, dateString) => handleInputChange("due_date", dateString)}
-                      />
-                    </div>}
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <div>
-                  <div className="mb-6 flex items-center gap-2 justify-between">
-                    <div className="flex items-center gap-2">
-                      <FaBox className="text-blue-500" />
-                      <h2 className="text-sm font-bold text-gray-800 dark:!text-gray-100">
-                        {t("orderItems")}
-                      </h2>
-                    </div>
-
-                    <div className="flex flex-1 text-sm items-center gap-2">
-                      <RichSearch
-                        data={items}
-                        placeholder={t("addItem")}
-                        keyFields={{
-                          id: "id",
-                          title: "name",
-                          image: "image",
-                          subtitle: "code",
-                          price: "wholesale_price",
-                          quantity: "in_stock",
-                        }}
-                        onSelected={addItemToOrder}
-                        onSearch={setSearchTerm}
-                        onScrollReader={onScrollFetch}
-                      />
-                      <ImportItemInList onSelected={handleImportItems} />
-                    </div>
-                  </div>
-
-                  {formData.items.length === 0 ? (
-                    <div className="rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 py-12 text-center dark:!border-gray-700 dark:!bg-blue-900/50">
-                      <FaBox className="mx-auto mb-4 text-4xl text-gray-400 dark:!text-gray-400" />
-                      <p className="mb-4 text-gray-500 dark:!text-gray-400">{t("noItemsAdded")}</p>
-                      <div className="flex items-center justify-center gap-4">
-                        <Button
-                          onClick={(e) => {
-                            e.preventDefault();
-                            downloadTemplate(targetFields, "Import Items");
-                          }}
-                          variant="success"
-                        >
-                          <FaFileInvoice className="text-white" size={18} />
-                          <span>{t("downloadTemplate")}</span>
-                        </Button>
-                      </div>
-                    </div>
-                  ) : (
-                    <ItemTable
-                      showSelectField={true}
-                      selectLable="item_for"
-                      selectOptions={ITEM_FOR_OPTIONS}
-                      showDiscountField={true}
-                      discountLabel="discount"
-                      priceLabel="item_price"
-                      t={t}
-                      data={formData.items}
-                      onDelete={removeItem}
-                      onQtyChange={handleQtyChange}
-                      onCostChange={handleCostChange}
-                      onDiscountChange={handleDiscountChange}
-                      onSelectChange={handleItemForChange}
-                      haedTitle={[
-                        { title: t("item"), key: "item" },
-                        { title: "Item For", key: "item_for" },
-                        { title: t("quantity"), key: "quantity" },
-                        { title: t("price"), key: "price" },
-                        { title: t("discount"), key: "discount" },
-                        { title: t("total"), key: "total" },
-                        { title: "", key: "action" },
-                      ]}
+                  <div className="flex items-center grow gap-2 ml-4">
+                    <RichSearch
+                      data={items}
+                      placeholder={t("addItem")}
+                      keyFields={{
+                        id: "id",
+                        title: "name",
+                        image: "image",
+                        subtitle: "code",
+                        price: "wholesale_price",
+                        quantity: "in_stock",
+                      }}
+                      onSelected={addItemToOrder}
+                      onSearch={setSearchTerm}
+                      onScrollReader={onScrollFetch}
                     />
-                  )}
-                  {errors.items && (
-                    <div className="mt-2 rounded-lg bg-red-50 p-3 text-sm text-red-500 dark:!bg-red-900/10">
-                      {errors.items}
-                    </div>
-                  )}
+                    <Button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        downloadTemplate(targetFields, "Import Items");
+                      }}
+                      variant="success"
+                      className="flex items-center gap-2"
+                    >
+                      <FaFileInvoice className="text-white" size={18} />
+                      <span>{t("downloadTemplate")}</span>
+                    </Button>
+                    <ImportItemInList onSelected={handleImportItems} />
+                  </div>
                 </div>
+
+                
+                <ItemTable
+                  data={formData.items}
+                  onDelete={removeItem}
+                  onCellChange={handleCellChange}
+                  columns={columns}
+                />
+                {errors.items && (
+                  <div className="mt-2 rounded-lg bg-red-50 p-3 text-sm text-red-500 dark:!bg-red-900/10 mb-2">
+                    {errors.items}
+                  </div>
+                )}
               </div>
-            </div>
+            </motion.div>
 
-            <div className="space-y-6 text-sm">
-              <div>
-                <div>
-                  <h2 className="mb-6 flex items-center gap-2 text-sm font-bold text-gray-800 dark:!text-gray-100">
-                    <FaLayerGroup className="text-blue-500" />
-                    {t("summary")}
-                  </h2>
-
-                  <div className="space-y-4">
-                    <div className="flex justify-between">
-                      <span className="text-gray-600 dark:!text-gray-400">{t("subtotal")}</span>
-                      <span className="font-bold text-gray-800 dark:!text-gray-100">
-                        ${Number(formData.sub_total).toFixed(2)}
-                      </span>
-                    </div>
-
-                    <div className="flex justify-between">
-                      <span className="text-gray-600 dark:!text-gray-400">{t("discount")}</span>
-                      <span className="font-bold text-gray-800 dark:!text-gray-100">
-                        ${Number(formData.discount_total).toFixed(2)}
-                      </span>
-                    </div>
-
-                    <div className="grid text-sm grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div>
+            {/* Summary Section */}
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              <div className="flex justify-between gap-10 p-4 mx-4 border bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-800">
+                <div className="max-w grow">
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-1">
+                    {t('description')} <GiNotebook />
+                  </label>
+                  <textarea
+                    value={formData.description || ''}
+                    placeholder="--- Notes for invoice... ---"
+                    onChange={(e) => handleInputChange("description", e.target.value)}
+                    className="textarea-input"
+                    rows={3}
+                  />
+                  
+                  <div className="grid grid-cols-3 items-end gap-5 mt-4">
+                    <div>
                         <div className="mb-2 flex items-center justify-between">
                           <span className="flex items-center gap-2 text-gray-600 dark:!text-gray-400">
-                            <FaPercent className="text-gray-400" />
-                            {t("tax")}
+                            <FaFileInvoice className="text-gray-400" />
+                            {t("referenceNo")}
                           </span>
                         </div>
-                        <RichSearch
-                          data={VAT_OPTIONS}
-                          value={formData.order_tax}
-                          placeholder={t("tax")}
-                          keyFields={{
-                            id: "value",
-                            title: "label",
-                          }}
-                          onSelected={(value) => handleInputChange("order_tax", value ? Number(value) : 0)}
+                        <Input
+                          type="text"
+                          name="reference_no"
+                          value={formData.reference_no}
+                          onChange={(value) => handleInputChange("reference_no", value)}
+                          placeholder={"e,g. QT-21234567889"}
+                          className="w-full"
                         />
-                      </div>
-
-                      <div>
+                    </div>
+                    <div>
                         <div className="mb-2 flex items-center justify-between">
                           <span className="flex items-center gap-2 text-gray-600 dark:!text-gray-400">
                             <FaTruck className="text-gray-400" />
@@ -1294,396 +1258,139 @@ const OrderInvoiceForm = () => {
                           value={formData.delivery_fee}
                           onChange={(value) => handleInputChange("delivery_fee", value)}
                           placeholder={t("deliveryFee")}
-                          className="w-full dark:!bg-gray-700 dark:!text-gray-200 dark:!border-gray-600"
+                          className="w-full"
                           min="0"
                           step="0.01"
                         />
-                      </div>
-
-                      
-
-                      <div>
-                        <div className="mb-2 flex items-center justify-between">
-                          <span className="flex items-center gap-2 text-gray-600 dark:!text-gray-400">
-                            <FaFileInvoice className="text-gray-400" />
-                            {t("invoiceId")}
-                          </span>
-                        </div>
-                        <Input
-                          type="text"
-                          name="reference_no"
-                          value={formData.reference_no}
-                          onChange={(value) => handleInputChange("reference_no", value)}
-                          placeholder={t("invoiceId")}
-                          className="w-full dark:!bg-gray-700 dark:!text-gray-200 dark:!border-gray-600"
-                        />
-                      </div>
-                      <div className="sm:col-span-2">
-                        <label className="mb-2 block text-sm font-medium text-gray-700 dark:!text-gray-300">
-                          <span className="flex items-center gap-2">
-                            <FaUser className="text-gray-400" />
-                            {t("createdBy")}
-                          </span>
-                        </label>
-                        <RichSearch
-                          data={createUser}
-                          value={formData.created_by}
-                          placeholder={t("selectCreatedBy")}
-                          keyFields={{
-                            id: "id",
-                            title: "username",
-                            image: "image",
-                          }}
-                          onSelected={handleUserSelect}
-                        />
-                      </div>
                     </div>
-
                     <div>
-                      <h3 className="text-md font-semibold mb-4 flex items-center gap-2 dark:text-white">
-                        <FaMoneyBillWave className="text-green-500" />
-                        {t('addPayment')}
-                      </h3>
-                      <div className=" flex flex-wrap gap-3">
-                        <div className="grow">
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-1">
-                            {t('paymentMethod')} <BsBank />
-                          </label>
-                          <RichSearch
-                            data={PAYMENT_METHODS}
-                            placeholder='e.g, cash or bank '
-                            keyFields={{
-                              id: 'value',
-                              title: 'label'
-                            }}
-                            value={paymentData.payment_method}
-                            onSelected={(value) => setPaymentData((pre) => ({ ...pre, payment_method: value }))}
-                          />
-                        </div>
-                        <div className="grow">
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-1">
-                            {t('transectionId')} <IoIdCard />
-                          </label>
-                          <Input
-                            type="text"
-                            value={paymentData.transection_id}
-                            placeholder="e.g, 12345678910"
-                            onChange={(value) => setPaymentData((pre) => ({ ...pre, transection_id: value }))}
-                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100"
-                          />
-                        </div>
-                        <div className="grow">
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-1">
-                            {t('amount')} <FaDollarSign />
-                          </label>
-                          <Input
-                            type="number"
-                            value={paymentData.amount}
-                            onChange={(value) => {
-                              const val = parseFloat(value) || 0;
-                              setPaymentData((pre) => ({ ...pre, amount: val }));
-                              updateFormData({ payment: val });
-                            }}
-                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100"
-                            step="0.01"
-                            min="0"
-                          />
-                        </div>
-                        <div className="grow">
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('paymentDate')}</label>
-                          <DatePicker
-                            showTime
-                            value={paymentData.paid_at ? dayjs(paymentData.paid_at) : null}
-                            onChange={(_, dateString) => setPaymentData((pre) => ({ ...pre, paid_at: dateString }))}
-                            className="date-picker w-full"
-                          />
-                        </div>
-                        <div className="grow w-full">
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-1">
-                            {t('remark')} <GiNotebook />
-                          </label>
-                          <textarea
-                            value={paymentData.remark || ''}
-                            placeholder="Remark for payment. . ."
-                            onChange={(e) => setPaymentData((pre) => ({ ...pre, remark: e.target.value }))}
-                            className="textarea-input w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100"
-                            rows={2}
-                          />
-                        </div>
-                      </div>
-                      {fieldErrors.payment && (
-                        <div className="mt-1 text-sm text-red-500">{fieldErrors.payment}</div>
-                      )}
-                    </div>
-                    <Divider className="my-4 dark:!border-gray-700" />
-
-                    <div className="flex justify-between text-sm font-bold">
-                      <span className="text-gray-700 dark:!text-gray-200">{t("totalAmount")}</span>
-                      <span className="text-blue-600 dark:!text-blue-400">
-                        ${Number(formData.total_amount).toFixed(2)}
-                      </span>
-                    </div>
-
-                    <div className="flex justify-between">
-                      <span className="text-gray-600 dark:!text-gray-400">{t("totalPaid")}</span>
-                      <span className="font-bold text-green-600 dark:!text-green-400">
-                        ${Number(formData.payment).toFixed(2)}
-                      </span>
-                    </div>
-
-                    <div className="flex justify-between">
-                      <span className="text-gray-600 dark:!text-gray-400">{t("remainingBalance")}</span>
-                      <span
-                        className={`font-bold ${formData.balance > 0
-                            ? "text-orange-600 dark:!text-orange-400"
-                            : "text-green-600 dark:!text-green-400"
-                          }`}
+                      <Checkbox
+                        checked={formData?.order_tax == 10}
+                        onChange={(e) =>
+                          e.target.checked?
+                            handleInputChange("order_tax", 10):
+                            handleInputChange("order_tax", 0)  
+                        }
                       >
-                        ${Number(formData.balance).toFixed(2)}
-                      </span>
+                        <span className="dark:text-gray-200">Tax Include</span>
+                      </Checkbox>
                     </div>
+                  </div>
+                </div>
 
-                    <Divider className="my-4 dark:!border-gray-700" />
+                <div className="max-w-96 grow">
+                  <div className="flex justify-between w-full max-w-[350px] text-slate-500">
+                    <span className="text-[13px] font-semibold uppercase">{t("subtotal")}</span>
+                    <span className="text-[13px]">${Number(formData.sub_total).toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between w-full max-w-[350px] text-slate-500">
+                    <span className="text-[13px] font-semibold uppercase">{t("discount")}</span>
+                    <span className="text-[13px]">${Number(formData.discount_total).toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between w-full max-w-[350px] text-slate-500">
+                    <span className="text-[13px] font-semibold uppercase">{t("tax")}</span>
+                    <span className="text-[13px]">${Number(formData.tax_total || 0).toFixed(2)}</span>
+                  </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="rounded-lg bg-blue-50 p-3 text-center dark:!bg-blue-900/20">
-                        <div className="text-sm text-gray-600 dark:!text-gray-400">{t("items")}</div>
-                        <div className="text-sm font-bold text-gray-800 dark:!text-gray-100">
-                          {formData.items.length}
-                        </div>
-                      </div>
-                      <div className="rounded-lg bg-green-50 p-3 text-center dark:!bg-green-900/20">
-                        <div className="text-sm text-gray-600 dark:!text-gray-400">{t("status")}</div>
-                        <div className="text-sm font-bold text-gray-800 dark:!text-gray-100">
-                          {STATUS_OPTIONS.find((option) => option.value === Number(formData.status))?.label || "-"}
-                        </div>
-                      </div>
-                    </div>
+                  <div className="flex justify-between w-full max-w-[350px] text-slate-500">
+                    <span className="text-[13px] font-semibold uppercase">{t("totalPaid")}</span>
+                    <span className="text-[13px] text-green-600">${Number(formData.payment).toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between w-full max-w-[350px] text-slate-500">
+                    <span className="text-[13px] font-semibold uppercase">{t("remainingBalance")}</span>
+                    <span className={`text-[13px] ${formData.balance > 0 ? 'text-orange-600' : 'text-green-600'}`}>
+                      ${Number(formData.balance).toFixed(2)}
+                    </span>
+                  </div>
 
-
+                  <div className="flex justify-between w-full max-w-[350px] text-slate-800 dark:text-white pt-4 border-t border-slate-200 dark:border-slate-700 mt-2">
+                    <span className="text-sm font-bold uppercase">{t("totalAmount")}</span>
+                    <span className="text-xl font-bold text-[#13b5ea]">${Number(formData.total_amount).toFixed(2)}</span>
                   </div>
                 </div>
               </div>
-            </div>
+            </motion.div>
           </div>
         </form>
       </div>
-      <Modal
+
+      {/* Template Modal */}
+      <OldTemplateModal
         open={showModal}
         onClose={() => setShowModal(false)}
-        width={1000}
-      >
-        <div className="flex flex-col max-h-[85vh]">
-          {/* Modal Header */}
-          <div className="p-4 border-b dark:border-gray-700">
-            <h3 className="text-lg font-bold text-gray-800 dark:!text-gray-100">
-              {t("selectOldInvoiceTemplate")}
-            </h3>
-          </div>
-
-          {/* Filters Area */}
-          <div className="p-4 bg-gray-50 dark:bg-gray-800/40 border-b dark:border-gray-700">
-            <div className="grid grid-cols-1 gap-3 lg:grid-cols-12">
-              <div className="lg:col-span-4">
-                <div className="relative">
-                  <LuSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                  <input
-                    type="text"
-                    placeholder={t("searchInvoices")}
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full border border-gray-300 bg-white py-1.5 pl-10 pr-4 text-sm text-gray-900 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-900 dark:text-white rounded-md"
-                  />
-                </div>
-              </div>
-              <div className="lg:col-span-2">
-                <RichSearch
-                  data={userFilterOptions}
-                  keyFields={{ id: "id", title: "username", image: 'image' }}
-                  value={filters.created_by}
-                  onSelected={(id) =>
-                    setFilters((prev) => ({ ...prev, created_by: id }))
-                  }
-                  placeholder={t("allUsers")}
-                />
-              </div>
-              <div className="lg:col-span-2">
-                <RichSearch
-                  data={customerFilterOptions}
-                  keyFields={{ id: "customer_id", title: "customer_name", image: 'customer_image' }}
-                  value={filters.customer_id}
-                  onSelected={(id) =>
-                    setFilters((prev) => ({ ...prev, customer_id: id }))
-                  }
-                  placeholder={t("allCustomers")}
-                />
-              </div>
-              <div className="lg:col-span-2">
-                <DatePicker
-                  value={filters.start_date ? dayjs(filters.start_date) : null}
-                  onChange={(_, dateString) =>
-                    setFilters((prev) => ({ ...prev, start_date: dateString || "" }))
-                  }
-                  format="YYYY-MM-DD"
-                  className="date-picker w-full"
-                  placeholder={t("startDate")}
-                />
-              </div>
-              <div className="lg:col-span-2">
-                <DatePicker
-                  value={filters.end_date ? dayjs(filters.end_date) : null}
-                  onChange={(_, dateString) =>
-                    setFilters((prev) => ({ ...prev, end_date: dateString || "" }))
-                  }
-                  format="YYYY-MM-DD"
-                  className="date-picker w-full"
-                  placeholder={t("endDate")}
-                />
-              </div>
+        title={t("selectOldInvoiceTemplate")}
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+        filters={
+          <>
+            <div className="lg:col-span-2">
+              <RichSearch
+                data={userFilterOptions}
+                keyFields={{ id: "id", title: "username", image: 'image' }}
+                value={filters.seller_id}
+                onSelected={(id) =>
+                  setFilters((prev) => ({ ...prev, seller_id: id }))
+                }
+                placeholder={t("allUsers")}
+              />
             </div>
-          </div>
-
-          {/* Selected Invoices Summary */}
-          {selectedInvoiceIds.length > 0 && (
-            <div className="px-4 py-2 bg-blue-50 dark:bg-blue-900/30 border-b dark:border-gray-700 flex justify-between items-center animate-in fade-in slide-in-from-top-2">
-              <div className="flex items-center gap-2 text-sm text-blue-700 dark:text-blue-300">
-                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-600 text-[10px] font-bold text-white">
-                  {selectedInvoiceIds.length}
-                </span>
-                <span>{t("invoicesSelected")}</span>
-              </div>
-              <div className="flex gap-2">
-                <Button
-                  onClick={() => setSelectedInvoiceIds([])}
-                  variant="danger"
-                  outline={true}
-                >
-                  {t("clearAll")}
-                </Button>
-                <Button
-                  onClick={handleImportTemplates}
-                  variant="primary"
-                >
-                  <FaCloudUploadAlt />
-                  {t("importItems")}
-                </Button>
-              </div>
+            <div className="lg:col-span-2">
+              <RichSearch
+                data={customerFilterOptions}
+                keyFields={{ id: "customer_id", title: "customer_name", image: 'customer_image' }}
+                value={filters.customer_id}
+                onSelected={(id) =>
+                  setFilters((prev) => ({ ...prev, customer_id: id }))
+                }
+                placeholder={t("allCustomers")}
+              />
             </div>
-          )}
-
-          {/* Table Area with Fixed Header and Scrollable Body */}
-          <div className="flex-1 overflow-y-auto min-h-[300px]">
-            <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400 border-collapse">
-              <thead className="text-xs text-gray-700 uppercase bg-gray-100 dark:bg-gray-800 dark:text-gray-400 sticky top-0 z-10 shadow-sm">
-                <tr>
-                  <th className="px-4 py-3 bg-gray-100 dark:bg-gray-800 w-12">
-                    <Checkbox
-                      type="checkbox"
-                      onChange={toggleSelectAllOnPage}
-                      checked={invoices.length > 0 && invoices.every(inv => selectedInvoiceIds.includes(inv.order_id || inv.id))}
-                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
-                    />
-                  </th>
-                  <th className="px-4 py-3 bg-gray-100 dark:bg-gray-800">{t("invoiceNo")}</th>
-                  <th className="px-4 py-3 bg-gray-100 dark:bg-gray-800">{t("customer")}</th>
-                  <th className="px-4 py-3 bg-gray-100 dark:bg-gray-800">{t("date")}</th>
-                  <th className="px-4 py-3 bg-gray-100 dark:bg-gray-800">{t("total")}</th>
-                  <th className="px-4 py-3 bg-gray-100 dark:bg-gray-800 text-right">{t("action")}</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                {queryLoading ? (
-                  <tr>
-                    <td colSpan="6" className="px-4 py-10 text-center">
-                      <div className="flex flex-col items-center gap-2">
-                        <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-                        <span>{t("loading")}...</span>
-                      </div>
-                    </td>
-                  </tr>
-                ) : invoices.length === 0 ? (
-                  <tr>
-                    <td colSpan="6" className="px-4 py-10 text-center italic text-gray-400">
-                      {t("noInvoicesFound")}
-                    </td>
-                  </tr>
-                ) : (
-                  invoices.map((invoice) => {
-                    const isSelected = selectedInvoiceIds.includes(invoice.order_id || invoice.id);
-                    return (
-                      <tr
-                        key={invoice.order_id || invoice.id}
-                        className={`transition-colors group cursor-pointer ${isSelected
-                            ? 'bg-blue-50 dark:bg-blue-900/20'
-                            : 'bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800'
-                          }`}
-                        onClick={() => toggleSelectInvoice(invoice.order_id || invoice.id)}
-                      >
-                        <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
-                          <Checkbox
-                            type="checkbox"
-                            checked={isSelected}
-                            onChange={() => toggleSelectInvoice(invoice.order_id || invoice.id)}
-                            className="rounded !bg-transparent border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
-                          />
-                        </td>
-                        <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">
-                          {invoice.order_no || invoice.reference_no}
-                        </td>
-                        <td className="px-4 py-3">{invoice.customer_name}</td>
-                        <td className="px-4 py-3">{dayjs(invoice.order_date).format("YYYY-MM-DD")}</td>
-                        <td className="px-4 py-3 font-semibold text-gray-700 dark:text-gray-200">
-                          ${toNumber(invoice.order_total || invoice.total_amount).toFixed(2)}
-                        </td>
-                        <td className="px-4 py-3 text-right" onClick={(e) => e.stopPropagation()}>
-                          <Button
-                            onClick={() => handleSelectTemplate(invoice)}
-                            variant="primary"
-                            outline={true}
-                            size="small"
-                          >
-                            {t("useAsBase")}
-                          </Button>
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Modal Footer / Pagination */}
-          <div className="p-4 border-t dark:border-gray-700 bg-gray-50 dark:bg-gray-800/40">
-            <div className="flex flex-col sm:flex-row justify-between items-center gap-4 text-sm font-medium">
-              <div className="text-gray-600 dark:text-gray-400">
-                {t("totalRecords")}: <span className="text-gray-900 dark:text-white">{pagination.total}</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <Button
-                  disabled={pagination.current === 1 || queryLoading}
-                  onClick={() => setPagination(p => ({ ...p, current: p.current - 1 }))}
-                  variant="primary"
-                  outline={true}
-                >
-                  {t("previous")}
-                </Button>
-                <div className="px-3 py-1 bg-white dark:bg-gray-700 border dark:border-gray-600 rounded shadow-sm text-gray-700 dark:text-gray-200">
-                  {pagination.current} / {Math.ceil(pagination.total / pagination.pageSize) || 1}
-                </div>
-                <Button
-                  disabled={pagination.current * pagination.pageSize >= pagination.total || queryLoading}
-                  onClick={() => setPagination(p => ({ ...p, current: p.current + 1 }))}
-                  variant="primary"
-                  outline={true}
-                >
-                  {t("next")}
-                </Button>
-              </div>
+            <div className="lg:col-span-2">
+              <DatePicker
+                value={filters.start_date ? dayjs(filters.start_date) : null}
+                onChange={(_, dateString) =>
+                  setFilters((prev) => ({ ...prev, start_date: dateString || "" }))
+                }
+                format="YYYY-MM-DD"
+                className="date-picker w-full"
+                placeholder={t("startDate")}
+              />
             </div>
-          </div>
-        </div>
-      </Modal>
+            <div className="lg:col-span-2">
+              <DatePicker
+                value={filters.end_date ? dayjs(filters.end_date) : null}
+                onChange={(_, dateString) =>
+                  setFilters((prev) => ({ ...prev, end_date: dateString || "" }))
+                }
+                format="YYYY-MM-DD"
+                className="date-picker w-full"
+                placeholder={t("endDate")}
+              />
+            </div>
+          </>
+        }
+        selectedIds={selectedInvoiceIds}
+        onToggleSelect={toggleSelectInvoice}
+        onSelectAll={toggleSelectAllOnPage}
+        onClearSelection={() => setSelectedInvoiceIds([])}
+        onImport={handleImportTemplates}
+        data={invoices}
+        isLoading={queryLoading}
+        columns={[
+          { title: t("invoiceNo"), render: (invoice) => invoice.order_no || invoice.reference_no },
+          { title: t("customer"), key: "customer_name" },
+          { title: t("date"), render: (invoice) => dayjs(invoice.order_date).format("YYYY-MM-DD") },
+          { 
+            title: t("total"), 
+            render: (invoice) => `$${toNumber(invoice.order_total || invoice.total_amount).toFixed(2)}`,
+            dataClassName: "font-semibold text-gray-700 dark:text-gray-200"
+          }
+        ]}
+        pagination={pagination}
+        onPaginationChange={(page) => setPagination(p => ({ ...p, current: page }))}
+        onUseTemplate={handleSelectTemplate}
+        t={t}
+      />
     </div>
   );
 };

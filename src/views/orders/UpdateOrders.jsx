@@ -1018,24 +1018,21 @@ const UpdateOrders = () => {
                     </div>
 
                     {/* Tax (for wholesale) */}
-                    <div className={form.sale_type === "wholesale" ? "block grow" : "hidden"}>
-                      <label className={`block text-sm font-medium mb-2 ${darkMode ? "text-gray-400" : "text-gray-700"}`}>
-                        {t("taxPercentage")}({form.order_tax}%)
-                      </label>
-                      <div className="relative">
-                        <RichSearch
-                          name="order_tax"
-                          value={form.order_tax}
-                          onSelected={(value) => handleFormChange({ target: { name: 'order_tax', value } })}
-                          data={TAX_OPTIONS}
-                          keyFields={{
-                            id: "value",
-                            title: 'label'
-                          }}
-                          placeholder="Select Tax"
+                    <div className=" grow">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-gray-600 text-sm font-semibold dark:!text-gray-400 flex items-center gap-2">
+                            <FaPercent className="text-gray-400" />
+                            {t('tax')}
+                          </span>
+                        </div>
+                        <Radio.Group
+                          className="dark:[&_.ant-radio-wrapper]:text-white"
+                          name="radiogroup"
+                          value={formData.order_tax}
+                          options={TAX_OPTIONS}
+                          onChange={(e) => handleInputChange("order_tax", e.target.value ? Number(e.target.value) : 0)}
                         />
                       </div>
-                    </div>
 
                     {/* Delivery Fee */}
                     <div className="grow">

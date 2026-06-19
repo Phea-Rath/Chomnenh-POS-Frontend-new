@@ -13,15 +13,15 @@ const EMPTY_ROWS = 8;
 const StockInvoice = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const pathname = useLocation();
+  const {pathname} = useLocation();
   console.log(pathname);
   
   const { id } = useParams();
   const token = localStorage.getItem("token");
   const invoiceRef = useRef(null);
-
-  const { data: stockResponse, isFetching: isStockFetching } = useGetStockByIdQuery({ id, token }, { skip: !id ||  pathname == `/stock-invoice/${id}` });
-  const { data: stockRawResponse, isFetching: isStockRawFetching } = useGetStockRawByIdQuery({ id, token }, { skip: !id ||  pathname == `/stock-raw-invoice/${id}` });
+  
+  const { data: stockResponse, isFetching: isStockFetching } = useGetStockByIdQuery({ id, token }, { skip: !id ||  pathname != `/stock-invoice/${id}` });
+  const { data: stockRawResponse, isFetching: isStockRawFetching } = useGetStockRawByIdQuery({ id, token }, { skip: !id ||  pathname != `/stock-raw-invoice/${id}` });
 
   const stock = stockResponse?.data || stockRawResponse?.data || {};
   const items = useMemo(() => (Array.isArray(stock?.items) ? stock.items : []), [stock?.items]);

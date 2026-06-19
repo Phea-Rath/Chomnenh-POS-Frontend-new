@@ -140,11 +140,11 @@ export default function RichSearch({
     return (
         <div className="mx-auto w-full" ref={containerRef}>
             <div className="relative min-w-30">
-                <div className="absolute inset-y-0 right-2 flex items-center pointer-events-none">
+                <div className="absolute bg-gradient-to-b from-gray-50 border border-gray-200 to-gray-200 inset-y-0 right-0 flex items-center pointer-events-none text-black">
                     {onSearch ? (
-                        <BiSearch />
+                        <BiSearch className="text-xl" />
                     ) : (
-                        <MdArrowDropDown className="text-2xl" />
+                        <MdArrowDropDown className="text-xl" />
                     )}
                 </div>
 
@@ -152,12 +152,15 @@ export default function RichSearch({
                     ref={inputRef}
                     type="text"
                     value={query}
-                    className={`w-full px-4 pr-10 py-2 bg-transparent
-                    text-gray-900 dark:border-gray-400 dark:text-gray-100
-                    border border-gray-400 min-w-30
+                    className={`w-full px-3 py-1.5 bg-white dark:bg-gray-600/70
+                    text-slate-900 dark:text-slate-100
+                    placeholder:text-slate-400
+                    border border-slate-200 dark:border-gray-600
+                    rounded-[2px] transition-all outline-none
+                    focus:border-[#13b5ea] focus:ring-0
+                    text-[13px] h-[38px]
                     ${onSearch ? "cursor-text" : "cursor-pointer"}
-                    transition-all outline-none
-                    focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500`}
+                    `}
                     onFocus={onFocusHandler}
                     onChange={(e) => {
                         setQuery(e.target.value);
@@ -172,9 +175,9 @@ export default function RichSearch({
                 createPortal(
                     <motion.ul
                         ref={dropdownRef}
-                        initial={{ opacity: 0, y: -10 }}
+                        initial={{ opacity: 0, y: -2 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.2 }}
+                        transition={{ duration: 0.1 }}
                         onScroll={onScrollReader}
                         style={{
                             position: "fixed",
@@ -182,7 +185,7 @@ export default function RichSearch({
                             left: dropdownPosition.left,
                             width: dropdownPosition.width,
                         }}
-                        className="max-h-60 z-[9999] overflow-auto rounded-sm border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-900"
+                        className="max-h-64 z-[9999] overflow-auto rounded-[2px] border border-slate-200 bg-white shadow-xl dark:border-slate-700 dark:bg-slate-900"
                     >
                         {filteredItems.length > 0 ? (
                             filteredItems.map((item, idx) => (
@@ -192,11 +195,11 @@ export default function RichSearch({
                                         e.preventDefault();
                                         handleSelect(item);
                                     }}
-                                    className={`flex cursor-pointer items-center gap-3 px-4 py-3 hover:bg-blue-50 dark:hover:bg-blue-900/20
+                                    className={`flex cursor-pointer items-center gap-3 px-4 py-2 border-b-1 border-slate-50 dark:border-slate-600 last:border-0 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors
                                     ${
                                         value == item.id
-                                            ? "bg-blue-50 dark:bg-blue-900/20"
-                                            : ""
+                                            ? "bg-[#13b5ea]/5 text-[#13b5ea] font-semibold"
+                                            : "text-slate-700 dark:text-slate-300"
                                     }`}
                                 >
                                     {"image" in item && (
@@ -212,26 +215,26 @@ export default function RichSearch({
                                                         .VITE_INITIAL_IMAGE;
                                             }}
                                             alt={item.title}
-                                            className="h-10 w-10 rounded-md object-cover flex-shrink-0"
+                                            className="h-8 w-8 rounded-[1px] object-cover flex-shrink-0 border border-slate-100 dark:border-slate-800"
                                         />
                                     )}
 
                                     <div className="min-w-0 flex-1">
-                                        <div className="flex items-start justify-between">
-                                            <p className="truncate text-sm font-semibold text-gray-900 dark:text-gray-100">
+                                        <div className="flex items-center justify-between gap-2">
+                                            <p className="truncate text-[13px]">
                                                 {item.title}
                                             </p>
 
                                             {item.price && (
-                                                <span className="text-sm font-bold text-blue-600 dark:text-blue-400">
+                                                <span className="text-[11px] font-mono font-bold text-slate-900 dark:text-white shrink-0">
                                                     ${item.price}
                                                 </span>
                                             )}
                                         </div>
 
-                                        <div className="mt-0.5 flex items-center justify-between">
+                                        <div className="flex items-center justify-between gap-2 mt-0">
                                             {item.subtitle && (
-                                                <p className="truncate text-xs text-gray-500 dark:text-gray-400">
+                                                <p className="truncate text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider font-mono">
                                                     {item.subtitle}
                                                 </p>
                                             )}
@@ -239,8 +242,8 @@ export default function RichSearch({
                                             {item.quantity !== undefined &&
                                                 typeof item.quantity !==
                                                     "object" && (
-                                                    <span className="rounded bg-gray-100 px-1.5 py-0.5 text-[10px] font-medium uppercase text-gray-600 dark:bg-gray-800 dark:text-gray-400">
-                                                        Qty: {item.quantity}
+                                                    <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 shrink-0 uppercase tracking-tighter">
+                                                        STOCK: {item.quantity}
                                                     </span>
                                                 )}
                                         </div>
@@ -248,8 +251,8 @@ export default function RichSearch({
                                 </li>
                             ))
                         ) : (
-                            <li className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
-                                No options found
+                            <li className="px-4 py-4 text-xs text-slate-400 dark:text-slate-500 italic text-center">
+                                No results found
                             </li>
                         )}
                     </motion.ul>,

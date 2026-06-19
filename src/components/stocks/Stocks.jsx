@@ -10,7 +10,8 @@ import { useGetAllSaleQuery } from '../../../app/Features/salesSlice';
 import api from '../../services/api';
 import RefreshButton from '../../utils/RefreshButton';
 import StockList from '../../utils/StockList';
-
+import Button from '../../utils/Button';
+const MENU_ID = 22;
 const formatDate = (date) =>
     new Date(date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
 
@@ -146,6 +147,7 @@ const Stocks = () => {
 
     return (
         <StockList
+            menuId={MENU_ID}
             title={t('stockManagement')}
             highlightedTitle={t('inventory')}
             subtitle={t('trackInventoryMovements')}
@@ -214,10 +216,10 @@ const Stocks = () => {
                         {exportLoading ? t('exporting') : t('exportExcel')}
                     </button>
                     <Link to="add" className="w-full sm:w-auto">
-                        <button className="w-full px-6 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white font-semibold rounded-lg hover:from-green-600 hover:to-green-700 flex items-center justify-center gap-2 shadow-lg shadow-green-500/20 transition-all active:scale-95">
+                        <Button variant='save' actionType='is_modify' menuId={MENU_ID}>
                             <FaPlus />
                             {t('addNewStock')}
-                        </button>
+                        </Button>
                     </Link>
                 </>
             }

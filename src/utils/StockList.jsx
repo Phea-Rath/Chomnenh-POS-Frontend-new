@@ -18,10 +18,13 @@ import {
     FaArrowRight,
     FaChevronLeft,
     FaChevronRight,
+    FaFileAlt,
 } from 'react-icons/fa';
 import AlertBox from '../services/AlertBox';
 import RichSearch from './RichSearch';
-import { FiFileText } from 'react-icons/fi';
+import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router';
+import ActionButton from './ActionButton';
 
 const getStockTypeColor = (type) => {
     const colors = {
@@ -90,6 +93,7 @@ const StatCard = ({ title, value, icon, color }) => (
 );
 
 const StockList = ({
+    menuId = null,
     title,
     isRaw = false,
     highlightedTitle,
@@ -134,6 +138,8 @@ const StockList = ({
     onDeleteConfirm,
     onDeleteCancel,
 }) => {
+    const { t } = useTranslation();
+    const navigate = useNavigate();
     const totalItems = (stock) => getStockItems(stock).length;
 
     const GridItem = ({ stock }) => (
@@ -173,22 +179,40 @@ const StockList = ({
                     <div className="font-semibold">{quantityLabel}: {getTotalQuantity(stock)}</div>
                 </div>
 
-                <div className="flex justify-end gap-2 mt-4 pt-3 border-t border-gray-100 dark:border-gray-700">
-                    <Link to={`detail/${stock.stock_id}`} className="p-2 bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/50">
-                        <FaEye />
-                    </Link>
-                    <Link target='_blank' to={`/stock${isRaw ? '-raw' : ''}-invoice/${stock.stock_id}`} className="p-2 bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/50">
-                        <FiFileText />
-                    </Link>
-                    <Link to={`update/${stock.stock_id}`} className="p-2 bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400 rounded-lg hover:bg-green-200 dark:hover:bg-green-900/50">
-                        <FaEdit />
-                    </Link>
-                    <button
-                        onClick={() => onDeleteRequest(stock.stock_id)}
-                        className="p-2 bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400 rounded-lg hover:bg-red-200 dark:hover:bg-red-900/50"
-                    >
-                        <FaTrash />
-                    </button>
+                <div className="flex justify-end mt-4 pt-3 border-t border-gray-100 dark:border-gray-700">
+                    <ActionButton
+                        menuId={menuId}
+                        actions={[
+                            {
+                                type: 'view',
+                                icon: <FaEye />,
+                                onClick: () => navigate(`detail/${stock.stock_id}`),
+                                title: t('viewDetails'),
+                                label: t('viewDetails')
+                            },
+                            {
+                                type: 'view',
+                                icon: <FaFileAlt />,
+                                onClick: () => window.open(`/stock${isRaw ? '-raw' : ''}-invoice/${stock.stock_id}`, '_blank'),
+                                title: t('invoice'),
+                                label: t('invoice')
+                            },
+                            {
+                                type: 'modify',
+                                icon: <FaEdit />,
+                                onClick: () => navigate(`update/${stock.stock_id}`),
+                                title: t('edit'),
+                                label: t('edit')
+                            },
+                            {
+                                type: 'drop',
+                                icon: <FaTrash />,
+                                onClick: () => onDeleteRequest(stock.stock_id),
+                                title: t('delete'),
+                                label: t('delete')
+                            }
+                        ]}
+                    />
                 </div>
             </div>
         </div>
@@ -246,23 +270,39 @@ const StockList = ({
                 </div>
             </td>
             <td className="px-6 py-4">
-                <div className="flex gap-2">
-                    <Link to={`detail/${stock.stock_id}`} className="p-2 bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/50">
-                        <FaEye />
-                    </Link>
-                    <Link target='_blank' to={`/stock${isRaw ? '-raw' : ''}-invoice/${stock.stock_id}`} className="p-2 bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/50">
-                        <FiFileText />
-                    </Link>
-                    <Link to={`update/${stock.stock_id}`} className="p-2 bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400 rounded-lg hover:bg-green-200 dark:hover:bg-green-900/50">
-                        <FaEdit />
-                    </Link>
-                    <button
-                        onClick={() => onDeleteRequest(stock.stock_id)}
-                        className="p-2 bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400 rounded-lg hover:bg-red-200 dark:hover:bg-red-900/50"
-                    >
-                        <FaTrash />
-                    </button>
-                </div>
+                <ActionButton
+                    menuId={menuId}
+                    actions={[
+                        {
+                            type: 'view',
+                            icon: <FaEye />,
+                            onClick: () => navigate(`detail/${stock.stock_id}`),
+                            title: t('viewDetails'),
+                            label: t('viewDetails')
+                        },
+                        {
+                            type: 'view',
+                            icon: <FaFileAlt />,
+                            onClick: () => window.open(`/stock${isRaw ? '-raw' : ''}-invoice/${stock.stock_id}`, '_blank'),
+                            title: t('invoice'),
+                            label: t('invoice')
+                        },
+                        {
+                            type: 'modify',
+                            icon: <FaEdit />,
+                            onClick: () => navigate(`update/${stock.stock_id}`),
+                            title: t('edit'),
+                            label: t('edit')
+                        },
+                        {
+                            type: 'drop',
+                            icon: <FaTrash />,
+                            onClick: () => onDeleteRequest(stock.stock_id),
+                            title: t('delete'),
+                            label: t('delete')
+                        }
+                    ]}
+                />
             </td>
         </tr>
     );

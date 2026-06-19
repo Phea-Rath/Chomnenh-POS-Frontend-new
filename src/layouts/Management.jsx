@@ -12,12 +12,12 @@ import echo from '../echo';
 import { useGetAllUserQuery, useGetUserLoginQuery } from '../../app/Features/usersSlice';
 import { useGetAllSaleQuery } from '../../app/Features/salesSlice';
 import { useGetAllItemsQuery } from '../../app/Features/itemsSlice';
-import { useGetPermissionByIdQuery } from '../../app/Features/permissionSlice';
+import { useGetAllPermissionQuery, useGetPermissionByIdQuery } from '../../app/Features/permissionSlice';
 import { useGetAllOrderQuery, useGetOrderByUserQuery } from '../../app/Features/ordersSlice';
 const outletContext = createContext();
 export const useOutletsContext = () => useContext(outletContext);
 
-import logo from "../assets/logo.jpg";
+import logo from "../assets/logo-v2-1.jpg";
 import SideBarV2 from './SideBarV2';
 
 const Management = () => {
@@ -40,6 +40,11 @@ const Management = () => {
     const saved = localStorage.getItem("darkMode");
     return saved ? JSON.parse(saved) : false;
   });
+  const {data:permissions} = useGetAllPermissionQuery(token);
+  useEffect(()=>{
+    if(permissions?.data?.length > 0)localStorage.setItem('permissions', JSON.stringify(permissions?.data))
+  },[permissions]);
+  
   const { data } = useGetUserLoginQuery(token);
   const { refetch: refetchOrder } = useGetAllOrderQuery({
     token,
@@ -129,17 +134,17 @@ const Management = () => {
       {loading ? <Loading /> : ""}
       <section className={`h-[100vh] flex ${darkMode ? "bg-gray-900" : "bg-sky-50"}`}>
         {/* {data?.data?.role_id !== 1 && <Sidebar darkMode={darkMode} />} */}
-        {data?.data?.role_id !== 1 && <SideBarV2 darkMode={darkMode} />}
+        {data?.data?.role_id !== 1 && <SideBarV2 />}
         <div>
           <Header darkMode={darkMode} setDarkMode={setDarkMode} />
           <AlertMessage show={alert} message={renderAlertMessage(message)} status={alertStatus} className="z-[9999]" />
-          <main ref={topRef} className={` h-[calc(100vh)] ${data?.data?.role_id !== 1 ? (sidebar ? "lg:w-[calc(100vw-250px)]" : "lg:w-[calc(100vw-80px)]") : ""} pt-[86px] overflow-auto m-0 w-[100vw] p-4 ${darkMode ? "!bg-[#21335e] !text-white" : "!bg-slate-50 !text-black"}`}>
+          <main ref={topRef} className={` h-[calc(100vh)] ${data?.data?.role_id !== 1 ? (sidebar ? "lg:w-[calc(100vw-250px)]" : "lg:w-[calc(100vw-80px)]") : ""} pt-[44px] overflow-auto m-0 w-[100vw] ${darkMode ? "!bg-gray-700 !text-white" : "!bg-gray-100 !text-black"}`}>
             {/* <div className='absolute -z-0 top-0 right-0 w-2/5 h-full bg-gradient-to-b from-blue-50/50 to-transparent pointer-events-none' /> */}
             <Outlet />
             <div className="absolute z-[9999] bottom-5 right-5 pointer-events-none opacity-50">
-              <div className="flex items-center gap-3">
-                <div className={`w-5 h-5 rounded-2xl flex items-center justify-center shadow-inner ${darkMode ? "bg-blue-500 shadow-blue-400" : "bg-blue-600 shadow-blue-400"}`}>
-                  <span className="text-white font-black text-xl"><img src={logo} alt="" /></span>
+              {/* <div className="flex items-center gap-3">
+                <div className={`w-29 h-10 overflow-hidden rounded-2xl flex items-center justify-center shadow-inner`}>
+                  <span className="text-white font-black"><img src={logo} alt="" className=' object-cover' /></span>
                 </div>
                 <div>
                   <h1 className={`font-black text-xs leading-tight tracking-tight ${darkMode ? "text-white" : "text-slate-900"}`}>
@@ -147,7 +152,7 @@ const Management = () => {
                   </h1>
                   <p className={`text-[10px] hidden lg:block uppercase font-bold tracking-[0.1em] ${darkMode ? "text-gray-400" : "text-slate-400"}`}>Management v2.0</p>
                 </div>
-              </div>
+              </div> */}
             </div>
           </main>
           

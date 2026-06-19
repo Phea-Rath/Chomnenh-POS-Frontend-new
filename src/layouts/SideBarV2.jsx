@@ -27,7 +27,7 @@ import { useTranslation } from "react-i18next";
 import iconFallback from "../assets/stock.png";
 import { useOutletsContext } from "./Management";
 
-const SideBarV2 = ({ darkMode }) => {
+const SideBarV2 = () => {
   const { t, i18n } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
@@ -116,7 +116,7 @@ const SideBarV2 = ({ darkMode }) => {
     const handleItemClick = () => {
         if (hasChildren) {
             if (!isExpanded && !isMobile) return;
-            setOpenMenus(prev => ({ ...prev, [item.menu_id]: !prev[item.menu_id] }));
+            setOpenMenus(prev => ({[item.menu_id]: !prev[item.menu_id] }));
         } else {
             navigate(item.menu_path);
             if (isMobile) setSidebar(false);
@@ -130,8 +130,8 @@ const SideBarV2 = ({ darkMode }) => {
             ${active 
               ? "bg-blue-600 text-white shadow-blue-500/20" 
               : parentActive && hasChildren
-                ? "bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400"
-                : "text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800/50 hover:text-gray-900 dark:hover:text-white"
+                ? "bg-blue-900/20 text-blue-400"
+                : "text-gray-400 hover:bg-gray-800/50 hover:text-white"
             }
             ${level > 0 && isExpanded ? "ml-6" : ""}`}
           onClick={handleItemClick}
@@ -139,23 +139,23 @@ const SideBarV2 = ({ darkMode }) => {
         >
           <div className="flex items-center gap-3 overflow-hidden">
             <div className={`flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-lg transition-colors duration-200 
-                ${active ? "bg-white/20" : "bg-gray-100 dark:bg-gray-800 group-hover:bg-gray-200 dark:group-hover:bg-gray-700"}`}>
+                `}>
                 {item.menu_icon && !hasImageError ? (
                   <img
                     src={item.menu_icon}
                     onError={() => setImageErrors(prev => ({ ...prev, [item.menu_id]: true }))}
-                    className={`w-5 h-5 object-contain ${active ? "brightness-0 invert" : "dark:invert opacity-80"}`}
+                    className={`w-5 h-5 object-contain ${active ? "brightness-0 invert" : "invert opacity-80"}`}
                     alt=""
                   />
                 ) : (
                   <div className={active ? "text-white" : "text-gray-400"}>
                     {getFallbackIcon(item.menu_name)}
                   </div>
-                )}
+                )}  
             </div>
             {isExpanded && (
               <span className={`truncate tracking-tight transition-all duration-200
-                ${level === 0 ? "text-[13px] font-black uppercase tracking-wider" : "text-[12px] font-semibold opacity-80"}
+                ${level === 0 ? "text-sm capitalize tracking-wider" : "text-[12px] "}
                 ${active ? "text-white opacity-100" : ""}`}>
                 {displayName}
               </span>
@@ -165,10 +165,10 @@ const SideBarV2 = ({ darkMode }) => {
             <div
               className={`${active ? "text-white" : "text-gray-400"}`}
             >
-              <HiChevronDown className="w-4 h-4" />
+              <HiChevronDown className="w-4 h-4" />              
             </div>
           )}
-        </div>
+        </div>     
 
         {hasChildren && isExpanded && (
           <AnimatePresence>
@@ -211,28 +211,28 @@ const SideBarV2 = ({ darkMode }) => {
         onMouseLeave={() => !isMobile && setIsHovered(false)}
         className={`fixed inset-y-0 left-0 z-50 flex flex-col transition-all duration-300 transform
           ${isMobile ? (sidebar ? "translate-x-0 w-[280px]" : "-translate-x-full w-[280px]") : (isExpanded ? "w-[250px]" : "w-[80px]")} 
-          ${darkMode ? "bg-[#0f172a] border-gray-800" : "bg-white border-gray-100"} border-r shadow-xs overflow-hidden`}
+          dark:bg-[#0f172a] bg-[#102A43] border-gray-800 border-r shadow-xs overflow-hidden`}
       >
         
         {/* Header Profile */}
-        <div className={`p-4 mb-2 ${darkMode ? "border-gray-800" : "border-gray-50"} border-b transition-all duration-300 
+        <div className={`p-4 mb-2 border-gray-700 border-b transition-all duration-300 
             ${isExpanded ? "px-6" : "px-0 flex justify-center"}`}>
           <Link to={`/profile/${proId}`} className="flex items-center gap-4 group">
             <Badge dot color="#10B981" offset={isExpanded ? [-4, 32] : [-2, 28]} size="small">
               <Avatar
                 size={isExpanded ? 48 : 40}
                 src={user?.image}
-                className={`border-2 transition-all duration-300 group-hover:scale-105 ${darkMode ? "border-blue-900 shadow-blue-900/20" : "border-blue-50 shadow-blue-100"}`}
+                className={`border-2 transition-all duration-300 group-hover:scale-105 border-blue-900 shadow-blue-900/20}`}
               >
                 {user?.profile_name?.charAt(0) || "U"}
               </Avatar>
             </Badge>
             {isExpanded && (
               <div className="flex flex-col overflow-hidden animate-in fade-in duration-500">
-                <h2 className={`text-sm font-bold truncate ${darkMode ? "text-white" : "text-gray-900"}`}>
+                <h2 className={`text-sm font-bold truncate text-white`}>
                   {user?.profile_name || "Admin"}
                 </h2>
-                <span className={`text-[9px] font-black uppercase tracking-widest ${darkMode ? "text-blue-400" : "text-blue-600"}`}>
+                <span className={`text-[9px] font-black uppercase tracking-widest text-blue-400`}>
                   {user?.role_name || t("administrator")}
                 </span>
               </div>
@@ -244,7 +244,7 @@ const SideBarV2 = ({ darkMode }) => {
         <div className="flex-1 overflow-y-auto py-2 px-1 custom-scrollbar scrollbar-hide overflow-x-hidden">
           {isExpanded && (
             <div className="px-6 py-2 animate-in fade-in duration-500">
-                <p className={`text-[10px] font-black uppercase tracking-[0.2em] ${darkMode ? "text-gray-500" : "text-gray-400"}`}>
+                <p className={`text-[10px] font-black uppercase tracking-[0.2em] text-gray-500`}>
                     {t("navigation")}
                 </p>
             </div>
@@ -262,16 +262,16 @@ const SideBarV2 = ({ darkMode }) => {
         </div>
 
         {/* Footer Settings/Logout */}
-        <div className={`p-4 mt-auto ${darkMode ? "border-gray-800" : "border-gray-50"} border-t space-y-2`}>
+        <div className={`p-4 mt-auto border-gray-700 border-t space-y-2`}>
           <button 
               onClick={() => {
                   localStorage.clear();
                   window.location.href = "/";
               }}
-              className={`w-full flex items-center ${isExpanded ? "justify-start gap-3 px-4" : "justify-center px-0"} py-3 rounded-xl text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all duration-200 font-bold text-xs uppercase tracking-wider`}
+              className={`w-full flex items-center ${isExpanded ? "justify-start gap-3 px-4" : "justify-center px-0"} py-3 rounded-xl text-red-500 hover:bg-red-900/20 transition-all duration-200 font-bold text-xs uppercase tracking-wider`}
               title={!isExpanded ? t("logout") : ""}
           >
-            <div className="w-8 h-8 flex-shrink-0 flex items-center justify-center rounded-lg bg-red-100 dark:bg-red-900/30">
+            <div className="w-8 h-8 flex-shrink-0 flex items-center justify-center rounded-lg bg-red-900/30">
               <HiOutlineLogout className="w-5 h-5" />
             </div>
             {isExpanded && <span className="animate-in fade-in duration-500">{t("logout")}</span>}

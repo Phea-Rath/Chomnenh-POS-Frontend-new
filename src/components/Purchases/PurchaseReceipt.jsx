@@ -130,7 +130,7 @@ const PurchaseReceipt = () => {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50">
+      <div className="flex min-h-screen items-center justify-center">
         <div className="text-center">
           <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-b-2 border-blue-600" />
           <p className="text-gray-600">Loading receipt...</p>
@@ -167,15 +167,13 @@ const PurchaseReceipt = () => {
       label: `Tax${purchase.tax_rate ? ` (${purchase.tax_rate.toFixed(0)}%)` : ""}`,
       value: formatUSD(purchase.tax_amount),
     },
-    { label: "Shipping", value: formatUSD(purchase.shipping_fee) },
-    { label: "Discounts", value: formatUSD(purchase.discount) },
+    // { label: "Shipping", value: formatUSD(purchase.shipping_fee) },
+    { label: "Discounts", value: formatUSD(purchase.total_discount) },
     { label: "Grand total", value: formatUSD(purchase.total_amount), strong: true },
-    { label: "Paid", value: formatUSD(purchase.total_paid) },
-    { label: "Balance", value: formatUSD(purchase.balance), strong: true },
   ];
 
   return (
-    <div className="print:bg-white print:py-0">
+    <div className="print:bg-white py-4 print:py-0 bg-gray-100">
       {/* <style>
         {`
           @media print {
@@ -188,18 +186,19 @@ const PurchaseReceipt = () => {
       </style> */}
 
       <div className="mx-auto max-w-5xl px-4">
-        <button
-          onClick={() => navigate(-1)}
-          className="mb-4 flex items-center text-blue-600 hover:text-blue-800 print:hidden"
-        >
-          <IoArrowBackCircle className="mr-2" size={24} />
-          Back
-        </button>
+        
 
         <div className="mb-6 flex flex-wrap justify-end gap-3 print:hidden">
           <Button
+              onClick={() => navigate(`${receiptType === "receipt"? '/inventories/purchases':'/inventories/purchase-raw'}`)}
+              variant="cancel"
+            >
+              <IoArrowBackCircle className="mr-2" size={24} />
+              Back
+          </Button>
+          <Button
             onClick={handlePrint}
-            className="flex items-center rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
+            variant="success"
           >
             <FaPrint className="mr-2" /> Print
           </Button>
@@ -230,7 +229,7 @@ const PurchaseReceipt = () => {
         >
           <div
             ref={componentRef}
-            className="purchase-order-page mx-auto min-h-[1122px] w-full max-w-[920px] border border-gray-300 bg-white p-8 text-[13px] leading-relaxed text-gray-900 shadow-[0_18px_45px_rgba(15,23,42,0.14)] sm:p-10"
+            className="purchase-order-page mx-auto min-h-[1122px] w-full max-w-[920px] border border-gray-300 bg-white p-8 text-[13px] leading-relaxed text-gray-900 sm:p-10"
           >
             <header className="grid gap-8 grid-cols-2 md:items-start">
               <div>
@@ -247,13 +246,13 @@ const PurchaseReceipt = () => {
                     </div>
                   )}
                   <div>
-                    <h2 className="text-[22px] font-bold leading-tight text-gray-800">
+                    <h2 className="text-xl font-bold leading-tight text-gray-800">
                       {businessInfo?.name || "Business Name"}
                     </h2>
-                    <p className="text-sm font-medium text-blue-600">Purchase Department</p>
+                    <p className="text-xs font-medium text-blue-600">Purchase Department</p>
                   </div>
                 </div>
-                <div className="mt-4 max-w-[360px] text-[14px] text-gray-800">
+                <div className=" max-w-[360px] text-xs text-gray-800">
                   <p>{businessInfo?.address || "Address not available"}</p>
                   <p>Tel: {businessInfo?.tel || "N/A"}</p>
                   {businessInfo?.email ? <p>Email: {businessInfo.email}</p> : null}
@@ -261,10 +260,10 @@ const PurchaseReceipt = () => {
               </div>
 
               <div className="text-right">
-                <h1 className="text-[34px] font-light uppercase tracking-[0.02em] text-gray-500">
+                <h1 className="text-xl font-light uppercase tracking-[0.02em] text-gray-500">
                   Purchase Order
                 </h1>
-                <div className="inline-grid grid-cols-[88px,1fr] gap-x-4 gap-y-1 text-left text-[14px]">
+                <div className="inline-grid grid-cols-[88px,1fr] text-xs gap-x-4 gap-y-1 text-left">
                   <pre>
                     <span className="font-bold mr-2">PO No:</span>
                     <span className="text-right">{purchase.purchase_no || "N/A"}</span>
@@ -274,8 +273,8 @@ const PurchaseReceipt = () => {
                     <span className="text-right">{formatDate(purchase.purchase_date)}</span>
                   </pre>
                   <pre>
-                    <span className="font-bold mr-2">Due Term:</span>
-                    <span className="text-right">{purchase.due_term ? `${purchase.due_term} days` : "N/A"}</span>
+                    <span className="font-bold mr-2">Quote No:</span>
+                    <span className="text-right">{purchase.quote_no ? `${purchase.quote_no}` : "N/A"}</span>
                   </pre>
                 </div>
               </div>
@@ -283,8 +282,8 @@ const PurchaseReceipt = () => {
 
             <section className="mt-2 grid gap-8 grid-cols-2">
               <div className="border border-gray-300">
-                <div className="bg-[#2f73c8] px-5 py-2 font-bold text-white">Vendor</div>
-                <div className="space-y-1 px-5 py-4 text-[14px]">
+                <div className="bg-[#2f73c8] px-2 py-1 font-bold text-white">Vendor</div>
+                <div className="space-y-1 px-2 py-1 text-xs">
                   <p>
                     <span className="font-bold">Supplier Name:</span> {supplier.supplier_name || "N/A"}
                   </p>
@@ -305,8 +304,8 @@ const PurchaseReceipt = () => {
               </div>
 
               <div className="border border-gray-300">
-                <div className="bg-[#2f73c8] px-5 py-2 font-bold text-white">Ship To:</div>
-                <div className="space-y-1 px-5 py-4 text-[14px]">
+                <div className="bg-[#2f73c8] px-2 py-1 font-bold text-white">Ship To:</div>
+                <div className="space-y-1 px-2 py-1 text-xs">
                   <p className="font-bold">{businessInfo?.name || "Business Name"}</p>
                   <p>{businessInfo?.address || "Address not available"}</p>
                   <p>
@@ -318,107 +317,71 @@ const PurchaseReceipt = () => {
               </div>
             </section>
 
-            <section className="mt-2 overflow-hidden border border-gray-300">
-              <div className="grid divide-gray-300 grid-cols-4 divide-x divide-y-0">
+            <section className="mt-1 overflow-hidden border text-xs border-gray-300">
+              <div className="grid divide-gray-300 grid-cols-3 divide-x divide-y-0">
                 <div>
-                  <div className="bg-[#2f73c8] px-5 py-2 font-bold text-white">Requisitioner</div>
-                  <div className="px-5 py-3">{purchase.created_by_name || "N/A"}</div>
+                  <div className="bg-[#2f73c8] px-2 py-1 font-bold text-white">Requisitioner</div>
+                  <div className="px-2 py-1 capitalize">{purchase.created_by_name || "N/A"}</div>
                 </div>
                 <div>
-                  <div className="bg-[#2f73c8] px-5 py-2 font-bold text-white">Ship via</div>
-                  <div className="px-5 py-3 capitalize">{shipping.vai || shipping.carrier || "N/A"}</div>
+                  <div className="bg-[#2f73c8] px-2 py-1 font-bold text-white">Ship via</div>
+                  <div className="px-2 py-1 capitalize">{shipping.vai || shipping.carrier || "N/A"}</div>
                 </div>
                 <div>
-                  <div className="bg-[#2f73c8] px-5 py-2 font-bold text-white">Carrier</div>
-                  <div className="px-5 py-3">{shipping.carrier || "N/A"}</div>
-                </div>
-                <div>
-                  <div className="bg-[#2f73c8] px-5 py-2 font-bold text-white">Shipping terms</div>
-                  <div className="px-5 py-3">
-                    {shipping.tracking_number ? `Tracking ${shipping.tracking_number}` : "Free shipping to destination"}
-                  </div>
+                  <div className="bg-[#2f73c8] px-2 py-1 font-bold text-white">Carrier</div>
+                  <div className="px-2 py-1">{shipping.carrier || "N/A"}</div>
                 </div>
               </div>
             </section>
-            <section className="mt-2 overflow-hidden">
-                {purchase.payments?.length ? (
-                  <div>
-                    <div className="bg-[#2f73c8] px-4 py-2 font-bold text-white">Payment History</div>
-                    <table className="w-full">
-                      <thead>
-                        <tr className="bg-gray-100">
-                          <th className="border border-gray-200 px-3 py-2 text-left">Method</th>
-                          <th className="border border-gray-200 px-3 py-2 text-left">Transaction</th>
-                          <th className="border border-gray-200 px-3 py-2 text-right">Amount</th>
-                          <th className="border border-gray-200 px-3 py-2 text-left">Paid At</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {purchase.payments.map((payment, index) => (
-                          <tr key={`${payment.transection_id || "payment"}-${index}`}>
-                            <td className="border border-gray-200 px-3 py-2 capitalize">
-                              {payment.payment_method || "N/A"}
-                            </td>
-                            <td className="border border-gray-200 px-3 py-2">
-                              {payment.transection_id || payment.remark || "N/A"}
-                            </td>
-                            <td className="border border-gray-200 px-3 py-2 text-right">
-                              {formatUSD(payment.amount)}
-                            </td>
-                            <td className="border border-gray-200 px-3 py-2">
-                              {formatDateTime(payment.paid_at || payment.created_at)}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                ) : null}
-            </section>
+            
 
-            <section className="mt-2 overflow-x-auto">
-              <table className="purchase-order-table w-full border-collapse text-[13px]">
+            <section className="mt-1 overflow-x-auto">
+              <table className="purchase-order-table w-full border-collapse text-xs">
                 <thead>
                   <tr>
-                    <th className="border border-gray-300 bg-[#2f73c8] px-2 py-2 text-center font-bold text-white">
+                    <th className="border border-gray-300 bg-[#2f73c8] px-2 py-1 text-center font-bold text-white">
                       S.No
                     </th>
-                    <th className="border border-gray-300 bg-[#2f73c8] px-2 py-2 text-center font-bold text-white">
+                    <th className="border border-gray-300 bg-[#2f73c8] px-2 py-1 text-center font-bold text-white">
                       Product Code
                     </th>
                     <th className="border border-gray-300 bg-[#2f73c8] px-3 py-2 text-left font-bold text-white">
                       Product Name
                     </th>
-                    <th className="border border-gray-300 bg-[#2f73c8] px-2 py-2 text-center font-bold text-white">
+                    <th className="border border-gray-300 bg-[#2f73c8] px-2 py-1 text-center font-bold text-white">
                       Quantity
                     </th>
-                    <th className="border border-gray-300 bg-[#2f73c8] px-2 py-2 text-center font-bold text-white">
-                      Units
+                    <th className="border border-gray-300 bg-[#2f73c8] px-3 py-2 text-left font-bold text-white">
+                      Specification
                     </th>
-                    <th className="border border-gray-300 bg-[#2f73c8] px-2 py-2 text-right font-bold text-white">
-                      Rate
+                    <th className="border border-gray-300 bg-[#2f73c8] px-2 py-1 text-center font-bold text-white">
+                      Price
                     </th>
-                    <th className="border border-gray-300 bg-[#2f73c8] px-2 py-2 text-right font-bold text-white">
+                    <th className="border border-gray-300 bg-[#2f73c8] px-2 py-1 text-right font-bold text-white">
+                      Discount
+                    </th>
+                    <th className="border border-gray-300 bg-[#2f73c8] px-2 py-1 text-right font-bold text-white">
                       Tax
                     </th>
-                    <th className="border border-gray-300 bg-[#2f73c8] px-2 py-2 text-right font-bold text-white">
+                    <th className="border border-gray-300 bg-[#2f73c8] px-2 py-1 text-right font-bold text-white">
                       Amount
                     </th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="!relative">
                   {purchase.details.map((item, index) => (
-                    <tr key={item.item_id || item.item_code || index}>
+                    <tr key={item.item_id || item.material_id || index}>
                       <td className="border border-gray-300 px-2 py-2 text-center">{index + 1}</td>
                       <td className="border border-gray-300 px-2 py-2 text-center">
-                        {item.item_id || item.item_code || "-"}
+                        {item.material_code || item.item_code || "-"}
                       </td>
                       <td className="border border-gray-300 px-3 py-2">
                         {isRawReceipt ? item.material_name || item.item_name : item.item_name}
                       </td>
                       <td className="border border-gray-300 px-2 py-2 text-center">{formatQty(item.quantity)}</td>
                       <td className="border border-gray-300 px-2 py-2 text-center">{item.unit || "pcs"}</td>
-                      <td className="border border-gray-300 px-2 py-2 text-right">{formatUSD(item.price)}</td>
+                      <td className="border border-gray-300 px-2 py-2 text-center">${formatQty(item.item_cost)}</td>
+                      <td className="border border-gray-300 px-2 py-2 text-right">{item.discount}%</td>
                       <td className="border border-gray-300 px-2 py-2 text-right">
                         {purchase.tax_rate ? `${purchase.tax_rate.toFixed(0)}%` : "-"}
                       </td>
@@ -426,13 +389,9 @@ const PurchaseReceipt = () => {
                     </tr>
                   ))}
                   {summaryRows.map((row) => (<tr>
-                      <th colSpan={7} className="px-3 py-2 text-right">{row.label}</th>
+                      <th colSpan={8} className="px-3 py-2 text-right">{row.label}</th>
                       <td className="border border-gray-300 px-3 py-2 text-right">{row.value}</td>
                     </tr>))}
-                    <tr>
-                      <th colSpan={7} className="px-3 py-2 text-right">KHR Total</th>
-                      <td className="border border-gray-300 px-3 py-2 text-right">{formatKHR(documentTotalKhr)}</td>
-                    </tr>
                   {purchase.details.length === 0 ? (
                     <tr>
                       <td className="border border-gray-300 px-3 py-8 text-center text-gray-500" colSpan="8">
@@ -440,29 +399,33 @@ const PurchaseReceipt = () => {
                       </td>
                     </tr>
                   ) : null}
+                 <div className="bg-blue-50 bottom-0 grow px-7 absolute  py-4 text-[11px] leading-snug text-gray-800">
+                  <p className="font-bold">Terms and conditions:</p>
+                  <ol className="list-decimal pl-4">
+                    <li>We reserve the right to cancel the purchase order anytime before product shipment.</li>
+                    <li>Invoice raised to us should contain purchase order details with date mentioned.</li>
+                    <li>Adherence to agreed product specifications is required during delivery.</li>
+                    <li>Packing and shipping charges are to be borne by the supplier unless stated.</li>
+                    <li>Delivery should be done within the agreed purchase order due term.</li>
+                  </ol>
+                </div>
                 </tbody>
               </table>
             </section>
+           
 
-            <footer className="mt-8 grid gap-0 md:grid-cols-[1fr,260px]">
-              <div className="bg-blue-50 px-7 py-4 text-[11px] leading-snug text-gray-800">
-                <p className="font-bold">Terms and conditions:</p>
-                <ol className="list-decimal pl-4">
-                  <li>We reserve the right to cancel the purchase order anytime before product shipment.</li>
-                  <li>Invoice raised to us should contain purchase order details with date mentioned.</li>
-                  <li>Adherence to agreed product specifications is required during delivery.</li>
-                  <li>Packing and shipping charges are to be borne by the supplier unless stated.</li>
-                  <li>Delivery should be done within the agreed purchase order due term.</li>
-                </ol>
-              </div>
-              <div>
+            <footer className="flex flex-col gap-20">
                 <div className="bg-[#2f73c8] px-4 py-2 text-center font-bold text-white">
                   For {businessInfo?.name || "Business Name"}
                 </div>
-                <div className="flex h-[102px] items-end justify-center border-b border-gray-300 px-4 pb-3 text-center text-xs italic text-gray-500">
-                  Authorized signatory
+                <div className="flex justify-between gap-5">
+                  <div className="flex items-end justify-center border-t border-gray-300 px-4 pb-3 text-center text-xs italic text-gray-500">
+                    Prepared by
+                  </div>
+                  <div className="flex items-end justify-center border-t border-gray-300 px-4 pb-3 text-center text-xs italic text-gray-500">
+                    Approved by
+                  </div>
                 </div>
-              </div>
             </footer>
 
             <div className="mt-4 text-[12px] text-gray-800">

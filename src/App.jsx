@@ -31,7 +31,6 @@ import UserProfile from "./components/logins/UserProfile";
 import UserDetails from "./components/logins/UserDetails";
 import ItemDetails from "./components/items/ItemDetails";
 import CreateItems from "./views/items/CreateItems";
-import OrderDetail from "./components/orders/OrderDetail";
 import OrderReceipt from "./components/orders/OrderReceipt";
 import Notification from "./components/notifications/page";
 import SaleOnline from "./components/orders/SaleOnline";
@@ -120,6 +119,7 @@ import StockInvoice from "./components/stocks/StockInvoice";
 import IncomeStatement from "./components/Reports/IncomeStatement";
 import TopSeller from "./components/top/TopSeller";
 import TopItemsAndRawMaterials from "./components/top/TopItemsAndRawMaterials";
+import OrderDetail from "./components/orders/OrderDetail";
 
 
 function ProtectedRoute({ children }) {
@@ -233,16 +233,14 @@ const router = createBrowserRouter([
       {
         path: "/home/expenses",
         element: <Expanses />,
-        children: [
-          {
-            path: "create",
-            element: <CreateExpanses />,
-          },
-          {
-            path: "update",
-            element: <CreateExpanses />,
-          },
-        ],
+      },
+      {
+        path: "/home/expenses/create",
+        element: <CreateExpanses />,
+      },
+      {
+        path: "/home/expenses/update/:id",
+        element: <CreateExpanses />,
       },
       {
         path: "/setting/expense-type",
@@ -341,7 +339,7 @@ const router = createBrowserRouter([
         element: <Analysis />,
       },
       {
-        path: "/home/e-menu",
+        path: "/e-menu",
         element: <EMenu />,
       },
       {
@@ -596,6 +594,10 @@ const router = createBrowserRouter([
         element: <OrderInvoiceForm />
       },
       {
+        path: "/wholesale/detail/:id",
+        element: <OrderDetail />
+      },
+      {
         path: 'aba',
         element: <ABAPaymentComponent />
       },
@@ -686,73 +688,12 @@ const router = createBrowserRouter([
         path: "/receipt/:id",
         element: <OrderReceipt />,
       },
+      {
+        path: "/retail",
+        element: <Sales />,
+      },
 ]
 );
-
-
-
-/*
-function _LegacyApp() {
-  const token = localStorage.getItem('token');
-  const userId = localStorage.getItem('userId');
-  const guestId = localStorage.getItem('guestId');
-  const profileId = localStorage.getItem('profileId');
-  const { data: dataWaste, isLoading, refetch } = useGetAllWasteQuery(token);
-  const { data: dataOrderOnline, isLoading: isLoadingOnline, refetch: refetchOnline } = useGetAllOrderOnlineQuery(token);
-  const { refetch: refetchOrder } = useGetAllOrderQuery(token);
-  const { refetch: refetchSale } = useGetAllSaleQuery({
-    token,
-    limit: 10,
-    page: 1,
-    search: ''
-  });
-  const { refetch: refetchItem } = useGetAllItemsQuery({
-    token,
-    limit: 10,
-    page: 1,
-    search: ''
-  });
-  const { refetch: refetchGuestOrder } = useGetOrderByUserQuery({ id: guestId, token });
-  // const { refetch: refetchItemInStock } = useGetAllItemInStockQuery(token);
-  // const { refetch: userRefetch } = useGetAllUserQuery(token);
-
-  useEffect(() => {
-    Echo.private(`my-private-channel.user.${profileId}`).listen("PrivateChannelEvent", (data) => {
-      // const audio = new Audio("../../public/sounds/auto.wav");
-      const audio = new Audio("/sounds/auto.wav");
-      audio.currentTime = 0; // restart from beginning
-      audio.play().catch((err) => console.log("🔇 Sound blocked:", err));
-      console.log("📡 Event received:", data); // 👈 Debug first
-      toast.info(`💬 New orders by ${data.data}`);
-      refetch();
-      refetchOnline();
-      refetchSale();
-      refetchItem();
-      // refetchItemInStock();
-    });
-    Echo.private(`check-online.user.${profileId}`).listen("OnlineEvent", (data) => {
-      // refetch();
-      toast.info(`💬 Order tracking updated ${data.data}`);
-      refetchSale();
-      refetchGuestOrder();
-      refetchOnline();
-      refetchOrder();
-    });
-    Echo.channel("my-public-channel").listen("PublicChannelEvent", (data) => {
-      const audio = new Audio("/sounds/auto.wav");
-      audio.currentTime = 0; // restart from beginning
-      audio.play().catch((err) => console.log("🔇 Sound blocked:", err));
-      console.log("📡 Event received:", data); // 👈 Debug first
-      toast.info(`💬 New orders by ${data.message}`);
-    });
-
-  }, []);
-
-  return (
-    <RouterProvider router={router}></RouterProvider>
-  );
-}
-*/
 
 function App() {
   const [authState, setAuthState] = useState(() => ({

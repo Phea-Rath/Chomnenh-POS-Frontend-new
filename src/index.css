@@ -2,6 +2,13 @@
 @plugin "daisyui";
 @custom-variant dark (&:where(.dark, .dark *));
 
+@import url('https://fonts.googleapis.com/css2?family=Kantumruy+Pro:ital,wght@0,100..700;1,100..700&display=swap');
+
+@font-face {
+  font-family: "kantumruy Pro";
+  src: url('https://fonts.googleapis.com/css2?family=Kantumruy+Pro:ital,wght@0,100..700;1,100..700&display=swap');
+}
+
 @layer {
 
   th,
@@ -10,11 +17,14 @@
   }
 
   .date-picker {
-    @apply !p-2 min-w-35 !text-sm !rounded-none !bg-transparent !border-gray-400 dark:!text-white dark:[&_.ant-picker-input>input::placeholder]:!text-gray-400 dark:[&_.ant-picker-suffix]:!text-white;
+    @apply !p-2 min-w-35 !text-sm !rounded-none !bg-white dark:!bg-gray-600/70 !box-border dark:!border-0 !border-gray-200 dark:!text-white dark:[&_.ant-picker-input>input::placeholder]:!text-gray-400 dark:[&_.ant-picker-suffix]:!text-white;
   }
 
   .textarea-input {
-    @apply w-full px-3 py-2 border bg-transparent placeholder:text-gray-400 border-gray-300 dark:border-gray-400 focus:outline-none resize-none dark:text-white text-sm;
+    @apply w-full px-3 !resize py-2 border !bg-white dark:!bg-gray-600/70 placeholder:text-gray-400 border-gray-300 dark:border-gray-400 focus:outline-none resize-none dark:text-white text-sm;
+  }
+  .text-input {
+    @apply w-full px-3 py-2 border !bg-white dark:!bg-gray-600/70 placeholder:text-gray-400 border-gray-300 dark:border-gray-400 focus:outline-none resize-none dark:text-white text-sm;
   }
 
   /* .bg-primary-light {
@@ -24,6 +34,7 @@
 
     
 @theme {
+  /* --font-Kantumruy: "Kantumruy Pro"; */
   --bg-main-light: rgb(13, 26, 99);
   --bg-side-light: #1b2b50;
   --bg-dark: hsl(0 0% 90%);
@@ -42,10 +53,39 @@
   --info: hsl(217 22% 41%);
   --shadow: 0px 4px 4px #00000015, 0px 12px 12px #00000015;
   --bg-gradient: linear-gradient(0deg, var(--bg) 100%, var(--bg-light));
+
+  --keyframes-pop-in: {
+    0% { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
+    100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  };
+  --keyframes-draw: {
+    100% { stroke-dashoffset: 0; }
+  };
+
+  --animate-pop-in: pop-in 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  --animate-draw-checkmark: draw 0.3s ease-out 0.15s forwards;
+  --animate-draw-x: draw 0.18s ease-out 0.15s forwards;
+  --animate-draw-x-delayed: draw 0.18s ease-out 0.28s forwards;
 }
 
 /* Light mode CSS variables */
 :root {
+
+  /* Chomnenh Brand Colors */
+  --color-brand-navy: #102a43;
+  --color-brand-gold: #d9a727;
+  --color-brand-gold-hover: #c49314;
+
+  /* App Layout Colors (ការពារកុំឱ្យចាំងភ្នែក) */
+  --color-app-bg: #f0f4f8;     /* ផ្ទៃ Background ធំ */
+  --color-card-bg: #ffffff;    /* ផ្ទៃកាត ឬ Sidebar */
+
+  /* Typography (ពណ៌អក្សរ) */
+  --color-text-main: #102a43;  /* អក្សរចំណងជើងធំៗ */
+  --color-text-body: #486581;  /* អក្សររៀបរាប់ទូទៅ */
+  --color-text-muted: #829ab1; /* អក្សរព្រិលៗ ឬ Icon */
+
+  --font-Kantumruy: "Kantumruy Pro", sans-serif;
   --bg-dark: hsl(0 0% 90%);
   --bg: hsl(300 0% 95%);
   --bg-light: hsl(300 50% 100%);
@@ -84,7 +124,10 @@
   --info: hsl(217 22% 60%);
   --shadow: 0px 4px 4px #00000040, 0px 12px 12px #00000040;
   --bg-gradient: linear-gradient(0deg, var(--bg) 100%, var(--bg-light));
-  --bg-primary: hsl(221, 44%, 32%);
+  --bg-primary: hsl(223, 50%, 11%);
+
+
+  
 }
 
 @layer utilities {
@@ -151,6 +194,28 @@
     }
 
   } */
+
+
+h1, h2, h3 {
+  color: var(--color-text-main);
+}
+
+.sidebar {
+  background-color: var(--color-card-bg);
+}
+
+.btn-primary {
+  background-color: var(--color-brand-navy);
+  color: #ffffff;
+}
+
+.btn-pos {
+  background-color: var(--color-brand-gold);
+  color: #102a43; /* អក្សរពណ៌ Navy លើប៊ូតុងមាស មើលទៅប្រណីត */
+}
+.btn-pos:hover {
+  background-color: var(--color-brand-gold-hover);
+}
 
   /* width */
 .main-scrollbar::-webkit-scrollbar {

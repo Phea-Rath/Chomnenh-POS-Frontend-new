@@ -1,28 +1,31 @@
 import React, { useEffect, useMemo, useState } from "react";
 import {
+  FaList,
+  FaTh,
+  FaEye,
+  FaEdit,
+  FaTrash,
+  FaPrint,
+  FaPlus,
+  FaCheck,
+  FaBan,
+  FaCreditCard,
+  FaSearch,
+  FaCalendarAlt,
+  FaUser,
+  FaFileAlt,
+  FaDollarSign,
+  FaShoppingBag,
+  FaClipboardList
+} from 'react-icons/fa';
+import {
   LuBadge,
-  LuBan,
-  LuCalendar,
-  LuCheck,
   LuChevronLeft,
   LuChevronRight,
   LuChevronsLeft,
   LuChevronsRight,
-  LuClipboardList,
-  LuCreditCard,
-  LuDollarSign,
-  LuEye,
-  LuFileText,
-  LuList,
-  LuPackage,
-  LuPencil,
-  LuPlus,
   LuRefreshCw,
   LuRotateCcw,
-  LuSearch,
-  LuShoppingBag,
-  LuTrash2,
-  LuUser,
 } from "react-icons/lu";
 import { motion } from "framer-motion";
 import { Link, useNavigate } from "react-router";
@@ -47,12 +50,14 @@ import { useGetAllUserQuery } from "../../../app/Features/usersSlice";
 import { useGetAllCustomerQuery } from "../../../app/Features/customersSlice";
 import RefreshButton from "../../utils/RefreshButton";
 import Button from "../../utils/Button";
+import ActionButton from "../../utils/ActionButton";
 import { IoWarning } from "react-icons/io5";
 import timeAgo from "../../services/timeAgo";
 import PaymentModel from "../../utils/PaymentModal";
+import { MdApproval } from "react-icons/md";
 
 dayjs.extend(relativeTime);
-
+const MENU_ID = 54;
 const DEFAULT_FILTERS = {
   created_by: "",
   customer_id: "",
@@ -95,6 +100,7 @@ const OrderInvoiceList = () => {
   const [alertBoxCancel, setAlertBoxCancel] = useState(false);
   const [alertBoxUncancel, setAlertBoxUncancel] = useState(false);
   const [alertBoxConfirm, setAlertBoxConfirm] = useState(false);
+  const [alertBoxApproved, setAlertBoxApproved] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentAmount, setPaymentAmount] = useState(0);
   const [balanceAmount, setBalanceAmount] = useState({ pay: 0, balance: 0 });
@@ -165,11 +171,16 @@ const OrderInvoiceList = () => {
     setAlertBoxCancel(false);
     setAlertBoxUncancel(false);
     setAlertBoxConfirm(false);
+    setAlertBoxApproved(false);
   };
 
   const handleOrderConfirm = (orderId) => {
     setId(orderId);
     setAlertBoxConfirm(true);
+  };
+  const handleOrderApproved = (orderId) => {
+    setId(orderId);
+    setAlertBoxApproved(true);
   };
 
   const handleConfirmDelete = async () => {
@@ -259,6 +270,24 @@ const OrderInvoiceList = () => {
       }
     } catch (error) {
       toast.error(error.message || t("orderConfirmFailed"));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleConfirmApprovedOrder = async () => {
+    try {
+      setAlertBoxApproved(false);
+      setLoading(true);
+      const response = await api.put(`order_approved/${id}`, {}, {
+                    headers: { Authorization: `Bearer ${token}` }
+      });
+      if (response?.data?.status === 200) {
+        refetch();
+        toast.success(response.data.message || t("orderApprovedSuccessfully"));
+      }
+    } catch (error) {
+      toast.error(error.message || t("orderApproveFailed"));
     } finally {
       setLoading(false);
     }
@@ -367,72 +396,85 @@ const OrderInvoiceList = () => {
     );
   };
 
-  const ActionButtons = ({ order }) => (
-    <div className="flex justify-center gap-2">
-
-      {order.status == 1 && (
-        <button
-        onClick={() => handleOrderConfirm(order.order_id)}
-          className="rounded bg-green-100 p-2 text-green-600 transition-colors hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400"
-          title={t("confirm")}
-        >
-          <LuCheck size={14} />
-        </button>
-      )}
-
-      {!order.is_cancelled && Number(order.balance) > 0 && (
-        <button
-        onClick={() => {
+  const ActionButtons = ({ order }) => {
+    const actions = [
+      // View Invoice (Primary)
+      {
+        type: 'view',
+        icon: <FaFileAlt size={14} />,
+        onClick: () => window.open(`/invoice/${order.order_id}`, '_blank'),
+        title: t("invoice"),
+        label: t("invoice")
+      },
+      {
+        type: 'view',
+        icon: <FaEye size={14} />,
+        onClick: () => navigate(`detail/${order.order_id}` ),
+        title: t("view"),
+        label: t("view")
+      },
+      // Edit
+      ...(order.status != 7 || order.status != 6 ? [{
+        type: 'modify',
+        icon: <FaEdit size={14} />,
+        onClick: () => navigate(`update/${order.order_id}`),
+        title: t("edit"),
+        label: t("edit")
+      }] : []),
+      // Pay
+      ...(order.status != 7 && Number(order.balance) > 0 ? [{
+        type: 'execute',
+        icon: <FaCreditCard size={14} />,
+        onClick: () => {
           setPaymentAmount(Number(order.balance) || 0);
           setBalanceAmount({ pay: Number(order.payment) || 0, balance: Number(order.balance) || 0 });
           setId(order.order_id);
           setShowPaymentModal(true);
-          }}
-          className="rounded bg-purple-100 p-2 text-purple-600 transition-colors hover:bg-purple-200 dark:bg-purple-900/30 dark:text-purple-400"
-          title={t("pay")}
-        >
-          <LuCreditCard size={14} />
-        </button>
-      )}
+        },
+        title: t("pay"),
+        label: t("pay")
+      }] : []),
+      // Approved
+      ...(Number(order.status) < 2 ? [{
+        type: 'execute',
+        icon: <MdApproval size={14} />,
+        onClick: () => handleOrderApproved(order.order_id),
+        title: t("approved"),
+        label: t("approved")
+      }] : []),
+      // Confirm
+      ...(Number(order.status) < 6 ? [{
+        type: 'execute',
+        icon: <FaCheck size={14} />,
+        onClick: () => handleOrderConfirm(order.order_id),
+        title: t("confirm"),
+        label: t("confirm")
+      }] : []),
+      // Cancel
+      ...(Number(order.status) < 7 ? [{
+        type: 'execute',
+        icon: <FaBan size={14} />,
+        onClick: () => handleOrderCancel(order.order_id),
+        title: t("cancel"),
+        label: t("cancel"),
+        className: 'text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/30'
+      }] : []),
+      // Delete
+      ...(Number(order.status) < 6 ? [{
+        type: 'drop',
+        icon: <FaTrash size={14} />,
+        onClick: () => handleDelete(order.order_id),
+        title: t("delete"),
+        label: t("delete")
+      }] : []),
+    ];
 
-      {!order.is_cancelled && !order.status == 6 && (
-        <button
-        onClick={() => handleOrderCancel(order.order_id)}
-          className="rounded bg-orange-100 p-2 text-orange-600 transition-colors hover:bg-orange-200 dark:bg-orange-900/30 dark:text-orange-400"
-          title={t("cancel")}
-          >
-          <LuBan size={14} />
-        </button>
-      )}
-
-      <a
-        href={`/invoice/${order.order_id}`}
-        target="_blank"
-        className="rounded bg-blue-100 p-2 text-blue-600 transition-colors hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-400"
-        title={t("view")}
-      >
-        <LuFileText size={14} />
-      </a>
-
-      {!order.is_cancelled && !order.status == 6 && (
-        <button
-          onClick={() => navigate(`update/${order.order_id}`)}
-          className="rounded bg-yellow-100 p-2 text-yellow-600 transition-colors hover:bg-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-400"
-          title={t("edit")}
-        >
-          <LuPencil size={14} />
-        </button>
-      )}
-
-      {!order.status == 6 &&<button
-        onClick={() => handleDelete(order.order_id)}
-        className="rounded bg-red-100 p-2 text-red-600 transition-colors hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400"
-        title={t("delete")}
-      >
-        <LuTrash2 size={14} />
-      </button>}
-    </div>
-  );
+    return (
+      <div className="flex justify-center">
+        <ActionButton actions={actions} menuId={MENU_ID} />
+      </div>
+    );
+  };
 
   const TableView = () => (
     <div className="overflow-hidden text-xs rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
@@ -475,6 +517,7 @@ const OrderInvoiceList = () => {
                 <td className="p-3 text-right font-bold text-green-600 dark:text-green-400">{formatCurrency(order.order_total)}</td>
                 <td className="p-3 text-center">{getPaymentStatusBadge(order.order_payment_status)}</td>
                 <td className="p-3 text-center">{getStatusBadge(order)}</td>
+                <td className="p-3 text-center">{order.status}</td>
                 <td className="p-3">
                   <ActionButtons order={order} />
                 </td>
@@ -539,7 +582,7 @@ const OrderInvoiceList = () => {
                 {getPaymentStatusBadge(order.order_payment_status)}
               </div>
               <div className="flex items-center gap-1 justify-end text-[10px] text-gray-400">
-                <LuCalendar size={10} /> {formatDate(order.order_date)}
+                <FaCalendarAlt size={10} /> {formatDate(order.order_date)}
               </div>
             </div>
 
@@ -564,13 +607,14 @@ const OrderInvoiceList = () => {
       <AlertBox isOpen={alertBoxCancel} title={t("cancelOrderTitle")} message={t("cancelOrderMessage")} onConfirm={handleConfirmCancelOrder} onCancel={handleCancel} confirmText={t("cancelOrderAction")} cancelText={t("keepOrder")} confirmColor="warning" />
       <AlertBox isOpen={alertBoxUncancel} title={t("uncancelOrderTitle")} message={t("uncancelOrderMessage")} onConfirm={handleConfirmUncancelOrder} onCancel={handleCancel} confirmText={t("uncancelOrder")} cancelText={t("keepCancelled")} confirmColor="info" />
       <AlertBox isOpen={alertBoxConfirm} title={t("confirmOrderTitle")} message={t("confirmOrderMessage")} onConfirm={handleConfirmConfirmOrder} onCancel={handleCancel} confirmText={t("confirm")} cancelText={t("cancel")} confirmColor="success" />
+      <AlertBox isOpen={alertBoxApproved} title={t("approvedOrderTitle")} message={t("approvedOrderMessage")} onConfirm={handleConfirmApprovedOrder} onCancel={handleCancel} confirmText={t("confirm")} cancelText={t("cancel")} confirmColor="success" />
 
       <div className="mx-auto">
         <div className="mb-8 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <motion.h1 initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="mb-2 flex items-center gap-3 text-2xl font-bold text-gray-900 dark:text-white">
               <div className="rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 p-3 shadow-sm">
-                <LuClipboardList className="text-xl text-white" />
+                <FaClipboardList className="text-xl text-white" />
               </div>
               {t('wholeSaleList')}
             </motion.h1>
@@ -581,9 +625,11 @@ const OrderInvoiceList = () => {
             <RefreshButton onRefresh={refetch} />
             <Link to="create">
               <Button
-                variant="success"
+                variant="save"
+                actionType="is_modify"
+                menuId={MENU_ID}
               >
-                <LuPlus className="mr-2" />
+                <FaPlus className="mr-2" />
                 {t("new")}
               </Button>
             </Link>
@@ -591,17 +637,17 @@ const OrderInvoiceList = () => {
         </div>
 
         <div className="mb-6 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
-          <StatCard title="Total Invoices" value={stats.orderCount.toLocaleString()} icon={<LuPackage className="text-2xl" />} color="teal" />
-          <StatCard title={t("totalSales")} value={formatCurrency(stats.totalSales)} icon={<LuDollarSign className="text-2xl" />} color="green" />
-          <StatCard title={t("totalPaid")} value={formatCurrency(stats.totalPaid)} icon={<LuCreditCard className="text-2xl" />} color="blue" />
-          <StatCard title={t("totalBalance")} value={formatCurrency(stats.totalBalance)} icon={<LuShoppingBag className="text-2xl" />} color="orange" />
+          <StatCard title="Total Invoices" value={stats.orderCount.toLocaleString()} icon={<FaFileAlt className="text-2xl" />} color="teal" />
+          <StatCard title={t("totalSales")} value={formatCurrency(stats.totalSales)} icon={<FaDollarSign className="text-2xl" />} color="green" />
+          <StatCard title={t("totalPaid")} value={formatCurrency(stats.totalPaid)} icon={<FaCreditCard className="text-2xl" />} color="blue" />
+          <StatCard title={t("totalBalance")} value={formatCurrency(stats.totalBalance)} icon={<FaShoppingBag className="text-2xl" />} color="orange" />
         </div>
 
         <div className="mb-6 rounded-lg border border-gray-200 bg-white p-4 text-sm shadow-sm transition-colors dark:border-gray-700 dark:bg-gray-800">
           <div className="flex flex-wrap text-sm items-center gap-4">
             <div className="lg:col-span-4 grow">
               <div className="relative">
-                <LuSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                 <input
                   type="text"
                   placeholder="Search invoices..."
@@ -672,7 +718,7 @@ const OrderInvoiceList = () => {
             <div className="lg:col-span-8">
               <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
                 <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-3 py-1 dark:bg-gray-700">
-                  <LuUser size={12} /> Filter by user, customer, item purpose, and date range
+                  <FaUser size={12} /> Filter by user, customer, item purpose, and date range
                 </span>
                 <button
                   onClick={handleResetFilters}
@@ -693,7 +739,7 @@ const OrderInvoiceList = () => {
                   className={`flex-1 rounded-md px-3 py-2 transition-all ${viewMode === "list" ? "bg-white font-semibold text-blue-600 shadow-sm dark:bg-gray-600 dark:text-blue-400" : "text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200"}`}
                 >
                   <span className="flex items-center justify-center gap-2">
-                    <LuList /> {t("table")}
+                    <FaList /> {t("table")}
                   </span>
                 </button>
                 <button
@@ -704,7 +750,7 @@ const OrderInvoiceList = () => {
                   className={`flex-1 rounded-md px-3 py-2 transition-all ${viewMode === "grid" ? "bg-white font-semibold text-blue-600 shadow-sm dark:bg-gray-600 dark:text-blue-400" : "text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200"}`}
                 >
                   <span className="flex items-center justify-center gap-2">
-                    <LuPackage /> {t("grid")}
+                    <FaTh /> {t("grid")}
                   </span>
                 </button>
               </div>
@@ -726,7 +772,7 @@ const OrderInvoiceList = () => {
             <p className="mb-6 max-w-md text-center text-gray-500 dark:text-gray-400">Try adjusting the filters or create a new invoice to get started.</p>
             <Link to="create">
               <button className="flex items-center gap-2 rounded-md bg-green-600 px-6 py-3 text-white transition-colors hover:bg-green-700">
-                <LuPlus /> Create Invoice
+                <FaPlus /> Create Invoice
               </button>
             </Link>
           </div>

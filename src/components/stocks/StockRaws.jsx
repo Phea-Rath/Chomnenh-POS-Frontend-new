@@ -11,7 +11,7 @@ import RefreshButton from '../../utils/RefreshButton';
 import ExportExcel from '../../services/ExportExcel';
 import Button from '../../utils/Button';
 import StockList from '../../utils/StockList';
-
+const MENU_ID = 48;
 const getStockItems = (stock) => (Array.isArray(stock?.items) ? stock.items : []);
 
 const getTotalQuantity = (stock) =>
@@ -63,6 +63,7 @@ const StockRaws = () => {
 
     return (
         <StockList
+            menuId={MENU_ID}
             title={t('rawStock')}
             highlightedTitle={t('inventory')}
             subtitle={t('trackManageRawMovements')}
@@ -120,7 +121,7 @@ const StockRaws = () => {
                     <RefreshButton onRefresh={refetch} />
                     <ExportExcel data={stocks} title="Raw Stock" />
                     <Link to="add">
-                        <Button variant="success">
+                        <Button actionType='is_modify' menuId={MENU_ID} variant="success">
                             <FaPlus />
                             {t('new')}
                         </Button>

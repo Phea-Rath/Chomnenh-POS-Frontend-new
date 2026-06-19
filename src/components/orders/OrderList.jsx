@@ -1,29 +1,39 @@
 import React, { useEffect, useState, useMemo } from "react";
 import {
-  LuSearch,
-  LuPlus,
-  LuRefreshCw,
-  LuDownload,
-  LuEye,
-  LuTrash2,
-  LuList,
-  LuDollarSign,
-  LuShoppingBag,
-  LuCalendar,
-  LuUser,
-  LuPhone,
-  LuMapPin,
-  LuClipboardList,
-  LuChartBar,
+  FaSearch,
+  FaPlus,
+  FaSyncAlt,
+  FaEye,
+  FaEdit,
+  FaTrash,
+  FaList,
+  FaTh,
+  FaDollarSign,
+  FaCreditCard,
+  FaClipboardList,
+  FaShoppingBag,
+  FaCalendarAlt,
+  FaUser,
+  FaPhone,
+  FaMapPin,
+  FaBan,
+  FaFileAlt
+} from 'react-icons/fa';
+import {
   LuChevronLeft,
   LuChevronRight,
   LuChevronsLeft,
   LuChevronsRight,
-  LuBan,
-  LuRotateCcw,
-  LuFileText,
+  LuClipboardList,
   LuCreditCard,
-  LuPackage
+  LuDollarSign,
+  LuList,
+  LuPackage,
+  LuPhone,
+  LuPlus,
+  LuRefreshCw,
+  LuSearch,
+  LuShoppingBag,
 } from 'react-icons/lu';
 import { motion } from 'framer-motion';
 import { useNavigate, Link } from 'react-router';
@@ -39,17 +49,17 @@ import { Tooltip } from "antd";
 import { toast } from "react-toastify";
 import { totalSum } from "../../services/serviceFunction";
 import { useTranslation } from "react-i18next";
-import { MdPayment } from "react-icons/md";
 import api from "../../services/api";
 import { useDebounce } from 'use-debounce';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
-import { LiaUserEditSolid } from "react-icons/lia";
-import { BiEdit } from "react-icons/bi";
+import ActionButton from "../../utils/ActionButton";
 import PaymentModel from "../../utils/PaymentModal";
+import Button from "../../utils/Button";
+import RefreshButton from "../../utils/RefreshButton";
 
 dayjs.extend(relativeTime);
-
+const MENU_ID = 49;
 const OrderList = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -200,7 +210,6 @@ const OrderList = () => {
 
   const formatDate = (date) => dayjs(date).format('MMM D, YYYY');
 
-  // Stats
   const stats = useMemo(() => {
     const orders = orderData?.data || [];
     const totalSales = totalSum(orders, "order_total");
@@ -213,6 +222,70 @@ const OrderList = () => {
       orderCount: pagination.total
     };
   }, [orderData, pagination.total]);
+
+  const ActionButtons = ({ order }) => {
+    const actions = [
+      // View Invoice/Receipt (Primary)
+      {
+        type: 'view',
+        icon: <FaFileAlt size={14} />,
+        onClick: () => window.open(order.sale_type === "sale" ? `/receipt/${order.order_id}` : `/invoice/${order.order_id}`, '_blank'),
+        title: t("receipt"),
+        label: t("receipt")
+      },
+      {
+        type: 'view',
+        icon: <FaEye size={14} />,
+        onClick: () => navigate(`detail/${order.order_id}` ),
+        title: t("view"),
+        label: t("view")
+      },
+      // Edit
+      // ...(order.status != 6 || order.status != 7 ? [{
+      //   type: 'modify',
+      //   icon: <FaEdit size={14} />,
+      //   onClick: () => navigate("edit/" + order.order_id),
+      //   title: t("edit"),
+      //   label: t("edit")
+      // }] : []),
+      // Pay
+      ...( order.status != 7 && order.balance > 0 ? [{
+        type: 'execute',
+        icon: <FaCreditCard size={14} />,
+        onClick: () => {
+          setPaymentAmount(order.balance);
+          setBalanceAmount({ pay: order.payment, balance: order.balance });
+          setId(order.order_id);
+          setShowPaymentModal(true);
+        },
+        title: t("pay"),
+        label: t("pay")
+      }] : []),
+      // Cancel
+      ...(order.status > 6 ? [{
+        type: 'drop',
+        icon: <FaBan size={14} />,
+        onClick: () => handleOrderCancel(order.order_id),
+        title: t("cancel"),
+        label: t("cancel"),
+        className: 'text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/30'
+      }] : []),
+      // Delete
+      ...(order.status != 6 ? [{
+        type: 'drop',
+        icon: <FaTrash size={14} />,
+        onClick: () => handleDelete(order.order_id),
+        title: t("delete"),
+        label: t("delete")
+      }] : []),
+    ];
+
+    return (
+      <div className="flex justify-center">
+        <ActionButton actions={actions} menuId={MENU_ID} />
+      </div>
+    );
+  };
 
   // Helpers
   const getStatusBadge = (order) => {
@@ -322,50 +395,8 @@ const OrderList = () => {
                 <td className="p-3 text-center">
                   {getStatusBadge(order)}
                 </td>
-                <td className="p-3">
-                  <div className="flex justify-center gap-2">
-                    <Link
-                      to={order.sale_type === "sale" ? `/receipt/${order.order_id}` : `/invoice/${order.order_id}`}
-                      target="_blank"
-                      className="p-2 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded hover:bg-green-200 transition-colors"
-                      title={t('view')}
-                    ><LuFileText size={14} /></Link>
-                    
-                    {!order.is_cancelled && !order.status == 6&& (
-                      <button
-                        onClick={() => navigate("edit/" + order.order_id)}
-                        className="p-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded hover:bg-blue-200 transition-colors"
-                        title={t('edit')}
-                      ><BiEdit size={14} /></button>
-                    )}
-
-                    {!order.is_cancelled && order.balance > 0 && (
-                      <button
-                        onClick={() => {
-                          setPaymentAmount(order.balance);
-                          setBalanceAmount({ pay: order.payment, balance: order.balance });
-                          setId(order.order_id);
-                          setShowPaymentModal(true);
-                        }}
-                        className="p-2 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded hover:bg-purple-200 transition-colors"
-                        title={t('pay')}
-                      ><LuCreditCard size={14} /></button>
-                    )}
-
-                    {!order.is_cancelled &&!order.status == 6&& (
-                      <button
-                        onClick={() => handleOrderCancel(order.order_id)}
-                        className="p-2 bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 rounded hover:bg-orange-200 transition-colors"
-                        title={t('cancel')}
-                      ><LuBan size={14} /></button>
-                    )}
-
-                    {!order.status == 6&&<button
-                      onClick={() => handleDelete(order.order_id)}
-                      className="p-2 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded hover:bg-red-200 transition-colors"
-                      title={t('delete')}
-                    ><LuTrash2 size={14} /></button>}
-                  </div>
+                <td className="p-3 text-center">
+                  <ActionButtons order={order} />
                 </td>
               </tr>
             ))}
@@ -429,52 +460,10 @@ const OrderList = () => {
 
             <div className="flex items-center justify-between pt-3 border-t border-gray-100 dark:border-gray-700">
                <div className="text-[10px] text-gray-400 flex items-center gap-1">
-                 <LuCalendar size={10} /> {formatDate(order.order_date)}
+                 <FaCalendarAlt size={10} /> {formatDate(order.order_date)}
                </div>
                <div className="flex gap-1">
-                  <div className="flex justify-center gap-2">
-                    <Link
-                      to={order.sale_type === "sale" ? `/receipt/${order.order_id}` : `/invoice/${order.order_id}`}
-                      target="_blank"
-                      className="p-2 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded hover:bg-green-200 transition-colors"
-                      title={t('view')}
-                    ><LuFileText size={14} /></Link>
-                    
-                    {!order.is_cancelled && !order.status == 6&& (
-                      <button
-                        onClick={() => navigate("edit/" + order.order_id)}
-                        className="p-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded hover:bg-blue-200 transition-colors"
-                        title={t('edit')}
-                      ><BiEdit size={14} /></button>
-                    )}
-
-                    {!order.is_cancelled && order.balance > 0 && (
-                      <button
-                        onClick={() => {
-                          setPaymentAmount(order.balance);
-                          setBalanceAmount({ pay: order.payment, balance: order.balance });
-                          setId(order.order_id);
-                          setShowPaymentModal(true);
-                        }}
-                        className="p-2 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded hover:bg-purple-200 transition-colors"
-                        title={t('pay')}
-                      ><LuCreditCard size={14} /></button>
-                    )}
-
-                    {!order.is_cancelled &&!order.status == 6&& (
-                      <button
-                        onClick={() => handleOrderCancel(order.order_id)}
-                        className="p-2 bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 rounded hover:bg-orange-200 transition-colors"
-                        title={t('cancel')}
-                      ><LuBan size={14} /></button>
-                    )}
-
-                    {!order.status == 6&&<button
-                      onClick={() => handleDelete(order.order_id)}
-                      className="p-2 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded hover:bg-red-200 transition-colors"
-                      title={t('delete')}
-                    ><LuTrash2 size={14} /></button>}
-                  </div>
+                  <ActionButtons order={order} />
                </div>
             </div>
           </div>
@@ -510,14 +499,11 @@ const OrderList = () => {
           </div>
 
           <div className="flex items-center gap-3">
-            <button onClick={() => refetch()} disabled={queryLoading || contextLoading} className="px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-50 flex items-center gap-2 transition-colors shadow-sm">
-              <LuRefreshCw className={queryLoading ? 'animate-spin' : ''} />
-              {t('refresh')}
-            </button>
+            <RefreshButton onRefresh={refetch}/>
             <Link to="/orders">
-              <button className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 flex items-center gap-2 transition-colors shadow-md">
+              <Button variant="save" actionType="is_modify" menuId={MENU_ID} className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 flex items-center gap-2 transition-colors shadow-md">
                 <LuPlus /> {t('addNewOrder')}
-              </button>
+              </Button>
             </Link>
           </div>
         </div>

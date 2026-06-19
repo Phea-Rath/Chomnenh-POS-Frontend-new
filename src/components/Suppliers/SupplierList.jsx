@@ -12,7 +12,9 @@ import Button from '../../utils/Button';
 import Pagination from '../../utils/Pagination';
 import { useTranslation } from 'react-i18next';
 import { ExclamationCircleOutlined } from '@ant-design/icons';
+import ActionButton from '../../utils/ActionButton';
 
+const MENU_ID = 14;
 const SupplierList = () => {
   const { t } = useTranslation();
   const token = localStorage.getItem('token');
@@ -26,6 +28,45 @@ const SupplierList = () => {
   const [selectedSupplier, setSelectedSupplier] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [viewMode, setViewMode] = useState('list');
+
+  const ActionButtons = ({ supplier }) => {
+    const actions = [
+      {
+        type: 'view',
+        icon: <FaEye size={14} />,
+        onClick: () => openDetail(supplier),
+        title: t('details'),
+        label: t('details')
+      },
+      {
+        type: 'modify',
+        icon: <FaEdit size={14} />,
+        onClick: () => handleEdit(supplier),
+        title: t('edit'),
+        label: t('edit')
+      },
+      {
+        type: 'drop',
+        icon: <FaTrash size={14} />,
+        onClick: () => handleDelete(supplier.supplier_id),
+        title: t('delete'),
+        label: t('delete')
+      },
+      {
+        type: 'view',
+        icon: <FaMapLocationDot size={14} />,
+        onClick: () => window.open(`https://www.google.com/maps?q=${encodeURIComponent(formatAddress(supplier))}`, '_blank'),
+        title: t('openInMaps', 'OPEN IN MAPS'),
+        label: t('openInMaps', 'OPEN IN MAPS')
+      }
+    ];
+
+    return (
+      <div className="flex justify-center">
+        <ActionButton actions={actions} menuId={MENU_ID} />
+      </div>
+    );
+  };
 
   const paginationOptions = [
     { id: 12, title: `12 / ${t('page')}` },
@@ -92,46 +133,33 @@ const SupplierList = () => {
   };
 
   return (
-    <div className="bg-transparent py-4">
-      <div className="sm:px-6 lg:px-8">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-          <div className="flex items-center gap-3">
-            <div className="p-3 bg-blue-500 rounded-xl shadow-blue-200">
-              <FaTruck className="text-white text-2xl" />
-            </div>
+    <div className="view-page bg-transparent transition-colors">
+      <div>
+        {/* Header */}
+        <div className="flex items-center justify-between border-b-0 border-x p-4 dark:border-gray-500 border-gray-200 bg-white dark:bg-gray-600">
             <div>
-              <h1 className="text-2xl sm:text-3xl text-gray-900 dark:text-white font-bold">{t('suppliers', 'Suppliers')}</h1>
-              <p className="text-sm text-gray-500">{t('manageSupplierNetwork', 'Manage your supplier network')}</p>
+              <h1 className="text-xl font-bold text-gray-800 dark:!text-gray-100 flex items-center gap-3">
+                {t('suppliers', 'Suppliers')}
+              </h1>
+              <p className="text-gray-600 text-xs dark:!text-gray-400 mt-2">
+                {t('manageSupplierNetwork', 'Manage your supplier network')}
+              </p>
             </div>
-          </div>
-          <div className='flex items-center gap-2 w-full sm:w-auto'>
-            <div className="flex bg-gray-100 dark:bg-gray-800 p-1 rounded-lg mr-2">
-              <button
-                onClick={() => setViewMode('list')}
-                className={`p-2 rounded-md transition-all ${viewMode === 'list' ? 'bg-white dark:bg-gray-700 shadow-sm text-blue-600' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
-                title={t('listView')}
-              >
-                <FaList size={18} />
-              </button>
-              <button
-                onClick={() => setViewMode('grid')}
-                className={`p-2 rounded-md transition-all ${viewMode === 'grid' ? 'bg-white dark:bg-gray-700 shadow-sm text-blue-600' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
-                title={t('gridView')}
-              >
-                <FaThLarge size={18} />
-              </button>
+            <div className="flex justify-center items-center gap-2">
+                <Button 
+                    variant='primary'
+                    menuId={MENU_ID}
+                    actionType="is_modify"
+                    onClick={() => navigate("create")}
+                >
+                    <FaPlus /> {t('new', 'New')}
+                </Button>
+                <RefreshButton onRefresh={refetch} />
             </div>
-            <RefreshButton onRefresh={refetch} />
-            <Link to="create">
-              <Button>
-                <FaPlus /> <span>{t('new', 'New')}</span>
-              </Button>
-            </Link>
-          </div>
         </div>
 
-        <div>
-          <div className='m-3'>
+        {/* Search and Controls */}
+        <div className="bg-gray-100 p-4 border dark:bg-transparent dark:border-gray-500 border-gray-200">
             <div className="flex flex-col md:flex-row justify-between items-center gap-4">
               <div className="relative w-full md:w-96">
                 <FaSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -140,7 +168,7 @@ const SupplierList = () => {
                   placeholder={t('searchSupplierPlaceholder', "Search by name, phone or email...")}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-11 pr-4 py-2.5 border border-gray-200 dark:border-gray-400 rounded-sm focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none text-sm dark:text-gray-100"
+                  className="w-full pl-11 pr-4 py-2.5 border border-gray-200 dark:border-gray-400 rounded-sm focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none text-sm dark:text-gray-100 bg-transparent"
                 />
               </div>
               
@@ -158,13 +186,28 @@ const SupplierList = () => {
                     placeholder={`${itemsPerPage} / ${t('page')}`}
                   />
                 </div>
+                <div className="flex items-center rounded-sm p-1 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-500">
+                    <button
+                        onClick={() => setViewMode('grid')}
+                        className={`p-2 rounded-sm transition-all ${viewMode === 'grid' ? 'bg-blue-500 text-white shadow-sm' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400'}`}
+                    >
+                        <FaThLarge size={16} />
+                    </button>
+                    <button
+                        onClick={() => setViewMode('list')}
+                        className={`p-2 rounded-sm transition-all ${viewMode === 'list' ? 'bg-blue-500 text-white shadow-sm' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400'}`}
+                    >
+                        <FaList size={16} />
+                    </button>
+                </div>
               </div>
             </div>
-          </div>
+        </div>
 
-          <div className="p-0">
+        {/* Content Container */}
+        <div className="border-t-0 px-4 py-6 border-x bg-gradient-to-b from-gray-50 to-gray-100 dark:bg-transparent dark:from-transparent dark:to-transparent border-gray-200 dark:border-gray-500 min-h-[400px]">
             {isLoading ? (
-              <div className="p-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
                   <Card key={i} className="dark:bg-gray-800 border-gray-100 dark:border-gray-700">
                     <Skeleton active avatar={{ size: 'large', shape: 'square' }} paragraph={{ rows: 2 }} />
@@ -172,7 +215,7 @@ const SupplierList = () => {
                 ))}
               </div>
             ) : error ? (
-              <div className="m-6 p-6 bg-red-50 border border-red-100 text-red-600 rounded-2xl flex items-center gap-3">
+              <div className="p-6 bg-red-50 dark:bg-red-900/10 border border-red-100 dark:border-red-900/20 text-red-600 rounded-sm flex items-center gap-3">
                 <ExclamationCircleOutlined className="text-xl" />
                 <div>
                   <p className="">{t('errorLoadingSuppliers', 'Error loading suppliers')}</p>
@@ -180,34 +223,34 @@ const SupplierList = () => {
                 </div>
               </div>
             ) : filteredSuppliers.length === 0 ? (
-              <div className="py-20">
+              <div className="py-20 flex flex-col items-center justify-center">
                 <Empty 
                   image={Empty.PRESENTED_IMAGE_SIMPLE}
                   description={
                     <div className="text-center">
-                      <p className="text-gray-500 text-lg">{t('noSuppliersFound', 'No suppliers found')}</p>
+                      <p className="text-gray-500 text-lg dark:text-gray-400">{t('noSuppliersFound', 'No suppliers found')}</p>
                       <p className="text-gray-400 text-sm">{t('tryAdjustingSearch', 'Try adjusting your search criteria')}</p>
                     </div>
                   } 
                 />
               </div>
             ) : viewMode === 'list' ? (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="overflow-x-auto bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-sm">
+                <table className="w-full text-left border-collapse text-sm">
                   <thead>
-                    <tr className="bg-primary text-gray-500 dark:text-gray-400 uppercase text-[11px] tracking-wider border-b border-gray-100 dark:border-gray-700">
+                    <tr className="bg-gray-50 dark:bg-gray-700/50 text-gray-500 dark:text-gray-400 uppercase text-[11px] tracking-wider border-b border-gray-200 dark:border-gray-700">
                       <th className="px-6 py-4">{t('supplier', 'Supplier')}</th>
                       <th className="px-6 py-4">{t('location', 'Location')}</th>
                       <th className="px-6 py-4">{t('contact', 'Contact')}</th>
                       <th className="px-6 py-4 text-center">{t('actions', 'Actions')}</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y bg-transparent divide-gray-100 dark:divide-gray-700">
+                  <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
                     {currentSuppliers.map((supplier) => (
-                      <tr key={supplier.supplier_id} className="hover:bg-blue-50/30 dark:hover:bg-gray-700/50 transition-colors group">
+                      <tr key={supplier.supplier_id} className="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-4">
-                            <div className="h-12 w-12 rounded-full overflow-hidden border border-gray-100 flex-shrink-0">
+                            <div className="h-10 w-10 rounded-full overflow-hidden border border-gray-100 dark:border-gray-600 flex-shrink-0">
                               <Image 
                                 className="object-cover h-full w-full" 
                                 src={supplier?.image || import.meta.env.VITE_DEFAULT_PROFILE}
@@ -216,10 +259,10 @@ const SupplierList = () => {
                               />
                             </div>
                             <div>
-                              <p className="text-sm text-gray-900 dark:text-white group-hover:text-blue-600 transition-colors font-medium">
+                              <p className="font-bold text-gray-800 dark:text-gray-100">
                                 {supplier.supplier_name}
                               </p>
-                              <p className="text-[11px] text-gray-400">{t('id', 'ID')}: #{supplier.supplier_id}</p>
+                              <p className="text-[10px] text-gray-500 ">{t('id', 'ID')}: #{supplier.supplier_id}</p>
                             </div>
                           </div>
                         </td>
@@ -242,104 +285,57 @@ const SupplierList = () => {
                           </div>
                         </td>
                         <td className="px-6 py-4">
-                          <div className="flex justify-center items-center gap-1">
-                            <Tooltip title={t('viewDetails')}>
-                              <button
-                                onClick={() => openDetail(supplier)}
-                                className="p-2 text-blue-500 hover:bg-blue-50 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                              >
-                                <FaEye />
-                              </button>
-                            </Tooltip>
-                            <Tooltip title={t('edit')}>
-                              <button
-                                onClick={() => handleEdit(supplier)}
-                                className="p-2 text-green-500 hover:bg-green-50 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                              >
-                                <FaEdit />
-                              </button>
-                            </Tooltip>
-                            <Tooltip title={t('delete')}>
-                              <button
-                                onClick={() => handleDelete(supplier.supplier_id)}
-                                className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                              >
-                                <FaTrash />
-                              </button>
-                            </Tooltip>
-                            <Tooltip title={t('viewOnMap', 'View on Map')}>
-                              <a
-                                href={`https://www.google.com/maps?q=${encodeURIComponent(formatAddress(supplier))}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="p-2 text-orange-500 hover:bg-orange-50 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                              >
-                                <FaMapLocationDot />
-                              </a>
-                            </Tooltip>
-                          </div>
+                           <ActionButtons supplier={supplier} />
                         </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
-              </div>
+              </motion.div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 p-6">
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 gap-6">
                 {currentSuppliers.map((supplier) => (
-                  <Card
+                  <motion.div
                     key={supplier.supplier_id}
-                    hoverable
-                    className="overflow-hidden border-gray-100 dark:!border-gray-700 dark:!bg-gray-800 group transition-all duration-300"
-                    cover={
-                      <div className="h-48 overflow-hidden bg-gray-50 dark:!bg-gray-900 relative">
+                    whileHover={{ y: -5 }}
+                    className="bg-white dark:bg-gray-800 rounded-sm border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm hover:shadow-md transition-all flex flex-col"
+                  >
+                    <div className="h-40 relative overflow-hidden bg-gray-50 dark:bg-gray-900">
                         <Image
                           alt={supplier.supplier_name}
                           src={supplier.image || import.meta.env.VITE_DEFAULT_PROFILE}
-                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                          className="w-full h-full object-cover"
                           preview={false}
                           fallback={import.meta.env.VITE_DEFAULT_PROFILE}
                         />
-                        <div className="absolute top-3 right-3">
-                          <Badge count={`ID: #${supplier.supplier_id}`} style={{ backgroundColor: '#3b82f6' }} />
+                        <div className="absolute top-2 right-2">
+                          <Tag color="blue" className="m-0 text-[10px] font-bold">#{supplier.supplier_id}</Tag>
                         </div>
-                      </div>
-                    }
-                    actions={[
-                      <Tooltip title={t('viewDetails')} key="view"><FaEye className="mx-auto text-blue-500 hover:scale-125 transition-transform" onClick={() => openDetail(supplier)} /></Tooltip>,
-                      <Tooltip title={t('edit')} key="edit"><FaEdit className="mx-auto text-green-500 hover:scale-125 transition-transform" onClick={() => handleEdit(supplier)} /></Tooltip>,
-                      <Tooltip title={t('delete')} key="delete"><FaTrash className="mx-auto text-red-500 hover:scale-125 transition-transform" onClick={() => handleDelete(supplier.supplier_id)} /></Tooltip>,
-                    ]}
-                  >
-                    <Card.Meta
-                      title={<span className="dark:text-white font-bold block truncate">{supplier.supplier_name}</span>}
-                      description={
-                        <div className="space-y-3 mt-3">
-                          <div className="flex items-start gap-2 text-[11px] text-gray-500 dark:text-gray-400 min-h-[32px]">
+                    </div>
+                    <div className="p-4 flex-grow">
+                        <h3 className="font-bold text-gray-800 dark:text-gray-100 truncate mb-2">{supplier.supplier_name}</h3>
+                        <div className="space-y-2 mb-4">
+                          <div className="flex items-start gap-2 text-[10px] text-gray-500 dark:text-gray-400 min-h-[30px]">
                             <FaMapMarkerAlt className="text-red-400 flex-shrink-0 mt-0.5" />
-                            <span className="line-clamp-2" title={formatAddress(supplier)}>{formatAddress(supplier)}</span>
+                            <span className="line-clamp-2">{formatAddress(supplier)}</span>
                           </div>
-                          <div className="flex flex-col gap-1.5 border-t border-gray-50 dark:border-gray-700 pt-3">
-                            <div className="flex items-center gap-2 text-[11px] text-gray-600 dark:text-gray-300">
-                              <FaPhone className="text-blue-400 flex-shrink-0" />
-                              <span className="font-medium">{supplier.supplier_tel || "N/A"}</span>
-                            </div>
-                            <div className="flex items-center gap-2 text-[11px] text-gray-600 dark:text-gray-300">
-                              <FaEnvelope className="text-gray-400 flex-shrink-0" />
-                              <span className="truncate">{supplier.supplier_email || "N/A"}</span>
-                            </div>
+                          <div className="flex items-center gap-2 text-[10px] text-gray-600 dark:text-gray-300">
+                            <FaPhone className="text-blue-400 flex-shrink-0" />
+                            <span className="font-medium">{supplier.supplier_tel || "N/A"}</span>
                           </div>
                         </div>
-                      }
-                    />
-                  </Card>
+                        
+                        <div className="flex justify-end gap-2 pt-3 border-t border-gray-100 dark:border-gray-700">
+                          <ActionButtons supplier={supplier} />
+                        </div>
+                    </div>
+                  </motion.div>
                 ))}
-              </div>
+              </motion.div>
             )}
-          </div>
 
           {filteredSuppliers.length > 0 && (
-            <div className="p-4 flex justify-end">
+            <div className="mt-6 flex justify-end">
               <Pagination
                 current={currentPage}
                 total={filteredSuppliers.length}
@@ -348,13 +344,10 @@ const SupplierList = () => {
                 showSizeChanger={false}
                 size="small"
                 t={t}
-                className="dark:[&_.ant-pagination-item]:bg-gray-700 dark:[&_.ant-pagination-item]:border-gray-600 dark:[&_.ant-pagination-item_a]:text-gray-200 dark:[&_.ant-pagination-item-active]:bg-blue-600 dark:[&_.ant-pagination-item-active]:border-blue-500 dark:[&_.ant-pagination-item-active_a]:text-white dark:[&_.ant-pagination-prev_.ant-pagination-item-link]:bg-gray-700 dark:[&_.ant-pagination-prev_.ant-pagination-item-link]:border-gray-600 dark:[&_.ant-pagination-prev_.ant-pagination-item-link]:text-gray-200 dark:[&_.ant-pagination-next_.ant-pagination-item-link]:bg-gray-700 dark:[&_.ant-pagination-next_.ant-pagination-item-link]:border-gray-600 dark:[&_.ant-pagination-next_.ant-pagination-item-link]:text-gray-200 dark:[&_.ant-pagination-disabled_.ant-pagination-item-link]:bg-gray-800 dark:[&_.ant-pagination-disabled_.ant-pagination-item-link]:text-gray-500"
               />
             </div>
           )}
         </div>
-
-        
       </div>
 
       {/* Detail Modal */}
@@ -371,7 +364,7 @@ const SupplierList = () => {
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: 20, opacity: 0 }}
-              className="bg-white dark:bg-gray-800 rounded-sm max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-gray-100 dark:border-gray-700"
+              className="bg-white dark:bg-gray-800 rounded-sm  max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-gray-100 dark:border-gray-700"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="relative bg-chomnenh-light p-8 rounded-sm">
@@ -387,13 +380,13 @@ const SupplierList = () => {
                       src={selectedSupplier.image || import.meta.env.VITE_DEFAULT_PROFILE}
                       onError={(e) => e.target.src = import.meta.env.VITE_DEFAULT_PROFILE}
                       alt={selectedSupplier.supplier_name}
-                      className="w-28 h-28 rounded-3xl object-cover border-4 border-white"
+                      className="w-28 h-28 rounded-3xl object-cover border-4 border-white "
                     />
                     <div className="absolute -bottom-2 -right-2 bg-blue-500 w-8 h-8 rounded-full border-4 border-white"></div>
                   </div>
                   <div className="text-white text-center sm:text-left">
-                    <h2 className="text-3xl mb-1">{selectedSupplier.supplier_name}</h2>
-                    <Tag color="blue" className="rounded-full px-3 border-none bg-white/20 text-white">
+                    <h2 className="text-3xl  mb-1">{selectedSupplier.supplier_name}</h2>
+                    <Tag color="blue" className="rounded-full px-3 border-none bg-white/20 text-white ">
                       {t('supplier', 'Supplier')} ID: #{selectedSupplier.supplier_id}
                     </Tag>
                   </div>
@@ -404,7 +397,7 @@ const SupplierList = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <div className="space-y-6">
                     <div>
-                      <h3 className="text-sm text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                      <h3 className="text-sm  text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
                         <div className="w-1 h-4 bg-blue-500 rounded-full"></div>
                         {t('contactInfo', 'Contact Info')}
                       </h3>
@@ -414,15 +407,15 @@ const SupplierList = () => {
                             <FaPhone className="text-blue-500" />
                           </div>
                           <div>
-                            <p className="text-[10px] text-gray-500 uppercase">{t('phoneNumber', 'Phone Number')}</p>
-                            <p className="text-sm text-gray-800 dark:text-gray-200">{selectedSupplier.supplier_tel || 'N/A'}</p>
+                            <p className="text-[10px] text-gray-500  uppercase">{t('phoneNumber', 'Phone Number')}</p>
+                            <p className="text-sm  text-gray-800 dark:text-gray-200">{selectedSupplier.supplier_tel || 'N/A'}</p>
                           </div>
                         </div>
                         <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-2xl">
-                          <div className="p-2 bg-white dark:bg-gray-700 rounded-lg text-green-500 font-bold">@</div>
+                          <div className="p-2 bg-white dark:bg-gray-700 rounded-lg text-green-500 ">@</div>
                           <div>
-                            <p className="text-[10px] text-gray-500 uppercase">{t('emailAddress', 'Email Address')}</p>
-                            <p className="text-sm text-gray-800 dark:text-gray-200 truncate max-w-[180px]">{selectedSupplier.supplier_email || 'N/A'}</p>
+                            <p className="text-[10px] text-gray-500  uppercase">{t('emailAddress', 'Email Address')}</p>
+                            <p className="text-sm  text-gray-800 dark:text-gray-200 truncate max-w-[180px]">{selectedSupplier.supplier_email || 'N/A'}</p>
                           </div>
                         </div>
                       </div>
@@ -431,7 +424,7 @@ const SupplierList = () => {
 
                   <div className="space-y-6">
                     <div>
-                      <h3 className="text-sm text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                      <h3 className="text-sm  text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
                         <div className="w-1 h-4 bg-orange-500 rounded-full"></div>
                         {t('location', 'Location')}
                       </h3>
@@ -439,7 +432,7 @@ const SupplierList = () => {
                         <div className="flex items-start gap-3">
                           <FaMapMarkerAlt className="text-orange-500 mt-1" />
                           <div>
-                            <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed font-medium">
+                            <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed ">
                               {formatAddress(selectedSupplier)}
                             </p>
                             <a
@@ -470,12 +463,14 @@ const SupplierList = () => {
                     onClick={() => setShowDetailModal(false)}
                     variant='danger'
                     outline
-                    className="order-2 sm:order-1 px-8 py-3 rounded-2xl text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all font-bold uppercase tracking-wide"
+                    className="order-2 sm:order-1 px-8 py-3 rounded-2xl text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700  transition-all font-bold uppercase tracking-wide"
                   >
                     {t('close', 'CLOSE')}
                   </Button>
                   <Button onClick={() => handleEdit(selectedSupplier)}
                     variant='success'
+                    menuId={MENU_ID}
+                    actionType="is_modify"
                     className="order-1 sm:order-2 px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl shadow-blue-200 dark:shadow-none transition-all flex items-center justify-center gap-2 font-bold uppercase tracking-wide"
                   >
                     <FaEdit /> {t('editSupplier', 'EDIT SUPPLIER')}

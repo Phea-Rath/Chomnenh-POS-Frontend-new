@@ -17,7 +17,6 @@ import { useOutletsContext } from "../layouts/Management";
 
 const Home = () => {
   const { t, i18n } = useTranslation();
-  const { darkMode } = useOutletsContext();
   const token = localStorage.getItem("token");
   const proId = localStorage.getItem("profileId");
 
@@ -37,14 +36,14 @@ const Home = () => {
     <motion.div variants={itemVariants}>
       <Link to={to} className="block group">
         <div className={`h-full p-6 rounded-[2rem] border transition-all duration-300 
-          ${darkMode ? "bg-gray-800/40 border-gray-700 hover:bg-gray-800 hover:border-blue-500/50" : "bg-white border-gray-100 hover:shadow-xl hover:shadow-blue-500/5 hover:border-blue-200"}`}>
+          dark:bg-gray-800/40 dark:border-gray-700 dark:hover:bg-gray-800 dark:hover:border-blue-500/50 bg-white border-gray-100 hover:shadow-xl hover:shadow-blue-500/5 hover:border-blue-200`}>
           <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-4 transition-transform duration-500 group-hover:scale-110 group-hover:rotate-6 ${color}`}>
             <Icon className="w-8 h-8" />
           </div>
-          <h3 className={`text-lg font-black uppercase tracking-tight mb-2 ${darkMode ? "text-white" : "text-gray-900"}`}>
+          <h3 className={`text-lg font-black uppercase tracking-tight mb-2 dark:text-white text-gray-900`}>
             {title}
           </h3>
-          <p className={`text-sm font-medium ${darkMode ? "text-gray-400" : "text-gray-500"}`}>
+          <p className={`text-sm font-medium dark:text-gray-400 text-gray-500`}>
             {desc}
           </p>
         </div>
@@ -53,7 +52,7 @@ const Home = () => {
   );
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8 md:py-12">
+    <div className="max-w-7xl mx-auto px-4">
       <motion.div
         variants={containerVariants}
         initial="hidden"
@@ -61,20 +60,20 @@ const Home = () => {
         className="space-y-12"
       >
         {/* Welcome Section */}
-        <motion.div variants={itemVariants} className="relative overflow-hidden rounded-lg p-8 md:p-12 bg-chomnenh-light">
+        <motion.div variants={itemVariants} className="relative overflow-hidden rounded-lg h-50 p-8">
           <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl" />
           <div className="absolute bottom-0 left-0 w-32 h-32 bg-blue-400/20 rounded-full translate-y-1/2 -translate-x-1/2 blur-2xl" />
           
           <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-8">
             <div className="space-y-4 max-w-2xl">
-              <span className="inline-block px-4 py-1.5 rounded-full bg-white/20 text-white text-xs font-black uppercase tracking-widest">
+              {/* <span className="inline-block px-4 py-1.5 rounded-full bg-white/20 text-white text-xs font-black uppercase tracking-widest">
                 {t("management_v2")}
-              </span>
-              <h1 className="text-4xl md:text-5xl font-black text-white leading-tight">
+              </span> */}
+              <h1 className="text-4xl font-Kantumruy font-black dark:text-white text-gray-700 leading-tight">
                 {isKhmer ? "រីករាយដែលបានជួបអ្នកវិញ" : "Welcome back"}, <br />
-                <span className="text-blue-200">{user?.username || "Admin"}</span>!
+                <span className="text-blue-900 dark:text-blue-200">{user?.username || "Admin"}</span>!
               </h1>
-              <p className="text-blue-50 text-lg font-medium opacity-90">
+              <p className="dark:text-blue-50 text-gray-600 text-md font-medium opacity-90">
                 {isKhmer 
                   ? "គ្រប់គ្រងអាជីវកម្មរបស់អ្នកដោយភាពងាយស្រួល និងប្រសិទ្ធភាពខ្ពស់ជាមួយ Chomnenh POS។" 
                   : "Effortlessly manage your store's operations, track inventory, and analyze sales performance in real-time."}
@@ -82,7 +81,7 @@ const Home = () => {
             </div>
             <div className="hidden lg:block">
                <div
-                className="w-48 h-48 bg-white/10 backdrop-blur-md rounded-[2.5rem] border border-white/20 flex items-center justify-center"
+                className="w-20 h-20 bg-white/10 backdrop-blur-md rounded-[2.5rem] border border-white/20 flex items-center justify-center"
                >
                   <HiOutlineLightningBolt className="w-24 h-24 text-blue-200" />
                </div>
@@ -94,16 +93,16 @@ const Home = () => {
         <div className="space-y-6">
           <div className="flex items-center gap-3">
             <div className="w-1.5 h-6 bg-blue-600 rounded-full" />
-            <h2 className={`text-xl font-black uppercase tracking-[0.2em] ${darkMode ? "text-white" : "text-gray-900"}`}>
+            <h2 className={`text-xl font-black uppercase tracking-[0.2em] dark:text-white text-gray-900`}>
               {t("quickActions")}
             </h2>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <QuickAction 
-              to="/orders" 
+              to="/wholesale" 
               icon={HiOutlineShoppingCart} 
-              title={isKhmer ? "លក់ទំនិញ" : "Point of Sale"}
+              title={isKhmer ? "លក់ដុំ ឫ​ចេញវិក័យបត្រ" : "Wholesale or Invoice"}
               desc={isKhmer ? "បង្កើតការបញ្ជាទិញថ្មីរហ័ស" : "Create and process customer orders instantly."}
               color="bg-emerald-100 text-emerald-600 dark:bg-emerald-900/40 dark:text-emerald-400"
             />
@@ -133,14 +132,14 @@ const Home = () => {
 
         {/* Feature Highlights */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className={`lg:col-span-2 p-8 rounded-[2.5rem] border ${darkMode ? "bg-gray-800/40 border-gray-700" : "bg-white border-gray-100"}`}>
+          <div className={`lg:col-span-2 p-8 rounded-[2.5rem] border dark:bg-gray-800/40 dark:border-gray-700 bg-white border-gray-100`}>
             <div className="flex flex-col md:flex-row gap-8">
               <div className="flex-1 space-y-6">
                 <div className="space-y-2">
-                  <h3 className={`text-2xl font-black ${darkMode ? "text-white" : "text-gray-900"}`}>
+                  <h3 className={`text-2xl font-black dark:text-white text-gray-900`}>
                     {isKhmer ? "មុខងារពិសេសដែលត្រូវបានណែនាំ" : "Recommended Special Functions"}
                   </h3>
-                  <p className={`font-medium ${darkMode ? "text-gray-400" : "text-gray-500"}`}>
+                  <p className={`font-medium dark:text-gray-400 text-gray-500`}>
                     {isKhmer 
                       ? "បង្កើនប្រសិទ្ធភាពការងាររបស់អ្នកជាមួយមុខងារទំនើបៗទាំងនេះ។" 
                       : "Maximize your efficiency with these advanced system capabilities designed for growth."}
@@ -148,12 +147,12 @@ const Home = () => {
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className={`p-4 rounded-2xl flex items-start gap-4 ${darkMode ? "bg-gray-800" : "bg-blue-50/50"}`}>
+                  <div className={`p-4 rounded-2xl flex items-start gap-4 dark:bg-gray-800 bg-blue-50/50`}>
                     <div className="p-2 rounded-xl bg-blue-100 text-blue-600">
                       <HiOutlineSparkles className="w-5 h-5" />
                     </div>
                     <div>
-                      <h4 className={`font-bold text-sm ${darkMode ? "text-white" : "text-gray-900"}`}>
+                      <h4 className={`font-bold text-sm dark:text-white text-gray-900`}>
                         {isKhmer ? "ការវិភាគចំណេញ-ខាត" : "Profit Analysis"}
                       </h4>
                       <p className="text-xs text-gray-500 mt-1">
@@ -161,12 +160,12 @@ const Home = () => {
                       </p>
                     </div>
                   </div>
-                  <div className={`p-4 rounded-2xl flex items-start gap-4 ${darkMode ? "bg-gray-800" : "bg-emerald-50/50"}`}>
+                  <div className={`p-4 rounded-2xl flex items-start gap-4 dark:"bg-gray-800 bg-emerald-50/50`}>
                     <div className="p-2 rounded-xl bg-emerald-100 text-emerald-600">
                       <HiOutlineCubeTransparent className="w-5 h-5" />
                     </div>
                     <div>
-                      <h4 className={`font-bold text-sm ${darkMode ? "text-white" : "text-gray-900"}`}>
+                      <h4 className={`font-bold text-sm dark:text-white text-gray-900`}>
                         {isKhmer ? "ការតាមដានផលិតកម្ម" : "Production Tracking"}
                       </h4>
                       <p className="text-xs text-gray-500 mt-1">
@@ -176,9 +175,9 @@ const Home = () => {
                   </div>
                 </div>
               </div>
-              <div className={`w-full md:w-64 rounded-3xl overflow-hidden flex flex-col items-center justify-center p-6 text-center border-2 border-dashed ${darkMode ? "border-gray-700 bg-gray-900/50" : "border-blue-100 bg-blue-50/30"}`}>
+              <div className={`w-full md:w-64 rounded-3xl overflow-hidden flex flex-col items-center justify-center p-6 text-center border-2 border-dashed dark:border-gray-700 dark:bg-gray-900/50 border-blue-100 bg-blue-50/30`}>
                 <HiOutlineShieldCheck className="w-12 h-12 text-blue-500 mb-4" />
-                <h4 className={`font-black text-sm uppercase tracking-wider mb-2 ${darkMode ? "text-white" : "text-gray-900"}`}>
+                <h4 className={`font-black text-sm uppercase tracking-wider mb-2 dark:text-white text-gray-900`}>
                   {isKhmer ? "សុវត្ថិភាពខ្ពស់" : "Secure System"}
                 </h4>
                 <p className="text-[11px] font-medium text-gray-500 uppercase tracking-tighter">
@@ -189,7 +188,7 @@ const Home = () => {
           </div>
 
           {/* Mini Insights Placeholder */}
-          <div className={`p-8 rounded-[2.5rem] border ${darkMode ? "bg-blue-600 border-blue-500" : "bg-slate-900 border-slate-800"} text-white flex flex-col justify-between overflow-hidden relative group`}>
+          <div className={`p-8 rounded-[2.5rem] border dark:bg-chomnenh-light bg-slate-900 border-slate-800 text-white flex flex-col justify-between overflow-hidden relative group`}>
             <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
                 <HiOutlineLightningBolt className="w-32 h-32" />
             </div>

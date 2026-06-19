@@ -159,23 +159,7 @@ const QuotationDetail = () => {
                     </div>
                 </div>
 
-                {/* Action Buttons - Excel style */}
-                <div className="flex flex-wrap gap-2">
-
-
-                    <button
-                        onClick={() => navigator(`/home/quotations/receipt/${id}`)}
-                        className="flex items-center px-3 py-1.5 border border-gray-300 dark:border-gray-700 rounded bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 text-sm text-gray-700 dark:text-gray-200"
-                    >
-                        <FaPrint className="mr-1" size={12} />
-                        {t('print')}
-                    </button>
-
-                    <button onClick={() => navigator(`/home/quotations/edit/${id}`)} className="flex items-center px-3 py-1.5 border border-gray-300 dark:border-gray-700 rounded bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 text-sm text-gray-700 dark:text-gray-200">
-                        <FaEdit className="mr-1" size={12} />
-                        {t('edit')}
-                    </button>
-                </div>
+                
             </div>
 
             {/* Main grid */}

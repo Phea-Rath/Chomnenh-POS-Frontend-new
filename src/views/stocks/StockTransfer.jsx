@@ -16,7 +16,9 @@ import RichSearch from '../../utils/RichSearch';
 import Input from '../../utils/Input';
 import dayjs from 'dayjs';
 import { useNotify } from '../../utils/NotificationProvider';
-import { FaUser } from 'react-icons/fa';
+import { FaUser, FaSave, FaTimes, FaBox, FaExchangeAlt } from 'react-icons/fa';
+import { MdLocalShipping } from "react-icons/md";
+import ItemTable from "../../utils/ItemTable";
 
 const StockTransfer = () => {
   const { t } = useTranslation();
@@ -44,7 +46,7 @@ const StockTransfer = () => {
   const [createStock] = useCreateStockMutation(token);
   const [errors, setErrors] = useState({});
   const [alertError, setAlertError] = useState('');
-    const {data:users} = useGetAllUserQuery(token);
+  const { data: users } = useGetAllUserQuery(token);
 
   // Initialize form state
   const { id } = useParams();
@@ -58,7 +60,8 @@ const StockTransfer = () => {
     stock_remark: '',
     order_id: null,
     received_by: null,
-    approved_by: null
+    approved_by: null,
+    stock_date: dayjs().format('YYYY-MM-DD'),
   });
 
   /* Fetch stock when in update mode */
@@ -134,45 +137,56 @@ const StockTransfer = () => {
 
   function onSelectItem(value) {
     const finding = fielditems.find(exp => exp.item_id == value);
-    const filterItem = fielditems.filter(exp => exp.item_id != value);
-    setfielditems(filterItem);
-    const exsistItem = selectItems.find(exp => exp.item_id == value);
-    if (exsistItem) {
+    if (!finding) return;
+
+    if (selectItems.some(exp => exp.item_id == value)) {
       setselectItems(prev =>
-        prev.map(exp =>
-          exp.item_id == value
-            ? { ...exp, quantity: Number(exsistItem.quantity) + 1 }
-            : exp
-        )
+        prev.map(exp => {
+          if (exp.item_id == value) {
+            const newQty = Number(exp.quantity) + 1;
+            if (Number(exp.stock.in_stock) < newQty) {
+              notify.warning(`${t('only')} ${exp.stock.in_stock} ${t('itemsAvailableInStock')}`);
+              return exp;
+            }
+            return { ...exp, quantity: newQty };
+          }
+          return exp;
+        })
       );
-    } else {
-      setselectItems(prev => {
-        return [...prev, { ...finding, quantity: 1, expire_date: null }];
-      });
+      return;
     }
+
+    setselectItems(prev => [...prev, { ...finding, quantity: 1, expire_date: '' }]);
+    setfielditems(prev => prev.filter(exp => exp.item_id != value));
   }
 
   const handleChange = (index, field, value) => {
     setselectItems(prev => {
       const updated = [...prev];
+      const item = { ...updated[index] };
+
+      if (field === 'quantity') {
+        const newQty = Number(value);
+        if (Number(item.stock.in_stock) < newQty) {
+          notify.warning(`${t('only')} ${item.stock.in_stock} ${t('itemsAvailableInStock')}`);
+          // item.quantity = item.stock.in_stock; // Optionally cap it
+        }
+      }
+
       updated[index] = {
-        ...updated[index],
+        ...item,
         [field]: value,
       };
-
-      const quantity = parseFloat(updated[index].quantity) || 1;
-      const unit_price = parseFloat(updated[index].unit_price) || 1;
-      updated[index].sub_total = (quantity * unit_price).toFixed(2);
 
       return updated;
     });
   };
 
-  function handleRemove(id) {
-    const filtering = selectItems.filter(exp => exp.item_id != id);
-    const finding = selectItems.find(exp => exp.item_id == id);
+  function handleRemove(index) {
+    const itemToRemove = selectItems[index];
+    const filtering = selectItems.filter((_, i) => i !== index);
     setselectItems(filtering);
-    setfielditems(prev => { return [...prev, finding] });
+    setfielditems(prev => [...prev, itemToRemove]);
   }
 
   async function handleConfirm() {
@@ -181,12 +195,17 @@ const StockTransfer = () => {
 
     try {
       let response;
-      const payload = { 
-        ...form, 
+      const payload = {
+        ...form,
         received_by: form.received_by ? Number(form.received_by) : null,
         approved_by: form.approved_by ? Number(form.approved_by) : null,
-        items: selectItems 
+        items: selectItems.map(item => ({
+          item_id: item.item_id,
+          quantity: parseInt(item.quantity) || 1,
+          expire_date: item.expire_date || null,
+        }))
       };
+
       if (isUpdate) {
         response = await api.put(`stock-transfer/${id}`, payload, {
           headers: { Authorization: `Bearer ${token}` }
@@ -201,27 +220,13 @@ const StockTransfer = () => {
         refetch();
         setLoading(false);
         notify.success(response.data.message || (isUpdate ? t('transferUpdatedSuccessfully') : t('transferCreatedSuccessfully')));
-
-        if (isUpdate) {
-          navigator(-1);
-        } else {
-          setForm({
-            item_id: '',
-            quantity: 0,
-            unit_price: 0,
-            from_warehouse_id: '',
-            to_warehouse_id: '',
-            stock_type_id: '',
-            note: ''
-          });
-          navigator(-1);
-        }
+        navigator(-1);
       } else {
         throw new Error(response.data.message);
       }
     } catch (error) {
       setLoading(false);
-      const errorMessage = error?.message || error || (isUpdate ? t('errorUpdatingTransfer') : t('errorCreatingTransfer'));
+      const errorMessage = error?.response?.data?.message || error?.message || (isUpdate ? t('errorUpdatingTransfer') : t('errorCreatingTransfer'));
       setErrors({ general: errorMessage });
       notify.error(errorMessage);
     }
@@ -247,42 +252,19 @@ const StockTransfer = () => {
       notify.error(error);
       return;
     }
+    if (selectItems.length === 0) {
+      notify.error(t("pleaseAddAtLeastOneItem"));
+      return;
+    }
     setAlertBox(true);
-    setForm(prev => {
-      return { ...prev, items: selectItems }
-    });
-  }
-
-  const options = [];
-  for (let i = 0; i < fielditems.length; i++) {
-    options.push({
-      value: fielditems[i].item_id,
-      name: fielditems[i].item_name,
-      label: (
-        <div className='flex items-center gap-3 justify-between w-full'>
-          <div className='flex items-center gap-3 flex-1'>
-            <span className="font-medium dark:text-gray-200">{fielditems[i].item_name}</span>
-          </div>
-          <div className='flex items-center gap-2'>
-            <Tag bordered={false} color="blue" className="text-xs dark:bg-blue-900/30">
-              {fielditems[i].size_name}
-            </Tag>
-            <span className="text-xs text-gray-500 dark:text-gray-400 font-mono">
-              {t('stock')}: {Number(fielditems[i].stock.in_stock)}
-            </span>
-          </div>
-        </div>
-      ),
-    });
   }
 
   const onSelectWarehouse = async (value) => {
     setForm(prev => { return { ...prev, from_warehouse: value } });
     const dataSelected = toWarehouse.filter(item => item.warehouse_id != value);
-    const itemSelected = items.filter(item => item.warehouse_id == value);
     settoWarehouseSelect(dataSelected);
-    setfielditems(itemSelected || []);
     setselectItems([]);
+    setfielditems([]);
 
     api.get(`stock_by_warehouse/${value}`, {
       headers: {
@@ -298,16 +280,7 @@ const StockTransfer = () => {
   }
 
   return (
-    <section className='view-page p-6 bg-transparent min-h-screen'>
-      {alertError && (
-        <Alert
-          message={alertError}
-          type="error"
-          closable
-          onClose={() => setAlertError('')}
-          className="mb-6"
-        />
-      )}
+    <section className='view-page bg-transparent min-h-screen'>
       <AlertBox
         isOpen={alertBox}
         title={t('confirmStockTransfer')}
@@ -318,258 +291,97 @@ const StockTransfer = () => {
         cancelText={t('cancel')}
       />
 
-      <div className=" mx-auto">
-        <div className="mb-6">
-          <div className="flex items-center justify-between">
+      <div className="mx-auto">
+        {/* Header */}
+        <div>
+          <div className="flex justify-between items-center bg-gray-50 dark:bg-gray-600 px-4 py-2">
             <div>
-              <h1 className="text-2xl font-bold text-gray-800 dark:text-white mb-2">{isUpdate ? t('editStockTransfer') : t('stockTransfer')}</h1>
-              <p className="text-gray-600 dark:text-gray-400">{isUpdate ? `${t('updateExistingTransfer')} #${stockByIdRes.data?.data?.stock_no || form.stock_id}` : t('transferItemsBetweenWarehouses')}</p>
+              <h1 className="text-md font-bold text-gray-900 dark:text-white">
+                {isUpdate ? t('editStockTransfer') : t('stockTransfer')}
+              </h1>
+              <p className="text-gray-600 text-xs dark:text-gray-400">
+                {isUpdate ? `${t('updateExistingTransfer')} #${stockByIdRes.data?.data?.stock_no || form.stock_id}` : t('transferItemsBetweenWarehouses')}
+              </p>
+            </div>
+            {/* Action Buttons */}
+            <div className="flex gap-3 justify-between items-center">
+              <Button
+                type="button"
+                disabled={loading || selectItems.length === 0}
+                variant={'save'}
+                onClick={handleSubmit}
+                outline={false}
+              >
+                {isUpdate ? <FaSave /> : <FaExchangeAlt />}
+                {isUpdate ? t('updateTransfer') : t('createTransfer')}
+              </Button>
+              <Link to={-1} className="flex-1">
+                <Button
+                  type="button"
+                  variant={'cancel'}
+                  outline={false}
+                >
+                  <FaTimes />
+                  {t('cancel')}
+                </Button>
+              </Link>
             </div>
           </div>
+
+          {/* Validation Summary */}
+          {Object.keys(errors).length > 0 && (
+            <Alert
+              message={t('pleaseFixErrors')}
+              description={
+                <ul className="list-disc list-inside">
+                  {Object.values(errors).map((error, index) => (
+                    error && <li key={index}>{error}</li>
+                  ))}
+                </ul>
+              }
+              type="error"
+              showIcon
+              className="mb-6"
+            />
+          )}
+          {alertError && (
+            <Alert
+              message={alertError}
+              type="error"
+              closable
+              onClose={() => setAlertError('')}
+              className="mb-4 mx-4 mt-2"
+            />
+          )}
         </div>
 
         <form onSubmit={handleSubmit}>
-          <div className="bg-transparent rounded-xl overflow-hidden">
+          <div className="bg-transparent overflow-hidden">
             <div>
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-
-                {/* Right Column - Selected Items Table */}
-                <div className="lg:col-span-2">
-                  <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-sm overflow-hidden transition-colors">
-                    <div className="px-4 py-3 bg-gradient-to-r from-gray-50 to-blue-50 dark:from-gray-900/50 dark:to-gray-900/30 border-b border-gray-200 dark:border-gray-700">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h3 className="text-lg font-medium text-gray-700 dark:text-gray-200">{t('selectedItems')}</h3>
-                          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                            {selectItems.length} {t('itemsSelectedForTransfer')}
-                          </p>
-                        </div>
-                        <div className="bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 px-3 py-1 rounded-full text-sm font-medium">
-                          {t('totalItems')}: {selectItems.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0)}
-                        </div>
-                      </div>
-                    </div>
-
-                    {selectItems.length > 0 ? (
-                      <div className="overflow-x-auto">
-                        <table className="w-full">
-                          <thead className="bg-gray-50 dark:bg-gray-900/50">
-                            <tr className="border-b border-gray-200 dark:border-gray-700">
-                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                NO.
-                              </th>
-                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                {t('name')}
-                              </th>
-                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                {t('quantity')}
-                              </th>
-                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                {t('expire')}
-                              </th>
-                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                {t('actions')}
-                              </th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                            {selectItems.map((item, index) => (
-                              <tr key={index} className="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
-                                <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-white">
-                                  {index + 1}
-                                </td>
-                                <td className="px-4 py-3">
-                                  <div className="flex items-center gap-3">
-                                    <div>
-                                      <div className=" text-gray-900 dark:text-white">
-                                        {item.item_name}
-                                      </div>
-                                      <div className="flex items-center text-sm font-medium text-gray-500 dark:text-gray-400 gap-2 mt-1 font-mono">
-                                        {item.barcode}
-                                      </div>
-                                    </div>
-                                  </div>
-                                </td>
-                                <td className="px-4 py-3">
-                                  <div className="flex items-center gap-2">
-                                    {/* <input
-                                      type="number"
-                                      min="1"
-                                      max={Number(item.stock.in_stock)}
-                                      placeholder="0"
-                                      onWheel={(e) => e.target.blur()}
-                                      className="w-20 px-2 py-1 border border-gray-300 dark:border-gray-600 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-center dark:bg-gray-900 dark:text-white"
-                                      name="quantity"
-                                      onChange={(e) => {
-                                        if (Number(item.stock.in_stock) < Number(e.target.value)) {
-                                          notify.warning(`${t('only')} ${item.stock.in_stock} ${t('itemsAvailableInStock')}`);
-                                          return;
-                                        }
-                                        handleChange(index, 'quantity', e.target.value)
-                                      }}
-                                      value={item.quantity ?? 1}
-                                      required
-                                    /> */}
-                                    <Input
-                                      type='number'
-                                      min='1'
-                                      max={Number(item.stock.in_stock)}
-                                      placeholder="0"
-                                      onWheel={(e) => e.target.blur()}
-                                      name="quantity"
-                                      onChange={(value) => {
-                                        if (Number(item.stock.in_stock) < Number(value)) {
-                                          notify.warning(`${t('only')} ${item.stock.in_stock} ${t('itemsAvailableInStock')}`);
-                                          return;
-                                        }
-                                        handleChange(index, 'quantity', value)
-                                      }}
-                                      value={item.quantity ?? 1}
-                                      required
-                                    />
-                                    <span className="text-xs text-gray-500 dark:text-gray-400">
-                                      / {Number(item.stock.in_stock)} {t('inStock')}
-                                    </span>
-                                  </div>
-                                </td>
-                                <td className="px-4 py-3">
-                                  {/* <input
-                                    type="date"
-                                    className="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-900 dark:text-white transition-colors"
-                                    name="expire_date"
-                                    defaultValue={item.expire_date || ''}
-                                    onChange={(e) => handleChange(index, 'expire_date', e.target.value)}
-                                    value={item.expire_date}
-                                    required
-                                  /> */}
-                                  <DatePicker
-                                    name='expire_date'
-                                    format="YYYY-MM-DD"
-                                    className='date-picker'
-                                    onChange={(date, dateString) => handleChange(index, 'expire_date', dateString)}
-                                    value={item.expire_date ? dayjs(item.expire_date) : null}
-                                    required
-                                  />
-                                </td>
-                                <td className="px-4 py-3">
-                                  <button
-                                    onClick={() => handleRemove(item.item_id)}
-                                    type="button"
-                                    className="text-red-600 hover:text-red-800 transition-colors p-2 rounded hover:bg-red-50 dark:hover:bg-red-900/30"
-                                    title={t('removeItem')}
-                                  >
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                    </svg>
-                                  </button>
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    ) : (
-                      <div className="text-center py-12">
-                        <svg className="w-16 h-16 text-gray-300 dark:text-gray-700 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-                        </svg>
-                        <p className="text-gray-500 dark:text-gray-400 text-lg mb-2">{t('noItemsSelected')}</p>
-                        <p className="text-gray-400 dark:text-gray-500 text-sm">{t('selectItemsFromDropdownToTransfer')}</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-                {/* Left Column - Form Controls */}
-                <div className="lg:col-span-1 space-y-4">
-                  <div className="form-group">
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      <span className="flex items-center gap-2">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                        </svg>
-                        {t('selectItem')}
-                      </span>
-                    </label>
-
-
-                    <RichSearch
-                      data={fielditems}
-                      keyFields={{
-                        id: 'item_id',
-                        title: 'item_name',
-                        image: 'image',
-                        quantity: 'stock'
-                      }}
-                      placeholder={t('searchItems')}
-                      onSelected={onSelectItem}
-                      onScrollReader={onScrollFetch}
-                      onSearch={(value) => setSearchTerm(value)}
-                    />
-                  </div>
-
-                  <div className="flex flex-wrap items-center gap-3">
-                    <div className="form-group grow">
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 uppercase">
-                        <span className="flex items-center gap-2">
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                          </svg>
-                          {t('fromWarehouse')}
-                        </span>
+              <div className="grid grid-cols-1">
+                <div className="border-y border-gray-200 dark:border-gray-500 px-4 py-10 ">
+                  {/* Stock Details Card */}
+                  <div className="space-y-4 flex flex-wrap gap-3">
+                    <div className="grow min-w-[200px]">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 uppercase">
+                        {t('fromWarehouse')} <span className="text-red-500">*</span>
                       </label>
-                      {/* <select
-                        onChange={(e) => onSelectWarehouse(e.target.value)}
-                        value={form.from_warehouse}
-                        className='w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-900 dark:text-white transition-colors'
-                        required
-                      >
-                        <option value="">{t('selectSourceWarehouse')}</option>
-                        {warehousesSelect.map((item) => (
-                          <option key={item.warehouse_id} value={item.warehouse_id}>
-                            {item.warehouse_name}
-                          </option>
-                        ))}
-                      </select> */}
                       <RichSearch
                         data={warehousesSelect}
-                        value={form.from_warehouse || null}
+                        value={form.from_warehouse}
                         keyFields={{
                           id: 'warehouse_id',
                           title: 'warehouse_name'
                         }}
-                        value={form.from_warehouse}
                         placeholder={t('selectSourceWarehouse')}
                         onSelected={onSelectWarehouse}
                       />
                     </div>
 
-                    <div className="form-group grow">
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 uppercase">
-                        <span className="flex items-center gap-2">
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" />
-                          </svg>
-                          {t('stockType')}
-                        </span>
+                    <div className="grow min-w-[200px]">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 uppercase">
+                        {t('stockType')} <span className="text-red-500">*</span>
                       </label>
-                      {/* <select
-                        name="stock_type_id"
-                        value={form.stock_type_id}
-                        className='w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-900 dark:text-white transition-colors'
-                        onChange={(e) => {
-                          setForm(prev => { return { ...prev, stock_type_id: e.target.value } });
-                        }}
-                        required
-                      >
-                        <option value="">{t('selectStockType')}</option>
-                        {stocktype.map((item) => (
-                          <option key={item.stock_type_id} value={item.stock_type_id}>
-                            {item.stock_type_name}
-                          </option>
-                        ))}
-                      </select> */}
-
                       <RichSearch
                         data={stocktype}
                         keyFields={{
@@ -578,65 +390,37 @@ const StockTransfer = () => {
                         }}
                         value={form.stock_type_id}
                         placeholder={t('selectStockType')}
-                        onSelected={(value) => {
-                          setForm(prev => { return { ...prev, stock_type_id: value } });
-                        }}
+                        onSelected={(value) => setForm(prev => ({ ...prev, stock_type_id: value }))}
                       />
                     </div>
 
-                    <div className="form-group grow">
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 uppercase">
-                        <span className="flex items-center gap-2">
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                          </svg>
-                          {t('toWarehouse')}
-                        </span>
+                    <div className="grow min-w-[200px]">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 uppercase">
+                        {t('toWarehouse')} <span className="text-red-500">*</span>
                       </label>
-                      {/* <select
-                        name="to_warehouse_id"
-                        value={form.warehouse_id}
-                        className='w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-900 dark:text-white transition-colors'
-                        onChange={(e) => setForm(prev => { return { ...prev, warehouse_id: e.target.value } })}
-                        required
-                      >
-                        <option value="">{t('selectDestinationWarehouse')}</option>
-                        {toWarehouseSelect.map((item) => (
-                          <option key={item.warehouse_id} value={item.warehouse_id}>
-                            {item.warehouse_name}
-                          </option>
-                        ))}
-                      </select> */}
                       <RichSearch
                         data={toWarehouseSelect}
                         keyFields={{
                           id: 'warehouse_id',
                           title: 'warehouse_name'
                         }}
-                        value={form.warehouse_id || null}
+                        value={form.warehouse_id}
                         placeholder={t('selectDestinationWarehouse')}
-                        onSelected={(value) => setForm(prev => { return { ...prev, warehouse_id: value } })}
+                        onSelected={(value) => setForm(prev => ({ ...prev, warehouse_id: value }))}
                       />
                     </div>
 
-                    <div className="form-group grow">
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 uppercase">
-                        <span className="flex items-center gap-2">
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
-                          </svg>
-                          {t('description')}
-                        </span>
+                    <div className="grow min-w-[200px]">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        {t('stockDate')}
                       </label>
-                      <textarea
-                        className="textarea-input"
-                        placeholder={t('description')}
-                        rows="3"
-                        name="stock_remark"
-                        value={form.stock_remark}
-                        onChange={(e) => setForm(prev => { return { ...prev, stock_remark: e.target.value } })}
-                      ></textarea>
+                      <DatePicker
+                        format="YYYY-MM-DD"
+                        value={form.stock_date ? dayjs(form.stock_date) : dayjs()}
+                        onChange={(date, dateString) => setForm(prev => ({ ...prev, stock_date: dateString }))}
+                        className="date-picker w-full"
+                        size="large"
+                      />
                     </div>
 
                     <div className="grow min-w-[200px]">
@@ -679,26 +463,75 @@ const StockTransfer = () => {
                       />
                     </div>
                   </div>
+                </div>
 
-                  <div className='flex gap-3 pt-4'>
-                    <Button
-                      type="submit"
-                      disabled={loading || selectItems.length === 0}
-                    >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-                      </svg>
-                      <span>{loading ? (isUpdate ? t('updating') : t('creating')) : (isUpdate ? t('updateTransfer') : t('createTransfer'))}</span>
-                    </Button>
-                    <Link to={-1} className="flex-1">
-                      <Button
-                        type="button"
-                        variant='danger'
-                        outline
-                      >
-                        {t('cancel')}
-                      </Button>
-                    </Link>
+                {/* Items Section */}
+                <div>
+                  <div className="p-4 pb-0">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                      <span className="text-red-500">*</span> {t('searchItems')}
+                    </label>
+
+                    <RichSearch
+                      data={fielditems}
+                      keyFields={{
+                        id: 'item_id',
+                        title: 'item_name',
+                        image: 'image',
+                        quantity: 'stock'
+                      }}
+                      placeholder={t('searchItems')}
+                      onSelected={onSelectItem}
+                      onScrollReader={onScrollFetch}
+                      onSearch={(value) => setSearchTerm(value)}
+                    />
+                  </div>
+
+                  <div className="px-4 pb-2 mt-4">
+                    <ItemTable
+                      data={selectItems}
+                      onDelete={handleRemove}
+                      onCellChange={handleChange}
+                      columns={[
+                        { title: t('item'), key: 'item_name', type: 'item', subKey: 'barcode' },
+                        { 
+                          title: t('quantity'), 
+                          key: 'quantity', 
+                          type: 'number',
+                          render: (item) => (
+                            <div className="text-[10px] text-gray-400">
+                                / {Number(item.stock?.in_stock || 0)} {t('inStock')}
+                            </div>
+                          )
+                        },
+                        { title: t('expireDate'), key: 'expire_date', type: 'date' },
+                      ]}
+                    />
+                  </div>
+
+                  <div className="flex justify-between gap-10 border-y border-gray-200 dark:border-gray-500">
+                    <div className="p-4 grow">
+                      <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        {t('remark')}
+                      </label>
+                      <textarea
+                        value={form.stock_remark}
+                        onChange={(e) => setForm(prev => ({ ...prev, stock_remark: e.target.value }))}
+                        className="textarea-input"
+                        placeholder={t('remarksPlaceholder')}
+                        rows="3"
+                      />
+                    </div>
+                    <div className="max-w-96 grow py-4 flex flex-col justify-end pr-4">
+                      <div className="flex justify-between w-full max-w-[350px] text-slate-800 dark:text-white pt-4 border-t border-slate-200 dark:border-slate-700 mt-2">
+                        <span className="text-sm font-bold uppercase">{t('totalQuantity')}</span>
+                        <span className="text-xl font-bold text-[#13b5ea]">
+                          {selectItems.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0)}
+                        </span>
+                      </div>
+                      <hr className="mb-1 text-gray-300 dark:text-gray-500"/>
+                      <hr className="text-gray-300 dark:text-gray-500"/>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -711,3 +544,4 @@ const StockTransfer = () => {
 }
 
 export default StockTransfer
+

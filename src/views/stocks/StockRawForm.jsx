@@ -26,6 +26,7 @@ import Input from "../../utils/Input";
 import { useNotify } from "../../utils/NotificationProvider";
 
 const { Option } = Select;
+const MENU_ID = 48;
 
 const StockRawForm = () => {
     const { t } = useTranslation();
@@ -297,8 +298,8 @@ const StockRawForm = () => {
             setLimit(prev => prev + 10);
         }
     }
-   
-    
+
+
     return (
         <section className="view-page px-6 py-6 bg-transparent">
             <AlertBox
@@ -325,26 +326,29 @@ const StockRawForm = () => {
                             </p>
                         </div>
                         {/* Action Buttons */}
-                                    <div className="flex gap-3 pt-4">
-                                        <Button
-                                            type="submit"
-                                            disabled={selectMaterials.length === 0}
-                                            
-                                        >
-                                            {isEditMode ? <FaSave /> : <MdLocalShipping />}
-                                            {isEditMode ? t('updateStock') : t('createStock')}
-                                        </Button>
-                                        <Link to={-1} className="flex-1">
-                                            <Button
-                                                type="button"
-                                                variant="danger"
-                                                outline
-                                            >
-                                                <FaTimes />
-                                                {t('cancel')}
-                                            </Button>
-                                        </Link>
-                                    </div>
+                        <div className="flex gap-3 pt-4">
+                            <Button
+                                actionType="is_modify"
+                                menuId={MENU_ID}
+                                variant="save"
+                                type="submit"
+                                disabled={selectMaterials.length === 0}
+
+                            >
+                                {isEditMode ? <FaSave /> : <MdLocalShipping />}
+                                {isEditMode ? t('updateStock') : t('createStock')}
+                            </Button>
+                            <Link to={-1} className="flex-1">
+                                <Button
+                                    type="button"
+                                    variant="danger"
+                                    outline
+                                >
+                                    <FaTimes />
+                                    {t('cancel')}
+                                </Button>
+                            </Link>
+                        </div>
                     </div>
 
                     {/* Validation Summary */}
@@ -369,7 +373,7 @@ const StockRawForm = () => {
                     <div className="bg-transparent overflow-visible">
                         <div>
                             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                                
+
                                 {/* Right Column - Selected Materials */}
                                 <div className="lg:col-span-2">
                                     <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-sm overflow-visible">
@@ -448,12 +452,12 @@ const StockRawForm = () => {
                                                                         />
                                                                     </td>
                                                                     <td className="px-6 py-4">
-                                                                        
+
                                                                         <DatePicker
                                                                             format="YYYY-MM-DD"
                                                                             value={materialLists[index]?.expire_date ? dayjs(materialLists[index].expire_date) : null}
                                                                             onChange={(date, dateString) => handleChange(index, 'expire_date', dateString)}
-                                                                            className="date-picker" 
+                                                                            className="date-picker"
                                                                             size="large"
                                                                         />
                                                                     </td>
@@ -512,22 +516,22 @@ const StockRawForm = () => {
                                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                                             <span className="text-red-500">*</span> {t('searchRawMaterials')}
                                         </label>
-                                        <RichSearch 
-                                            data={fieldMaterials} 
+                                        <RichSearch
+                                            data={fieldMaterials}
                                             keyFields={{
-                                                id: 'id', 
-                                                title: 'material_name', 
-                                                subtitle: 'material_code', 
-                                                image: 'material_image', 
-                                                price: 'material_cost', 
+                                                id: 'id',
+                                                title: 'material_name',
+                                                subtitle: 'material_code',
+                                                image: 'material_image',
+                                                price: 'material_cost',
                                                 // quantity: 'stock'
-                                            }} 
-                                            onScrollReader={onScrollFetch} 
-                                            onSelected={onSelectMaterial} 
-                                            onSearch={setSearchMaterial} 
+                                            }}
+                                            onScrollReader={onScrollFetch}
+                                            onSelected={onSelectMaterial}
+                                            onSearch={setSearchMaterial}
                                             placeholder={t('searchRawMaterialsPlaceholder')}
                                         />
-                                    </div>      
+                                    </div>
 
                                     {/* Stock Details Card */}
                                     <div className="">
@@ -566,11 +570,11 @@ const StockRawForm = () => {
                                                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                                     {t('toWarehouse')} <span className="text-red-500">*</span>
                                                 </label>
-                                                <RichSearch 
+                                                <RichSearch
                                                     placeholder={t('selectWarehouse')}
                                                     value={form.warehouse_id}
-                                                    data={toWarehouse} keyFields={{id: 'warehouse_id', title: 'warehouse_name'}} 
-                                                    onSelected={(id)=>setForm(prev => ({ ...prev, warehouse_id: id }))}/>
+                                                    data={toWarehouse} keyFields={{ id: 'warehouse_id', title: 'warehouse_name' }}
+                                                    onSelected={(id) => setForm(prev => ({ ...prev, warehouse_id: id }))} />
                                             </div>
 
                                             <div className="grow">
@@ -641,7 +645,7 @@ const StockRawForm = () => {
                                         </div>
                                     </div>
 
-                                    
+
                                 </div>
 
                             </div>

@@ -1,5 +1,28 @@
 import React, { useEffect, useState, useRef } from "react";
+import { useNavigate, useParams } from "react-router";
+import { motion } from 'framer-motion';
+import {
+  LuArrowLeft,
+  LuSave,
+  LuX,
+  LuRefreshCw,
+  LuImage,
+  LuTag,
+  LuPackage,
+  LuTrash2,
+  LuPlus,
+  LuPalette,
+  LuSettings2,
+  LuInfo,
+  LuFileText,
+  LuBox
+} from 'react-icons/lu';
 import { IoMdCloudUpload } from "react-icons/io";
+import { IoPulseOutline } from "react-icons/io5";
+import { Divider, Select, Space, Alert } from "antd";
+import { useTranslation } from "react-i18next";
+
+import api from "../../services/api";
 import { useOutletsContext } from "../../layouts/Management";
 import AlertBox from "../../services/AlertBox";
 import { useGetAllBrandQuery } from "../../../app/Features/brandsSlice";
@@ -11,19 +34,14 @@ import {
   useGetAllItemsQuery,
   useGetItemByIdQuery,
 } from "../../../app/Features/itemsSlice";
-import { Divider, Select, Space, Alert } from "antd";
-import { FaSave, FaTimes, FaPalette, FaTag, FaBox, FaTrash, FaPlus, FaEdit } from "react-icons/fa";
-import api from "../../services/api";
-import { useNavigate, useParams } from "react-router";
 import { useGetAllSaleQuery } from "../../../app/Features/salesSlice";
-import { IoPulseOutline } from "react-icons/io5";
 import { useGetAllAttributeQuery } from "../../../app/Features/attributesSlice";
-import { useTranslation } from "react-i18next";
 import Input from "../../utils/Input";
 import RichSearch from "../../utils/RichSearch";
 import Button from "../../utils/Button";
 import { useNotify } from "../../utils/NotificationProvider";
-
+import { definePermission } from "../../services/serviceFunction";
+const MENU_ID = 6;
 const ItemForm = () => {
   const { t } = useTranslation();
   const notify = useNotify();
@@ -48,10 +66,10 @@ const ItemForm = () => {
   const [attributesAll, setAttributesAll] = useState([]);
   const [attributeName, setAttributeName] = useState("");
   const [isOpen, setIsOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [highlightedIndex, setHighlightedIndex] = useState(0);
   const [submissionError, setSubmissionError] = useState(null);
+  const [saving, setSaving] = useState(false);
   const wrapperRef = useRef(null);
+  const inputRef = useRef(null);
 
   // Item state following the response format
   const [item, setItem] = useState({
@@ -68,7 +86,7 @@ const ItemForm = () => {
   });
 
   // Queries and Mutations
-  const { data: itemData, refetch: refetchItem } = useGetItemByIdQuery({ token, id }, { skip: !isEditMode });
+  const { data: itemData, isLoading: itemLoading, refetch: refetchItem } = useGetItemByIdQuery({ token, id }, { skip: !isEditMode });
 
   const [createItem] = useCreateItemMutation();
   const [updateItem] = useUpdateItemMutation();
@@ -171,30 +189,30 @@ const ItemForm = () => {
 
     // Required field validation
     if (!item.name || item.name.trim() === '') {
-      newErrors.name = t('itemNameRequired', 'Item name is required');
+      newErrors.name = t('itemNameRequired');
     }
 
     if (!item.price || item.price === '') {
-      newErrors.price = t('itemPriceRequired', 'Item price is required');
+      newErrors.price = t('itemPriceRequired');
     } else if (isNaN(item.price) || parseFloat(item.price) <= 0) {
-      newErrors.price = t('itemPriceValid', 'Item price must be a valid positive number');
+      newErrors.price = t('itemPriceValid');
     }
 
     if (!item.category_id || item.category_id === '') {
-      newErrors.category_id = t('categoryRequired', 'Category is required');
+      newErrors.category_id = t('categoryRequired');
     }
 
     if (!item.brand_id || item.brand_id === '') {
-      newErrors.brand_id = t('brandRequired', 'Brand is required');
+      newErrors.brand_id = t('brandRequired');
     }
 
     // Validate other attributes
     attributes.forEach((attr, index) => {
       if (attr.name !== "colors" && (!attr.name || attr.name.trim() === "")) {
-        newErrors[`attribute_${index}_name`] = t('attributeNameRequired', "Attribute name is required");
+        newErrors[`attribute_${index}_name`] = t('attributeNameRequired');
       }
       if (attr.name !== "colors" && (!attr.value || (Array.isArray(attr.value) && attr.value.length === 0))) {
-        newErrors[`attribute_${index}_value`] = t('attributeValueRequired', "Attribute value is required");
+        newErrors[`attribute_${index}_value`] = t('attributeValueRequired');
       }
     });
 
@@ -203,16 +221,11 @@ const ItemForm = () => {
   };
 
   const handleConfirm = async () => {
+    setSaving(true);
     setLoading(true);
     setSubmissionError(null);
-
-    if (!validateForm()) {
-      notify.error(t('error'), t('fixValidationErrors', "Please fix all validation errors before submitting"));
-      setLoading(false);
-      return;
-    }
-
     setAlertBox(false);
+
     const formData = new FormData();
 
     // Append basic fields
@@ -238,19 +251,18 @@ const ItemForm = () => {
     // Append attributes - ensure colors are properly formatted
     const formattedAttributes = attributes.map(attr => ({
       name: attr.name,
-      // type: attr.type,
       value: (Array.isArray(attr.value) ? attr.value.join(',') : attr.value)
     }));
 
     formData.append("attributes", JSON.stringify(formattedAttributes));
 
     // Append new images
-    images.forEach((image, index) => {
+    images.forEach((image) => {
       formData.append(`item_images[]`, image);
     });
 
     if (existingImageId.length > 0) {
-      existingImageId.forEach((id, index) => {
+      existingImageId.forEach((id) => {
         formData.append(`edit_image_id[]`, id);
       });
     } else {
@@ -284,40 +296,51 @@ const ItemForm = () => {
         refetch();
         if (isEditMode) refetchItem();
         saleContext.refetch();
-        notify.success(t('success'), response.data.message || t(isEditMode ? 'itemUpdated' : 'itemCreated'));
-        setLoading(false);
+        notify.success(t(isEditMode ? 'itemUpdated' : 'itemCreated'));
         navigator(-1);
       }
     } catch (error) {
       const errMsg = error?.response?.data?.message || error?.message || t('operationFailed');
       setSubmissionError(errMsg);
-      notify.error(t('error'), errMsg);
+      notify.error(errMsg);
+    } finally {
+      setSaving(false);
       setLoading(false);
     }
   };
 
-  function handleCancel() {
+  const handleCancel = () => {
     setAlertBox(false);
-  }
+  };
 
-  function handleSubmit() {
+  const handleSubmit = () => {
     setSubmissionError(null);
     if (!validateForm()) {
-      notify.error(t('error'), t('fixValidationErrors', "Please fix all validation errors before submitting"));
-
-      const firstErrorField = Object.keys(errors)[0];
-      if (firstErrorField) {
-        const element = document.querySelector(`[data-field="${firstErrorField}"]`);
-        if (element) {
-          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          element.focus();
-        }
-      }
+      notify.error(t('fixHighlightedFields'));
       return;
     }
-
     setAlertBox(true);
-  }
+  };
+
+  const handleReset = () => {
+    setItem({
+      name: "",
+      code: "",
+      price: "",
+      price_discount: "",
+      wholesale_price: "",
+      wholesale_price_discount: "",
+      category_id: "",
+      brand_id: "",
+      scale_id: "",
+      discount: 0,
+    });
+    setViewImages([]);
+    setExistingImages([]);
+    setImages([]);
+    setAttributes([]);
+    setErrors({});
+  };
 
   function changeUpload(e) {
     const files = Array.from(e.target.files);
@@ -338,23 +361,17 @@ const ItemForm = () => {
       });
 
       if (invalidFiles.length > 0) {
-        setErrors(prev => ({
-          ...prev,
-          images: t('invalidFileType', `Invalid file type: ${invalidFiles.join(', ')}. Please select valid image files`)
-        }));
+        notify.error(`${t('invalidFileType')}: ${invalidFiles.join(', ')}`);
       }
 
       if (oversizedFiles.length > 0) {
-        setErrors(prev => ({
-          ...prev,
-          images: t('fileTooLarge', `Files too large: ${oversizedFiles.join(', ')}. Max size 2MB each`)
-        }));
+        notify.error(`${t('fileTooLarge')}: ${oversizedFiles.join(', ')}`);
       }
 
       if (validFiles.length > 0) {
         const newViewImages = validFiles.map(file => URL.createObjectURL(file));
         setViewImages(prev => [...prev, ...newViewImages]);
-        setImages([...validFiles]);
+        setImages(prev => [...prev, ...validFiles]);
         setErrors(prev => ({ ...prev, images: '' }));
       }
     }
@@ -362,6 +379,7 @@ const ItemForm = () => {
 
   function removeImage(index) {
     setViewImages(prev => prev.filter((_, i) => i !== index));
+    setImages(prev => prev.filter((_, i) => i !== index));
   }
 
   function removeExistingImage(index, id) {
@@ -399,63 +417,43 @@ const ItemForm = () => {
           <select
             value={attribute.value[0] || "false"}
             onChange={(e) => updateAttributeValue(index, e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100"
+            className="text-input"
           >
-            <option value="true">{t('booleanTrue', 'True')}</option>
-            <option value="false">{t('booleanFalse', 'False')}</option>
+            <option value="true">{t('booleanTrue')}</option>
+            <option value="false">{t('booleanFalse')}</option>
           </select>
         );
       case 'select':
         return (
-          <div className="space-y-2">
-            <textarea
-              value={Array.isArray(attribute.value) ? attribute.value.join(",") : attribute.value}
-              onChange={(e) => updateAttributeValue(index, e.target.value)}
-              placeholder={t('enterValuesSeparatedByCommas', "Enter values separated by commas (e.g., Red,Blue,Green)")}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100"
-              rows="3"
-            />
-          </div>
+          <textarea
+            value={Array.isArray(attribute.value) ? attribute.value.join(",") : attribute.value}
+            onChange={(e) => updateAttributeValue(index, e.target.value)}
+            placeholder={t('attributeValuesSeparator')}
+            className="textarea-input"
+            rows="3"
+          />
         );
       case 'number':
         return (
-          <input
+          <Input
             type="number"
-            onWheel={(e) => e.target.blur()}   // 👈 បិទ scroll change
+            onWheel={(e) => e.target.blur()}
             value={Array.isArray(attribute.value) ? attribute.value[0] : attribute.value || ""}
-            onChange={(e) => updateAttributeValue(index, e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100"
+            onChange={(value) => updateAttributeValue(index, value)}
           />
         );
       default:
         return (
-          <input
+          <Input
             type="text"
+            placeholder="e,g. size, model, more feature, ..."
             value={Array.isArray(attribute.value) ? attribute.value[0] : attribute.value || ""}
-            onChange={(e) => updateAttributeValue(index, e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100"
+            onChange={(value) => updateAttributeValue(index, value)}
           />
         );
     }
   };
 
-  // Helper function to get input classes with error styling
-  const getInputClass = (fieldName) => {
-    const baseClass = "w-full px-4 py-2 border text-sm rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100";
-    return errors[fieldName]
-      ? `${baseClass} border-red-500 dark:border-red-500 bg-red-50 dark:bg-red-900/20`
-      : `${baseClass} border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500`;
-  };
-
-  // Helper function to get select classes with error styling
-  const getSelectClass = (fieldName) => {
-    const baseClass = "w-full px-4 py-2 border text-sm rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100";
-    return errors[fieldName]
-      ? `${baseClass} border-red-500 dark:border-red-500 bg-red-50 dark:bg-red-900/20`
-      : `${baseClass} border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500`;
-  };
-
-  const inputRef = useRef(null);
   const onAttributeName = value => {
     setAttributeName(value);
   };
@@ -482,144 +480,128 @@ const ItemForm = () => {
     updateColorsInAttributes(newColors);
   };
 
-  const handleColorPick = (color) => {
-    addColor(color);
-    setIsOpen(false);
-  };
-
   const handleCustomColor = (e) => {
     addColor(e.target.value);
   };
 
-  return (
-    <div className=" bg-transparent py-8">
-      <div className="mx-auto px-2">
-        <AlertBox
-          isOpen={alertBox}
-          title={t('confirm', "Confirmation")}
-          message={isEditMode ? t('confirmUpdateItem', `Are you sure you want to update this item?`) : t('confirmCreateItem', `Are you sure you want to create this item?`)}
-          onConfirm={handleConfirm}
-          onCancel={handleCancel}
-          confirmText={isEditMode ? t('update', "Update") : t('create', "Create")}
-          cancelText={t('cancel', "Cancel")}
-        />
+  if (isEditMode && itemLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-blue-200 border-t-[#13b5ea]" />
+          <p className="mt-4 text-gray-600 dark:text-gray-400">{t('loading')}...</p>
+        </div>
+      </div>
+    );
+  }
 
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-            {isEditMode ? t('editItem') : t('createNewItem')}
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400">
-            {isEditMode ? t('updateProductInfo', 'Update product information') : t('addNewProductToInventory', 'Add a new product to your inventory system')}
-          </p>
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="view-page font-sans antialiased text-slate-900 dark:text-slate-100"
+    >
+      <AlertBox
+        isOpen={alertBox}
+        title={t('confirm')}
+        message={isEditMode ? t('confirmUpdateItem') : t('confirmCreateItem')}
+        onConfirm={handleConfirm}
+        onCancel={handleCancel}
+        confirmText={isEditMode ? t('update') : t('create')}
+        cancelText={t('cancel')}
+      />
+
+      <div>
+        {/* Header Section */}
+        <div className="border-b border-slate-200 dark:border-slate-600">
+          <div className="p-4 flex gap-4 items-center justify-between bg-gray-50 dark:bg-gray-600">
+            <div>
+              <button
+                type="button"
+                onClick={() => navigator(-1)}
+                className="mb-2 inline-flex items-center gap-1 text-xs font-semibold uppercase tracking-wider text-[#13b5ea] hover:underline"
+              >
+                <LuArrowLeft size={14} />
+                {t('backToItems')}
+              </button>
+
+              <div className="flex items-center gap-3">
+                <h1 className="text-2xl font-bold text-slate-800 dark:text-white">
+                  {isEditMode ? t('editItem') : t('createNewItem')}
+                </h1>
+                {isEditMode && id && (
+                  <span className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-2 py-0.5 rounded-[2px] text-xs border border-slate-200 dark:border-slate-700">
+                    #{id}
+                  </span>
+                )}
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={handleReset}
+                className="px-4 py-2 text-[13px] font-bold uppercase tracking-wider text-slate-500 hover:text-slate-700 transition-colors"
+              >
+                {t('reset')}
+              </button>
+              <button
+                type="button"
+                onClick={() => navigator(-1)}
+                className="px-4 py-2 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-[2px] text-[13px] font-bold uppercase tracking-wider hover:bg-slate-50 dark:hover:bg-slate-800 transition-all"
+              >
+                {t('cancel')}
+              </button>
+              <button
+                type="button"
+                onClick={handleSubmit}
+                disabled={!definePermission(MENU_ID).is_modify}
+                disabled={saving}
+                className="px-6 py-2 bg-[#13b5ea] hover:bg-[#0f92bd] text-white rounded-[2px] text-[13px] font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-sm disabled:opacity-50"
+              >
+                {saving ? <LuRefreshCw className="animate-spin" /> : <LuSave />}
+                {saving ? t('saving') : isEditMode ? t('updateItem') : t('saveItem')}
+              </button>
+            </div>
+          </div>
         </div>
 
         {submissionError && (
-          <Alert
-            message={t('error', 'Error')}
-            description={submissionError}
-            type="error"
-            showIcon
-            closable
-            onClose={() => setSubmissionError(null)}
-            className="mb-6"
-          />
+          <div className="mt-4 px-4 md:px-6">
+            <Alert
+              message={t('error')}
+              description={submissionError}
+              type="error"
+              showIcon
+              closable
+              onClose={() => setSubmissionError(null)}
+            />
+          </div>
         )}
 
-        <div>
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <form className="max-w-7xl mx-auto">
+          <div className="flex flex-col gap-3">
             {/* Left Column - Image Upload */}
-            <div className="lg:col-span-1">
-              <div>
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-lg font-semibold text-gray-800 dark:text-white">
-                    {t('productImages')}
-                  </h2>
-                  {(viewImages.length > 0 || existingImages.length > 0) && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setViewImages([]);
-                        setExistingImages([]);
-                      }}
-                      className="px-3 py-1 text-sm bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors flex items-center gap-2"
-                    >
-                      <FaTrash className="text-xs" />
-                      {t('removeAll')}
-                    </button>
-                  )}
-                </div>
-
-                {/* Existing Images */}
-                {existingImages.length > 0 && (
-                  <div className="mb-4">
-                    <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('existingImages')}</h3>
-                    <div className="flex flex-wrap gap-3 mb-4">
-                      {existingImages.map((image, index) => (
-                        <div key={index} className="relative group">
-                          <img
-                            src={image.image}
-                            alt={`Existing item ${index + 1}`}
-                            className="w-24 h-24 object-contain rounded-sm shadow-sm"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => removeExistingImage(index, image.image_id)}
-                            className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                          >
-                            <FaTrash className="text-xs" />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* New Images */}
-                {viewImages.length > 0 && (
-                  <div className="mb-4">
-                    <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('newImages')}</h3>
-                    <div className="flex flex-wrap gap-3 mb-4">
-                      {viewImages.map((image, index) => (
-                        <div key={index} className="relative group">
-                          <img
-                            src={image}
-                            alt={`New item preview ${index + 1}`}
-                            className="h-24 w-24 object-contain rounded-sm"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => removeImage(index)}
-                            className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                          >
-                            <FaTrash className="text-xs" />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
+            <div className="lg:col-span-4 dark:bg-gray-800/50 bg-gray-50">
+              <div className="space-x-4 p-4 flex">
                 <label
                   htmlFor="image-item"
-                  className={`block cursor-pointer transition-all duration-200 ${errors.images ? 'ring-2 ring-red-500 ring-offset-2 rounded-lg' : ''
-                    }`}
-                  data-field="images"
+                  className={`group min-w-40 max-h-44 relative block cursor-pointer overflow-hidden rounded-[2px] border-2 border-dashed transition-all duration-200 ${
+                    errors.images 
+                    ? 'border-red-400 bg-red-50 dark:bg-red-900/10' 
+                    : 'border-slate-400 dark:border-slate-700 hover:border-[#13b5ea] hover:bg-slate-50 dark:hover:bg-slate-800/50'
+                  }`}
                 >
-                  <div className={`w-full flex justify-center items-center p-4 border-2 border-dashed rounded-lg transition-all duration-200 ${errors.images
-                    ? 'border-red-500 bg-red-25'
-                    : viewImages.length > 0 || existingImages.length > 0
-                      ? 'border-blue-300 dark:border-blue-500/50 bg-blue-25 dark:bg-blue-900/20'
-                      : 'border-gray-400 dark:border-gray-600 hover:border-blue-400 dark:hover:border-blue-500 hover:bg-blue-25 dark:hover:bg-blue-900/20'
-                    }`}>
-                    <div className="text-center py-4">
-                      <IoMdCloudUpload className="text-5xl text-blue-400 mx-auto mb-4" />
-                      <h3 className="text-lg font-medium text-gray-700 dark:text-gray-200 mb-2">
-                        {(viewImages.length > 0 || existingImages.length > 0) ? t('addMoreImages') : t('uploadProductImages')}
-                      </h3>
-                      <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">{t('dragAndDrop')}</p>
-                      <div className="px-6 py-2 bg-blue-500 text-white rounded-lg inline-flex items-center gap-2 hover:bg-blue-600 transition-colors">
-                        {t('browseFiles')}
+                  <div className="flex flex-col items-center justify-center p-6 text-center">
+                    <div className="space-y-4">
+                      <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 group-hover:bg-[#13b5ea]/10 group-hover:text-[#13b5ea] transition-all">
+                        <IoMdCloudUpload size={24} />
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-slate-700 dark:text-slate-200">
+                          {existingImages.length > 0 || viewImages.length > 0 ? t('addMoreImages') : t('clickToUpload')}
+                        </p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{t('imageFormatsLimit')}</p>
                       </div>
                     </div>
                   </div>
@@ -631,318 +613,278 @@ const ItemForm = () => {
                   onChange={changeUpload}
                   id="image-item"
                   hidden
-                  name="image-item"
                   multiple
                 />
-
-                {errors.images && (
-                  <div className="flex items-center gap-2 text-red-500 text-sm mt-3">
-                    <span className="w-2 h-2 bg-red-500 rounded-full"></span>
-                    {errors.images}
+                {(existingImages.length > 0 || viewImages.length > 0) && (
+                  <div className="flex flex-wrap grow gap-3 border mb-4">
+                    {existingImages.map((image, index) => (
+                      <div key={`existing-${index}`} className="group relative aspect-square bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-800 rounded-[2px] overflow-hidden">
+                        <img
+                          src={image.image}
+                          alt="Existing"
+                          className="h-full w-full object-contain"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeExistingImage(index, image.image_id)}
+                          className="absolute top-1 right-1 h-6 w-6 flex items-center justify-center bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-all"
+                        >
+                          <LuTrash2 size={12} />
+                        </button>
+                      </div>
+                    ))}
+                    {viewImages.map((image, index) => (
+                      <div key={`new-${index}`} className="group relative aspect-square bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-800 rounded-[2px] overflow-hidden h-20 w-20">
+                        <img
+                          src={image}
+                          alt="New"
+                          className="h-full w-full object-contain"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeImage(index)}
+                          className="absolute top-1 right-1 h-6 w-6 flex items-center justify-center bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-all"
+                        >
+                          <LuTrash2 size={12} />
+                        </button>
+                        <div className="absolute bottom-0 left-0 right-0 bg-blue-500 text-white text-[9px] font-bold uppercase text-center py-0.5">
+                          {t('new')}
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 )}
-
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-3 text-center">
-                  {t('maxSize2MB')}
-                  <span className="text-red-500 ml-1">* {t('required')}</span>
-                </p>
               </div>
+              
             </div>
 
             {/* Right Column - Form Fields */}
-            <div className="lg:col-span-2">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Basic Information */}
-                <div className="space-y-4">
-                  <div>
-                    <div className="flex items-center gap-3 mb-4">
-                      <FaTag className="text-blue-500 text-xl" />
-                      <h2 className="text-lg font-semibold text-gray-800 dark:text-white">{t('basicInformation')}</h2>
+            <div className="col-span-8">
+              {/* Basic Information */}
+              <section>
+                <h2 className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 border-b border-slate-100 dark:border-slate-800 pb-2 flex items-center gap-2">
+                  <LuTag size={14} />
+                  {t('basicInformation')}
+                </h2>
+
+                <div className="md:grid-cols-2 flex flex-col gap-4">
+                  <div className="flex gap-4  px-4 border-t border-gray-200 dark:border-gray-500 py-4">
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[13px] font-semibold text-slate-700 dark:text-slate-300">
+                        {t('itemName')} <span className="text-red-500">*</span>
+                      </label>
+                      <Input
+                        onChange={(value) => setItem({ ...item, name: value })}
+                        value={item.name}
+                        placeholder={t('enterProductName')}
+                        status={errors.name ? 'error' : ''}
+                      />
+                      {errors.name && (
+                        <p className="text-red-500 text-[11px] font-medium">{errors.name}</p>
+                      )}
                     </div>
-
-                    <div className="space-y-4 flex flex-wrap gap-3">
-                      <div className="grow">
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          {t('itemName')} <span className="text-red-500">*</span>
-                        </label>
-                        <Input
-                          onChange={(value) => setItem({ ...item, name: value })}
-                          value={item.name}
-                          type="text"
-                          placeholder={t('enterProductName')}
-                          data-field="name"
-                        />
-                        {errors.name && (
-                          <div className="flex items-center gap-2 text-red-500 text-sm mt-2">
-                            <span className="w-2 h-2 bg-red-500 rounded-full"></span>
-                            {errors.name}
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="grow">
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          {t('itemCode')}
-                        </label>
-                        <Input
-                          onChange={(value) => setItem({ ...item, code: value })}
-                          value={item.code}
-                          type="text"
-                          placeholder="PRD-00001"
-                          data-field="code"
-                        />
-                      </div>
-
-                      <div className="grow">
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          {t('retailPrice')} <span className="text-red-500">*</span>
-                        </label>
-                        <Input
-                          onChange={(value) => setItem({ ...item, price: value })}
-                          value={item.price}
-                          type="number"
-                          step="0.1"
-                          min="0"
-                          placeholder="0.00"
-                          data-field="price"
-                        />
-                        {errors.price && (
-                          <div className="flex items-center gap-2 text-red-500 text-sm mt-2">
-                            <span className="w-2 h-2 bg-red-500 rounded-full"></span>
-                            {errors.price}
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="grow">
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          {t('wholesalePrice')}
-                        </label>
-                        <Input
-                          onChange={(value) => setItem({ ...item, wholesale_price: value })}
-                          value={item.wholesale_price}
-                          type="number"
-                          step="0.1"
-                          min="0"
-                          placeholder="0.00"
-                          data-field="wholesale_price"
-                        />
-                      </div>
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[13px] font-semibold text-slate-700 dark:text-slate-300">
+                        {t('itemCode')}
+                      </label>
+                      <Input
+                        onChange={(value) => setItem({ ...item, code: value })}
+                        value={item.code}
+                        placeholder="PRD-00001"
+                      />
                     </div>
+                    <div className="flex flex-col gap-1.5">
+                    <label className="text-[13px] font-semibold text-slate-700 dark:text-slate-300">
+                      {t('category')} <span className="text-red-500">*</span>
+                    </label>
+                    <RichSearch
+                      data={categories}
+                      value={item.category_id}
+                      onSelected={(value) => setItem({ ...item, category_id: value })}
+                      keyFields={{ id: 'category_id', title: 'category_name' }}
+                      placeholder={t('selectCategory')}
+                    />
+                    {errors.category_id && (
+                      <p className="text-red-500 text-[11px] font-medium">{errors.category_id}</p>
+                    )}
                   </div>
 
-                  {/* Pricing & Discount */}
-                  <div>
-                    <div className="flex items-center gap-3 mb-4">
-                      <FaTag className="text-green-500 text-xl" />
-                      <h2 className="text-lg font-semibold text-gray-800 dark:text-white">{t('pricingAndDiscount')}</h2>
-                    </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[13px] font-semibold text-slate-700 dark:text-slate-300">
+                      {t('brand')} <span className="text-red-500">*</span>
+                    </label>
+                    <RichSearch
+                      data={brands}
+                      value={item.brand_id}
+                      placeholder={t('selectBrand')}
+                      onSelected={(value) => setItem({ ...item, brand_id: value })}
+                      keyFields={{ id: 'brand_id', title: 'brand_name' }}
+                    />
+                    {errors.brand_id && (
+                      <p className="text-red-500 text-[11px] font-medium">{errors.brand_id}</p>
+                    )}
+                  </div>
 
-                    <div className="space-y-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          {t('discountPercentage')}
-                        </label>
-                        <Input
-                          onChange={(value) => setItem({ ...item, discount: value })}
-                          value={item.discount}
-                          type="number"
-                          step="0.5"
-                          min="0"
-                          max="100"
-                          className={getInputClass('discount')}
-                          placeholder="0.00"
-                          data-field="discount"
-                        />
-                      </div>
+                  </div>
+
+                  <div className="flex gap-4 px-4 border-t border-gray-200 dark:border-gray-500  py-4">
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[13px] font-semibold text-slate-700 dark:text-slate-300">
+                        {t('retailPrice')} <span className="text-red-500">*</span>
+                      </label>
+                      <Input
+                        onChange={(value) => setItem({ ...item, price: value })}
+                        value={item.price}
+                        type="number"
+                        placeholder="0.00"
+                        status={errors.price ? 'error' : ''}
+                        addonBefore="$"
+                      />
+                      {errors.price && (
+                        <p className="text-red-500 text-[11px] font-medium">{errors.price}</p>
+                      )}
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[13px] font-semibold text-slate-700 dark:text-slate-300">
+                        {t('wholesalePrice')}
+                      </label>
+                      <Input
+                        onChange={(value) => setItem({ ...item, wholesale_price: value })}
+                        value={item.wholesale_price}
+                        type="number"
+                        placeholder="0.00"
+                        addonBefore="$"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[13px] font-semibold text-slate-700 dark:text-slate-300">
+                        {t('discountPercentage')}
+                      </label>
+                      <Input
+                        onChange={(value) => setItem({ ...item, discount: value })}
+                        value={item.discount}
+                        type="number"
+                        placeholder="0"
+                        addonAfter="%"
+                      />
                     </div>
                   </div>
                 </div>
+              </section>
 
-                {/* Specifications */}
-                <div className="space-y-4">
-                  <div>
-                    <div className="flex items-center gap-3 mb-4">
-                      <FaBox className="text-purple-500 text-xl" />
-                      <h2 className="text-lg font-semibold text-gray-800 dark:text-white">{t('specifications')}</h2>
-                    </div>
+              {/* Specifications */}
+              <section>
+                <h2 className="text-xs px-2 font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 border-b border-slate-100 dark:border-slate-800 pb-2 flex items-center gap-2">
+                  <LuPackage size={14} />
+                  {t('specifications')}
+                </h2>
 
-                    <div className="space-y-4 flex flex-wrap gap-3">
-                      <div className="grow">
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          {t('category')} <span className="text-red-500">*</span>
-                        </label>
-                        <RichSearch
-                          data={categories}
-                          value={item.category_id}
-                          onSelected={(value) => setItem({ ...item, category_id: value })}
-                          keyFields={{
-                            id: 'category_id',
-                            title: 'category_name',
-                          }}
-                          placeholder={t('selectCategory')}
+                <div className="grid gap-6 md:grid-cols-2 px-4 border-t border-gray-200 dark:border-gray-500  py-4">
+                  
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[13px] font-semibold text-slate-700 dark:text-slate-300">
+                      {t('scale')} <span className="text-red-500">*</span>
+                    </label>
+                    <RichSearch
+                      data={scales}
+                      value={item.scale_id}
+                      placeholder={t('selectScale')}
+                      onSelected={(value) => setItem({ ...item, scale_id: value })}
+                      keyFields={{ id: 'scale_id', title: 'scale_name' }}
+                    />
+                    {errors.scale_id && (
+                      <p className="text-red-500 text-[11px] font-medium">{errors.scale_id}</p>
+                    )}
+                  </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[13px] font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                      <LuPalette size={14} />
+                      {t('colors')}
+                    </label>
+                    <div className="flex gap-2">
+                      <div className="relative group overflow-hidden rounded-[2px] border border-slate-200 dark:border-slate-800 w-[100px] h-[38px]">
+                        <input
+                          type="color"
+                          className="absolute inset-[-4px] w-[calc(100%+8px)] h-[calc(100%+8px)] cursor-pointer"
+                          onChange={handleCustomColor}
+                          defaultValue="#000000"
                         />
-                        {errors.category_id && (
-                          <div className="flex items-center gap-2 text-red-500 text-sm mt-2">
-                            <span className="w-2 h-2 bg-red-500 rounded-full"></span>
-                            {errors.category_id}
-                          </div>
-                        )}
                       </div>
-
-                      <div className="grow">
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          {t('brand')} <span className="text-red-500">*</span>
-                        </label>
-                        <RichSearch
-                          data={brands}
-                          value={item.brand_id}
-                          placeholder={t('selectBrand')}
-                          onSelected={(value) => setItem({ ...item, brand_id: value })}
-                          keyFields={{
-                            id: 'brand_id',
-                            title: 'brand_name',
-                          }}
-                        />
-                        {errors.brand_id && (
-                          <div className="flex items-center gap-2 text-red-500 text-sm mt-2">
-                            <span className="w-2 h-2 bg-red-500 rounded-full"></span>
-                            {errors.brand_id}
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="grow">
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          {t('scale')} <span className="text-red-500">*</span>
-                        </label>
-                        <RichSearch
-                          data={scales}
-                          value={item.scale_id}
-                          placeholder={t('selectScale')}
-                          onSelected={(value) => setItem({ ...item, scale_id: value })}
-                          keyFields={{
-                            id: 'scale_id',
-                            title: 'scale_name',
-                          }}
-                        />
-                        {errors.scale_id && (
-                          <div className="flex items-center gap-2 text-red-500 text-sm mt-2">
-                            <span className="w-2 h-2 bg-red-500 rounded-full"></span>
-                            {errors.scale_id}
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Color Selection - Integrated with Attributes */}
-                      <div className="grow">
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          {t('colors')}
-                        </label>
-                        <div className="relative w-full" ref={wrapperRef}>
-                          <div className={`flex border rounded-lg shadow-sm bg-white dark:bg-slate-800 ${errors.colors ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-                            }`}>
-                            <input
-                              type="color"
-                              className="h-12 w-16 p-1 rounded-l cursor-pointer border-r border-gray-300 dark:border-gray-600 bg-white dark:bg-slate-800"
-                              onChange={handleCustomColor}
-                              defaultValue="#000000"
+                      <div className="flex-1 flex flex-wrap gap-2 items-center min-h-[38px] px-2 border border-slate-200 dark:border-slate-800 rounded-[2px] bg-slate-50 dark:bg-slate-900/50">
+                        {colors.map((color, index) => (
+                          <div key={index} className="group relative">
+                            <div
+                              className="w-6 h-6 rounded-full border border-white dark:border-slate-700 shadow-sm"
+                              style={{ backgroundColor: color }}
                             />
                             <button
                               type="button"
-                              className="flex-1 px-4 py-3 bg-blue-500 text-white rounded-r-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-300 transition-colors flex items-center justify-between"
-                              onClick={() => setIsOpen(!isOpen)}
+                              onClick={() => removeColor(index)}
+                              className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-3 h-3 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all text-[8px]"
                             >
-                              <span>{t('pickColor')}</span>
-                              <FaPalette className="text-lg" />
+                              <LuX size={8} />
                             </button>
                           </div>
-                          {errors.colors && (
-                            <div className="flex items-center gap-2 text-red-500 text-sm mt-2">
-                              <span className="w-2 h-2 bg-red-500 rounded-full"></span>
-                              {errors.colors}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Selected Colors Display */}
-                      <div className="mt-3">
-                        <div className="flex flex-wrap gap-2">
-                          {colors.map((color, index) => (
-                            <div key={index} className="relative group">
-                              <div
-                                className="w-8 h-8 rounded-full border border-gray-300 dark:border-gray-600 shadow-sm"
-                                style={{ backgroundColor: color }}
-                              />
-                              <button
-                                type="button"
-                                onClick={() => removeColor(index)}
-                                className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-xs"
-                              >
-                                ×
-                              </button>
-                            </div>
-                          ))}
-                        </div>
+                        ))}
                         {colors.length === 0 && (
-                          <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">{t('noColorsSelected')}</p>
+                          <span className="text-[10px] text-slate-400 uppercase tracking-wider">{t('noColors')}</span>
                         )}
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
+              </section>
 
-              {/* Attributes Section (Excluding Colors) */}
-              <div className="mt-6 bg-gray-50 dark:bg-slate-800/50 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <FaBox className="text-orange-500 text-xl" />
-                    <h2 className="text-lg font-semibold text-gray-800 dark:text-white">{t('productAttributes')}</h2>
-                    <span className="text-sm text-gray-500 dark:text-gray-400">({t('excludingColors', 'Excluding colors')})</span>
-                  </div>
+              {/* Attributes Section */}
+              <section className="bg-gray-50 dark:bg-gray-800/50 ">
+                <div className="mb-4 bg-white dark:bg-gray-600 border p-2 flex items-center justify-between border-b border-gray-200 dark:border-gray-500  pb-2">
+                  <h2 className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 flex items-center gap-2">
+                    <LuSettings2 size={14} />
+                    {t('productAttributes')}
+                  </h2>
                   <button
                     type="button"
                     onClick={addAttribute}
-                    className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors flex items-center gap-2"
+                    className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-[#13b5ea] hover:text-[#0f92bd] transition-colors"
                   >
-                    <FaPlus />
+                    <LuPlus size={14} />
                     {t('addAttribute')}
                   </button>
                 </div>
 
-                <div className="space-y-4">
+                <div className="p-4">
                   {attributes.filter(attr => attr.name !== "colors").map((attribute, index) => {
                     const actualIndex = attributes.findIndex(a => a === attribute);
                     return (
-                      <div key={actualIndex} className="flex flex-col md:flex-row gap-3 items-start p-4 bg-white dark:bg-slate-800 rounded-lg border border-gray-200 dark:border-gray-700">
-                        <div className="flex-1 w-full">
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('attributeName')}</label>
+                      <div key={actualIndex} className="group relative grid gap-4 md:grid-cols-12 items-end bg-slate-50/50 dark:bg-slate-800/30 p-4 rounded-[2px] border border-slate-100 dark:border-slate-800/50">
+                        <div className="md:col-span-5 flex flex-col gap-1.5">
+                          <label className="text-[11px] font-bold uppercase text-slate-400">{t('attributeName')}</label>
                           <Select
-                            className="w-full dark:[&_.ant-select-selector]:!bg-slate-800 dark:[&_.ant-select-selector]:!border-gray-600 dark:[&_.ant-select-selector]:!text-white dark:[&_.ant-select-selection-placeholder]:!text-gray-400 dark:[&_.ant-select-arrow]:!text-gray-400"
-                            style={{ width: '100%' }}
-                            placeholder={t('selectAttributeName')}
+                            className="w-full custom-antd-select"
+                            placeholder={t('selectAttribute')}
                             size="large"
                             value={attribute.name}
                             onChange={(value) => updateAttribute(actualIndex, 'name', value)}
-                            popupRender={menu => (
-                              <div >
+                            dropdownRender={menu => (
+                              <div>
                                 {menu}
-                                <Divider className="dark:bg-gray-200" style={{ margin: '8px 0' }} />
-                                <Space style={{ padding: '0 8px 4px' }}>
+                                <Divider style={{ margin: '8px 0' }} />
+                                <div className="p-2 flex gap-2">
                                   <input
-                                    placeholder={t('Name')}
-                                    className="w-18 border border-gray-300 rounded-sm p-1 focus:outline-0"
+                                    placeholder={t('newName')}
+                                    className="flex-1 h-8 px-2 text-xs border border-slate-200 dark:border-slate-700 bg-transparent outline-none rounded-[2px]"
                                     ref={inputRef}
                                     value={attributeName}
-                                    onChange={onAttributeName}
-                                    onKeyDown={e => e.stopPropagation()}
+                                    onChange={(e) => setAttributeName(e.target.value)}
                                   />
-                                  <Button className="dark:text-blue-400" type="text" icon={<IoPulseOutline />} onClick={addItem}>
-                                    add
-                                  </Button>
-                                </Space>
+                                  <button
+                                    onClick={addItem}
+                                    className="px-3 h-8 bg-[#13b5ea] text-white text-xs font-bold uppercase rounded-[2px]"
+                                  >
+                                    {t('add')}
+                                  </button>
+                                </div>
                               </div>
                             )}
                             options={attributesAll?.filter(attr => attr.name !== "colors").map(item => ({
@@ -951,63 +893,44 @@ const ItemForm = () => {
                             }))}
                           />
                           {errors[`attribute_${actualIndex}_name`] && (
-                            <div className="text-red-500 text-sm mt-1">{errors[`attribute_${actualIndex}_name`]}</div>
+                            <p className="text-red-500 text-[10px] font-medium">{errors[`attribute_${actualIndex}_name`]}</p>
                           )}
                         </div>
                         
-                        <div className="flex-1 w-full">
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('attributeValue')}</label>
+                        <div className="md:col-span-6 flex flex-col gap-1.5">
+                          <label className="text-[11px] font-bold uppercase text-slate-400">{t('attributeValue')}</label>
                           {renderAttributeValueInput(attribute, actualIndex)}
                           {errors[`attribute_${actualIndex}_value`] && (
-                            <div className="text-red-500 text-sm mt-1">{errors[`attribute_${actualIndex}_value`]}</div>
+                            <p className="text-red-500 text-[10px] font-medium">{errors[`attribute_${actualIndex}_value`]}</p>
                           )}
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => removeAttribute(actualIndex)}
-                          className="mt-0 md:mt-7 px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors w-full md:w-auto flex justify-center"
-                        >
-                          <FaTrash />
-                        </button>
+
+                        <div className="md:col-span-1 flex justify-end">
+                          <button
+                            type="button"
+                            onClick={() => removeAttribute(actualIndex)}
+                            className="h-[38px] w-full flex items-center justify-center text-slate-400 hover:text-red-500 transition-colors"
+                          >
+                            <LuTrash2 size={18} />
+                          </button>
+                        </div>
                       </div>
                     );
                   })}
 
                   {attributes.filter(attr => attr.name !== "colors").length === 0 && (
-                    <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                      <FaBox className="text-4xl mx-auto mb-3 opacity-50" />
-                      <p>{t('noAdditionalAttributes')}</p>
+                    <div className="flex flex-col items-center justify-center py-10 text-slate-400 bg-slate-50/30 dark:bg-slate-700/20 border border-dashed border-slate-200 dark:border-slate-600 rounded-[2px]">
+                      <LuBox size={32} className="mb-2 opacity-20" />
+                      <p className="text-xs uppercase tracking-widest font-bold">{t('noAdditionalAttributes')}</p>
                     </div>
                   )}
                 </div>
-              </div>
+              </section>
             </div>
           </div>
-
-          {/* Action Buttons */}
-          <div className="flex justify-end space-x-4 pt-8 mt-8 border-t border-gray-200 dark:border-gray-700">
-            <Button
-              type="button"
-              variant="danger"
-              outline
-              onClick={() => navigator(-1)}
-              disabled={loading}
-            >
-              <FaTimes />
-              {t('cancel')}
-            </Button>
-            <Button
-              type="button"
-              onClick={handleSubmit}
-              disabled={loading}
-            >
-              {isEditMode ? <FaEdit className="text-lg" /> : <FaSave className="text-lg" />}
-              {loading ? (isEditMode ? t('updating') : t('creating')) : (isEditMode ? t('updateItem') : t('createItem'))}
-            </Button>
-          </div>
-        </div>
+        </form>
       </div>
-    </div>
+    </motion.div>
   );
 };
 

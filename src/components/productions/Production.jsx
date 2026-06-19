@@ -1,35 +1,42 @@
 import React, { useState, useEffect } from 'react';
 import {
-    LuSearch,
-    LuPlus,
-    LuFilter,
-    LuRefreshCw,
-    LuDownload,
-    LuEye,
-    LuTrash2,
-    LuList,
-    LuDollarSign,
-    LuPackage,
-    LuCalendar,
-    LuFactory,
-    LuFileText,
-    LuUsers,
-    LuClipboardList,
-    LuChartBar,
+    FaSearch,
+    FaPlus,
+    FaFilter,
+    FaSyncAlt,
+    FaDownload,
+    FaEye,
+    FaTrash,
+    FaList,
+    FaDollarSign,
+    FaBox,
+    FaCalendarAlt,
+    FaIndustry,
+    FaFileAlt,
+    FaUsers,
+    FaClipboardList,
+    FaChartBar,
+    FaChevronLeft,
+    FaChevronRight,
+    FaTh,
+    FaTimes,
+    FaCheck,
+    FaClock,
+    FaEdit
+} from 'react-icons/fa';
+import {
     LuChevronLeft,
     LuChevronRight,
     LuChevronsLeft,
     LuChevronsRight,
-    LuX,
-    LuCheck
+    LuDownload,
+    LuPlus,
 } from 'react-icons/lu';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import ExportExcel from '../../services/ExportExcel';
-import { BiEdit } from 'react-icons/bi';
-import { BsGrid3X3 } from 'react-icons/bs';
 import { useGetAllProductionQuery } from '../../../app/Features/productSlice';
 import { useDebounce } from 'use-debounce';
 import api from '../../services/api';
@@ -37,9 +44,12 @@ import { toast } from 'react-toastify';
 import { useTranslation } from 'react-i18next';
 import AlertMessage from '../../services/AlertMessage';
 import AlertBox from '../../services/AlertBox';
+import ActionButton from '../../utils/ActionButton';
+import Button from '../../utils/Button';
+import RefreshButton from '../../utils/RefreshButton';
 
 dayjs.extend(relativeTime);
-
+const MENU_ID = 21;
 const Production = () => {
     const { t } = useTranslation();
     const navigate = useNavigate();
@@ -70,6 +80,51 @@ const Production = () => {
         search: debouncedSearch,
         token
     });
+
+    const ActionButtons = ({ item }) => {
+        const actions = [
+            // Confirm (Primary - Conditional)
+            ...(item.status !== 'confirmed' ? [{
+                type: 'modify',
+                icon: <FaCheck size={14} />,
+                onClick: () => handleSubmit(item.id),
+                title: t('confirm'),
+                label: t('confirm'),
+                className: 'text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/30'
+            }] : []),
+            // View (Primary)
+            {
+                type: 'view',
+                icon: <FaEye size={14} />,
+                onClick: () => navigate(`view/${item.id}`),
+                title: t('view'),
+                label: t('view')
+            },
+            // Edit (Primary - Conditional)
+            ...(item.status !== 'confirmed' ? [{
+                type: 'modify',
+                icon: <FaEdit size={14} />,
+                onClick: () => navigate(`/inventories/production/edit/${item.id}`),
+                title: t('edit'),
+                label: t('edit'),
+                disabled: item.is_deleted === 1
+            }] : []),
+            // Delete (Overflow)
+            {
+                type: 'drop',
+                icon: <FaTrash size={14} />,
+                onClick: () => setDeleteConfirmId(item.id),
+                title: t('delete'),
+                label: t('delete')
+            },
+        ];
+
+        return (
+            <div className="flex justify-center">
+                <ActionButton menuId={MENU_ID} actions={actions} />
+            </div>
+        );
+    };
 
     // Update data when query returns
     useEffect(() => {
@@ -434,7 +489,7 @@ const Production = () => {
                                                     className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium transition-colors ${item.details?.length ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 cursor-pointer hover:bg-blue-200' : 'bg-gray-100 text-gray-400 dark:bg-gray-700 dark:text-gray-500 cursor-not-allowed'}`}
                                                     title={item.details?.length ? t('showMaterials') : t('noMaterials')}
                                                 >
-                                                    <LuClipboardList className="mr-1" />
+                                                    <FaClipboardList className="mr-1" />
                                                     {item.details?.length || 0}
                                                 </button>
                                             </td>
@@ -448,38 +503,7 @@ const Production = () => {
                                             </td>
                                             <td className="p-3"><Badge isDeleted={item.is_deleted} /></td>
                                             <td className="p-3">
-                                                <div className="flex justify-center gap-2">
-                                                    {item.status !== 'confirmed' && (
-                                                        <button
-                                                            onClick={() => handleSubmit(item.id)}
-                                                            className="p-2 bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 rounded hover:bg-amber-200 dark:hover:bg-amber-900/50 transition-colors"
-                                                            title={t('confirm')}
-                                                        >
-                                                            <LuCheck size={14} />
-                                                    </button>)}
-                                                    <button
-                                                        onClick={() => navigate(`view/${item.id}`)}
-                                                        className="p-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors"
-                                                        title={t('view')}
-                                                    >
-                                                        <LuEye size={14} />
-                                                    </button>
-                                                    <button
-                                                        onClick={() => navigate(`/inventories/production/edit/${item.id}`)}
-                                                        disabled={item.status === 'confirmed'}
-                                                        className={`p-2 rounded transition-colors ${item.is_deleted === 1 ? 'bg-gray-100 text-gray-400 dark:bg-gray-700 dark:text-gray-600 cursor-not-allowed' : 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/50'}`}
-                                                        title={t('edit')}
-                                                    >
-                                                        <BiEdit size={14} />
-                                                    </button>
-                                                    <button
-                                                        onClick={() => setDeleteConfirmId(item.id)}
-                                                        className="p-2 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors"
-                                                        title={t('delete')}
-                                                    >
-                                                        <LuTrash2 size={14} />
-                                                    </button>
-                                                </div>
+                                                <ActionButtons item={item} />
                                             </td>
                                         </tr>
                                         {isExpanded && item.details?.length > 0 && (
@@ -596,37 +620,8 @@ const Production = () => {
                                     </div>
                                     <span className="text-gray-600 dark:text-gray-400">{t('by')} {item.created_by_name}</span>
                                 </div>
-                                <div className="flex items-center justify-between pt-3 border-t border-gray-100 dark:border-gray-700 transition-colors">
-                                    {item.status !== 'confirmed' && (
-                                        <button
-                                            onClick={() => handleSubmit(item.id)}
-                                            className="p-2 bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 rounded hover:bg-amber-200 dark:hover:bg-amber-900/50 transition-colors"
-                                            title={t('confirm')}
-                                        >
-                                            <LuCheck size={14} />
-                                    </button>)}
-                                    <button
-                                        onClick={() => navigate(`view/${item.id}`)}
-                                        className="p-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors"
-                                        title={t('view')}
-                                    >
-                                        <LuEye size={14} />
-                                    </button>
-                                    <button
-                                        onClick={() => navigate(`/inventories/production/edit/${item.id}`)}
-                                        disabled={item.status === 'confirmed'}
-                                        className={`p-2 rounded transition-colors ${item.is_deleted === 1 ? 'bg-gray-100 text-gray-400 dark:bg-gray-700 dark:text-gray-600 cursor-not-allowed' : 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/50'}`}
-                                        title={t('edit')}
-                                    >
-                                        <BiEdit size={14} />
-                                    </button>
-                                    <button
-                                        onClick={() => setDeleteConfirmId(item.id)}
-                                        className="p-2 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors"
-                                        title={t('delete')}
-                                    >
-                                        <LuTrash2 size={14} />
-                                    </button>
+                                <div className="border-t border-gray-100 dark:border-gray-700 pt-3">
+                                    <ActionButtons item={item} />
                                 </div>
                             </div>
                         </motion.div>
@@ -665,7 +660,7 @@ const Production = () => {
                             className="text-2xl font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-3"
                         >
                             <div className="p-3 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-xl shadow-sm transition-all">
-                                <LuFactory className="text-xl text-white" />
+                                <FaIndustry className="text-xl text-white" />
                             </div>
                             {t('productionRecords')}
                         </motion.h1>
@@ -673,14 +668,7 @@ const Production = () => {
                     </div>
 
                     <div className="flex items-center gap-3">
-                        <button
-                            onClick={() => refetch()}
-                            disabled={loading}
-                            className="px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 flex items-center gap-2 transition-colors shadow-sm"
-                        >
-                            <LuRefreshCw className={loading ? 'animate-spin' : ''} />
-                            {t('refresh')}
-                        </button>
+                        <RefreshButton onRefresh={refetch}/>
                         <ExportExcel
                             data={filteredProductions.map(p => ({
                                 [t('productionNo')]: p.production_no,
@@ -701,10 +689,10 @@ const Production = () => {
                             {t('export')}
                         </ExportExcel>
                         <Link to="create">
-                            <button className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 flex items-center gap-2 transition-colors shadow-md">
+                            <Button actionType='is_modify' menuId={MENU_ID} variant='save'>
                                 <LuPlus />
                                 {t('newProduction')}
-                            </button>
+                            </Button>
                         </Link>
                     </div>
                 </div>
@@ -715,28 +703,28 @@ const Production = () => {
                         title={t('totalProductions')}
                         value={stats.totalProductions.toLocaleString()}
                         subValue={`${stats.totalActive} ${t('active')} • ${stats.totalDeleted} ${t('deleted')}`}
-                        icon={<LuFactory className="text-2xl" />}
+                        icon={<FaIndustry className="text-2xl" />}
                         color="blue"
                     />
                     <StatCard
                         title={t('totalQuantity')}
                         value={stats.totalQuantity.toLocaleString()}
                         subValue={t('unitsProduced')}
-                        icon={<LuPackage className="text-2xl" />}
+                        icon={<FaBox className="text-2xl" />}
                         color="green"
                     />
                     <StatCard
                         title={t('totalCost')}
                         value={formatCurrency(stats.totalCost)}
                         subValue={t('productionCost')}
-                        icon={<LuDollarSign className="text-2xl" />}
+                        icon={<FaDollarSign className="text-2xl" />}
                         color="purple"
                     />
                     <StatCard
                         title={t('avgPerProduction')}
                         value={formatCurrency(stats.avgCostPerProduction)}
                         subValue={`${t('cost')} • ${stats.avgQuantityPerProduction.toFixed(1)} ${t('unitsCount')}`}
-                        icon={<LuChartBar className="text-2xl" />}
+                        icon={<FaChartBar className="text-2xl" />}
                         color="orange"
                     />
                 </div>
@@ -747,7 +735,7 @@ const Production = () => {
                         {/* Search */}
                         <div className="lg:col-span-4 grow">
                             <div className="relative">
-                                <LuSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                                <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                                 <input
                                     type="text"
                                     placeholder={t('searchProductionPlaceholder')}
@@ -765,14 +753,14 @@ const Production = () => {
                                     onClick={() => setViewMode('table')}
                                     className={`flex-1 px-3 py-2 rounded-md flex items-center justify-center gap-2 transition-all ${viewMode === 'table' ? 'bg-white dark:bg-gray-600 shadow-sm text-blue-600 dark:text-blue-400 font-semibold' : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'}`}
                                 >
-                                    <LuList />
+                                    <FaList />
                                     <span>{t('table')}</span>
                                 </button>
                                 <button
                                     onClick={() => setViewMode('grid')}
                                     className={`flex-1 px-3 py-2 rounded-md flex items-center justify-center gap-2 transition-all ${viewMode === 'grid' ? 'bg-white dark:bg-gray-600 shadow-sm text-blue-600 dark:text-blue-400 font-semibold' : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'}`}
                                 >
-                                    <BsGrid3X3 />
+                                    <FaTh />
                                     <span>{t('grid')}</span>
                                 </button>
                             </div>
@@ -806,7 +794,7 @@ const Production = () => {
                 ) : filteredProductions.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-16 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800/50 transition-colors">
                         <div className="w-20 h-20 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mb-4">
-                            <LuFactory className="w-10 h-10 text-blue-400" />
+                            <FaIndustry className="w-10 h-10 text-blue-400" />
                         </div>
                         <h3 className="text-xl font-semibold text-gray-700 dark:text-white mb-2">{t('noProductionRecordsFound')}</h3>
                         <p className="text-gray-500 dark:text-gray-400 text-center max-w-md mb-6">
@@ -817,7 +805,7 @@ const Production = () => {
                         {!searchTerm && statusFilter === 'all' && !showDeleted && !dateRange.start && (
                             <Link to="/home/production/create">
                                 <button className="px-6 py-3 bg-green-600 text-white rounded-md hover:bg-green-700 flex items-center gap-2 transition-colors">
-                                    <LuPlus /> {t('createFirstProduction')}
+                                    <FaPlus /> {t('createFirstProduction')}
                                 </button>
                             </Link>
                         )}

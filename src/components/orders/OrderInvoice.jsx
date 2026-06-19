@@ -10,7 +10,7 @@ import { useTranslation } from "react-i18next";
 import timeAgo from "../../services/timeAgo";
 import Button from "../../utils/Button";
 import { currencyFormat } from "../../services/serviceFunction";
-import { useGetProfileByUserQuery } from "../../../app/Features/userProfileSlice";
+import { useGetProfileByIdQuery, useGetProfileByUserQuery } from "../../../app/Features/userProfileSlice";
 
 const OrderInvoice = () => {
   const { t } = useTranslation();
@@ -18,12 +18,14 @@ const OrderInvoice = () => {
   const navigator = useNavigate();
   const { id } = useParams();
   const token = localStorage.getItem("token");
+  const proId = localStorage.getItem("profileId");
   const invoiceRef = useRef(null);
   const [data, setData] = useState({});
 
   const { data: invoiceData, isLoading } = useGetOrderByIdQuery({ id, token });
-  const { data: profileData } = useGetProfileByUserQuery(invoiceData?.data?.created_by, { skip: !invoiceData?.data?.created_by });
-
+  const { data: profileData } = useGetProfileByIdQuery(proId);
+  console.log(profileData);
+  
   useEffect(() => {
     setData(invoiceData?.data || {});
   }, [invoiceData]);

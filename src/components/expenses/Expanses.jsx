@@ -1,51 +1,58 @@
 import React, {
-  createContext,
-  useContext,
   useEffect,
   useState,
+  useMemo
 } from "react";
 import { IoIosSearch, IoIosGrid, IoIosList } from "react-icons/io";
-import { FaImage } from "react-icons/fa";
+import { FaImage, FaPlus, FaEye, FaEdit, FaTrash, FaMoneyBillWave, FaCalculator, FaChartLine } from "react-icons/fa";
 import { MdAttachMoney, MdCalendarToday, MdPerson } from "react-icons/md";
 import AlertBox from "../../services/AlertBox";
 import { useOutletsContext } from "../../layouts/Management";
-import { Link, Outlet, useLocation, useNavigate } from "react-router";
-import { Button, Empty, Skeleton, Typography, Tag } from "antd";
+import { Link, useNavigate } from "react-router";
+import { Empty, Skeleton, Typography, Tag } from "antd";
 import {
   useDeleteExpanseMutation,
   useGetAllExpansesQuery,
 } from "../../../app/Features/expensesSlice";
-import { useGetAllExpanseTypesQuery } from "../../../app/Features/expenseTypesSlice";
 import { toast } from "react-toastify";
 import ExportExcel from "../../services/ExportExcel";
 import { useTranslation } from "react-i18next";
 import RefreshButton from "../../utils/RefreshButton";
+import Button from "../../utils/Button";
+import ActionButton from "../../utils/ActionButton";
+import Input from "../../utils/Input";
+import { motion } from "framer-motion";
 
-const ExpContext = createContext();
-export function useExpContext() {
-  return useContext(ExpContext);
-}
+const MENU_ID = 19;
 
 const Expanses = () => {
   const { t } = useTranslation();
   const [expenses, setExpanses] = useState([]);
+  const [filteredExpenses, setFilteredExpenses] = useState([]);
   const [viewMode, setViewMode] = useState("table");
   const navigator = useNavigate();
-  const location = useLocation();
   const [id, setId] = useState(0);
   const [alertBox, setAlertBox] = useState(false);
-  const [edit, setEdit] = useState(null);
   const { setLoading, darkMode } = useOutletsContext();
-  const [expenseType, setExpanseType] = useState([]);
   const token = localStorage.getItem("token");
   const { data, isLoading, refetch } = useGetAllExpansesQuery(token);
   const [deleteExpanse] = useDeleteExpanseMutation();
-  const expenseTypeContext = useGetAllExpanseTypesQuery(token);
 
   useEffect(() => {
-    setExpanses(data?.data || []);
-    setExpanseType(expenseTypeContext.data?.data || []);
-  }, [data, expenseTypeContext.data]);
+    const items = data?.data || [];
+    setExpanses(items);
+    setFilteredExpenses(items);
+  }, [data]);
+
+  // Statistics calculation
+  const stats = useMemo(() => {
+    const totalCount = filteredExpenses.length;
+    const totalAmount = filteredExpenses.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+    const attachmentCount = filteredExpenses.filter(e => e.images?.length > 0).length;
+    const averageAmount = totalCount > 0 ? totalAmount / totalCount : 0;
+
+    return { totalCount, totalAmount, attachmentCount, averageAmount };
+  }, [filteredExpenses]);
 
   function handleDelete(expense_id) {
     setAlertBox(true);
@@ -64,60 +71,71 @@ const Expanses = () => {
       if (response.data.status === 200) {
         refetch();
         toast.success(t('expenseDeletedSuccess'));
-        setLoading(false);
       }
     } catch (error) {
-      toast.error(
-        error?.message ||
-          error ||
-          "An error occurred while deleting the expense"
-      );
+      toast.error(error?.message || t('errorOccurredDeletingExpense', "An error occurred while deleting the expense"));
+    } finally {
       setLoading(false);
-      setAlertBox(false);
     }
   }
 
-  function onSearch(event) {
-    if (event.target.value) {
-      const filterExpanse = data.data.filter((expense) =>
-        expense.code.toLowerCase().includes(event.target.value.toLowerCase())
+  function onSearch(val) {
+    if (val) {
+      const filtered = expenses.filter((expense) =>
+        expense.expense_no.toLowerCase().includes(val.toLowerCase()) ||
+        expense.expense_supplier?.toLowerCase().includes(val.toLowerCase()) ||
+        expense.expense_by?.toLowerCase().includes(val.toLowerCase())
       );
-      setExpanses(filterExpanse || []);
+      setFilteredExpenses(filtered);
     } else {
-      setExpanses(data.data || []);
+      setFilteredExpenses(expenses);
     }
   }
 
-  function onAdd() {
-    setEdit(null);
-    navigator("/home/expenses");
-  }
+  const handleUpdate = (expense) => {
+    navigator(`/home/expenses/update/${expense.expense_id}`);
+  };
 
-  async function handleUpdate(expense) {
-    setEdit(expense);
-    await navigator("update");
-  }
+  const handleCreate = () => {
+    navigator("/home/expenses/create");
+  };
 
-  async function handleCreate() {
-    setEdit(null);
-    await navigator("create");
-  }
+  const ActionButtons = ({ item }) => {
+    const actions = [
+      {
+        type: 'view',
+        icon: <FaEye size={14} />,
+        onClick: () => window.open(`/expense-print/${item.expense_id}`, '_blank'),
+        title: t('details'),
+        label: t('details')
+      },
+      {
+        type: 'modify',
+        icon: <FaEdit size={14} />,
+        onClick: () => handleUpdate(item),
+        title: t('edit'),
+        label: t('edit')
+      },
+      {
+        type: 'drop',
+        icon: <FaTrash size={14} />,
+        onClick: () => handleDelete(item.expense_id),
+        title: t('delete'),
+        label: t('delete')
+      }
+    ];
 
-  const isExpenseChildRoute =
-    location.pathname === "/home/expenses/create" ||
-    location.pathname === "/home/expenses/update";
-
-  useEffect(() => {
-    if (!isExpenseChildRoute) {
-      setEdit(null);
-    }
-  }, [isExpenseChildRoute]);
+    return (
+      <div className="flex justify-end">
+        <ActionButton actions={actions} menuId={MENU_ID} />
+      </div>
+    );
+  };
 
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat("en-US", {
       style: "currency",
       currency: "USD",
-      minimumFractionDigits: 2,
     }).format(amount);
   };
 
@@ -133,6 +151,22 @@ const Expanses = () => {
     if (amount > 1000) return "red";
     if (amount > 500) return "orange";
     return "green";
+  };
+
+  const StatCard = ({ title, value, icon, color = "blue" }) => {
+    const bgColor = `bg-gradient-to-br from-${color}-50 to-${color}-100 dark:from-${color}-900/20 dark:to-${color}-800/20`;
+    const textColor = `text-${color}-600 dark:text-${color}-400`;
+    return (
+      <div className={`border border-gray-200 dark:border-gray-700 rounded-xl p-4 ${bgColor} transition-all duration-300 hover:shadow-md`}>
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-gray-600 dark:text-gray-400 text-xs font-bold uppercase tracking-wider">{title}</p>
+            <p className="text-xl font-black text-gray-900 dark:text-white mt-1">{value}</p>
+          </div>
+          <div className={`p-3 bg-white dark:bg-slate-800 rounded-full shadow-sm ${textColor}`}>{icon}</div>
+        </div>
+      </div>
+    );
   };
 
   const ExpenseCard = ({ expense }) => (
@@ -183,36 +217,8 @@ const Expanses = () => {
         </Tag>
       </div>
 
-      <div className={`flex gap-2 pt-4 border-t ${darkMode ? "border-gray-700" : "border-gray-100"}`}>
-        <Link to={`/expense-print/${expense.expense_id}`} target="_blank" className="flex-1">
-          <button className={`w-full inline-flex items-center justify-center px-3 py-2 border rounded-lg transition-colors duration-200 text-xs font-semibold ${
-            darkMode 
-            ? "border-blue-500 text-blue-400 hover:bg-blue-500 hover:text-white" 
-            : "border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white"
-          }`}>
-            {t('details')}
-          </button>
-        </Link>
-        <button
-          className={`flex-1 inline-flex items-center justify-center px-3 py-2 border rounded-lg transition-colors duration-200 text-xs font-semibold ${
-            darkMode 
-            ? "border-green-500 text-green-400 hover:bg-green-500 hover:text-white" 
-            : "border-green-600 text-green-600 hover:bg-green-600 hover:text-white"
-          }`}
-          onClick={() => handleUpdate(expense)}
-        >
-          {t('edit')}
-        </button>
-        <button
-          className={`flex-1 inline-flex items-center justify-center px-3 py-2 border rounded-lg transition-colors duration-200 text-xs font-semibold ${
-            darkMode 
-            ? "border-red-500 text-red-400 hover:bg-red-500 hover:text-white" 
-            : "border-red-600 text-red-600 hover:bg-red-600 hover:text-white"
-          }`}
-          onClick={() => handleDelete(expense.expense_id)}
-        >
-          {t('delete')}
-        </button>
+      <div className={`pt-4 border-t ${darkMode ? "border-gray-700" : "border-gray-100"}`}>
+        <ActionButtons item={expense} />
       </div>
     </div>
   );
@@ -243,231 +249,211 @@ const Expanses = () => {
   );
 
   return (
-    <div className="min-h-screen bg-transparent">
-      <section className="px-4 py-6">
-        <AlertBox
-          isOpen={alertBox}
-          title={t('confirmDelete')}
-          message={t('confirmDeleteExpense')}
-          onConfirm={handleConfirm}
-          onCancel={handleCancel}
-          confirmText={t('delete')}
-          cancelText={t('cancel')}
-        />
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="view-page bg-transparent transition-colors"
+    >
+      <AlertBox
+        isOpen={alertBox}
+        title={t('confirmDelete')}
+        message={t('confirmDeleteExpense')}
+        onConfirm={handleConfirm}
+        onCancel={handleCancel}
+        confirmText={t('delete')}
+        cancelText={t('cancel')}
+      />
 
-        <div className="mb-8">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
-            <div>
-              <h1 className={`text-2xl md:text-3xl font-bold ${darkMode ? "text-white" : "text-gray-900"} mb-2`}>
-                {t('expenseManagement')}
-              </h1>
-              <p className={darkMode ? "text-gray-400" : "text-gray-600"}>{t('manageAndTrackExpenses')}</p>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <RefreshButton onRefresh={refetch} />
-              <ExportExcel data={expenses} title={t('expenses')} />
-              <div className={`flex rounded-lg border p-1 ${darkMode ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"}`}>
-                <button
-                  onClick={() => setViewMode("table")}
-                  className={`p-2 rounded-md transition-colors duration-200 ${
-                    viewMode === "table"
-                      ? (darkMode ? "bg-blue-900/40 text-blue-400" : "bg-blue-100 text-blue-600")
-                      : (darkMode ? "text-gray-400 hover:text-gray-200" : "text-gray-500 hover:text-gray-700")
-                  }`}
-                >
-                  <IoIosList className="text-xl" />
-                </button>
-                <button
-                  onClick={() => setViewMode("grid")}
-                  className={`p-2 rounded-md transition-colors duration-200 ${
-                    viewMode === "grid"
-                      ? (darkMode ? "bg-blue-900/40 text-blue-400" : "bg-blue-100 text-blue-600")
-                      : (darkMode ? "text-gray-400 hover:text-gray-200" : "text-gray-500 hover:text-gray-700")
-                  }`}
-                >
-                  <IoIosGrid className="text-xl" />
-                </button>
-              </div>
-
-              <button
-                className="btn btn-primary bg-blue-600 hover:bg-blue-700 text-white border-none px-6 py-3 rounded-lg font-semibold transition-colors duration-200 flex items-center gap-2 shadow-md hover:shadow-lg"
-                onClick={handleCreate}
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                </svg>
-                {t('addNewExpense')}
-              </button>
-            </div>
+      <div>
+        {/* Header Section */}
+        <div className="flex items-center justify-between border-b-0 border-x p-4 dark:border-gray-500 border-gray-200 bg-white dark:bg-gray-600">
+          <div>
+            <h1 className="text-xl font-bold text-gray-800 dark:text-white flex items-center gap-3">
+              <FaMoneyBillWave className="text-[#13b5ea]" />
+              {t('expenseManagement')}
+            </h1>
+            <p className="text-gray-500 text-xs dark:text-gray-400 mt-2">
+              {t('manageAndTrackExpenses')}
+            </p>
           </div>
 
-          <div className={`${darkMode ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"} rounded-xl shadow-sm border p-4`}>
-            <div className="relative max-w-md">
-              <IoIosSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-xl" />
-              <input
-                onChange={onSearch}
+          <div className="flex flex-wrap items-center gap-2">
+            <RefreshButton onRefresh={refetch} />
+            <ExportExcel data={filteredExpenses} title="Expenses" />
+
+            <Button
+              menuId={MENU_ID}
+              actionType="is_modify"
+              variant="save"
+              onClick={handleCreate}
+            >
+              <FaPlus />
+              {t('addNewExpense')}
+            </Button>
+          </div>
+        </div>
+
+        {/* Controls Section */}
+        <div className="flex flex-col lg:flex-row gap-4 justify-between bg-gray-100 dark:bg-transparent p-4 border-x border-gray-200 dark:border-gray-500">
+          <div className="flex flex-col sm:flex-row sm:items-end gap-4 flex-1">
+            <div className="flex border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-1 rounded-[2px]">
+              <button
+                type="button"
+                onClick={() => setViewMode("table")}
+                className={`p-2 transition-all ${viewMode === 'table' ? 'bg-[#13b5ea]/10 text-[#13b5ea]' : 'text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200'}`}
+                title={t('tableView')}
+              >
+                <IoIosList size={20} />
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode("grid")}
+                className={`p-2 transition-all ${viewMode === 'grid' ? 'bg-[#13b5ea]/10 text-[#13b5ea]' : 'text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200'}`}
+                title={t('gridView')}
+              >
+                <IoIosGrid size={20} />
+              </button>
+            </div>
+
+            <div className="grow max-w-md">
+              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
+                <IoIosSearch className="text-gray-400" />
+                {t('searchExpense')}
+              </label>
+              <Input
                 type="text"
-                className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200 ${
-                  darkMode 
-                  ? "bg-gray-700 border-gray-600 text-white placeholder-gray-400" 
-                  : "bg-gray-50 border-gray-300 text-gray-900"
-                }`}
                 placeholder={t('searchByExpenseNumber')}
+                onChange={(val) => onSearch(val)}
+                className="w-full"
               />
             </div>
           </div>
         </div>
 
-        {viewMode === "table" ? (
-          <div className={`${darkMode ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"} rounded-xl shadow-sm border overflow-hidden`}>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className={`${darkMode ? "bg-gray-700" : "bg-gray-50"} border-b ${darkMode ? "border-gray-600" : "border-gray-200"}`}>
-                  <tr>
-                    <th className={`px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider ${darkMode ? "text-gray-300" : "text-gray-700"}`}>No.</th>
-                    <th className={`px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider ${darkMode ? "text-gray-300" : "text-gray-700"}`}>{t('expenseNo')}</th>
-                    <th className={`px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider ${darkMode ? "text-gray-300" : "text-gray-700"}`}>{t('supplier')}</th>
-                    <th className={`px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider ${darkMode ? "text-gray-300" : "text-gray-700"}`}>{t('paidBy')}</th>
-                    <th className={`px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider ${darkMode ? "text-gray-300" : "text-gray-700"}`}>{t('purchasedBy', 'Purchased By')}</th>
-                    <th className={`px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider ${darkMode ? "text-gray-300" : "text-gray-700"}`}>{t('date')}</th>
-                    <th className={`px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider ${darkMode ? "text-gray-300" : "text-gray-700"}`}>{t('description')}</th>
-                    <th className={`px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider ${darkMode ? "text-gray-300" : "text-gray-700"}`}>{t('amount')}</th>
-                    <th className={`px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider ${darkMode ? "text-gray-300" : "text-gray-700"}`}>{t('staff')}</th>
-                    <th className={`px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider ${darkMode ? "text-gray-300" : "text-gray-700"}`}>{t('actions')}</th>
-                  </tr>
-                </thead>
-                <tbody className={`${darkMode ? "bg-gray-800 divide-gray-700" : "bg-white divide-gray-200"} divide-y`}>
-                  {expenses.length === 0 && !isLoading ? (
-                    <tr>
-                      <td colSpan={9} className="px-6 py-24">
-                        <Empty
-                          className="w-full flex flex-col items-center justify-center"
-                          image="https://gw.alipayobjects.com/zos/antfincdn/ZHrcdLPrvN/empty.svg"
-                          imageStyle={{ height: 80 }}
-                          description={<Typography.Text className={`${darkMode ? "text-gray-400" : "text-gray-500"} text-lg`}>{t('noExpensesFound')}</Typography.Text>}
-                        >
-                          <Button
-                            type="primary"
-                            size="large"
-                            className="mt-4 bg-blue-600 hover:bg-blue-700 border-none h-11 px-6 rounded-lg font-semibold"
-                            onClick={handleCreate}
-                          >
-                            {t('createFirstExpense')}
-                          </Button>
-                        </Empty>
-                      </td>
-                    </tr>
-                  ) : (
-                    expenses?.map((exp, index) => (
-                      <tr key={index} className={`${darkMode ? "hover:bg-gray-700/50" : "hover:bg-gray-50"} transition-colors duration-150`}>
-                        <td className={`px-6 py-4 whitespace-nowrap text-sm font-medium ${darkMode ? "text-gray-200" : "text-gray-900"}`}>{index + 1}</td>
-                        <td className={`px-6 py-4 whitespace-nowrap text-sm font-semibold ${darkMode ? "text-gray-100" : "text-gray-900"}`}>{exp.expense_no}</td>
-                        <td className={`px-6 py-4 whitespace-nowrap text-sm ${darkMode ? "text-gray-300" : "text-gray-700"}`}>{exp.expense_supplier || "-"}</td>
-                        <td className={`px-6 py-4 whitespace-nowrap text-sm ${darkMode ? "text-gray-300" : "text-gray-700"}`}>
-                          <div className="flex items-center gap-2">
-                            {exp.expense_by}
-                            {exp.images?.length > 0 && <FaImage className="text-blue-500" title={t('hasAttachments', 'Has attachments')} />}
-                          </div>
-                        </td>
-                        <td className={`px-6 py-4 whitespace-nowrap text-sm ${darkMode ? "text-gray-300" : "text-gray-700"}`}>{exp.purchased_by || "-"}</td>
-                        <td className={`px-6 py-4 whitespace-nowrap text-sm ${darkMode ? "text-gray-300" : "text-gray-700"}`}>{formatDate(exp.expense_date)}</td>
-                        <td className={`px-6 py-4 text-sm max-w-xs truncate ${darkMode ? "text-gray-300" : "text-gray-700"}`}>{exp.expense_other || t('noRemarks')}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-green-600">{formatCurrency(exp.amount)}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm">
-                          <Tag color={darkMode ? "cyan" : "blue"} className="rounded-full px-3 py-1 text-xs">{exp.created_by}</Tag>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          <div className="flex items-center gap-2">
-                            <Link to={`/expense-print/${exp.expense_id}`} target="_blank">
-                              <button className={`inline-flex items-center px-3 py-1.5 border rounded-lg transition-colors duration-200 text-xs font-semibold ${
-                                darkMode 
-                                ? "border-blue-500 text-blue-400 hover:bg-blue-500 hover:text-white" 
-                                : "border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white"
-                              }`}>
-                                {t('details')}
-                              </button>
-                            </Link>
-                            <button
-                              className={`inline-flex items-center px-3 py-1.5 border rounded-lg transition-colors duration-200 text-xs font-semibold ${
-                                darkMode 
-                                ? "border-green-500 text-green-400 hover:bg-green-500 hover:text-white" 
-                                : "border-green-600 text-green-600 hover:bg-green-600 hover:text-white"
-                              }`}
-                              onClick={() => handleUpdate(exp)}
-                            >
-                              {t('edit')}
-                            </button>
-                            <button
-                              className={`inline-flex items-center px-3 py-1.5 border rounded-lg transition-colors duration-200 text-xs font-semibold ${
-                                darkMode 
-                                ? "border-red-500 text-red-400 hover:bg-red-500 hover:text-white" 
-                                : "border-red-600 text-red-600 hover:bg-red-600 hover:text-white"
-                              }`}
-                              onClick={() => handleDelete(exp.expense_id)}
-                            >
-                              {t('delete')}
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-
-              <div className={`flex flex-col gap-3 p-6 transition-all duration-500 ${isLoading ? "" : "hidden"}`}>
-                {[...Array(5)].map((_, index) => (
-                  <div key={index} className="flex items-center gap-4">
-                    <Skeleton.Button style={{ width: "100%" }} active={true} size={"small"} shape={"square"} block={true} />
-                  </div>
-                ))}
-              </div>
-            </div>
+        {/* Main Content Area */}
+        <div className="p-4 md:p-6 border border-gray-200 dark:border-gray-500 bg-white dark:bg-gray-800">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <StatCard title={t('totalExpenses')} value={stats.totalCount} icon={<FaCalculator className="text-2xl" />} color="blue" />
+            <StatCard title={t('totalAmount')} value={formatCurrency(stats.totalAmount)} icon={<FaMoneyBillWave className="text-2xl" />} color="green" />
+            <StatCard title={t('averageAmount')} value={formatCurrency(stats.averageAmount)} icon={<FaChartLine className="text-2xl" />} color="purple" />
+            <StatCard title={t('attachments')} value={stats.attachmentCount} icon={<FaImage className="text-2xl" />} color="orange" />
           </div>
-        ) : (
-          <div>
-            {expenses.length === 0 && !isLoading ? (
-              <div className={`${darkMode ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"} rounded-xl shadow-sm border p-12 text-center`}>
-                <Empty
-                  className="w-full flex flex-col items-center justify-center"
-                  image="https://gw.alipayobjects.com/zos/antfincdn/ZHrcdLPrvN/empty.svg"
-                  imageStyle={{ height: 80 }}
-                  description={<Typography.Text className={`${darkMode ? "text-gray-400" : "text-gray-500"} text-lg`}>{t('noExpensesFound')}</Typography.Text>}
-                >
-                  <Button
-                    type="primary"
-                    size="large"
-                    className="mt-4 bg-blue-600 hover:bg-blue-700 border-none h-11 px-6 rounded-lg font-semibold"
-                    onClick={handleCreate}
-                  >
-                    {t('createFirstExpense')}
-                  </Button>
-                </Empty>
+
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+            {viewMode === "table" ? (
+              <div className="bg-white dark:bg-slate-800/50 border border-gray-200 dark:border-gray-700 overflow-hidden rounded-[2px]">
+                <div className="overflow-x-auto">
+                  <table className="w-full border-collapse text-sm">
+                    <thead className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800">
+                      <tr className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-800">
+                        <th className="px-6 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-gray-200 border-r border-gray-200 dark:border-gray-400">#</th>
+                        <th className="px-6 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-gray-200 border-r border-gray-200 dark:border-gray-400">{t('expenseNo')}</th>
+                        <th className="px-6 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-gray-200 border-r border-gray-200 dark:border-gray-400">{t('supplier')}</th>
+                        <th className="px-6 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-gray-200 border-r border-gray-200 dark:border-gray-400">{t('paidBy')}</th>
+                        <th className="px-6 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-gray-200 border-r border-gray-200 dark:border-gray-400">{t('purchasedBy', 'Purchased By')}</th>
+                        <th className="px-6 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-gray-200 border-r border-gray-200 dark:border-gray-400">{t('date')}</th>
+                        <th className="px-6 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-gray-200 border-r border-gray-200 dark:border-gray-400">{t('description')}</th>
+                        <th className="px-6 py-3 text-right text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-gray-200 border-r border-gray-200 dark:border-gray-400">{t('amount')}</th>
+                        <th className="px-6 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-gray-200 border-r border-gray-200 dark:border-gray-400">{t('staff')}</th>
+                        <th className="px-6 py-3 text-right text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-gray-200">{t('actions')}</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                      {filteredExpenses.length === 0 && !isLoading ? (
+                        <tr>
+                          <td colSpan={10} className="px-6 py-24">
+                            <Empty
+                              className="w-full flex flex-col items-center justify-center"
+                              image="https://gw.alipayobjects.com/zos/antfincdn/ZHrcdLPrvN/empty.svg"
+                              imageStyle={{ height: 80 }}
+                              description={<Typography.Text className="text-gray-500 dark:text-gray-400 text-lg">{t('noExpensesFound')}</Typography.Text>}
+                            >
+                              <Button
+                                variant="primary"
+                                actionType="is_modify"
+                                menuId={MENU_ID}
+                                onClick={handleCreate}
+                                className="mt-4"
+                              >
+                                {t('createFirstExpense')}
+                              </Button>
+                            </Empty>
+                          </td>
+                        </tr>
+                      ) : (
+                        filteredExpenses.map((exp, index) => (
+                          <tr key={exp.expense_id} className="hover:bg-blue-50/40 dark:hover:bg-blue-900/10 transition-colors">
+                            <td className="px-6 py-4 text-gray-500 dark:text-gray-400 border-r border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800">{index + 1}</td>
+                            <td className="px-6 py-4 font-bold text-blue-600 dark:text-blue-400 border-r border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800">{exp.expense_no}</td>
+                            <td className="px-6 py-4 border-r border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 dark:text-gray-200">{exp.expense_supplier || "-"}</td>
+                            <td className="px-6 py-4 border-r border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 dark:text-gray-200">
+                              <div className="flex items-center gap-2">
+                                {exp.expense_by}
+                                {exp.images?.length > 0 && <FaImage className="text-blue-500" title={t('hasAttachments')} />}
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 border-r border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 dark:text-gray-200">{exp.purchased_by || "-"}</td>
+                            <td className="px-6 py-4 border-r border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 dark:text-gray-200">{formatDate(exp.expense_date)}</td>
+                            <td className="px-6 py-4 border-r border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 dark:text-gray-200 truncate max-w-[150px]" title={exp.expense_other}>{exp.expense_other || t('noRemarks')}</td>
+                            <td className="px-6 py-4 text-right font-bold text-green-600 border-r border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800">{formatCurrency(exp.amount)}</td>
+                            <td className="px-6 py-4 border-r border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800">
+                              <Tag color={darkMode ? "cyan" : "blue"} className="rounded-full px-3 py-1 text-xs">{exp.created_by}</Tag>
+                            </td>
+                            <td className="px-6 py-4 bg-white dark:bg-gray-800">
+                              <ActionButtons item={exp} />
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+
+                {isLoading && (
+                  <div className="flex flex-col gap-3 p-6 transition-all duration-500">
+                    {[...Array(5)].map((_, index) => (
+                      <div key={index} className="flex items-center gap-4">
+                        <Skeleton.Button active block />
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {isLoading ? (
-                  [...Array(8)].map((_, index) => <ExpenseCardSkeleton key={index} />)
+              <div>
+                {filteredExpenses.length === 0 && !isLoading ? (
+                  <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-12 text-center">
+                    <Empty
+                      image="https://gw.alipayobjects.com/zos/antfincdn/ZHrcdLPrvN/empty.svg"
+                      imageStyle={{ height: 80 }}
+                      description={<Typography.Text className="text-gray-500 dark:text-gray-400 text-lg">{t('noExpensesFound')}</Typography.Text>}
+                    >
+                      <Button
+                        variant="primary"
+                        actionType="is_modify"
+                        menuId={MENU_ID}
+                        onClick={handleCreate}
+                        className="mt-4"
+                      >
+                        {t('createFirstExpense')}
+                      </Button>
+                    </Empty>
+                  </div>
                 ) : (
-                  expenses?.map((exp, index) => <ExpenseCard key={index} expense={exp} index={index} />)
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    {isLoading ? (
+                      [...Array(8)].map((_, index) => <ExpenseCardSkeleton key={index} />)
+                    ) : (
+                      filteredExpenses.map((exp) => <ExpenseCard key={exp.expense_id} expense={exp} />)
+                    )}
+                  </div>
                 )}
               </div>
             )}
-          </div>
-        )}
-
-        {isExpenseChildRoute && (
-          <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/50 p-4">
-            <div className={`w-11/12 max-w-6xl rounded-2xl ${darkMode ? "bg-gray-800" : "bg-white"} shadow-xl overflow-hidden`}>
-              <ExpContext.Provider value={{ expenseType, onAdd, edit, expenses }}>
-                <Outlet />
-              </ExpContext.Provider>
-            </div>
-          </div>
-        )}
-      </section>
-    </div>
+          </motion.div>
+        </div>
+      </div>
+    </motion.div>
   );
 };
 

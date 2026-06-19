@@ -15,10 +15,15 @@ import * as XLSX from 'xlsx';
 import { useTranslation } from 'react-i18next';
 import { useGetAllWarehousesQuery } from '../../../app/Features/warehousesSlice';
 import api from '../../services/api';
-import { Link, useParams } from 'react-router';
+import { Link, useParams, useNavigate } from 'react-router';
 import RefreshButton from '../../utils/RefreshButton';
-import { LuList, LuPlus } from 'react-icons/lu';
+import { LuFileText, LuList, LuPlus, LuRefreshCw, LuSearch } from 'react-icons/lu';
 
+import RichSearch from "../../utils/RichSearch";
+import Input from "../../utils/Input";
+import Button from "../../utils/Button";
+const MENU_ID = 50;
+const LIST_MENU_ID = 22;
 const STOCK_FIELDS = [
     { key: 'in_stock', label: 'In Stock', kh: 'ក្នុងស្តុក', className: 'text-blue-600 bg-blue-50 dark:bg-blue-900/20 dark:text-blue-400' },
     { key: 'stock_in', label: 'Stock In', kh: 'ស្តុកចូល', className: 'text-green-600 bg-green-50 dark:bg-green-900/20 dark:text-green-400' },
@@ -31,6 +36,7 @@ const STOCK_FIELDS = [
 const StockByWarehouse = () => {
     const { t, i18n } = useTranslation();
     const { id } = useParams();
+    const navigate = useNavigate();
     const warehouse_id = id ?? 1;
     const isKhmer = i18n.language === 'kh';
     const token = localStorage.getItem('token');
@@ -77,7 +83,6 @@ const StockByWarehouse = () => {
             setLoading(false);
         }
     };
-
     useEffect(() => {
         fetchStocksByWarehouse(selectedWarehouse);
     }, [selectedWarehouse]);
@@ -228,7 +233,7 @@ const StockByWarehouse = () => {
             transition={{ duration: 0.25 }}
             className="overflow-hidden border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-[0_18px_50px_-28px_rgba(15,23,42,0.15)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_22px_60px_-30px_rgba(37,99,235,0.25)]"
         >
-            <div className="relative h-52 overflow-hidden bg-slate-900">
+            <div className="relative h-30 overflow-hidden bg-slate-900">
                 <ProductImage
                     src={getImageSrc(item)}
                     alt={item.item_name}
@@ -250,44 +255,47 @@ const StockByWarehouse = () => {
 
             <div className="space-y-2 p-5">
                 <div>
-                    <h3 className="text-lg font-bold tracking-tight text-slate-900 dark:text-white leading-tight">{item.item_name}</h3>
+                    <h3 className="text-md font-bold tracking-tight text-slate-900 dark:text-white leading-tight">{item.item_name}</h3>
                     <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
                         {item.item_code || 'N/A'} {item.barcode ? `| ${item.barcode}` : ''}
                     </p>
-                    <p className="mt-2 text-xs text-slate-600 dark:text-slate-300">
+                    {/* <p className="mt-2 text-xs text-slate-600 dark:text-slate-300">
                         {t('price')}: <span className="font-semibold text-slate-800 dark:text-slate-100">${formatNumber(item.item_price)}</span> | {t('wholesale')}: <span className="font-semibold text-slate-800 dark:text-slate-100">${formatNumber(item.wholesale_price)}</span>
-                    </p>
+                    </p> */}
                 </div>
 
-                <div className="rounded-[20px] bg-slate-50 dark:bg-slate-900/50 p-4 shadow-inner border border-slate-100 dark:border-slate-700">
-                    <div className="grid grid-cols-2 gap-x-4 gap-y-3">
+                <div className="rounded-xs bg-slate-50 dark:bg-slate-900/50 p-4 shadow-inner border border-slate-100 dark:border-slate-700">
+                    <div className="grid grid-cols-2 !text-[10px] gap-x-4 gap-y-3">
                         <div>
-                            <p className="text-[12px] font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{t('stockIn')} (IN)</p>
+                            <p className="font-medium text-slate-500 dark:text-slate-400 capitalize tracking-wider">{t('stockIn')}</p>
                             <p className="mt-1 text-md font-bold text-emerald-600 dark:text-emerald-400">+ {Number(item?.stock?.stock_in)}</p>
                         </div>
                         <div>
-                            <p className="text-[12px] font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{t('stockReturn')} (RET)</p>
+                            <p className="font-medium text-slate-500 dark:text-slate-400 capitalize tracking-wider">{t('stockReturn')}</p>
                             <p className="mt-1 text-md font-bold text-sky-600 dark:text-sky-400">+ {Number(item?.stock?.stock_return)}</p>
                         </div>
                         <div>
-                            <p className="text-[12px] font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{t('stockOut')} (OUT)</p>
+                            <p className="font-medium text-slate-500 dark:text-slate-400 capitalize tracking-wider">{t('stockOut')}</p>
                             <p className="mt-1 text-md font-bold text-orange-500 dark:text-orange-400">- {Number(item?.stock?.stock_out)}</p>
                         </div>
                         <div>
-                            <p className="text-[12px] font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{t('stockWasted')}</p>
+                            <p className="font-medium text-slate-500 dark:text-slate-400 capitalize tracking-wider">{t('stockWasted')}</p>
                             <p className="mt-1 text-md font-bold text-rose-500 dark:text-rose-400">- {Number(item?.stock?.stock_wasted)}</p>
+                        </div>
+                        <div>
+                            <p className="font-medium text-slate-500 dark:text-slate-400 capitalize tracking-wider">{t('sold')}</p>
+                            <p className="mt-1 text-md font-bold text-violet-600 dark:text-violet-400">- {Number(item?.stock?.sold)}</p>
                         </div>
                     </div>
 
-                    <div className="mt-4 border-t border-dashed border-slate-300 dark:border-slate-700 pt-3">
-                        <p className="text-[12px] font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{t('sold')}</p>
-                        <p className="mt-1 text-md font-bold text-violet-600 dark:text-violet-400">- {Number(item?.stock?.sold)}</p>
-                    </div>
+                    
                 </div>
 
-                <div className="rounded-sm border border-blue-100 dark:border-blue-900/30 bg-gradient-to-b from-sky-50 to-blue-50 dark:from-slate-800/50 dark:to-blue-900/10 px-5 py-2 text-center">
-                    <p className="text-xs font-semibold text-gray-600 dark:text-gray-400">{t('availableStock')}</p>
-                    <p className="mt-2 text-xl font-black tracking-tight text-blue-500 dark:text-blue-600">{getNetAvailable(item)}</p>
+                <div className=" flex items-center justify-between px-2 text-center">
+                    <div className='flex items-end gap-1 text-center'>
+                        <h1 className="text-xs font-semibold text-gray-600 dark:text-gray-400">{t('available')}:</h1>
+                        <p className="mt-2 text-xs tracking-tight text-blue-500 dark:text-blue-600">{getNetAvailable(item)}</p>
+                    </div>
                     <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
                         {t('costValue')}: <span className="font-semibold text-slate-700 dark:text-slate-200">${formatNumber(Number(item.item_cost || 0) * getNetAvailable(item))}</span>
                     </p>
@@ -306,212 +314,232 @@ const StockByWarehouse = () => {
 
     return (
         <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.4 }}
-            className={`min-h-screen bg-transparent p-2 md:p-2 ${isKhmer ? 'font-khmer' : ''}`}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className={`view-page bg-transparent transition-colors ${isKhmer ? 'font-khmer' : ''}`}
         >
-            <div className="mx-auto">
-                <div className="mb-2 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+                {/* Header Section */}
+                <div className="flex items-center justify-between border-b-0 border-x p-4 dark:border-gray-500 border-gray-200 bg-white dark:bg-gray-600">
                     <div>
-                        <h1 className="mb-2 text-3xl font-bold text-gray-900 dark:text-white">
-                            {t('stockBy')} <span className="text-blue-600 dark:text-blue-400">{t('warehouse')}</span>
+                        <h1 className="text-xl font-bold text-gray-800 dark:text-white">
+                            {t('stockBy')} <span className="text-[#13b5ea]">{t('warehouse')}</span>
                         </h1>
-                        <p className="text-gray-600 dark:text-slate-400">{t('stockByWarehouseDesc', 'Select a warehouse to view item stock balances and all stock movement totals.')}</p>
-                        {/* {responseMessage && <p className="mt-2 text-sm font-medium text-green-600 dark:text-green-400">{responseMessage}</p>} */}
+                        <p className="text-gray-500 text-xs dark:text-gray-400 mt-2">
+                            {t('stockByWarehouseDesc', 'Select a warehouse to view item stock balances and all stock movement totals.')}
+                        </p>
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-3">
-                        <div className="flex  border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-1 shadow-xs">
+                    <div className="flex flex-wrap items-center gap-2">
+                        {/* View Mode Toggle */}
+                        <div className="flex border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-1 rounded-[2px] mr-2">
                             <button
                                 type="button"
                                 onClick={() => handleViewModeChange('table')}
-                                className={` p-2 transition-all ${viewMode === 'table' ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200'}`}
+                                className={` p-2 transition-all ${viewMode === 'table' ? 'bg-[#13b5ea]/10 text-[#13b5ea]' : 'text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200'}`}
                                 title={t('tableView')}
                             >
-                                <IoIosList size={22} />
+                                <IoIosList size={20} />
                             </button>
                             <button
                                 type="button"
                                 onClick={() => handleViewModeChange('grid')}
-                                className={` p-2 transition-all ${viewMode === 'grid' ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200'}`}
+                                className={` p-2 transition-all ${viewMode === 'grid' ? 'bg-[#13b5ea]/10 text-[#13b5ea]' : 'text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200'}`}
                                 title={t('gridView')}
                             >
-                                <IoIosGrid size={22} />
+                                <IoIosGrid size={20} />
                             </button>
                         </div>
 
-                        <RefreshButton onRefresh={() => fetchStocksByWarehouse(selectedWarehouse)} />
+                        <Button
+                            variant="primary"
+                            onClick={() => fetchStocksByWarehouse(selectedWarehouse)}
+                            disabled={loading}
+                        >
+                            <LuRefreshCw className={loading ? 'animate-spin' : ''} />
+                        </Button>
 
-                        <button
-                            type="button"
+                        <Button
+                            variant="primary"
                             onClick={exportToExcel}
                             disabled={exportLoading || filteredStocks.length === 0}
-                            className="inline-flex items-center gap-2  border border-blue-200 dark:border-blue-900/50 bg-white dark:bg-slate-800 px-4 py-2 text-sm font-medium text-blue-600 dark:text-blue-400 shadow-xs hover:bg-blue-50 dark:hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-60"
                         >
                             <FaFileExport />
                             {exportLoading ? t('exporting') : t('exportExcel')}
-                        </button>
-                        <Link to="/inventories/stock-list">
-                            <button className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center gap-2 transition-colors">
-                                <LuList />
-                                {t('stockList')}
-                            </button>
-                        </Link>
-                        <Link to="/inventories/stock-list/add">
-                            <button className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center gap-2 transition-colors">
-                                <LuPlus />
-                                {t('stockIn')}
-                            </button>
-                        </Link>
+                        </Button>
+
+                        <Button
+                            variant="primary"
+                            actionType='is_view'
+                            menuId={LIST_MENU_ID}
+                            onClick={() => navigate("/inventories/stock-list")}
+                        >
+                            <LuList />
+                            {t('stockList')}
+                        </Button>
+
+                        <Button
+                            variant="save"
+                            actionType='is_modify'
+                            menuId={LIST_MENU_ID}
+                            onClick={() => navigate("/inventories/stock-list/add")}
+                        >
+                            <LuPlus />
+                            {t('stockIn')}
+                        </Button>
                     </div>
                 </div>
 
-                <div className="mb-2  border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4 shadow-xs">
-                    <div className="flex flex-col gap-4 md:flex-row md:items-end">
-                        <div className="flex-1">
-                            <label className="mb-2 block text-sm font-semibold text-gray-700 dark:text-slate-300">{t('warehouse')}</label>
-                            <div className="relative">
-                                <FaWarehouse className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 dark:text-slate-500" />
-                                <select
+                {/* Filters Section */}
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3 }}
+                >
+                    <div className="flex gap-2 justify-between bg-gray-100 dark:bg-transparent p-4 border-x border-gray-200 dark:border-gray-500">
+                        <div className="flex items-end gap-5 grow">
+                            <div className="w-64">
+                                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
+                                    <FaWarehouse className="text-gray-400" />
+                                    {t('warehouse')}
+                                </label>
+                                <RichSearch
+                                    data={warehouses}
                                     value={selectedWarehouse}
-                                    onChange={(e) => setSelectedWarehouse(e.target.value)}
-                                    disabled={warehouseLoading}
-                                    className="w-full  border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 py-3 pl-12 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white"
-                                >
-                                    <option value="">{t('selectWarehouse', 'Select warehouse')}</option>
-                                    {warehouses.map((warehouse) => (
-                                        <option key={warehouse.warehouse_id} value={warehouse.warehouse_id}>
-                                            {warehouse.warehouse_name}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-                        </div>
-
-                        <div className="flex-[2]">
-                            <label className="mb-2 block text-sm font-semibold text-gray-700 dark:text-slate-300">{t('searchItem')}</label>
-                            <div className="relative">
-                                <IoIosSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-xl text-gray-400 dark:text-slate-500" />
-                                <input
-                                    type="text"
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                    placeholder={t('searchStockPlaceholder', 'Search by item name, code, barcode...')}
-                                    className="w-full  border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 py-3 pl-12 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white"
+                                    placeholder={t('selectWarehouse')}
+                                    keyFields={{
+                                        id: "warehouse_id",
+                                        title: "warehouse_name",
+                                    }}
+                                    onSelected={(val) => setSelectedWarehouse(val)}
                                 />
                             </div>
-                        </div>
 
-                        <div className="flex items-end">
-                            <button
-                                type="button"
+                            <div className="grow">
+                                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
+                                    <LuSearch className="text-gray-400" />
+                                    {t('searchItem')}
+                                </label>
+                                <Input
+                                    type="text"
+                                    value={searchTerm}
+                                    onChange={(val) => setSearchTerm(val)}
+                                    placeholder={t('searchStockPlaceholder')}
+                                    className="w-full"
+                                />
+                            </div>
+
+                            <Button
+                                variant="cancel"
                                 onClick={() => setSearchTerm('')}
-                                className="w-full  border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-700 px-4 py-3 text-sm font-medium text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-600 lg:w-auto"
                             >
                                 {t('clearSearch')}
-                            </button>
+                            </Button>
                         </div>
                     </div>
-                </div>
+                </motion.div>
 
-                <div className="mb-2 grid grid-cols-2 gap-2 md:grid-cols-2 xl:grid-cols-4">
-                    <StatCard
-                        title={t('selectedWarehouse')}
-                        value={selectedWarehouseName}
-                        icon={<FaWarehouse className="text-blue-600 dark:text-blue-400" />}
-                        color="from-blue-50 to-cyan-50 dark:from-slate-800 dark:to-slate-900"
-                    />
-                    <StatCard
-                        title={t('itemsFound')}
-                        value={filteredStocks.length}
-                        icon={<FaClipboardList className="text-green-600 dark:text-green-400" />}
-                        color="from-green-50 to-emerald-50 dark:from-slate-800 dark:to-slate-900"
-                    />
-                    <StatCard
-                        title={t('totalInStock')}
-                        value={totals.in_stock}
-                        icon={<FaBoxOpen className="text-orange-600 dark:text-orange-400" />}
-                        color="from-orange-50 to-amber-50 dark:from-slate-800 dark:to-slate-900"
-                    />
-                    <StatCard
-                        title={t('totalSold')}
-                        value={totals.sold}
-                        icon={<FaShoppingCart className="text-purple-600 dark:text-purple-400" />}
-                        color="from-purple-50 to-fuchsia-50 dark:from-slate-800 dark:to-slate-900"
-                    />
-                </div>
+                {/* Main Content Area */}
+                <div className="p-4 md:p-6 border border-gray-200 dark:border-gray-500 bg-white dark:bg-gray-800">
+                    <div className="mb-6 grid grid-cols-2 gap-4 md:grid-cols-2 xl:grid-cols-4">
+                        <StatCard
+                            title={t('selectedWarehouse')}
+                            value={selectedWarehouseName}
+                            icon={<FaWarehouse className="text-blue-600 dark:text-blue-400" />}
+                            color="from-blue-50 to-cyan-50 dark:from-slate-800 dark:to-slate-900"
+                        />
+                        <StatCard
+                            title={t('itemsFound')}
+                            value={filteredStocks.length}
+                            icon={<FaClipboardList className="text-green-600 dark:text-green-400" />}
+                            color="from-green-50 to-emerald-50 dark:from-slate-800 dark:to-slate-900"
+                        />
+                        <StatCard
+                            title={t('totalInStock')}
+                            value={totals.in_stock}
+                            icon={<FaBoxOpen className="text-orange-600 dark:text-orange-400" />}
+                            color="from-orange-50 to-amber-50 dark:from-slate-800 dark:to-slate-900"
+                        />
+                        <StatCard
+                            title={t('totalSold')}
+                            value={totals.sold}
+                            icon={<FaShoppingCart className="text-purple-600 dark:text-purple-400" />}
+                            color="from-purple-50 to-fuchsia-50 dark:from-slate-800 dark:to-slate-900"
+                        />
+                    </div>
 
-                <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
-                    {STOCK_FIELDS.map((field) => (
-                        <div key={field.key} className=" border grow border-gray-200 rounded-lg dark:border-slate-700 bg-white dark:bg-slate-800 p-5 shadow-xs">
-                            <p className="text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider">{isKhmer ? field.kh : field.label}</p>
-                            <p className="mt-2 text-2xl font-bold text-gray-900 dark:text-white leading-none">{totals[field.key]}</p>
-                        </div>
-                    ))}
-                </div>
-
-                {loading ? (
-                    <LoadingState />
-                ) : filteredStocks.length === 0 ? (
-                    <EmptyState />
-                ) : viewMode === 'grid' ? (
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
-                        {filteredStocks.map((item) => (
-                            <GridItem key={item.item_id} item={item} />
+                    <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
+                        {STOCK_FIELDS.map((field) => (
+                            <div key={field.key} className="border grow border-gray-200 rounded-[2px] dark:border-slate-700 bg-white dark:bg-slate-800 p-5 shadow-sm">
+                                <p className="text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider">{isKhmer ? field.kh : field.label}</p>
+                                <p className="mt-2 text-2xl font-bold text-gray-900 dark:text-white leading-none">{totals[field.key]}</p>
+                            </div>
                         ))}
                     </div>
-                ) : (
-                    <div className="overflow-hidden border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-xs">
-                        <div className="overflow-x-auto">
-                            <table className="w-full min-w-[1200px]">
-                                <thead className="border-b border-gray-200 dark:border-slate-700 bg-gradient-to-r from-gray-50 to-blue-50 dark:from-slate-900 dark:to-slate-800">
-                                    <tr>
-                                        <th className="px-4 py-4 text-left text-sm font-semibold text-gray-700 dark:text-slate-300">{t('product')}</th>
-                                        <th className="px-4 py-4 text-left text-sm font-semibold text-gray-700 dark:text-slate-300">{t('code')}</th>
-                                        <th className="px-4 py-4 text-left text-sm font-semibold text-gray-700 dark:text-slate-300">{t('category')}</th>
-                                        <th className="px-4 py-4 text-left text-sm font-semibold text-gray-700 dark:text-slate-300">{t('brand')}</th>
-                                        <th className="px-4 py-4 text-right text-sm font-semibold text-gray-700 dark:text-slate-300">{t('price')}</th>
-                                        <th className="px-4 py-4 text-right text-sm font-semibold text-gray-700 dark:text-slate-300">{t('cost')}</th>
-                                        <th className="px-4 py-4 text-right text-sm font-semibold text-gray-700 dark:text-slate-300">{t('wholesale')}</th>
-                                        {STOCK_FIELDS.map((field) => (
-                                            <th key={field.key} className="px-4 py-4 text-right text-sm font-semibold text-gray-700 dark:text-slate-300">
-                                                {isKhmer ? field.kh : field.label}
-                                            </th>
-                                        ))}
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-gray-100 text-xs dark:divide-slate-700">
-                                    {filteredStocks.map((item) => (
-                                        <tr key={item.item_id} className="hover:bg-blue-50/40 dark:hover:bg-blue-900/10 transition-colors">
-                                            <td className="px-4 py-4">
-                                                <div className="flex items-center gap-3">
-                                                    <ProductImage src={getImageSrc(item)} alt={item.item_name} />
-                                                    <div>
-                                                        <p className="font-semibold text-gray-900 dark:text-white">{item.item_name}</p>
-                                                        <p className="text-xs text-gray-500 dark:text-slate-400">{item.barcode || 'No barcode'}</p>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td className="px-4 py-4 text-sm font-mono text-gray-600 dark:text-slate-400">{item.item_code || 'N/A'}</td>
-                                            <td className="px-4 py-4 text-sm text-gray-700 dark:text-slate-300">{item.category_name || 'N/A'}</td>
-                                            <td className="px-4 py-4 text-sm text-gray-700 dark:text-slate-300">{item.brand_name || 'N/A'}</td>
-                                            <td className="px-4 py-4 text-right text-sm font-medium text-gray-800 dark:text-slate-100">${Number(item.item_price || 0).toFixed(2)}</td>
-                                            <td className="px-4 py-4 text-right text-sm font-medium text-gray-800 dark:text-slate-100">${Number(item.item_cost || 0).toFixed(2)}</td>
-                                            <td className="px-4 py-4 text-right text-sm font-medium text-gray-800 dark:text-slate-100">${Number(item.wholesale_price || 0).toFixed(2)}</td>
+
+                    {loading ? (
+                        <LoadingState />
+                    ) : filteredStocks.length === 0 ? (
+                        <EmptyState />
+                    ) : viewMode === 'grid' ? (
+                        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+                            {filteredStocks.map((item) => (
+                                <GridItem key={item.item_id} item={item} />
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="overflow-hidden border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-[2px]">
+                            <div className="overflow-x-auto">
+                                <table className="w-full min-w-[1200px] border-collapse">
+                                    <thead className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800">
+                                        <tr className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-800">
+                                            <th className="px-4 py-4 text-left text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-gray-200 border-r border-gray-200 dark:border-gray-400">{t('product')}</th>
+                                            <th className="px-4 py-4 text-left text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-gray-200 border-r border-gray-200 dark:border-gray-400">{t('code')}</th>
+                                            <th className="px-4 py-4 text-left text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-gray-200 border-r border-gray-200 dark:border-gray-400">{t('category')}</th>
+                                            <th className="px-4 py-4 text-left text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-gray-200 border-r border-gray-200 dark:border-gray-400">{t('brand')}</th>
+                                            <th className="px-4 py-4 text-right text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-gray-200 border-r border-gray-200 dark:border-gray-400">{t('price')}</th>
+                                            <th className="px-4 py-4 text-right text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-gray-200 border-r border-gray-200 dark:border-gray-400">{t('cost')}</th>
+                                            <th className="px-4 py-4 text-right text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-gray-200 border-r border-gray-200 dark:border-gray-400">{t('wholesale')}</th>
                                             {STOCK_FIELDS.map((field) => (
-                                                <td key={field.key} className="px-4 py-4 text-right text-sm font-bold text-gray-800 dark:text-slate-100">
-                                                    {Number(item?.stock?.[field.key] || 0)}
-                                                </td>
+                                                <th key={field.key} className="px-4 py-4 text-right text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-gray-200 border-r border-gray-200 dark:border-gray-400 last:border-r-0">
+                                                    {isKhmer ? field.kh : field.label}
+                                                </th>
                                             ))}
                                         </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-100 text-xs dark:divide-slate-700">
+                                        {filteredStocks.map((item) => (
+                                            <tr key={item.item_id} className="hover:bg-blue-50/40 dark:hover:bg-blue-900/10 transition-colors">
+                                                <td className="px-4 py-4 border-r border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800">
+                                                    <div className="flex items-center gap-3">
+                                                        <ProductImage src={getImageSrc(item)} alt={item.item_name} />
+                                                        <div>
+                                                            <p className="font-bold text-gray-900 dark:text-white">{item.item_name}</p>
+                                                            <p className="text-[10px] text-gray-500 dark:text-slate-400">{item.barcode || 'No barcode'}</p>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td className="px-4 py-4 text-[13px] font-mono text-gray-600 dark:text-slate-400 border-r border-gray-100 dark:border-gray-700">{item.item_code || 'N/A'}</td>
+                                                <td className="px-4 py-4 text-[13px] text-gray-700 dark:text-slate-300 border-r border-gray-100 dark:border-gray-700">{item.category_name || 'N/A'}</td>
+                                                <td className="px-4 py-4 text-[13px] text-gray-700 dark:text-slate-300 border-r border-gray-100 dark:border-gray-700">{item.brand_name || 'N/A'}</td>
+                                                <td className="px-4 py-4 text-right text-[13px] font-bold text-gray-800 dark:text-slate-100 border-r border-gray-100 dark:border-gray-700">${Number(item.item_price || 0).toFixed(2)}</td>
+                                                <td className="px-4 py-4 text-right text-[13px] font-bold text-gray-800 dark:text-slate-100 border-r border-gray-100 dark:border-gray-700">${Number(item.item_cost || 0).toFixed(2)}</td>
+                                                <td className="px-4 py-4 text-right text-[13px] font-bold text-gray-800 dark:text-slate-100 border-r border-gray-100 dark:border-gray-700">${Number(item.wholesale_price || 0).toFixed(2)}</td>
+                                                {STOCK_FIELDS.map((field) => (
+                                                    <td key={field.key} className="px-4 py-4 text-right text-[13px] font-bold text-gray-800 dark:text-slate-100 border-r border-gray-100 dark:border-gray-700 last:border-r-0">
+                                                        <span className={field.className + " px-2 py-0.5 rounded text-[11px]"}>
+                                                            {Number(item?.stock?.[field.key] || 0)}
+                                                        </span>
+                                                    </td>
+                                                ))}
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
-                    </div>
-                )}
+                    )}
+                </div>
             </div>
         </motion.div>
     );

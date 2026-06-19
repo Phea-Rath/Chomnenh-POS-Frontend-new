@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router";
-import { FaSave, FaTimes, FaMapMarkerAlt, FaUser, FaEnvelope, FaPhone, FaMapMarkedAlt, FaTrash, FaEdit } from "react-icons/fa";
+import { FaSave, FaTimes, FaMapMarkerAlt, FaUser, FaEnvelope, FaPhone, FaMapMarkedAlt, FaTrash, FaEdit, FaTruck } from "react-icons/fa";
 import { IoMdCloudUpload } from "react-icons/io";
 import { Alert } from "antd";
 import { useTranslation } from "react-i18next";
@@ -16,7 +16,8 @@ import Input from "../../utils/Input";
 import RichSearch from "../../utils/RichSearch";
 import Button from "../../utils/Button";
 import { useNotify } from "../../utils/NotificationProvider";
-
+import { motion } from "framer-motion";
+const MENU_ID = 15;
 const CustomerForm = () => {
   const { t } = useTranslation();
   const notify = useNotify();
@@ -260,8 +261,7 @@ const CustomerForm = () => {
   };
 
   return (
-    <div className="bg-transparent py-8">
-      <div className="mx-auto px-2">
+    <div className="view-page bg-transparent transition-colors">
         <AlertBox
           isOpen={alertBox}
           title={t('confirm', "Confirmation")}
@@ -272,242 +272,274 @@ const CustomerForm = () => {
           cancelText={t('cancel')}
         />
 
-        {/* Header */}
-        <div className="mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-              {isUpdate ? t('editCustomer') : t('createNewCustomer')}
-            </h1>
-            {/* Actions */}
-              <div className="flex justify-end gap-4">
-                <Button variant="danger" outline onClick={() => navigate(-1)} disabled={loading}>
-                  <FaTimes /> {t('cancel')}
-                </Button>
-                <Button onClick={handleSubmit} disabled={loading}>
-                  {isUpdate ? <FaEdit /> : <FaSave />}
-                  {loading ? t('saving') : isUpdate ? t('updateCustomer') : t('createCustomer')}
-                </Button>
-              </div>
-          </div>
-          <p className="text-gray-600 dark:text-gray-400">
-            {isUpdate ? t('updateCustomerInfo') : t('addNewCustomerSystem')}
-          </p>
-
-          
-        </div>
-
-        {submissionError && (
-          <Alert
-            message={t('error', 'Error')}
-            description={submissionError}
-            type="error"
-            showIcon
-            closable
-            onClose={() => setSubmissionError(null)}
-            className="mb-6"
-          />
-        )}
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left Column: Image & Location */}
-          <div className="lg:col-span-1 space-y-6">
-            {/* Image Upload */}
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-gray-800 dark:text-white">{t('customerImage')}</h2>
-                {viewImage && (
-                  <button type="button" onClick={removeImage} className="text-red-500 hover:text-red-600 transition-colors">
-                    <FaTrash />
-                  </button>
-                )}
-              </div>
-              
-              <label htmlFor="image-upload" className="block cursor-pointer">
-                <div className={`w-full flex justify-center items-center p-4 border-2 border-dashed rounded-lg transition-all duration-200 ${
-                  viewImage ? 'border-blue-300 dark:border-blue-500/50 bg-blue-50/30' : 'border-gray-300 dark:border-gray-600 hover:border-blue-400'
-                }`}>
-                  {viewImage ? (
-                    <img src={viewImage} alt="Preview" className="max-h-64 rounded-lg object-contain mx-auto" />
-                  ) : (
-                    <div className="text-center py-8">
-                      <IoMdCloudUpload className="text-5xl text-blue-400 mx-auto mb-4" />
-                      <p className="text-gray-500 dark:text-gray-400">{t('clickToUpload', 'Click to upload image')}</p>
-                    </div>
-                  )}
+        <div>
+            {/* Header */}
+            <div className="flex items-center justify-between border-b-0 border-x p-4 dark:border-gray-500 border-gray-200 bg-white dark:bg-gray-600">
+                <div>
+                    <h1 className="text-xl font-bold text-gray-800 dark:!text-gray-100">
+                        {isUpdate ? t('editCustomer') : t('createNewCustomer')}
+                    </h1>
+                    <p className="text-gray-600 text-xs dark:!text-gray-400 mt-2">
+                        {isUpdate ? t('updateCustomerInfo') : t('addNewCustomerSystem')}
+                    </p>
                 </div>
-              </label>
-              <input type="file" id="image-upload" hidden accept="image/*" onChange={handleImageChange} />
+                <div className="flex justify-center items-center gap-2">
+                    <Button
+                    actionType="is_modify"
+                    menuId={MENU_ID}
+                        onClick={handleSubmit}
+                        disabled={loading}
+                        variant='primary'
+                    >
+                        {isUpdate ? <FaEdit /> : <FaSave />}
+                        {loading ? t('saving') : isUpdate ? t('update') : t('create')}
+                    </Button>
+                    <Button
+                        variant='cancel'
+                        onClick={() => navigate(-1)}
+                        disabled={loading}
+                    >
+                        <FaTimes />{t('back')}
+                    </Button>
+                </div>
             </div>
 
-           
-          </div>
-
-          {/* Right Column: Form Fields */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Basic Info */}
-            <div>
-              <div className="flex items-center gap-3 mb-6">
-                <FaUser className="text-blue-500 text-xl" />
-                <h2 className="text-lg font-semibold text-gray-800 dark:text-white">{t('basicInformation')}</h2>
-              </div>
-
-              <div className="flex flex-wrap gap-6">
-                <div className="space-y-2 grow">
-                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('customerName')} <span className="text-red-500">*</span></label>
-                  <Input
-                    value={dataForm.customer_name}
-                    onChange={(val) => setFormData(p => ({ ...p, customer_name: val }))}
-                    placeholder={t('enterCustomerName')}
-                  />
-                  {errors.customer_name && <p className="text-red-500 text-xs">{errors.customer_name}</p>}
-                </div>
-
-                <div className="space-y-2 grow">
-                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('phoneNumber')}</label>
-                  <Input
-                    value={dataForm.customer_tel}
-                    onChange={(val) => setFormData(p => ({ ...p, customer_tel: val }))}
-                    placeholder="+1234567890"
-                  />
-                  {errors.customer_tel && <p className="text-red-500 text-xs">{errors.customer_tel}</p>}
-                </div>
-
-                <div className="space-y-2 grow">
-                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('emailAddress')}</label>
-                  <Input
-                    type="email"
-                    value={dataForm.customer_email}
-                    onChange={(val) => setFormData(p => ({ ...p, customer_email: val }))}
-                    placeholder="email@example.com"
-                  />
-                </div>
-
-                <div className="space-y-2 grow">
-                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('addressCoordinates')}</label>
-                  <div className="flex gap-2">
-                    <Input
-                      value={dataForm.customer_address}
-                      onChange={handleLocationChange}
-                      placeholder="lat, lng"
+            {submissionError && (
+                <div className="px-4 border-x dark:border-gray-500 border-gray-200">
+                    <Alert
+                        message={t('error', 'Error')}
+                        description={submissionError}
+                        type="error"
+                        showIcon
+                        closable
+                        onClose={() => setSubmissionError(null)}
+                        className="my-4"
                     />
-                    <button type="button" onClick={getCurrentLocation} className="p-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 rounded-lg hover:bg-blue-200 transition-colors">
-                      <FaMapMarkerAlt />
-                    </button>
-                  </div>
                 </div>
-              </div>
-            </div>
+            )}
 
-            {/* Geographical Location */}
-            <div>
-              <div className="flex items-center gap-3 mb-6">
-                <FaMapMarkedAlt className="text-emerald-500 text-xl" />
-                <h2 className="text-lg font-semibold text-gray-800 dark:text-white">{t('geographicalLocation')}</h2>
-              </div>
+            <form onSubmit={handleSubmit}>
+                <div className="grid grid-cols-1 lg:grid-cols-3">
+                    {/* Left Column: Image & Basic Info */}
+                    <div className="lg:col-span-2">
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.3 }}
+                        >
+                            <div className="bg-gray-100 p-4 border dark:bg-transparent dark:border-gray-500 border-gray-200">
+                                <h3 className="text-md font-semibold mb-4 flex items-center gap-2 dark:text-white">
+                                    <FaUser className="text-blue-500" />
+                                    {t('basicInformation')}
+                                </h3>
 
-              <div className="flex flex-wrap gap-6">
-                <div className="space-y-2 grow">
-                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('province')}</label>
-                  <RichSearch
-                    data={provinces}
-                    value={dataForm.province_id}
-                    onSelected={(id) => {
-                      const p = provinces.find(x => x.id === id || x.province_id === id);
-                      setFormData(prev => ({ 
-                        ...prev, province_id: id, provinces: p?.khmer_name || p?.name || "",
-                        district_id: null, commune_id: null, village_id: null 
-                      }));
-                    }}
-                    keyFields={{ id: 'id', title: 'khmer_name', subtitle: 'name' }}
-                    placeholder={t('selectProvince')}
-                  />
-                </div>
+                                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('customerName')} <span className="text-red-500">*</span></label>
+                                        <Input
+                                            value={dataForm.customer_name}
+                                            onChange={(val) => setFormData(p => ({ ...p, customer_name: val }))}
+                                            placeholder={t('enterCustomerName')}
+                                        />
+                                        {errors.customer_name && <p className="text-red-500 text-xs">{errors.customer_name}</p>}
+                                    </div>
 
-                <div className="space-y-2 grow">
-                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('district')}</label>
-                  <RichSearch
-                    data={districts}
-                    value={dataForm.district_id}
-                    onSelected={(id) => {
-                      const d = districts.find(x => x.id === id || x.district_id === id);
-                      setFormData(prev => ({ 
-                        ...prev, district_id: id, districts: d?.khmer_name || d?.name || "",
-                        commune_id: null, village_id: null 
-                      }));
-                    }}
-                    keyFields={{ id: 'id', title: 'khmer_name', subtitle: 'name' }}
-                    placeholder={t('selectDistrict')}
-                    disabled={!districts.length}
-                  />
-                </div>
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('phoneNumber')}</label>
+                                        <Input
+                                            value={dataForm.customer_tel}
+                                            onChange={(val) => setFormData(p => ({ ...p, customer_tel: val }))}
+                                            placeholder="+1234567890"
+                                        />
+                                        {errors.customer_tel && <p className="text-red-500 text-xs">{errors.customer_tel}</p>}
+                                    </div>
 
-                <div className="space-y-2 grow">
-                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('commune')}</label>
-                  <RichSearch
-                    data={communes}
-                    value={dataForm.commune_id}
-                    onSelected={(id) => {
-                      const c = communes.find(x => x.id === id || x.commune_id === id);
-                      setFormData(prev => ({ 
-                        ...prev, commune_id: id, communes: c?.khmer_name || c?.name || "",
-                        village_id: null 
-                      }));
-                    }}
-                    keyFields={{ id: 'id', title: 'khmer_name', subtitle: 'name' }}
-                    placeholder={t('selectCommune')}
-                    disabled={!communes.length}
-                  />
-                </div>
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('emailAddress')}</label>
+                                        <Input
+                                            type="email"
+                                            value={dataForm.customer_email}
+                                            onChange={(val) => setFormData(p => ({ ...p, customer_email: val }))}
+                                            placeholder="email@example.com"
+                                        />
+                                    </div>
 
-                <div className="space-y-2 grow">
-                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('village')}</label>
-                  <RichSearch
-                    data={villages}
-                    value={dataForm.village_id}
-                    onSelected={(id) => {
-                      const v = villages.find(x => x.id === id || x.village_id === id);
-                      setFormData(prev => ({ 
-                        ...prev, village_id: id, villages: v?.khmer_name || v?.name || ""
-                      }));
-                    }}
-                    keyFields={{ id: 'id', title: 'khmer_name', subtitle: 'name' }}
-                    placeholder={t('selectVillage')}
-                    disabled={!villages.length}
-                  />
-                </div>
-              </div>
-            </div>
-             {/* Location Preview */}
-            <div className="bg-primary p-4 rounded-sm">
-              <div className="flex items-center gap-3 mb-4">
-                <FaMapMarkedAlt className="text-blue-500 text-xl" />
-                <h2 className="text-lg font-semibold text-gray-800 dark:text-white">{t('locationPreview')}</h2>
-              </div>
-              
-              {location.latitude && location.longitude ? (
-                <div className="space-y-4">
-                  <div className="rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 h-48">
-                    <iframe
-                      src={`https://www.google.com/maps?q=${location.latitude},${location.longitude}&z=15&output=embed`}
-                      width="100%" height="100%" style={{ border: 0 }} loading="lazy" title="Location Map"
-                    ></iframe>
-                  </div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
-                    {location.latitude}, {location.longitude}
-                  </p>
-                </div>
-              ) : (
-                <div className="text-center py-8 text-gray-400">
-                  <FaMapMarkerAlt className="text-3xl mx-auto mb-2 opacity-50" />
-                  <p>{t('noLocationSet', 'No location coordinates set')}</p>
-                </div>
-              )}
-            </div>
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('addressCoordinates')}</label>
+                                        <div className="flex gap-2">
+                                            <Input
+                                                value={dataForm.customer_address}
+                                                onChange={handleLocationChange}
+                                                placeholder="lat, lng"
+                                            />
+                                            <button type="button" onClick={getCurrentLocation} className="p-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 rounded-lg hover:bg-blue-200 transition-colors">
+                                                <FaMapMarkerAlt />
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </motion.div>
 
-           
-          </div>
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.3, delay: 0.1 }}
+                        >
+                            <div className="bg-gray-100 p-4 border border-t-0 dark:bg-transparent dark:border-gray-500 border-gray-200">
+                                <h3 className="text-md font-semibold mb-4 flex items-center gap-2 dark:text-white">
+                                    <FaMapMarkedAlt className="text-emerald-500" />
+                                    {t('geographicalLocation')}
+                                </h3>
+
+                                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('province')}</label>
+                                        <RichSearch
+                                            data={provinces}
+                                            value={dataForm.province_id}
+                                            onSelected={(id) => {
+                                                const p = provinces.find(x => x.id === id || x.province_id === id);
+                                                setFormData(prev => ({ 
+                                                    ...prev, province_id: id, provinces: p?.khmer_name || p?.name || "",
+                                                    district_id: null, commune_id: null, village_id: null 
+                                                }));
+                                            }}
+                                            keyFields={{ id: 'id', title: 'khmer_name', subtitle: 'name' }}
+                                            placeholder={t('selectProvince')}
+                                        />
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('district')}</label>
+                                        <RichSearch
+                                            data={districts}
+                                            value={dataForm.district_id}
+                                            onSelected={(id) => {
+                                                const d = districts.find(x => x.id === id || x.district_id === id);
+                                                setFormData(prev => ({ 
+                                                    ...prev, district_id: id, districts: d?.khmer_name || d?.name || "",
+                                                    commune_id: null, village_id: null 
+                                                }));
+                                            }}
+                                            keyFields={{ id: 'id', title: 'khmer_name', subtitle: 'name' }}
+                                            placeholder={t('selectDistrict')}
+                                            disabled={!districts.length}
+                                        />
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('commune')}</label>
+                                        <RichSearch
+                                            data={communes}
+                                            value={dataForm.commune_id}
+                                            onSelected={(id) => {
+                                                const c = communes.find(x => x.id === id || x.commune_id === id);
+                                                setFormData(prev => ({ 
+                                                    ...prev, commune_id: id, communes: c?.khmer_name || c?.name || "",
+                                                    village_id: null 
+                                                }));
+                                            }}
+                                            keyFields={{ id: 'id', title: 'khmer_name', subtitle: 'name' }}
+                                            placeholder={t('selectCommune')}
+                                            disabled={!communes.length}
+                                        />
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('village')}</label>
+                                        <RichSearch
+                                            data={villages}
+                                            value={dataForm.village_id}
+                                            onSelected={(id) => {
+                                                const v = villages.find(x => x.id === id || x.village_id === id);
+                                                setFormData(prev => ({ 
+                                                    ...prev, village_id: id, villages: v?.khmer_name || v?.name || ""
+                                                }));
+                                            }}
+                                            keyFields={{ id: 'id', title: 'khmer_name', subtitle: 'name' }}
+                                            placeholder={t('selectVillage')}
+                                            disabled={!villages.length}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        </motion.div>
+                    </div>
+
+                    {/* Right Column: Image & Location Preview */}
+                    <div className="lg:col-span-1">
+                        <motion.div
+                            initial={{ opacity: 0, x: 20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ duration: 0.3 }}
+                        >
+                            <div className="bg-gray-100 p-4 border lg:border-l-0 dark:bg-transparent dark:border-gray-500 border-gray-200 h-full">
+                                <div className="space-y-6 grid grid-cols-2 gap-3 lg:block">
+                                    {/* Image Upload */}
+                                    <div>
+                                        <div className="flex items-center justify-between mb-4">
+                                            <h3 className="text-md font-semibold dark:text-white flex items-center gap-2">
+                                                <IoMdCloudUpload className="text-blue-500" />
+                                                {t('customerImage')}
+                                            </h3>
+                                            {viewImage && (
+                                                <button type="button" onClick={removeImage} className="text-red-500 hover:text-red-600 transition-colors text-sm">
+                                                    <FaTrash />
+                                                </button>
+                                            )}
+                                        </div>
+                                        
+                                        <label htmlFor="image-upload" className="block cursor-pointer">
+                                            <div className={`w-full flex justify-center items-center p-4 border-2 border-dashed rounded-sm transition-all duration-200 ${
+                                                viewImage ? 'border-blue-300 dark:border-blue-500/50 bg-blue-50/30' : 'border-gray-300 dark:border-gray-600 hover:border-blue-400'
+                                            }`}>
+                                                {viewImage ? (
+                                                    <img src={viewImage} alt="Preview" className="max-h-48 rounded-sm object-contain mx-auto" />
+                                                ) : (
+                                                    <div className="text-center py-4">
+                                                        <IoMdCloudUpload className="text-4xl text-blue-400 mx-auto mb-2" />
+                                                        <p className="text-gray-500 dark:text-gray-400 text-sm">{t('clickToUpload')}</p>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </label>
+                                        <input type="file" id="image-upload" hidden accept="image/*" onChange={handleImageChange} />
+                                    </div>
+
+                                    {/* Location Preview */}
+                                    <div className="pt-4 lg:border-t border-gray-200 dark:border-gray-600">
+                                        <h3 className="text-md font-semibold mb-4 flex items-center gap-2 dark:text-white">
+                                            <FaMapMarkedAlt className="text-blue-500" />
+                                            {t('locationPreview')}
+                                        </h3>
+                                        
+                                        {location.latitude && location.longitude ? (
+                                            <div className="space-y-2">
+                                                <div className="rounded-sm overflow-hidden border border-gray-200 dark:border-gray-700 h-48">
+                                                    <iframe
+                                                        src={`https://www.google.com/maps?q=${location.latitude},${location.longitude}&z=15&output=embed`}
+                                                        width="100%" height="100%" style={{ border: 0 }} loading="lazy" title="Location Map"
+                                                    ></iframe>
+                                                </div>
+                                                <p className="text-[10px] text-gray-500 dark:text-gray-400 text-center">
+                                                    {location.latitude}, {location.longitude}
+                                                </p>
+                                            </div>
+                                        ) : (
+                                            <div className="text-center py-8 text-gray-400 border border-dashed border-gray-300 dark:border-gray-600 rounded-sm">
+                                                <FaMapMarkerAlt className="text-2xl mx-auto mb-2 opacity-50" />
+                                                <p className="text-xs">{t('noLocationSet')}</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        </motion.div>
+                    </div>
+                </div>
+            </form>
         </div>
-      </div>
     </div>
   );
 };

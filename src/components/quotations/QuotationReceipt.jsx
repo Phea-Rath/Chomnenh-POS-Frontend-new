@@ -25,20 +25,22 @@ import {
 import { useNavigate, useParams } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { useGetQuoteByIdQuery } from '../../../app/Features/quoteSlice';
-import { useGetUserLoginQuery } from '../../../app/Features/usersSlice';
+import { useGetCurrentProfileQuery, useGetUserLoginQuery } from '../../../app/Features/usersSlice';
 import handleDownload from '../../services/imageDowload';
 import { convertImageToBase64 } from '../../services/serviceFunction';
+import { useGetProfileByIdQuery } from '../../../app/Features/userProfileSlice';
 
 const QuotationReceipt = () => {
     const { t, i18n } = useTranslation();
     const navigate = useNavigate();
     const { id } = useParams();
     const token = localStorage.getItem('token');
+    const proId = localStorage.getItem('profileId');
     const { data, refetch } = useGetQuoteByIdQuery({ id, token });
     const receiptRef = useRef(null);
     const [quotation, setQuotation] = useState({});
     const [logoBase64, setLogoBase64] = useState();
-    const { data: company } = useGetUserLoginQuery(token);
+    const { data: company } = useGetProfileByIdQuery(proId);
 
     useEffect(() => {
         const savedLang = localStorage.getItem("language");
@@ -53,6 +55,8 @@ const QuotationReceipt = () => {
         localStorage.setItem("language", newLang);
     };
 
+    console.log(company);
+    
     useEffect(() => {
         setQuotation(data?.data);
         convertImageToBase64(company?.data?.image).then(setLogoBase64);
@@ -83,7 +87,7 @@ const QuotationReceipt = () => {
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div className="flex items-center">
                         <button
-                            onClick={() => navigate(-1)}
+                            onClick={() => navigate('/home/quotations')}
                             className="flex items-center mr-4 px-3 py-1.5 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 text-sm text-gray-800 dark:text-gray-200"
                         >
                             <FaArrowLeft className="mr-1" size={12} />
@@ -148,11 +152,11 @@ const QuotationReceipt = () => {
             <div className="flex justify-center print-area">
                 <div
                     ref={receiptRef}
-                    className="w-full max-w-4xl bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 shadow-sm"
+                    className="w-full max-w-4xl print:border-0 bg-white dark:bg-gray-900 border border-gray-300 print:m-0 dark:border-gray-700 shadow-sm print:shadow-none"
                 >
                     {/* Header */}
                     <div className="p-6 border-b border-gray-300 dark:border-gray-700">
-                        <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
+                        <div className="flex flex-row justify-between items-center">
                             <div className="mb-4 md:mb-0">
                                 <div className="flex items-center mb-3">
                                     <div className={`w-12 h-12 ${!logoBase64 && "bg-blue-600"} border border-gray-300 dark:border-gray-600 overflow-hidden flex items-center justify-center mr-3`}>
@@ -160,7 +164,9 @@ const QuotationReceipt = () => {
                                             : <span className="text-white text-lg font-bold">CP</span>}
                                     </div>
                                     <div>
-                                        <h1 className="text-xl font-bold text-gray-800 dark:text-white">{company?.data?.username}</h1>
+                                        <h1 className="text-xl font-bold text-gray-800 dark:text-white">{company?.data?.profile_name}</h1>
+                                        <p className="text-xs text-gray-800 dark:text-white">{company?.data?.address}</p>
+                                        <p className="text-xs text-gray-800 dark:text-white">{company?.data?.telephone}</p>
                                     </div>
                                 </div>
                             </div>
@@ -188,7 +194,7 @@ const QuotationReceipt = () => {
                     </div>
 
                     {/* Bill To / Details – two columns with border */}
-                    <div className="p-6 border-b border-gray-300 dark:border-gray-700 grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="p-6 border-b border-gray-300 dark:border-gray-700 grid grid-cols-2 gap-6">
                         <div>
                             <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">{t('billTo')}</h3>
                             <div className="flex items-start">
@@ -305,6 +311,21 @@ const QuotationReceipt = () => {
                                 </div>
                             </div>
                         </div>
+                        <div className="mt-20 grid grid-cols-3 gap-8 text-center text-[15px] text-gray-700">
+              <div>
+                <div className="mx-auto mb-3 h-px w-40 bg-gray-500" />
+                <p className="font-medium">Prepared By</p>
+              </div>
+              <div>
+                <div className="mx-auto mb-3 h-px w-40 bg-gray-500" />
+                <p className="font-medium">Approved By</p>
+              </div>
+              <div>
+                <div className="mx-auto mb-3 h-px w-40 bg-gray-500" />
+                <p className="font-medium">Receiver</p>
+              </div>
+            </div>
+
                     </div>
                 </div>
             </div>
@@ -316,7 +337,6 @@ const QuotationReceipt = () => {
                     .print-area, .print-area * { visibility: visible; }
                     .print-area { position: absolute; left: 0; top: 0; width: 100%; padding: 0; margin: 0; box-shadow: none; border: none !important; }
                     .no-print { display: none !important; }
-                    @page { margin: 20mm; }
                     .dark .print-area { background: white !important; color: black !important; }
                     .dark .print-area * { color: black !important; border-color: #ddd !important; }
                 }

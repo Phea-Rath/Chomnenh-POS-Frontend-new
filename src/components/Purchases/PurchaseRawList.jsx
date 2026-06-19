@@ -24,34 +24,41 @@ import {
     FaDollarSign,
     FaBox,
     FaUser,
-    FaReceipt,
     FaPlus,
-    FaDownload,
     FaFilter,
     FaShoppingCart,
-    FaMoneyBillWave,
     FaBalanceScale,
     FaCheckCircle,
     FaTimesCircle,
     FaClock,
     FaCheck,
+    FaEye,
+    FaEdit,
+    FaTrash,
+    FaFileAlt,
+    FaCreditCard,
+    FaBan,
+    FaReceipt,
 } from "react-icons/fa";
-import { FiInfo } from "react-icons/fi";
 import { LuCalendar, LuRefreshCw } from "react-icons/lu";
-import { FaXmark } from "react-icons/fa6";
 import dayjs from "dayjs";
 import api from "../../services/api";
 import ExportExcel from "../../services/ExportExcel";
 import { useGetAllRawMaterialQuery } from "../../../app/Features/RawMaterialSlice";
-import { BiEdit, BiTrash } from "react-icons/bi";
 import { useTranslation } from "react-i18next";
-import { MdPayment } from "react-icons/md";
+import { useNavigate } from "react-router";
 import RichSearch from "../../utils/RichSearch";
 import { DatePicker } from "antd";
 import PaymentModel from "../../utils/PaymentModal";
-
+import ActionButton from "../../utils/ActionButton";
+import { FaXmark } from "react-icons/fa6";
+import { MdPayment } from "react-icons/md";
+import { BiEdit, BiTrash } from "react-icons/bi";
+import Button from "../../utils/Button";
+const MENU_ID = 39;
 const PurchaseRawList = () => {
     const { t } = useTranslation();
+    const navigate = useNavigate();
     const [purchases, setPurchases] = useState([]);
     const [filteredPurchases, setFilteredPurchases] = useState([]);
     const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -72,6 +79,86 @@ const PurchaseRawList = () => {
     const { refetch: salesRefetch } = useGetAllSaleQuery(token);
     const { refetch: stockRefetch } = useGetAllStockQuery(token);
     const { setLoading, loading } = useOutletsContext();
+
+    const ActionButtons = ({ item }) => {
+        const actions = [
+            // View Details (Primary)
+            {
+                type: 'view',
+                icon: <FaEye size={14} />,
+                onClick: () => navigate(`detail-raw/${item.purchase_id}`),
+                title: t('details'),
+                label: t('details')
+            },
+            // Receipt (Primary)
+            {
+                type: 'execute',
+                icon: <FaFileAlt size={14} />,
+                onClick: () => navigate(`receipt-raw/${item.purchase_id}`),
+                title: t('receipt'),
+                label: t('receipt')
+            },
+            // Payment (Conditional Primary)
+            ...(item.balance != 0 ? [{
+                type: 'execute',
+                icon: <FaCreditCard size={14} />,
+                onClick: () => {
+                    setShowPaymentModal(true);
+                    setBalanceAmount({ pay: item.total_paid, balance: item.balance });
+                    setId(item.purchase_id);
+                },
+                title: t('payment'),
+                label: t('payment')
+            }] : []),
+            // Confirm/Receive (Overflow)
+            ...(item.status === 0 ? [{
+                type: 'modify',
+                icon: <FaCheck size={14} />,
+                onClick: () => handlePurchase(item.purchase_id, "confirm"),
+                title: t('receive'),
+                label: t('receive')
+            }] : []),
+            // Uncancel (Overflow)
+            ...(item.status === 2 ? [{
+                type: 'modify',
+                icon: <FaCheck size={14} />,
+                onClick: () => handlePurchase(item.purchase_id, "uncancel"),
+                title: t('uncancelPurchase'),
+                label: t('uncancelPurchase')
+            }] : []),
+            // Edit (Overflow)
+            ...(item.status !== 1 ? [{
+                type: 'modify',
+                icon: <FaEdit size={14} />,
+                onClick: () => navigate(`update/${item.purchase_id}`),
+                title: t('edit'),
+                label: t('edit')
+            }] : []),
+            // Cancel (Overflow)
+            ...(item.status === 0 ? [{
+                type: 'drop',
+                icon: <FaBan size={14} />,
+                onClick: () => handlePurchase(item.purchase_id, "cancel"),
+                title: t('cancel'),
+                label: t('cancel')
+            }] : []),
+            // Delete (Overflow)
+            ...(item.status !== 1 ? [{
+                type: 'drop',
+                icon: <FaTrash size={14} />,
+                onClick: () => { setAlertBox(true); setId(item.purchase_id) },
+                title: t('delete'),
+                label: t('delete')
+            }] : []),
+        ];
+
+        return (
+            <div className="flex justify-end">
+                <ActionButton actions={actions}  menuId={MENU_ID}/>
+            </div>
+        );
+    };
+
     const queryParams = useMemo(() => ({
         token,
         limit: itemsPerPage,
@@ -363,10 +450,10 @@ const PurchaseRawList = () => {
                         </button>
                         <ExportExcel data={filteredPurchases} title="Purchase" />
                         <Link to="add">
-                            <button className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 flex items-center gap-2 transition-colors">
+                            <Button variant="save" actionType="is_modify" menuId={MENU_ID} className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 flex items-center gap-2 transition-colors">
                                 <FaPlus />
                                 {t('newPurchase')}
-                            </button>
+                            </Button>
                         </Link>
                     </div>
                 </div>
@@ -525,66 +612,7 @@ const PurchaseRawList = () => {
                                                 </td>
                                                 <td className="px-6 py-4 text-gray-600 dark:text-gray-400">{item.created_by_name}</td>
                                                 <td className="px-6 py-4">
-                                                    <div className="flex justify-end gap-2">
-                                                        {item.status === 0 && (
-                                                            <>
-                                                                <button
-                                                                    onClick={() => handlePurchase(item.purchase_id, "confirm")}
-                                                                    className="p-2 bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400 rounded hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors"
-                                                                    title={t('receive')}
-                                                                >
-                                                                    <FaCheckCircle />
-                                                                </button>
-                                                                <button
-                                                                    onClick={() => handlePurchase(item.purchase_id, "cancel")}
-                                                                    className="p-2 bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400 rounded hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors"
-                                                                    title={t('cancel')}
-                                                                >
-                                                                    <FaXmark />
-                                                                </button>
-                                                            </>
-                                                        )}
-                                                        {item.status === 2 && (
-                                                            <button
-                                                                onClick={() => handlePurchase(item.purchase_id, "uncancel")}
-                                                                className="p-2 bg-yellow-100 text-yellow-600 dark:bg-yellow-900/30 dark:text-yellow-400 rounded hover:bg-yellow-200 dark:hover:bg-yellow-900/50 transition-colors"
-                                                                title={t('uncancelPurchase')}
-                                                            >
-                                                                <FaCheck />
-                                                            </button>
-                                                        )}
-                                                        {item.balance != 0 && (
-                                                            <button
-                                                                onClick={() => {
-                                                                    setShowPaymentModal(true);
-                                                                    setBalanceAmount({ pay: item.total_paid, balance: item.balance });
-                                                                    setId(item.purchase_id);
-                                                                }}
-                                                                className="p-2 bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 rounded hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors"
-                                                            >
-                                                                <MdPayment />
-                                                            </button>
-                                                        )}
-                                                        <Link to={`detail-raw/${item.purchase_id}`}>
-                                                            <button className="p-2 bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 rounded hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors" title={t('details')}>
-                                                                <FiInfo />
-                                                            </button>
-                                                        </Link>
-                                                        <Link to={`receipt-raw/${item.purchase_id}`}>
-                                                            <button className="p-2 bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400 rounded hover:bg-purple-200 dark:hover:bg-purple-900/50 transition-colors">
-                                                                <FaReceipt />
-                                                            </button>
-                                                        </Link>
-                                                        {item.status != 1 && <Link to={`update/${item.purchase_id}`}>
-                                                            <button className="px-3 py-2 bg-gray-100 text-blue-700 dark:bg-gray-700 dark:text-blue-400 rounded hover:bg-gray-200 dark:hover:bg-gray-600 text-sm transition-colors">
-                                                                <BiEdit />
-                                                            </button>
-                                                        </Link>}
-
-                                                        {item.status != 1 && <button onClick={() => { setAlertBox(true); setId(item.purchase_id) }} className="px-3 py-2 bg-gray-100 text-red-700 dark:bg-gray-700 dark:text-red-400 rounded hover:bg-gray-200 dark:hover:bg-gray-600 text-sm transition-colors">
-                                                            <BiTrash />
-                                                        </button>}
-                                                    </div>
+                                                    <ActionButtons item={item} />
                                                 </td>
                                             </tr>
                                         ))}
@@ -685,58 +713,7 @@ const PurchaseRawList = () => {
                                             <div className="text-sm text-gray-500 dark:text-gray-400 mb-4">{t('createdBy')}: {item.created_by_name}</div>
 
                                             <div className="flex flex-wrap justify-start gap-2 border-t border-gray-300 dark:border-gray-700 pt-2">
-                                                {item.status === 0 && (
-                                                    <>
-                                                        <button
-                                                            onClick={() => handlePurchase(item.purchase_id, "confirm")}
-                                                            className="p-2 bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400 rounded hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors"
-                                                            title={t('receive')}
-                                                        >
-                                                            <FaCheckCircle />
-                                                        </button>
-                                                        <button
-                                                            onClick={() => handlePurchase(item.purchase_id, "cancel")}
-                                                            className="p-2 bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400 rounded hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors"
-                                                            title={t('cancel')}
-                                                        >
-                                                            <FaXmark />
-                                                        </button>
-                                                    </>
-                                                )}
-                                                {item.status === 2 && (
-                                                    <button
-                                                        onClick={() => handlePurchase(item.purchase_id, "uncancel")}
-                                                        className="p-2 bg-yellow-100 text-yellow-600 dark:bg-yellow-900/30 dark:text-yellow-400 rounded hover:bg-yellow-200 dark:hover:bg-yellow-900/50 transition-colors"
-                                                        title={t('uncancelPurchase')}
-                                                    >
-                                                        <FaCheck />
-                                                    </button>
-                                                )}
-                                                {item.balance != 0 && (
-                                                    <button
-                                                        onClick={() => {
-                                                            setShowPaymentModal(true);
-                                                            setBalanceAmount({ pay: item.total_paid, balance: item.balance });
-                                                            setId(item.purchase_id);
-                                                        }}
-                                                        className="p-2 bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 rounded hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors"
-                                                    >
-                                                        <MdPayment />
-                                                    </button>
-                                                )}
-                                                <Link to={`receipt-raw/${item.purchase_id}`}>
-                                                    <button className="p-2 bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400 rounded hover:bg-purple-200 dark:hover:bg-purple-900/50 transition-colors">
-                                                        <FaReceipt />
-                                                    </button>
-                                                </Link>
-                                                {item.status != 1 && <Link to={`update/${item.purchase_id}`}>
-                                                    <button className="px-3 py-2 bg-gray-100 text-blue-700 dark:bg-gray-700 dark:text-blue-400 rounded hover:bg-gray-200 dark:hover:bg-gray-600 text-sm transition-colors">
-                                                        <BiEdit />
-                                                    </button>
-                                                </Link>}
-                                                {item.status != 1 && <button onClick={() => { setAlertBox(true); setId(item.purchase_id) }} className="px-3 py-2 bg-gray-100 text-red-700 dark:bg-gray-700 dark:text-red-400 rounded hover:bg-gray-200 dark:hover:bg-gray-600 text-sm transition-colors">
-                                                    <BiTrash />
-                                                </button>}
+                                                <ActionButtons item={item} />
                                             </div>
                                         </div>
                                     </motion.div>
