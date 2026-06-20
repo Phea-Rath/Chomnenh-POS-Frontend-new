@@ -61,6 +61,7 @@ const PurchaseReceipt = () => {
           total_amount: parseFloat(purchaseData.grand_total || purchaseData.total_amount || 0),
           total_paid: parseFloat(purchaseData.paymented || purchaseData.total_paid || 0),
           balance: parseFloat(purchaseData.balance || 0),
+          created_by_name: purchaseData.created_by_name,
           exchange_rate: parseFloat(purchaseData.exchange_rate || 1),
           total_amount_khr: parseFloat(purchaseData.grand_total_khr || 0),
           details: (purchaseData.items || purchaseData.details || []).map((detail) => ({
@@ -74,6 +75,7 @@ const PurchaseReceipt = () => {
             amount: parseFloat(payment.amount || 0),
           })),
         });
+        
 
         const supplierResponse = await api.get(`/suppliers/${purchaseData.supplier_id}`, {
           headers: { Authorization: `Bearer ${token}` },
@@ -167,7 +169,7 @@ const PurchaseReceipt = () => {
       label: `Tax${purchase.tax_rate ? ` (${purchase.tax_rate.toFixed(0)}%)` : ""}`,
       value: formatUSD(purchase.tax_amount),
     },
-    // { label: "Shipping", value: formatUSD(purchase.shipping_fee) },
+    { label: "Shipping", value: formatUSD(purchase.shipping_fee) },
     { label: "Discounts", value: formatUSD(purchase.total_discount) },
     { label: "Grand total", value: formatUSD(purchase.total_amount), strong: true },
   ];
@@ -325,7 +327,7 @@ const PurchaseReceipt = () => {
                 </div>
                 <div>
                   <div className="bg-[#2f73c8] px-2 py-1 font-bold text-white">Ship via</div>
-                  <div className="px-2 py-1 capitalize">{shipping.vai || shipping.carrier || "N/A"}</div>
+                  <div className="px-2 py-1 capitalize">{shipping.via || "N/A"}</div>
                 </div>
                 <div>
                   <div className="bg-[#2f73c8] px-2 py-1 font-bold text-white">Carrier</div>

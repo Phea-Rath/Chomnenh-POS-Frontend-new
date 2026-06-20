@@ -51,6 +51,7 @@ import { PAYMENT_METHODS } from "../../services/paymentService";
 import PaymentModel from "../../utils/PaymentModal";
 import ActionButton from "../../utils/ActionButton";
 import Button from "../../utils/Button";
+import { MdApproval } from "react-icons/md";
 const MENU_ID = 28;
 const Purchases = () => {
   const { t } = useTranslation();
@@ -69,6 +70,7 @@ const Purchases = () => {
   const [alertBoxCancel, setAlertBoxCancel] = useState(false);
   const [alertBoxUncancel, setAlertBoxUncancel] = useState(false);
   const [alertBoxConfirm, setAlertBoxConfirm] = useState(false);
+  const [alertBoxApproved, setAlertBoxApproved] = useState(false);
   const [viewMode, setViewMode] = useState("list");
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearch] = useDebounce(searchTerm, 500);
@@ -176,6 +178,9 @@ const Purchases = () => {
       case "confirm":
         setAlertBoxConfirm(true);
         break;
+      case "approved":
+        setAlertBoxApproved(true);
+        break;
       default:
         break;
     }
@@ -187,6 +192,7 @@ const Purchases = () => {
     setAlertBoxConfirm(false);
     setAlertBoxCancel(false);
     setAlertBoxUncancel(false);
+    setAlertBoxApproved(false);
   }
 
   async function handleConfirm() {
@@ -257,6 +263,26 @@ const Purchases = () => {
     }
   }
 
+  async function handlePurchaseApproved() {
+    try {
+      setAlertBoxApproved(false);
+      setLoading(true);
+      const res = await api.put(`/purchase_approved/${id}`, null, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.data.status === 200) {
+        salesRefetch();
+        stockRefetch();
+        refetch();
+        toast.success(t('approvedPurchaseSuccess', 'Approved purchase successfully!'));
+      }
+    } catch (error) {
+      toast.error(error.message || t('confirmPurchaseFailed', 'Failed to approved purchase!'));
+    } finally {
+      setLoading(false);
+    }
+  }
+
   const addPayment = async (value) => {
     try {
       setLoading(true);
@@ -296,8 +322,10 @@ const Purchases = () => {
       case 0:
         return { label: t('pending'), color: "orange", icon: FaClock };
       case 1:
-        return { label: t('completed'), color: "green", icon: FaCheckCircle };
+        return { label: t('approved'), color: "cyan", icon: MdApproval };
       case 2:
+        return { label: t('completed'), color: "green", icon: FaCheckCircle };
+      case 3:
         return { label: t('cancelled'), color: "red", icon: FaTimesCircle };
       default:
         return { label: t('unknown'), color: "gray", icon: FaBox };
@@ -309,6 +337,7 @@ const Purchases = () => {
     const colorClasses = {
       orange: "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400",
       green: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
+      cyan: "bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-400",
       red: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
       gray: "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400",
     };
@@ -350,7 +379,7 @@ const Purchases = () => {
       },
       // Receipt (Primary)
       {
-        type: 'execute',
+        type: 'view',
         icon: <FaFileAlt size={14} />,
         onClick: () => navigate(`receipt/${item.purchase_id}`),
         title: t('receipt'),
@@ -378,13 +407,13 @@ const Purchases = () => {
         title: t('receive'),
         label: t('receive')
       }] : []),
-      // Uncancel (Overflow)
-      ...(item.status === 2 ? [{
-        type: 'modify',
-        icon: <FaCheck size={14} />,
-        onClick: () => handlePurchase(item.purchase_id, "uncancel"),
-        title: t('uncancelPurchase'),
-        label: t('uncancelPurchase')
+      // Approved (Overflow)
+      ...(item.status < 1 ? [{
+        type: 'execute',
+        icon: <MdApproval size={14} />,
+        onClick: () => handlePurchase(item.purchase_id, "approved"),
+        title: t('approved'),
+        label: t('approved')
       }] : []),
       // Edit (Overflow)
       ...(item.status !== 1 ? [{
@@ -627,6 +656,7 @@ const Purchases = () => {
                   const borderColor = {
                     orange: "border-orange-200 dark:border-orange-900/30",
                     green: "border-green-200 dark:border-green-900/30",
+                    cyan: "border-cyan-200 dark:border-cyan-900/30",
                     red: "border-red-200 dark:border-red-900/30",
                     gray: "border-gray-200 dark:border-gray-700",
                   }[statusInfo.color];
@@ -744,6 +774,15 @@ const Purchases = () => {
         onCancel={handleCancel}
         confirmText={t('cancel')}
         cancelText={t('keep')}
+      />
+      <AlertBox
+        isOpen={alertBoxApproved}
+        title={t('approvedPurchase')}
+        message={t('confirmApprovedPurchase')}
+        onConfirm={handlePurchaseApproved}
+        onCancel={handleCancel}
+        confirmText={t('approve')}
+        cancelText={t('cancel')}
       />
       <AlertBox
         isOpen={alertBoxConfirm}

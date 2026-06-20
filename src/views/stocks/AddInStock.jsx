@@ -186,13 +186,14 @@ const AddInStock = () => {
     const newItem = {
       ...finding,
       quantity: 1,
+      item_cost: parseFloat(finding.item_cost ?? finding.cost ?? 0) || 0,
       expire_date: ''
     };
     setselectItems(prev => [...prev, newItem]);
 
     setItemLists(prev => [...prev, {
       item_id: value,
-      item_cost: 0,
+      item_cost: parseFloat(finding.item_cost ?? finding.cost ?? 0) || 0,
       quantity: 1,
       expire_date: '',
       attributes: []
@@ -256,7 +257,7 @@ const AddInStock = () => {
           const updated = [...prev];
           updated[index] = {
             ...updated[index],
-            item_cost: value || 0
+            item_cost: parseFloat(value) || 0
           };
           return updated;
         });
@@ -285,7 +286,7 @@ const AddInStock = () => {
         items: itemLists.map(item => ({
           item_id: item.item_id,
           quantity: parseInt(item.quantity) || 1,
-          item_cost: item.item_cost || 1,
+          item_cost: parseFloat(item.item_cost) || 0,
           expire_date: item.expire_date || new Date().toISOString().split('T')[0],
           attributes: item.attributes || []
         }))
@@ -566,6 +567,7 @@ const AddInStock = () => {
                       columns={[
                         { title: t('item'), key: 'name', type: 'item', subKey: 'code' },
                         { title: t('quantity'), key: 'quantity', type: 'number' },
+                        { title: t('cost'), key: 'item_cost', type: 'number' },
                         { title: t('expireDate'), key: 'expire_date', type: 'date' },
                       ]}
                     />

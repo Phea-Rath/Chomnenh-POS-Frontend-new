@@ -55,7 +55,7 @@ export default function AlertBox({
             <div className="bg-gray-100 px-4 py-3 flex flex-col sm:flex-row-reverse gap-3">
               <button
                 type="button"
-                className="w-full sm:w-auto cursor-pointer inline-flex justify-center rounded-lg bg-gradient-to-r from-red-500 to-red-600 px-4 py-2 text-sm font-semibold text-white shadow-md hover:from-red-600 hover:to-red-700 transition-all duration-200"
+                className="w-full sm:w-auto cursor-pointer inline-flex justify-center rounded-lg bg-gradient-to-r from-amber-500 to-amber-600 px-4 py-2 text-sm font-semibold text-white shadow-md hover:from-amber-600 hover:to-amber-700 transition-all duration-200"
                 onClick={onConfirm}
               >
                 {confirmText}

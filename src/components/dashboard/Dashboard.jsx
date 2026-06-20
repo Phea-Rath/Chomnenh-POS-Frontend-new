@@ -22,7 +22,7 @@ import {
   PolarGrid,
   PolarAngleAxis,
 } from "recharts";
-import { BsArrowDownRight, BsArrowUpRight } from "react-icons/bs";
+import { BsArrowDownRight, BsArrowRight, BsArrowUpRight } from "react-icons/bs";
 import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
 import { useGetDashboardFilterQuery } from "../../../app/Features/dashboardsSlice";
@@ -36,6 +36,7 @@ import { useGetAllUserQuery, useGetUserLoginQuery } from "../../../app/Features/
 import RefreshButton from "../../utils/RefreshButton";
 import Button from "../../utils/Button";
 import { motion } from "framer-motion";
+import { IoImagesSharp } from "react-icons/io5";
 
 const COLORS = ["#3b82f6", "#f59e0b", "#10b981", "#ef4444", "#8b5cf6", "#ec4899"];
 
@@ -87,7 +88,7 @@ const itemVariants = {
 
 const MetricCard = ({ title, value, persent, isLoss, icon: Icon, colorClass, chartData, chartColor, loading, bgColor }) => (
   <motion.div variants={itemVariants}>
-    <div className={`group h-full p-4 border transition-all duration-300 relative overflow-hidden rounded-lg ${bgColor}`}>
+    <div className={`group h-full p-4 border transition-all duration-300 relative shadow-sm overflow-hidden rounded-lg ${bgColor}`}>
       {loading && (
         <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/40 dark:bg-black/40">
           <div className="w-6 h-6 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
@@ -122,11 +123,15 @@ const MetricCard = ({ title, value, persent, isLoss, icon: Icon, colorClass, cha
 
 const ChartArea = ({ title, children, loading }) => (
   <motion.div variants={itemVariants}>
-    <div className="h-full p-4 transition-all duration-300 relative border rounded-sm bg-white border-gray-200 shadow-sm dark:bg-gray-800/40 dark:border-gray-500">
+    <div className="h-full p-4 transition-all duration-300 relative border rounded-xl bg-white border-gray-200 shadow-sm dark:bg-gray-800/40 dark:border-gray-500">
       <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <div className="w-1 h-4 bg-blue-500 rounded-full" />
-          <h3 className="text-xs font-bold uppercase tracking-wider text-gray-900 dark:text-white">{title}</h3>
+        <div className="flex items-center gap-2 bg-blue-600/70 p-1 px-5 rounded-2xl">
+          {/* <div className="w-1 h-4 bg-blue-500 rounded-full" /> */}
+          <h3 className="text-sm font-bold uppercase tracking-wider text-white">{title}</h3>
+        </div>
+        <div className="flex gap-2 text-gray-400 border px-2 rounded-2xl transition duration-300 border-gray-300 cursor-pointer group hover:border-blue-400 hover:text-blue-500">
+          <h1 className="text-xs text-gray-400 group-hover:text-blue-500">view more</h1>
+          <BsArrowRight className="group-hover:translate-x-1 transition duration-300"/>
         </div>
       </div>
       {loading && (
@@ -405,7 +410,7 @@ const Dashboard = () => {
             </div>
               <div className="flex gap-3">
                 <div className="grow relative">
-                  <ChartArea title={t("revenueTrends")} style={{ height: "100%" }} loading={saleQuery.isFetching} className="!h-full">
+                  <ChartArea title={t("revenueTrends")} loading={saleQuery.isFetching}>
                     <ResponsiveContainer width="100%" height="100%">
                       <AreaChart data={revenueChart}>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--chart-grid)" />
@@ -418,6 +423,20 @@ const Dashboard = () => {
                     </ResponsiveContainer>
                   </ChartArea>
                 </div>
+                <div className="grow">
+                <ChartArea title={t("purchaseInventory")} loading={purchaseQuery.isFetching}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={purchaseChart}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--chart-grid)" />
+                      <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: "var(--chart-tick)", fontWeight: 600 }} />
+                      <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: "var(--chart-tick)", fontWeight: 600 }} />
+                      <Tooltip cursor={{ fill: "rgba(0,0,0,0.02)" }} contentStyle={{ borderRadius: "8px", border: "1px solid var(--chart-border)", backgroundColor: "var(--chart-tooltip-bg)", color: "var(--chart-tooltip-color)" }} />
+                      <Bar dataKey="quantity" name="Quantity" fill="#3BA3F6" radius={[10, 10, 0, 0]} barSize={70} />
+                      <Bar dataKey="value" name="Price" fill="#85BBFF" radius={[10, 10, 0, 0]} barSize={70} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </ChartArea>
+              </div>
 
                 <motion.div variants={itemVariants}>
                   <div className="p-4 border rounded-sm text-center bg-cyan-100/50 h-full border-gray-200 shadow-sm dark:bg-gray-800/40 dark:border-gray-500">
@@ -466,20 +485,7 @@ const Dashboard = () => {
               </div>
 
 
-              <div>
-                <ChartArea title={t("purchaseInventory")} loading={purchaseQuery.isFetching}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={purchaseChart}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--chart-grid)" />
-                      <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: "var(--chart-tick)", fontWeight: 600 }} />
-                      <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: "var(--chart-tick)", fontWeight: 600 }} />
-                      <Tooltip cursor={{ fill: "rgba(0,0,0,0.02)" }} contentStyle={{ borderRadius: "8px", border: "1px solid var(--chart-border)", backgroundColor: "var(--chart-tooltip-bg)", color: "var(--chart-tooltip-color)" }} />
-                      <Bar dataKey="quantity" name="Quantity" fill="#3BA3F6" radius={[10, 10, 0, 0]} barSize={70} />
-                      <Bar dataKey="value" name="Price" fill="#85BBFF" radius={[10, 10, 0, 0]} barSize={70} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </ChartArea>
-              </div>
+              
 
           </section>
           <section className="col-span-1 flex flex-col gap-3">
@@ -493,8 +499,8 @@ const Dashboard = () => {
                   <div className="space-y-4">
                     {popularSales?.data?.map((s, i) => (
                       <div key={i} className="flex items-center gap-4 group border-b border-gray-100 dark:border-gray-700 pb-3 last:border-0">
-                        <div className="w-10 h-10 rounded p-1 border border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 transition-transform group-hover:scale-105">
-                          <img className="w-full h-full object-contain" src={s.image} alt="" />
+                        <div className="w-10 h-10 rounded p-1 border border-gray-100 flex items-center justify-center dark:border-gray-700 bg-gray-50 dark:bg-gray-800 transition-transform group-hover:scale-105">
+                          {s.image?<img className="w-full h-full object-contain" src={s.image} alt="" />:<IoImagesSharp className="text-gray-400 text-2xl"/>}
                         </div>
                         <div className="flex-1 min-w-0">
                           <h4 className="text-xs font-bold truncate uppercase tracking-tight text-gray-800 dark:text-gray-200">{s.item_name}</h4>
@@ -521,7 +527,7 @@ const Dashboard = () => {
                   {popularStock?.data?.map((s, idx) => (
                     <div key={idx} className="flex items-center gap-4 group border-b border-gray-100 dark:border-gray-700 pb-3 last:border-0">
                       <div className="w-10 h-10 rounded flex items-center justify-center bg-blue-50 dark:bg-blue-900/40 transition-transform group-hover:scale-105">
-                        <img className="w-6 h-6 object-contain" src={s.image} alt="" />
+                        {s.image?<img className="w-full h-full object-contain" src={s.image} alt="" />:<IoImagesSharp className="text-gray-400 text-2xl"/>}
                       </div>
                       <div className="flex-1 min-w-0">
                         <h4 className="text-xs font-bold truncate uppercase tracking-tight text-gray-800 dark:text-gray-200">{s.item_name}</h4>
