@@ -15,6 +15,8 @@ import Input from "./components/Input";
 import api from "../services/api";
 import { toast } from "react-toastify";
 
+import { setGuestToken } from "@/utils/tokenStore";
+
 export default function HeaderPanel() {
   const [openModal, setOpenModal] = useState(false);
   const [tel, setTel] = useState('');
@@ -68,7 +70,7 @@ export default function HeaderPanel() {
         user,
       } = response.data;
 
-      localStorage.setItem("guestToken", userToken);
+      setGuestToken(userToken);
       localStorage.setItem("guest", JSON.stringify(user));
       if (user?.id) {
         localStorage.setItem("guestId", user.id);

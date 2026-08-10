@@ -24,13 +24,14 @@ import {
     FaChevronUp
 } from 'react-icons/fa';
 import { useParams, useNavigate } from 'react-router';
-import { useGetQuoteByIdQuery } from '../../../app/Features/quoteSlice';
+import { useGetQuoteByIdQuery } from "@/features/sales/quoteSlice";
 import { useTranslation } from 'react-i18next';
+import { getToken } from '@/utils/tokenStore';
 
 const QuotationDetail = () => {
     const { t, i18n } = useTranslation();
     const { id } = useParams();
-    const token = localStorage.getItem('token');
+    const token = getToken();
     const { data, refetch } = useGetQuoteByIdQuery({ id, token });
     const navigate = useNavigate();
     const [quotation, setQuotation] = useState({});
@@ -285,7 +286,7 @@ const QuotationDetail = () => {
                                 <div className="border-t border-gray-300 dark:border-gray-700 pt-2 mt-2">
                                     <div className="flex justify-between font-bold">
                                         <span className="dark:text-white">{t('grandTotal')}</span>
-                                        <span className="text-blue-600 dark:text-blue-400">${quotation?.grand_total}</span>
+                                        <span className="text-cyan-600 dark:text-cyan-400">${quotation?.grand_total}</span>
                                     </div>
                                 </div>
                             </div>
@@ -324,8 +325,8 @@ const QuotationDetail = () => {
                         {showCustomerInfo && (
                             <div className="p-4 text-sm">
                                 <div className="flex items-start mb-3">
-                                    <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/30 rounded flex items-center justify-center mr-2">
-                                        <FaUser className="text-blue-600 dark:text-blue-400" size={14} />
+                                    <div className="w-8 h-8 bg-cyan-100 dark:bg-cyan-900/30 rounded flex items-center justify-center mr-2">
+                                        <FaUser className="text-cyan-600 dark:text-cyan-400" size={14} />
                                     </div>
                                     <div>
                                         <h3 className="font-semibold text-gray-800 dark:text-white">{quotation?.customer_name}</h3>
@@ -335,7 +336,7 @@ const QuotationDetail = () => {
                                 {/* <div className="space-y-2">
                                     <div className="flex">
                                         <FaEnvelope className="text-gray-400 mr-2" size={12} />
-                                        <a href={`mailto:${quotation?.customer_email}`} className="text-blue-600 hover:underline">
+                                        <a href={`mailto:${quotation?.customer_email}`} className="text-cyan-600 hover:underline">
                                             {quotation?.customer_email}
                                         </a>
                                     </div>

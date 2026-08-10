@@ -25,17 +25,18 @@ import { motion } from 'framer-motion';
 import dayjs from 'dayjs';
 import { useTranslation } from 'react-i18next';
 import api from '../../services/api';
-import { useGetAllDeliverQuery } from '../../../app/Features/deliversSlice';
-import { useGetOrderByIdQuery } from '../../../app/Features/ordersSlice';
-import { useGetAllSaleQuery } from '../../../app/Features/salesSlice';
-import { useGetAllWasteQuery } from '../../../app/Features/notificationSlice';
+import { useGetAllDeliverQuery } from "@/features/sales/deliversSlice";
+import { useGetOrderByIdQuery } from "@/features/sales/ordersSlice";
+import { useGetAllSaleQuery } from "@/features/sales/salesSlice";
+import { useGetAllWasteQuery } from "@/features/system/notificationSlice";
 import Button from '../../utils/Button';
 import Input from '../../utils/Input';
 import RichSearch from '../../utils/RichSearch';
+import { getToken } from '@/utils/tokenStore';
 
 const statusOptions = [
     { id: 1, label: 'Pending', icon: FaClock, color: 'bg-yellow-100 text-yellow-800 border-yellow-200' },
-    { id: 3, label: 'Packaged', icon: TbPackage, color: 'bg-blue-100 text-blue-800 border-blue-200' },
+    { id: 3, label: 'Packaged', icon: TbPackage, color: 'bg-cyan-100 text-cyan-800 border-cyan-200' },
     { id: 4, label: 'Ready for Pickup', icon: FaTruck, color: 'bg-purple-100 text-purple-800 border-purple-200' },
     { id: 5, label: 'Delivering', icon: FaShippingFast, color: 'bg-indigo-100 text-indigo-800 border-indigo-200' },
     { id: 6, label: 'Completed', icon: FaCheckCircle, color: 'bg-green-100 text-green-800 border-green-200' },
@@ -48,7 +49,7 @@ const OrderDetail = () => {
     const { t } = useTranslation();
     const { id } = useParams();
     const navigate = useNavigate();
-    const token = localStorage.getItem('token');
+    const token = getToken();
     const [editingField, setEditingField] = useState({});
     const [tempValues, setTempValues] = useState({});
     const [showField, setShowField] = useState({});
@@ -136,7 +137,7 @@ const OrderDetail = () => {
         return (
             <div className="flex min-h-screen items-center justify-center bg-transparent">
                 <div className="text-center">
-                    <div className="mx-auto h-12 w-12 animate-spin rounded-full border-b-2 border-blue-600" />
+                    <div className="mx-auto h-12 w-12 animate-spin rounded-full border-b-2 border-cyan-600" />
                     <p className="mt-4 text-sm text-slate-600">{t('loadingOrder') || 'Loading order...'}</p>
                 </div>
             </div>
@@ -188,7 +189,7 @@ const OrderDetail = () => {
                     </div>
 
                     <div className="flex items-center gap-2">
-                        <Link to={`/order-list/receipt/${order.order_id}`}>
+                        <Link to={`/receipt/${order.order_id}`}>
                             <Button variant="primary">
                                 <FaReceipt className="mr-2 h-4 w-4" />
                                 {t('receipt') || 'Receipt'}
@@ -213,7 +214,7 @@ const OrderDetail = () => {
                     </div>
                     <div className="rounded-2xl border border-slate-200 dark:border-gray-500 bg-white dark:bg-gray-700 p-5 shadow-sm">
                         <div className="text-xs font-medium text-slate-500 dark:text-gray-400 uppercase tracking-wider">{t('items') || 'Items'}</div>
-                        <div className="mt-2 text-2xl font-bold text-blue-600 dark:text-blue-400">
+                        <div className="mt-2 text-2xl font-bold text-cyan-600 dark:text-cyan-400">
                             {order.items?.reduce((sum, item) => sum + Number(item.quantity || 0), 0) || 0}
                         </div>
                     </div>
@@ -225,10 +226,10 @@ const OrderDetail = () => {
                         <div className="rounded-2xl border border-slate-200 dark:border-gray-500 bg-white dark:bg-gray-700 shadow-sm overflow-hidden">
                             <div className="bg-slate-50 dark:bg-gray-800/50 px-5 py-4 border-b border-slate-200 dark:border-gray-600 flex items-center justify-between">
                                 <h2 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2 uppercase tracking-wide">
-                                    <TbPackage className="text-blue-500" />
+                                    <TbPackage className="text-cyan-500" />
                                     {t('orderItems') || 'Order Items'}
                                 </h2>
-                                <span className="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-3 py-1 rounded-full text-[11px] font-bold">
+                                <span className="bg-cyan-100 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-300 px-3 py-1 rounded-full text-[11px] font-bold">
                                     {order.items?.length || 0} {t('products') || 'Products'}
                                 </span>
                             </div>
@@ -271,7 +272,7 @@ const OrderDetail = () => {
                                                     </div>
                                                 </div>
                                                 <div className="text-right">
-                                                    <div className="text-lg font-bold text-blue-700 dark:text-blue-400">
+                                                    <div className="text-lg font-bold text-cyan-700 dark:text-cyan-400">
                                                         {money(Number(item.price || 0) * Number(item.quantity || 0))}
                                                     </div>
                                                     <div className="text-[11px] font-medium text-slate-400 uppercase tracking-tighter">
@@ -329,7 +330,7 @@ const OrderDetail = () => {
                                                 )}
                                                 <div className={`mt-1 h-4 w-4 rounded-full border-2 border-white dark:border-gray-700 z-10 flex-shrink-0 ${
                                                     detail.status === 'completed' ? 'bg-green-500' :
-                                                    detail.status === 'cancelled' ? 'bg-red-500' : 'bg-blue-500'
+                                                    detail.status === 'cancelled' ? 'bg-red-500' : 'bg-cyan-500'
                                                 }`} />
                                                 <div className="flex-1 min-w-0">
                                                     <div className="flex items-center justify-between gap-2">
@@ -394,7 +395,7 @@ const OrderDetail = () => {
                         <div className="rounded-2xl border border-slate-200 dark:border-gray-500 bg-white dark:bg-gray-700 shadow-sm overflow-hidden">
                             <div className="bg-slate-50 dark:bg-gray-800/50 px-5 py-4 border-b border-slate-200 dark:border-gray-600">
                                 <h2 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2 uppercase tracking-wide">
-                                    <FaEdit className="text-blue-500" />
+                                    <FaEdit className="text-cyan-500" />
                                     {t('quickUpdate') || 'Quick Update'}
                                 </h2>
                             </div>
@@ -406,7 +407,7 @@ const OrderDetail = () => {
                                         {!isEditing('status') && (
                                             <button
                                                 onClick={() => handleEditClick('status', order.status)}
-                                                className="text-blue-500 hover:text-blue-700 transition"
+                                                className="text-cyan-500 hover:text-cyan-700 transition"
                                             >
                                                 <FaEdit className="h-3.5 w-3.5" />
                                             </button>
@@ -414,7 +415,7 @@ const OrderDetail = () => {
                                     </div>
 
                                     {isEditing('status') ? (
-                                        <div className="space-y-3 rounded-2xl border border-blue-100 dark:border-blue-900/30 bg-blue-50/50 dark:bg-blue-900/10 p-4">
+                                        <div className="space-y-3 rounded-2xl border border-cyan-100 dark:border-cyan-900/30 bg-cyan-50/50 dark:bg-cyan-900/10 p-4">
                                             <div className="grid grid-cols-2 gap-2">
                                                 {statusOptions.map((option) => {
                                                     const Icon = option.icon;
@@ -423,7 +424,7 @@ const OrderDetail = () => {
                                                             key={option.id}
                                                             onClick={() => handleSaveField('status', option.id, option.id)}
                                                             disabled={editingOrder === order.order_id}
-                                                            className={`inline-flex items-center justify-center gap-1.5 rounded-xl border px-3 py-2 text-[10px] font-bold transition hover:opacity-80 active:scale-95 ${option.color} ${Number(order.status) === option.id ? 'ring-2 ring-blue-500 ring-offset-1' : ''}`}
+                                                            className={`inline-flex items-center justify-center gap-1.5 rounded-xl border px-3 py-2 text-[10px] font-bold transition hover:opacity-80 active:scale-95 ${option.color} ${Number(order.status) === option.id ? 'ring-2 ring-cyan-500 ring-offset-1' : ''}`}
                                                         >
                                                             <Icon className="h-3 w-3" />
                                                             {option.label.toUpperCase()}
@@ -458,7 +459,7 @@ const OrderDetail = () => {
                                         {!isFieldVisible('delivery_fee') && (
                                             <button
                                                 onClick={() => handleEditClick('delivery_fee', order.delivery_fee)}
-                                                className="text-blue-500 hover:text-blue-700 transition"
+                                                className="text-cyan-500 hover:text-cyan-700 transition"
                                             >
                                                 <FaEdit className="h-3.5 w-3.5" />
                                             </button>
@@ -502,13 +503,13 @@ const OrderDetail = () => {
                                 <div>
                                     <div className="mb-3 flex items-center justify-between">
                                         <label className="flex items-center gap-2 text-[11px] font-bold text-slate-500 dark:text-gray-400 uppercase tracking-widest">
-                                            <FaTruck className="h-3.5 w-3.5 text-blue-500" />
+                                            <FaTruck className="h-3.5 w-3.5 text-cyan-500" />
                                             {t('deliveryService') || 'Delivery Service'}
                                         </label>
                                         {!isFieldVisible('deliver_id') && (
                                             <button
                                                 onClick={() => handleEditClick('deliver_id', order.deliver_id)}
-                                                className="text-blue-500 hover:text-blue-700 transition"
+                                                className="text-cyan-500 hover:text-cyan-700 transition"
                                             >
                                                 <FaEdit className="h-3.5 w-3.5" />
                                             </button>
@@ -596,7 +597,7 @@ const OrderDetail = () => {
                                 </div>
                                 <div className="pt-4 mt-4 border-t border-slate-100 dark:border-gray-600 flex justify-between items-center">
                                     <span className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">{t('total') || 'Total'}</span>
-                                    <span className="text-2xl font-black text-blue-700 dark:text-blue-400">{money(order.order_total)}</span>
+                                    <span className="text-2xl font-black text-cyan-700 dark:text-cyan-400">{money(order.order_total)}</span>
                                 </div>
                             </div>
                         </div>
@@ -615,7 +616,7 @@ const OrderDetail = () => {
                                 {order.description && (
                                     <div>
                                         <h2 className="text-[11px] font-bold text-slate-500 dark:text-gray-400 uppercase tracking-widest mb-2 flex items-center gap-2">
-                                            <FaInfoCircle className="text-blue-400" />
+                                            <FaInfoCircle className="text-cyan-400" />
                                             {t('note') || 'Note'}
                                         </h2>
                                         <p className="text-sm text-slate-600 dark:text-gray-300 leading-relaxed italic">

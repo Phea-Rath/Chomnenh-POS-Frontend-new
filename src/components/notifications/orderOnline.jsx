@@ -12,13 +12,14 @@ import {
     FaSync,
     FaTruck,
 } from 'react-icons/fa';
-import { useGetAllOrderOnlineQuery } from '../../../app/Features/notificationSlice';
-import { useViewOrderMutation } from '../../../app/Features/ordersSlice';
+import { useGetAllOrderOnlineQuery } from "@/features/system/notificationSlice";
+import { useViewOrderMutation } from "@/features/sales/ordersSlice";
 import { useTranslation } from 'react-i18next';
+import { getToken } from '@/utils/tokenStore';
 
 const OrderOnline = () => {
     const { t } = useTranslation();
-    const token = localStorage.getItem('token');
+    const token = getToken();
     const navigate = useNavigate();
     const [orders, setOrders] = useState([]);
     const { data: dataOrderOnline, refetch, isLoading, isFetching } = useGetAllOrderOnlineQuery(token);
@@ -84,7 +85,7 @@ const OrderOnline = () => {
     if (!isLoading && orders.length === 0) {
         return (
             <div className="rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 bg-white dark:bg-gray-800 p-12 text-center transition-colors">
-                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-blue-50 dark:bg-blue-900/20 text-blue-500 dark:text-blue-400">
+                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-cyan-50 dark:bg-cyan-900/20 text-cyan-500 dark:text-cyan-400">
                     <FaReceipt className="h-7 w-7" />
                 </div>
                 <h3 className="mt-4 text-lg font-semibold text-slate-800 dark:text-slate-200">{t('noOnlineOrders')}</h3>
@@ -182,7 +183,7 @@ const OrderOnline = () => {
                                     <button
                                         onClick={() => navigate(`/home/order-tracking/view/${order.order_id}`)}
                                         title={t('orderTracking')}
-                                        className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 transition hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-blue-600 dark:hover:text-blue-400"
+                                        className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 transition hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-cyan-600 dark:hover:text-cyan-400"
                                     >
                                         <FaTruck className="h-4 w-4" />
                                     </button>

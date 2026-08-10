@@ -5,12 +5,13 @@ import { FaPlus, FaFileExport, FaClipboardList, FaBoxOpen, FaCubes, FaShoppingCa
 import { toast } from 'react-toastify';
 import * as XLSX from 'xlsx';
 import { useOutletsContext } from '../../layouts/Management';
-import { useGetAllStockQuery } from '../../../app/Features/stocksSlice';
-import { useGetAllSaleQuery } from '../../../app/Features/salesSlice';
+import { useGetAllStockQuery, useDeleteStockMutation } from "@/features/stocks/stocksSlice";
+import { useGetAllSaleQuery } from "@/features/sales/salesSlice";
 import api from '../../services/api';
 import RefreshButton from '../../utils/RefreshButton';
 import StockList from '../../utils/StockList';
 import Button from '../../utils/Button';
+import { getToken } from '@/utils/tokenStore';
 const MENU_ID = 22;
 const formatDate = (date) =>
     new Date(date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
@@ -44,7 +45,7 @@ const getStockTypeLabel = (type, t) => {
 const Stocks = () => {
     const { t } = useTranslation();
     const { setLoading } = useOutletsContext();
-    const token = localStorage.getItem('token');
+    const token = getToken();
 
     const [stocks, setStocks] = useState([]);
     const [id, setId] = useState(0);
@@ -55,6 +56,7 @@ const Stocks = () => {
     const [page, setPage] = useState(1);
     const [limit, setLimit] = useState(10);
 
+    const [deleteStock] = useDeleteStockMutation();
     const { data, isLoading, refetch } = useGetAllStockQuery({ limit, page, search: searchTerm, token });
     const { refetch: saleRefetch } = useGetAllSaleQuery(token);
 
@@ -71,16 +73,11 @@ const Stocks = () => {
         setAlertBox(false);
         setLoading(true);
         try {
-            const res = await api.delete(`stock_masters/${id}`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
-            if (res.data.status === 200) {
-                refetch();
-                saleRefetch();
-                toast.success(t('orderDeletedSuccessfully'));
-            }
+            await deleteStock({ id, token, queryArgs: { limit, page, search: searchTerm, token } }).unwrap();
+            saleRefetch();
+            toast.success(t('orderDeletedSuccessfully'));
         } catch (error) {
-            toast.error(error.message || t('orderDeleteFailed'));
+            toast.error(error?.data?.message || error?.message || t('orderDeleteFailed'));
         } finally {
             setLoading(false);
         }
@@ -181,8 +178,8 @@ const Stocks = () => {
                 {
                     title: t('totalStockRecords'),
                     value: data?.pagination?.total || 0,
-                    icon: <FaClipboardList className="text-blue-500" />,
-                    color: 'from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 shadow-xs',
+                    icon: <FaClipboardList className="text-cyan-500" />,
+                    color: 'from-cyan-50 to-cyan-100 dark:from-cyan-900/20 dark:to-cyan-800/20 shadow-xs',
                 },
                 {
                     title: t('page'),
@@ -209,7 +206,7 @@ const Stocks = () => {
                     <button
                         onClick={exportToExcel}
                         disabled={exportLoading}
-                        className="px-4 py-2 bg-primary border border-blue-300 dark:border-gray-600 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-50 dark:hover:bg-gray-700 flex items-center justify-center gap-2 disabled:opacity-50 transition-colors"
+                        className="px-4 py-2 bg-primary border border-cyan-300 dark:border-gray-600 text-cyan-600 dark:text-cyan-400 rounded-lg hover:bg-cyan-50 dark:hover:bg-gray-700 flex items-center justify-center gap-2 disabled:opacity-50 transition-colors"
                         title={t('exportExcel')}
                     >
                         <FaFileExport />

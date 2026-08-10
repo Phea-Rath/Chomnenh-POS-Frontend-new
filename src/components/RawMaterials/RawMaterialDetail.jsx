@@ -1,152 +1,258 @@
 import React, { useEffect, useState } from 'react';
-import { Button, Tag, Card, Descriptions, Divider, Statistic, Row, Col } from 'antd';
 import {
-    ArrowLeftOutlined,
-    EditOutlined,
-    DatabaseOutlined,
-    SwapOutlined,
-    UserOutlined,
-    CalendarOutlined
-} from '@ant-design/icons';
-import { useNavigate, useParams } from 'react-router';
-import { useGetRawMaterialByIdQuery } from '../../../app/Features/RawMaterialSlice';
+  FaArrowLeft,
+  FaEdit,
+  FaExchangeAlt,
+  FaCalendarAlt,
+  FaUser,
+  FaHashtag,
+  FaCheckCircle,
+  FaBalanceScale
+} from 'react-icons/fa';
+import { LuPackage } from 'react-icons/lu';
+import { useNavigate, useParams, Link } from 'react-router';
+import { useGetRawMaterialByIdQuery } from "@/features/stocks/RawMaterialSlice";
 import { useTranslation } from 'react-i18next';
+import { Skeleton } from 'antd';
+import { motion } from 'framer-motion';
+import { getToken } from '@/utils/tokenStore';
 
 const RawMaterialDetail = () => {
-    const { t } = useTranslation();
-    const navigate = useNavigate();
-    const { id } = useParams();
-    const token = localStorage.getItem('token');
-    const { data } = useGetRawMaterialByIdQuery({ id, token });
-    const [material, setMaterial] = useState({});
-    console.log(data);
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+  const { id } = useParams();
+  const token = getToken();
+  const { data, isLoading, error } = useGetRawMaterialByIdQuery({ id, token });
+  const [material, setMaterial] = useState({});
 
+  useEffect(() => {
+    if (data?.data) {
+      setMaterial(data.data);
+    }
+  }, [data]);
 
-    useEffect(() => {
-        setMaterial(data?.data);
-    }, [data]);
+  const formatQuantity = (amount) => Number(amount || 0).toLocaleString('en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  });
 
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount || 0);
+  };
+
+  if (isLoading) {
     return (
-        <div className="min-h-screen bg-transparent p-4 md:p-8 view-page">
-            {/* Top Navigation & Actions */}
-            <div className="max-w-6xl mx-auto flex justify-between items-center mb-6">
-                <Button
-                    icon={<ArrowLeftOutlined />}
-                    onClick={() => navigate(-1)}
-                    className="flex items-center border-none shadow-none bg-transparent hover:bg-slate-200 dark:text-gray-300 dark:hover:bg-gray-800 transition-colors"
-                >
-                    {t('backToInventory')}
-                </Button>
-                <Button
-                    type="primary"
-                    icon={<EditOutlined />}
-                    size="large"
-                    className="rounded-lg"
-                    onClick={() => navigate(`/raw_materials/edit/${id}`)}
-                >
-                    {t('editMaterial')}
-                </Button>
-            </div>
-
-            <div className="max-w-6xl mx-auto">
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-
-                    {/* Left Column: Image and Stock Status */}
-                    <div className="lg:col-span-1 gap-2 space-y-6">
-                        <Card className="rounded-2xl !mb-3 !shadow-xs !border-0 overflow-hidden bg-primary transition-colors">
-                            <div className="aspect-square bg-transparent flex items-center justify-center p-4 transition-colors">
-                                <img
-                                    src={material?.material_image}
-                                    alt={material?.material_name}
-                                    className="w-full h-full object-contain rounded-xl"
-                                    onError={(e) => {
-                                        e.target.src = "data:image/png;base64,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";
-                                    }}
-                                />
-                            </div>
-                        </Card>
-
-                        <Card className="rounded-2xl shadow-sm !border-none !bg-indigo-600 dark:!bg-indigo-900/40 transition-colors">
-                            <Statistic
-                                title={<span className="text-indigo-100 dark:text-indigo-300 uppercase tracking-wider text-xs font-bold">{t('currentStock')}</span>}
-                                value={material?.in_stock}
-                                precision={2}
-                                suffix={material?.primary_unit}
-                                valueStyle={{ color: '#fff', fontSize: '32px', fontWeight: '800' }}
-                                className="dark:[&_.ant-statistic-content]:text-white"
-                            />
-                            <div className="mt-2 text-indigo-200 dark:text-indigo-300 text-sm">
-                                {t('totalValueIn')} {material?.primary_unit}
-                            </div>
-                        </Card>
-                    </div>
-
-                    {/* Right Column: Detailed Information */}
-                    <div className="lg:col-span-2 space-y-6">
-                        <Card className="rounded-2xl shadow-sm !border-none min-h-full p-2 bg-primary transition-colors">
-                            <div className="mb-6 px-4">
-                                <Tag color="cyan" className="mb-2 font-mono dark:bg-cyan-900/30 dark:border-cyan-800">{material?.material_code}</Tag>
-                                <h1 className="text-4xl font-extrabold text-slate-800 dark:text-white">{material?.material_name}</h1>
-                            </div>
-
-                            <Divider orientation="left" className="text-slate-400 dark:text-gray-500 font-normal text-xs uppercase tracking-widest">
-                                {t('unitConversion')}
-                            </Divider>
-
-                            <div className="bg-slate-50 dark:bg-gray-900/50 p-6 rounded-2xl border border-slate-100 dark:border-gray-700 flex items-center justify-around mb-8 transition-colors">
-                                <div className="text-center">
-                                    <p className="text-xs text-slate-400 dark:text-gray-500 font-bold uppercase mb-1">{t('primary')}</p>
-                                    <p className="text-2xl font-bold text-slate-700 dark:text-gray-200">1 {material?.primary_unit}</p>
-                                </div>
-                                <div className="!bg-white p-3 rounded-full shadow-sm transition-colors">
-                                    <SwapOutlined className="text-indigo-500 text-xl" />
-                                </div>
-                                <div className="text-center">
-                                    <p className="text-xs text-slate-400 dark:text-gray-500 font-bold uppercase mb-1">{t('secondary')}</p>
-                                    <p className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">{material?.conversion_value} {material?.secondary_unit}</p>
-                                </div>
-                            </div>
-
-                            <Divider orientation="left" className="text-slate-400 dark:text-gray-500 font-normal text-xs uppercase tracking-widest">
-                                {t('generalInformation')}
-                            </Divider>
-
-                            <div className="px-4">
-                                <Descriptions column={1} bordered size="middle" className="bg-white dark:bg-gray-900 rounded-xl overflow-hidden transition-colors dark:border-gray-700">
-                                    <Descriptions.Item label={<div className="flex items-center gap-2 dark:text-gray-300"><DatabaseOutlined /> {t('materialID')}</div>} className="dark:text-gray-300">
-                                        <span className="dark:text-gray-100">{material?.id}</span>
-                                    </Descriptions.Item>
-                                    <Descriptions.Item label={<div className="flex items-center gap-2 dark:text-gray-300"><UserOutlined /> {t('createdBy')}</div>} className="dark:text-gray-300">
-                                        <span className="dark:text-gray-100">{material?.create_by_name}</span>
-                                    </Descriptions.Item>
-                                    <Descriptions.Item label={<div className="flex items-center gap-2 dark:text-gray-300"><CalendarOutlined /> {t('registrationDate')}</div>} className="dark:text-gray-300">
-                                        <span className="dark:text-gray-100">{material?.created_at}</span>
-                                    </Descriptions.Item>
-                                    <Descriptions.Item label={<div className="flex items-center gap-2 dark:text-gray-300"><CalendarOutlined /> {t('lastUpdate')}</div>} className="dark:text-gray-300">
-                                        <span className="dark:text-gray-100">{material?.updated_at}</span>
-                                    </Descriptions.Item>
-                                </Descriptions>
-                            </div>
-
-                            <div className="mt-10 grid grid-cols-2 gap-4 px-4 pb-4">
-                                <div className="p-4 rounded-xl border border-dashed border-slate-200 dark:border-gray-700 transition-colors">
-                                    <p className="text-slate-400 dark:text-gray-500 text-xs font-bold uppercase mb-1">{t('stockInSecondaryUnit')}</p>
-                                    <p className="text-xl font-bold text-slate-700 dark:text-gray-200">
-                                        {(parseFloat(material?.in_stock) * parseFloat(material?.conversion_value)).toLocaleString()} {material?.secondary_unit}
-                                    </p>
-                                </div>
-                                <div className="p-4 rounded-xl border border-dashed border-slate-200 dark:border-gray-700 transition-colors">
-                                    <p className="text-slate-400 dark:text-gray-500 text-xs font-bold uppercase mb-1">{t('status')}</p>
-                                    <Tag color="green" className="m-0 px-4 py-0.5 rounded-full font-bold dark:bg-green-900/30 dark:border-green-800">{t('active')}</Tag>
-                                </div>
-                            </div>
-                        </Card>
-                    </div>
-
-                </div>
-            </div>
+      <div className="flex min-h-[70vh] items-center justify-center p-6">
+        <div className="w-full max-w-4xl rounded-2xl border border-slate-200/80 bg-white p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900">
+          <Skeleton active avatar paragraph={{ rows: 6 }} />
         </div>
+      </div>
     );
+  }
+
+  if (error || !material?.id) {
+    return (
+      <div className="flex min-h-[70vh] flex-col items-center justify-center p-6">
+        <div className="rounded-2xl border border-dashed border-slate-200 bg-white/50 p-12 text-center backdrop-blur-xs dark:border-slate-800 dark:bg-slate-900/50">
+          <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-3xl bg-cyan-50 text-cyan-600 dark:bg-cyan-950/40 dark:text-cyan-400">
+            <LuPackage className="h-9 w-9" />
+          </div>
+          <h3 className="text-base font-bold text-slate-900 dark:text-white">Raw Material Not Found</h3>
+          <Link
+            to="/raw_materials"
+            className="mt-4 inline-flex items-center gap-2 rounded-xl bg-cyan-600 px-5 py-2.5 text-xs font-bold text-white shadow-md shadow-cyan-600/20 hover:bg-cyan-700 transition-colors"
+          >
+            <FaArrowLeft /> Back to Raw Materials
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  const secondaryStockValue = (parseFloat(material?.in_stock || 0) * parseFloat(material?.conversion_value || 1));
+
+  return (
+    <div className="space-y-6 p-4 md:p-6 transition-colors">
+      {/* Top Header Card */}
+      <div className="rounded-2xl border border-slate-200/80 bg-white/80 p-4 md:p-5 shadow-xs backdrop-blur-md dark:border-slate-800 dark:bg-slate-900/80">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <button
+              onClick={() => navigate(-1)}
+              className="inline-flex items-center gap-2 text-xs font-bold text-slate-500 hover:text-cyan-600 dark:text-slate-400 dark:hover:text-cyan-400 transition-colors mb-2"
+            >
+              <FaArrowLeft className="h-3 w-3" />
+              <span>{t('backToInventory', 'Back to Raw Materials')}</span>
+            </button>
+            <h1 className="text-xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+              Raw Material Profile Details
+            </h1>
+          </div>
+
+          <div className="flex items-center gap-2.5">
+            <button
+              onClick={() => navigate(`/raw_materials/edit/${id}`)}
+              className="flex items-center gap-2 rounded-xl bg-cyan-600 px-4 py-2 text-xs font-bold text-white shadow-md shadow-cyan-600/20 hover:bg-cyan-700 transition-all dark:bg-cyan-700 dark:hover:bg-cyan-800"
+            >
+              <FaEdit className="h-3.5 w-3.5" />
+              <span>{t('editMaterial', 'Edit Material')}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Grid Layout */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        {/* Left Column - Profile Avatar & Quick Stock Summary Card */}
+        <div className="space-y-4 lg:col-span-1">
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-xs dark:border-slate-800 dark:bg-slate-900"
+          >
+            <div className="relative bg-slate-900 p-6 text-center text-white dark:bg-slate-950">
+              <div className="relative mx-auto h-32 w-32 overflow-hidden rounded-2xl border-4 border-white/20 shadow-xl bg-slate-800 flex items-center justify-center">
+                {material?.material_image ? (
+                  <img
+                    src={material.material_image}
+                    alt={material.material_name}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <LuPackage className="h-12 w-12 text-cyan-400" />
+                )}
+              </div>
+              <h2 className="mt-4 text-lg font-extrabold tracking-tight text-white">
+                {material?.material_name}
+              </h2>
+              <span className="mt-1.5 inline-flex items-center rounded-full bg-cyan-500/20 px-3 py-0.5 text-xs font-bold text-cyan-300 border border-cyan-500/30 font-mono">
+                {material?.material_code || 'N/A'}
+              </span>
+            </div>
+
+            <div className="p-5 space-y-3">
+              <div className="rounded-2xl border border-cyan-200/80 bg-cyan-50/70 p-4 text-center dark:border-cyan-900/40 dark:bg-cyan-950/30">
+                <p className="text-[10px] font-extrabold uppercase tracking-wider text-cyan-600 dark:text-cyan-400">
+                  {t('currentStock', 'Current Stock')}
+                </p>
+                <p className="mt-1.5 text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+                  {formatQuantity(material?.in_stock)} <span className="text-sm font-bold text-cyan-600 dark:text-cyan-400">{material?.primary_unit?.toUpperCase()}</span>
+                </p>
+                {material?.secondary_unit && (
+                  <p className="mt-1 text-xs font-semibold text-slate-500 dark:text-slate-400">
+                    ≈ {formatQuantity(secondaryStockValue)} {material?.secondary_unit?.toUpperCase()}
+                  </p>
+                )}
+              </div>
+
+              <div className="flex items-center justify-between rounded-xl bg-slate-50 p-3 text-xs dark:bg-slate-800/50">
+                <span className="font-semibold text-slate-500 dark:text-slate-400">Material Cost</span>
+                <span className="font-bold text-slate-900 dark:text-white">{formatCurrency(material?.material_cost)}</span>
+              </div>
+
+              <div className="flex items-center justify-between rounded-xl bg-slate-50 p-3 text-xs dark:bg-slate-800/50">
+                <span className="font-semibold text-slate-500 dark:text-slate-400">Status</span>
+                <span className="inline-flex rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-bold text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400">
+                  {material?.is_deleted === 1 ? t('deleted') : t('active')}
+                </span>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+
+        {/* Right Column - Detailed Info Cards */}
+        <div className="space-y-6 lg:col-span-2">
+          {/* Unit Conversion Display */}
+          {material?.secondary_unit && (
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.3 }}
+              className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-4"
+            >
+              <h3 className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-400">
+                <FaBalanceScale className="h-3.5 w-3.5 text-cyan-500" />
+                {t('unitConversion', 'Unit Conversion Ratio')}
+              </h3>
+
+              <div className="flex items-center justify-around rounded-2xl border border-slate-100 bg-slate-50/70 p-5 dark:border-slate-800/80 dark:bg-slate-800/40">
+                <div className="text-center">
+                  <p className="text-[10px] font-extrabold uppercase text-slate-400">{t('primary', 'Primary Unit')}</p>
+                  <p className="mt-1 text-lg font-extrabold text-slate-900 dark:text-white">1 {material?.primary_unit?.toUpperCase()}</p>
+                </div>
+
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-cyan-500/10 text-cyan-600 dark:text-cyan-400">
+                  <FaExchangeAlt className="h-4 w-4" />
+                </div>
+
+                <div className="text-center">
+                  <p className="text-[10px] font-extrabold uppercase text-slate-400">{t('secondary', 'Secondary Unit')}</p>
+                  <p className="mt-1 text-lg font-extrabold text-cyan-600 dark:text-cyan-400">
+                    {material?.conversion_value} {material?.secondary_unit?.toUpperCase()}
+                  </p>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {/* General Information Card */}
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.3, delay: 0.1 }}
+            className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-4"
+          >
+            <h3 className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-400">
+              <div className="h-3.5 w-1 rounded-full bg-cyan-500" />
+              {t('generalInformation', 'General Information')}
+            </h3>
+
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div className="flex items-center gap-3.5 rounded-2xl border border-slate-100 bg-slate-50/70 p-3.5 dark:border-slate-800/80 dark:bg-slate-800/40">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 shrink-0">
+                  <FaHashtag className="h-4 w-4" />
+                </div>
+                <div>
+                  <p className="text-[10px] font-semibold uppercase text-slate-400">{t('materialID', 'Material ID')}</p>
+                  <p className="text-xs font-bold text-slate-900 dark:text-white mt-0.5">#{material?.id}</p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3.5 rounded-2xl border border-slate-100 bg-slate-50/70 p-3.5 dark:border-slate-800/80 dark:bg-slate-800/40">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shrink-0">
+                  <FaUser className="h-4 w-4" />
+                </div>
+                <div>
+                  <p className="text-[10px] font-semibold uppercase text-slate-400">{t('createdBy', 'Created By')}</p>
+                  <p className="text-xs font-bold text-slate-900 dark:text-white mt-0.5">{material?.create_by_name || 'N/A'}</p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3.5 rounded-2xl border border-slate-100 bg-slate-50/70 p-3.5 dark:border-slate-800/80 dark:bg-slate-800/40">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 shrink-0">
+                  <FaCalendarAlt className="h-4 w-4" />
+                </div>
+                <div>
+                  <p className="text-[10px] font-semibold uppercase text-slate-400">{t('registrationDate', 'Registration Date')}</p>
+                  <p className="text-xs font-bold text-slate-900 dark:text-white mt-0.5">{material?.created_at || 'N/A'}</p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3.5 rounded-2xl border border-slate-100 bg-slate-50/70 p-3.5 dark:border-slate-800/80 dark:bg-slate-800/40">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 shrink-0">
+                  <FaCheckCircle className="h-4 w-4" />
+                </div>
+                <div>
+                  <p className="text-[10px] font-semibold uppercase text-slate-400">{t('lastUpdate', 'Last Update')}</p>
+                  <p className="text-xs font-bold text-slate-900 dark:text-white mt-0.5">{material?.updated_at || 'N/A'}</p>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      </div>
+    </div>
+  );
 };
 
 export default RawMaterialDetail;

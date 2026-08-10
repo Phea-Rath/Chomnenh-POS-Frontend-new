@@ -1,8 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { FiDownload, FiPrinter, FiFilter } from 'react-icons/fi';
-import { useGetAPReportMutation } from '../../../app/Features/reportsSlice';
-import { useGetAllUserQuery, useGetUserLoginQuery } from '../../../app/Features/usersSlice';
-import { useGetAllSupplierQuery } from '../../../app/Features/suppliesSlice';
+import { useGetAPReportMutation } from "@/features/dashboard/reportsSlice";
+import { useGetAllUserQuery, useGetUserLoginQuery } from "@/features/auth/usersSlice";
+import { useGetAllSupplierQuery } from "@/features/purchases/suppliesSlice";
 import { toast } from 'react-toastify';
 import * as XLSX from 'xlsx';
 import { useReactToPrint } from 'react-to-print';
@@ -10,6 +10,7 @@ import { useReportText } from './reportText';
 import RichSearch from '../../utils/RichSearch';
 import { DatePicker } from 'antd';
 import dayjs from 'dayjs';
+import { getToken } from '@/utils/tokenStore';
 
 const EMPTY_REPORT = {
     summary: [],
@@ -23,7 +24,7 @@ const EMPTY_REPORT = {
 
 const APReport = () => {
     const { rt } = useReportText();
-    const token = localStorage.getItem('token');
+    const token = getToken();
     const [getAPReport] = useGetAPReportMutation();
     const { data: userLogin } = useGetUserLoginQuery(token);
     const profile = userLogin?.data;
@@ -247,7 +248,7 @@ const APReport = () => {
                         <button
                             onClick={handleGetReport}
                             disabled={loading}
-                            className="flex items-center justify-center gap-2 bg-blue-600 text-white px-5 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed h-10"
+                            className="flex items-center justify-center gap-2 bg-cyan-600 text-white px-5 py-2 rounded-md hover:bg-cyan-700 disabled:opacity-50 disabled:cursor-not-allowed h-10"
                         >
                             <FiFilter size={16} />
                             {loading ? rt('Loading...') : rt('Get Report')}
@@ -258,7 +259,7 @@ const APReport = () => {
                 {reportData && (
                     <div className="bg-primary rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 p-5 text-xs">
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                            <div className="rounded-lg border border-blue-100 bg-blue-50 dark:bg-slate-800 dark:border-slate-600 p-4">
+                            <div className="rounded-lg border border-cyan-100 bg-cyan-50 dark:bg-slate-800 dark:border-slate-600 p-4">
                                 <p className="text-slate-500 dark:text-slate-400">{rt("Total Amount")}</p>
                                 <p className="text-lg font-semibold text-slate-900 dark:text-white">{formatUSD(totals.total)}</p>
                                 <p className="text-slate-400 text-xs mt-1 dark:text-slate-500">{formatKHR(totals.total_kh)}</p>
@@ -309,7 +310,7 @@ const APReport = () => {
                                     </div>
                                 </div>
                                 <div className="text-right">
-                                    <h1 className="text-xl font-bold text-blue-600">{rt("Account Payables Report")}</h1>
+                                    <h1 className="text-xl font-bold text-cyan-600">{rt("Account Payables Report")}</h1>
                                     <p className="text-xs text-slate-500">{new Date().toLocaleString()}</p>
                                 </div>
                             </div>
@@ -386,7 +387,7 @@ const APReport = () => {
 
                 {loading && (
                     <div className="bg-primary rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 p-12 text-center">
-                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-600 mx-auto mb-4"></div>
                         <p className="text-slate-600 dark:text-slate-400">{rt("Generating report...")}</p>
                     </div>
                 )}

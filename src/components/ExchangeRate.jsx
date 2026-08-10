@@ -3,16 +3,17 @@ import { HiOutlineRefresh, HiOutlineSave, HiOutlinePencil } from "react-icons/hi
 import {
   useGetExchangeRateByIdQuery,
   useUpdateExchangeRateMutation,
-} from "../../app/Features/exchangeRatesSlice";
+} from "@/features/system/exchangeRatesSlice";
 import { toast } from "react-toastify";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { useOutletsContext } from "../layouts/Management";
+import { getToken } from '@/utils/tokenStore';
 
 const ExchangeRate = () => {
   const { t, i18n } = useTranslation();
   const { darkMode } = useOutletsContext();
-  const token = localStorage.getItem("token");
+  const token = getToken();
   const proId = localStorage.getItem("profileId");
   const [usdToKhr, setUsdToKhr] = useState();
   const [isEditing, setIsEditing] = useState(false);
@@ -74,7 +75,7 @@ const ExchangeRate = () => {
         
         <div className="flex flex-col md:flex-row items-center gap-6">
           {/* Icon Container */}
-          <div className="w-14 h-14 rounded-2xl flex items-center justify-center bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400 transition-transform duration-500 group-hover:scale-110 group-hover:rotate-6 shrink-0">
+          <div className="w-14 h-14 rounded-2xl flex items-center justify-center bg-cyan-100 text-cyan-600 dark:bg-cyan-900/40 dark:text-cyan-400 transition-transform duration-500 group-hover:scale-110 group-hover:rotate-6 shrink-0">
             <HiOutlineRefresh className="w-8 h-8" />
           </div>
 
@@ -90,14 +91,14 @@ const ExchangeRate = () => {
                     type="number"
                     value={inputValue}
                     onChange={(e) => setInputValue(e.target.value)}
-                    className={`w-full px-4 py-2 text-sm border rounded-xl outline-none focus:ring-2 focus:ring-blue-500/50 transition-all
+                    className={`w-full px-4 py-2 text-sm border rounded-xl outline-none focus:ring-2 focus:ring-cyan-500/50 transition-all
                       ${darkMode ? "bg-gray-700 border-gray-600 text-white" : "bg-gray-50 border-gray-200 text-gray-900"}`}
                     placeholder="Enter rate"
                     autoFocus
                   />
                   <button
                     onClick={handleSave}
-                    className="p-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors shrink-0"
+                    className="p-2.5 bg-cyan-600 text-white rounded-xl hover:bg-cyan-700 transition-colors shrink-0"
                     title={t("save") || "Save"}
                   >
                     <HiOutlineSave className="w-5 h-5" />
@@ -112,13 +113,13 @@ const ExchangeRate = () => {
                 </div>
               ) : (
                 <div className="flex items-center gap-4">
-                  <p className={`text-2xl font-black ${darkMode ? "text-blue-400" : "text-blue-600"}`}>
+                  <p className={`text-2xl font-black ${darkMode ? "text-cyan-400" : "text-cyan-600"}`}>
                     1 USD = <span className="underline decoration-dotted underline-offset-4">{usdToKhr?.toLocaleString()}</span> KHR
                   </p>
                   <button
                     onClick={handleEditClick}
                     className={`p-2 rounded-xl transition-all duration-200
-                      ${darkMode ? "hover:bg-gray-700 text-gray-400 hover:text-white" : "hover:bg-blue-50 text-gray-400 hover:text-blue-600"}`}
+                      ${darkMode ? "hover:bg-gray-700 text-gray-400 hover:text-white" : "hover:bg-cyan-50 text-gray-400 hover:text-cyan-600"}`}
                     aria-label="Edit exchange rate"
                   >
                     <HiOutlinePencil size={20} />

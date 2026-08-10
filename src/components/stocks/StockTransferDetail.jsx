@@ -52,6 +52,7 @@ import dayjs from "dayjs";
 import api from "../../services/api";
 import { toast } from "react-toastify";
 import { useTranslation } from "react-i18next";
+import { getToken } from '@/utils/tokenStore';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -72,7 +73,7 @@ const StockTransferDetail = () => {
     const fetchStockMaster = async () => {
         try {
             setLoading(true);
-            const token = localStorage.getItem("token");
+            const token = getToken();
             const response = await api.get(`/stock_masters/${id}`, {
                 headers: {
                     Authorization: `Bearer ${token}`,
@@ -112,7 +113,7 @@ const StockTransferDetail = () => {
             'stock in': 'green',
             'stock out': 'red',
             'stock sale': 'orange',
-            'transfer': 'blue',
+            'transfer': 'cyan',
             'adjustment': 'purple',
             'return': 'yellow'
         };
@@ -125,7 +126,7 @@ const StockTransferDetail = () => {
             'stock in': <LuTrendingUp className="text-green-500" />,
             'stock out': <LuTrendingDown className="text-red-500" />,
             'stock sale': <LuDollarSign className="text-orange-500" />,
-            'transfer': <LuTruck className="text-blue-500" />,
+            'transfer': <LuTruck className="text-cyan-500" />,
             'adjustment': <LuShield className="text-purple-500" />,
             'return': <LuRefreshCw className="text-yellow-500" />
         };
@@ -160,7 +161,7 @@ const StockTransferDetail = () => {
         return (
             <div className="flex justify-center items-center min-h-screen">
                 <div className="text-center">
-                    <LuRefreshCw className="animate-spin text-4xl text-blue-600 mx-auto mb-4" />
+                    <LuRefreshCw className="animate-spin text-4xl text-cyan-600 mx-auto mb-4" />
                     <p className="text-gray-600 dark:text-gray-400">{t('loading')}...</p>
                 </div>
             </div>
@@ -216,7 +217,7 @@ const StockTransferDetail = () => {
                         </Link>
                         <div>
                             <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                                <LuReceipt className="text-blue-600" />
+                                <LuReceipt className="text-cyan-600" />
                                 {t('stockTransferDetails')}
                             </h1>
                             <p className="text-gray-600 dark:text-gray-400">
@@ -240,7 +241,7 @@ const StockTransferDetail = () => {
                             onClick={() => {
                                 setTimeout(handlePrintDetail, 300);
                             }}
-                            className="bg-gradient-to-r from-blue-600 to-blue-700 border-0 shadow-md"
+                            className="bg-gradient-to-r from-cyan-600 to-cyan-700 border-0 shadow-md"
                         >
                             {t('printReport')}
                         </Button>
@@ -252,7 +253,7 @@ const StockTransferDetail = () => {
                     <Row gutter={[16, 16]} align="middle">
                         <Col xs={24} md={8}>
                             <div className="flex items-center gap-4">
-                                <div className="p-3 bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-900/30 dark:to-blue-800/20 rounded-lg">
+                                <div className="p-3 bg-gradient-to-br from-cyan-100 to-cyan-200 dark:from-cyan-900/30 dark:to-cyan-800/20 rounded-lg">
                                     {getStockTypeIcon(data.stock_type_name)}
                                 </div>
                                 <div>
@@ -279,7 +280,7 @@ const StockTransferDetail = () => {
                                     <Statistic
                                         title={<span className="dark:text-gray-400">{t('totalItems')}</span>}
                                         value={asArray(data?.items).length}
-                                        prefix={<LuPackage className="text-blue-500" />}
+                                        prefix={<LuPackage className="text-cyan-500" />}
                                         valueStyle={{ color: '#3b82f6' }}
                                         className="dark:[&_.ant-statistic-content]:text-white"
                                     />
@@ -323,7 +324,7 @@ const StockTransferDetail = () => {
                     <Card
                         title={
                             <div className="flex items-center gap-2 dark:text-gray-200">
-                                <LuInfo className="text-blue-600" />
+                                <LuInfo className="text-cyan-600" />
                                 <span>{t('transferInformation')}</span>
                             </div>
                         }
@@ -334,7 +335,7 @@ const StockTransferDetail = () => {
                                 <Text strong className="text-lg dark:text-white">{data.stock_no}</Text>
                             </Descriptions.Item>
                             <Descriptions.Item label={<div className="flex items-center gap-2"><LuCalendar /> {t('stockDate')}</div>}>
-                                <Tag color="blue" className="dark:bg-blue-900/30 dark:border-blue-800">{dayjs(data.stock_date).format('MMMM DD, YYYY')}</Tag>
+                                <Tag color="cyan" className="dark:bg-cyan-900/30 dark:border-cyan-800">{dayjs(data.stock_date).format('MMMM DD, YYYY')}</Tag>
                             </Descriptions.Item>
                             <Descriptions.Item label={<div className="flex items-center gap-2"><LuClock /> {t('created')}</div>}>
                                 {dayjs(data.created_at).format('MMMM DD, YYYY HH:mm:ss')}
@@ -357,14 +358,14 @@ const StockTransferDetail = () => {
                     <Card
                         title={
                             <div className="flex items-center gap-2 dark:text-gray-200">
-                                <LuWarehouse className="text-blue-600" />
+                                <LuWarehouse className="text-cyan-600" />
                                 <span>{t('warehouseTransfer')}</span>
                             </div>
                         }
                         className="shadow-md dark:!bg-gray-800 dark:!border-gray-700 transition-colors"
                     >
                         <div className="space-y-6">
-                            <div className="flex items-center justify-between p-4 bg-gradient-to-r from-blue-50 to-blue-100 dark:from-gray-900/50 dark:to-gray-900/30 rounded-lg transition-colors">
+                            <div className="flex items-center justify-between p-4 bg-gradient-to-r from-cyan-50 to-cyan-100 dark:from-gray-900/50 dark:to-gray-900/30 rounded-lg transition-colors">
                                 <div className="text-center flex-1">
                                     <LuWarehouse className="text-3xl text-red-500 mx-auto mb-2" />
                                     <Text strong className="block mb-1 dark:text-gray-300">{t('fromWarehouse')}</Text>
@@ -374,7 +375,7 @@ const StockTransferDetail = () => {
                                 </div>
 
                                 <div className="px-4">
-                                    <LuArrowLeftRight className="text-2xl text-blue-500 animate-pulse" />
+                                    <LuArrowLeftRight className="text-2xl text-cyan-500 animate-pulse" />
                                 </div>
 
                                 <div className="text-center flex-1">
@@ -395,11 +396,11 @@ const StockTransferDetail = () => {
                                     </div>
                                     <div className="text-sm text-green-700 dark:text-green-500">{t('totalUnits')}</div>
                                 </div>
-                                <div className="text-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded transition-colors">
-                                    <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                                <div className="text-center p-3 bg-cyan-50 dark:bg-cyan-900/20 rounded transition-colors">
+                                    <div className="text-2xl font-bold text-cyan-600 dark:text-cyan-400">
                                         {asArray(data?.items).length}
                                     </div>
-                                    <div className="text-sm text-blue-700 dark:text-blue-500">{t('uniqueItems')}</div>
+                                    <div className="text-sm text-cyan-700 dark:text-cyan-500">{t('uniqueItems')}</div>
                                 </div>
                             </div>
                         </div>
@@ -412,10 +413,10 @@ const StockTransferDetail = () => {
                         title={
                             <div className="flex items-center gap-2 justify-between w-full dark:text-gray-200">
                                 <div className="flex items-center gap-2">
-                                    <LuPackage className="text-blue-600" />
+                                    <LuPackage className="text-cyan-600" />
                                     <span>{t('transferredItems')} ({asArray(data?.items).length})</span>
                                 </div>
-                                <Tag color="blue" className="dark:bg-blue-900/30 dark:border-blue-800 m-0">{totals.quantity} {t('totalUnits')}</Tag>
+                                <Tag color="cyan" className="dark:bg-cyan-900/30 dark:border-cyan-800 m-0">{totals.quantity} {t('totalUnits')}</Tag>
                             </div>
                         }
                         className="shadow-md dark:!bg-gray-800 dark:!border-gray-700 transition-colors"
@@ -435,8 +436,8 @@ const StockTransferDetail = () => {
                                             alt={item.item_name}
                                             className="rounded-lg object-cover border dark:border-gray-700"
                                             fallback={
-                                                <div className="w-20 h-20 rounded-lg bg-gradient-to-br from-blue-100 to-blue-50 dark:from-gray-700 dark:to-gray-800 border border-blue-200 dark:border-gray-600 flex items-center justify-center">
-                                                    <LuPackage className="text-2xl text-blue-600 dark:text-blue-400" />
+                                                <div className="w-20 h-20 rounded-lg bg-gradient-to-br from-cyan-100 to-cyan-50 dark:from-gray-700 dark:to-gray-800 border border-cyan-200 dark:border-gray-600 flex items-center justify-center">
+                                                    <LuPackage className="text-2xl text-cyan-600 dark:text-cyan-400" />
                                                 </div>
                                             }
                                         />
@@ -465,7 +466,7 @@ const StockTransferDetail = () => {
 
                                                 <div className="flex items-center gap-4">
                                                     <div className="flex items-center gap-2">
-                                                        <LuBox className="text-blue-400" />
+                                                        <LuBox className="text-cyan-400" />
                                                         <Text strong className="dark:text-gray-300">{t('quantity')}: {item.quantity}</Text>
                                                     </div>
                                                     <div className="flex items-center gap-2">

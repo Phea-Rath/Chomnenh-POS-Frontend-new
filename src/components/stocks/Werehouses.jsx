@@ -5,10 +5,10 @@ import { TbBuildingWarehouse } from 'react-icons/tb';
 import { MdLocationCity } from 'react-icons/md';
 import { useOutletsContext } from '../../layouts/Management';
 import AlertBox from '../../services/AlertBox';
-import UpdateWarehouses from '../../views/stocks/UpdateWarehouses';
-import CreateWarehouses from '../../views/stocks/CreateWarehouses';
+import UpdateWarehouses from './UpdateWarehouses';
+import CreateWarehouses from './CreateWarehouses';
 import { motion } from 'framer-motion';
-import { useGetAllWarehousesQuery, useDeleteWarehouseMutation } from '../../../app/Features/warehousesSlice';
+import { useGetAllWarehousesQuery, useDeleteWarehouseMutation } from "@/features/stocks/warehousesSlice";
 import { toast } from 'react-toastify';
 import { RiDeleteBin6Line, RiEdit2Line, RiEyeLine } from 'react-icons/ri';
 import { IoGridOutline, IoListOutline } from 'react-icons/io5';
@@ -18,6 +18,7 @@ import { useTranslation } from 'react-i18next';
 import Button from '../../utils/Button';
 import ActionButton from '../../utils/ActionButton';
 import Input from '../../utils/Input';
+import { getToken } from '@/utils/tokenStore';
 
 const MENU_ID = 12;
 
@@ -34,7 +35,7 @@ const Warehouses = () => {
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isUpdateOpen, setIsUpdateOpen] = useState(false);
   const { setLoading, loading } = useOutletsContext();
-  const token = localStorage.getItem('token');
+  const token = getToken();
   const { data, isLoading, refetch } = useGetAllWarehousesQuery(token);
   const [deleteWarehouse] = useDeleteWarehouseMutation();
 
@@ -75,15 +76,10 @@ const Warehouses = () => {
     setAlertBox(false);
     setLoading(true);
     try {
-      const response = await deleteWarehouse({ id, token });
-      if (response?.data?.status === 200) {
-        refetch();
-        toast.success(response.data.message || t('warehouseDeletedSuccess', 'Warehouse deleted successfully!'));
-      } else {
-        throw new Error(response.error?.data?.message || t('failedToDeleteWarehouse', 'Failed to delete warehouse'));
-      }
+      await deleteWarehouse({ id, token }).unwrap();
+      toast.success(t('warehouseDeletedSuccess', 'Warehouse deleted successfully!'));
     } catch (error) {
-      toast.error(error?.message || t('errorOccurredDeletingWarehouse', 'An error occurred while deleting the warehouse'));
+      toast.error(error?.data?.message || error?.message || t('errorOccurredDeletingWarehouse', 'An error occurred while deleting the warehouse'));
     } finally {
       setLoading(false);
     }
@@ -142,7 +138,7 @@ const Warehouses = () => {
       success: 'bg-green-100 text-green-800 border-green-200',
       error: 'bg-red-100 text-red-800 border-red-200',
       warning: 'bg-yellow-100 text-yellow-800 border-yellow-200',
-      blue: 'bg-blue-100 text-blue-800 border-blue-200',
+      cyan: 'bg-cyan-100 text-cyan-800 border-cyan-200',
       gray: 'bg-gray-100 text-gray-800 border-gray-200',
     };
     return (
@@ -152,7 +148,7 @@ const Warehouses = () => {
     );
   };
 
-  const StatCard = ({ title, value, icon, color = 'blue' }) => (
+  const StatCard = ({ title, value, icon, color = 'cyan' }) => (
     <div className={`bg-primary  rounded p-4 `}>
       <div className="flex items-center justify-between">
         <div>
@@ -166,8 +162,8 @@ const Warehouses = () => {
 
   const EmptyState = ({ onCreate }) => (
     <div className="flex flex-col items-center justify-center py-16 border-2 border-dashed border-gray-300 rounded bg-white dark:bg-gray-800">
-      <div className="w-20 h-20 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mb-4">
-        <HiOutlineBuildingOffice2 className="text-3xl text-blue-400" />
+      <div className="w-20 h-20 bg-cyan-100 dark:bg-cyan-900/30 rounded-full flex items-center justify-center mb-4">
+        <HiOutlineBuildingOffice2 className="text-3xl text-cyan-400" />
       </div>
       <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-200 mb-2">{t('noWarehousesFound', 'No Warehouses Found')}</h3>
       <p className="text-gray-500 dark:text-gray-400 text-center max-w-md mb-6">
@@ -228,8 +224,8 @@ const Warehouses = () => {
       >
         <div className="p-4">
           <div className="flex items-start justify-between mb-3">
-            <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded">
-              <HiOutlineBuildingOffice2 className="text-blue-600 dark:text-blue-400" />
+            <div className="p-2 bg-cyan-100 dark:bg-cyan-900/30 rounded">
+              <HiOutlineBuildingOffice2 className="text-cyan-600 dark:text-cyan-400" />
             </div>
             <Badge color={warehouse.status === 'stock' ? 'success' : 'error'}>
               {warehouse.status === 'stock' ? t('active') : t('inactive')}
@@ -273,8 +269,8 @@ const Warehouses = () => {
             animate={{ opacity: 1, x: 0 }}
             className="text-2xl font-bold text-gray-800 dark:text-white flex items-center gap-3"
           >
-            <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded">
-              <TbBuildingWarehouse className="text-blue-600 dark:text-blue-400" />
+            <div className="p-2 bg-cyan-100 dark:bg-cyan-900/30 rounded">
+              <TbBuildingWarehouse className="text-cyan-600 dark:text-cyan-400" />
             </div>
             {t('warehouseManagement')}
           </motion.h1>
@@ -293,7 +289,7 @@ const Warehouses = () => {
 
       {/* Statistics Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-        <StatCard title={t('totalWarehouses')} value={stats.totalWarehouses} icon={<TbBuildingWarehouse />} color="blue" />
+        <StatCard title={t('totalWarehouses')} value={stats.totalWarehouses} icon={<TbBuildingWarehouse />} color="cyan" />
         <StatCard title={t('active')} value={stats.activeWarehouses} icon={<MdLocationCity />} color="green" />
         <StatCard title={t('inactive')} value={stats.inactiveWarehouses} icon={<HiOutlineBuildingOffice2 />} color="red" />
       </div>
@@ -305,7 +301,7 @@ const Warehouses = () => {
             <div className="flex border border-gray-300 dark:border-gray-600 rounded overflow-hidden">
               <button
                 onClick={() => setViewMode('table')}
-                className={`px-4 py-2 text-sm flex items-center gap-2 transition-colors ${viewMode === 'table' ? 'bg-blue-600 text-white' : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600'
+                className={`px-4 py-2 text-sm flex items-center gap-2 transition-colors ${viewMode === 'table' ? 'bg-cyan-600 text-white' : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600'
                   }`}
               >
                 <IoListOutline />
@@ -313,7 +309,7 @@ const Warehouses = () => {
               </button>
               <button
                 onClick={() => setViewMode('grid')}
-                className={`px-4 py-2 text-sm flex items-center gap-2 transition-colors ${viewMode === 'grid' ? 'bg-blue-600 text-white' : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600'
+                className={`px-4 py-2 text-sm flex items-center gap-2 transition-colors ${viewMode === 'grid' ? 'bg-cyan-600 text-white' : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600'
                   }`}
               >
                 <IoGridOutline />
@@ -359,8 +355,8 @@ const Warehouses = () => {
                       <td className="px-4 py-3 dark:text-gray-300">{index + 1}</td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
-                          <div className="p-1.5 bg-blue-100 dark:bg-blue-900/30 rounded">
-                            <HiOutlineBuildingOffice2 className="text-blue-600 dark:text-blue-400" size={14} />
+                          <div className="p-1.5 bg-cyan-100 dark:bg-cyan-900/30 rounded">
+                            <HiOutlineBuildingOffice2 className="text-cyan-600 dark:text-cyan-400" size={14} />
                           </div>
                           <span className="font-medium dark:text-gray-200">{wh.warehouse_name}</span>
                         </div>

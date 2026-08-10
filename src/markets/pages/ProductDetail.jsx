@@ -15,7 +15,7 @@ import {
 import {
     useGetAllItemsForMarketPlaceQuery,
     useGetItemMarketPlaceByIdQuery,
-} from '../../../app/Features/itemsSlice';
+} from "@/features/products/itemsSlice";
 
 const ProductDetail = () => {
     const navigate = useNavigate();

@@ -44,7 +44,7 @@ import {
   useDeleteOrderMutation,
   useGetAllOrderQuery,
   useUncancelOrderMutation,
-} from "../../../app/Features/ordersSlice";
+} from "@/features/sales/ordersSlice";
 import { Tooltip } from "antd";
 import { toast } from "react-toastify";
 import { totalSum } from "../../services/serviceFunction";
@@ -57,13 +57,14 @@ import ActionButton from "../../utils/ActionButton";
 import PaymentModel from "../../utils/PaymentModal";
 import Button from "../../utils/Button";
 import RefreshButton from "../../utils/RefreshButton";
+import { getToken } from '@/utils/tokenStore';
 
 dayjs.extend(relativeTime);
 const MENU_ID = 49;
 const OrderList = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const token = localStorage.getItem('token');
+  const token = getToken();
   const { setLoading, loading: contextLoading } = useOutletsContext();
 
   // State management
@@ -136,13 +137,16 @@ const OrderList = () => {
     try {
       setAlertBox(false);
       setLoading(true);
-      const res = await deleteOrder({ id, token });
-      if (res.data.status === 200) {
-        refetch();
-        toast.success(res.data.message || t("orderDeletedSuccessfully"));
-      }
+      const queryArgs = {
+        token,
+        limit: pagination.pageSize,
+        page: pagination.current,
+        search: debouncedSearch,
+      };
+      await deleteOrder({ id, token, queryArgs }).unwrap();
+      toast.success(t("orderDeletedSuccessfully"));
     } catch (error) {
-      toast.error(error.message || t("orderDeleteFailed"));
+      toast.error(error?.data?.message || error?.message || t("orderDeleteFailed"));
     } finally {
       setLoading(false);
     }
@@ -152,13 +156,10 @@ const OrderList = () => {
     try {
       setAlertBoxCancel(false);
       setLoading(true);
-      const res = await cancelOrder({ id, token });
-      if (res.data.status === 200) {
-        refetch();
-        toast.success(res.data.message || t("orderCanceledSuccessfully"));
-      }
+      await cancelOrder({ id, token }).unwrap();
+      toast.success(t("orderCanceledSuccessfully"));
     } catch (error) {
-      toast.error(error.message || t("orderCancelFailed"));
+      toast.error(error?.data?.message || error?.message || t("orderCancelFailed"));
     } finally {
       setLoading(false);
     }
@@ -168,13 +169,10 @@ const OrderList = () => {
     try {
       setAlertBoxUncancel(false);
       setLoading(true);
-      const res = await uncancelOrder({ id, token });
-      if (res.data.status === 200) {
-        refetch();
-        toast.success(res.data.message || t("orderUncanceledSuccessfully"));
-      }
+      await uncancelOrder({ id, token }).unwrap();
+      toast.success(t("orderUncanceledSuccessfully"));
     } catch (error) {
-      toast.error(error.message || t("orderUncancelFailed"));
+      toast.error(error?.data?.message || error?.message || t("orderUncancelFailed"));
     } finally {
       setLoading(false);
     }
@@ -295,7 +293,7 @@ const OrderList = () => {
     if (order.online === 1) {
       return <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">{t('online')}</span>;
     }
-    return <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">{t('direct')}</span>;
+    return <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-400">{t('direct')}</span>;
   };
 
   const getPaymentStatusBadge = (status) => {
@@ -306,7 +304,7 @@ const OrderList = () => {
   };
 
   // Components
-  const StatCard = ({ title, value, icon, color = 'blue' }) => (
+  const StatCard = ({ title, value, icon, color = 'cyan' }) => (
     <div className={`border border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-gradient-to-br from-white to-${color}-50 dark:from-gray-800 dark:to-${color}-900/10 transition-all`}>
       <div className="flex items-center justify-between">
         <div>
@@ -331,7 +329,7 @@ const OrderList = () => {
           <select
             value={pagination.pageSize}
             onChange={(e) => setPagination(prev => ({ ...prev, pageSize: parseInt(e.target.value), current: 1 }))}
-            className="border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 rounded-md px-2 py-1 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 rounded-md px-2 py-1 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-cyan-500"
           >
             {pagination.pageSizeOptions.map(size => (
               <option key={size} value={size}>{size}</option>
@@ -370,7 +368,7 @@ const OrderList = () => {
             {(orderData?.data || []).map((order) => (
               <tr key={order.order_id} className={`border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors ${order.is_cancelled ? 'bg-red-50 dark:bg-red-900/10' : ''}`}>
                 <td className="p-3">
-                   <div className="font-mono font-semibold text-blue-600 dark:text-blue-400">{order.order_no}</div>
+                   <div className="font-mono font-semibold text-cyan-600 dark:text-cyan-400">{order.order_no}</div>
                    <div className="text-[10px] uppercase font-bold text-gray-400">{order.sale_type}</div>
                 </td>
                 <td className="p-3">
@@ -416,12 +414,12 @@ const OrderList = () => {
         >
           <div className="p-4">
             <div className="flex justify-between items-start mb-3">
-              <span className="font-mono font-semibold text-blue-600 dark:text-blue-400">{order.order_no}</span>
+              <span className="font-mono font-semibold text-cyan-600 dark:text-cyan-400">{order.order_no}</span>
               {getStatusBadge(order)}
             </div>
 
             <div className="flex items-center gap-3 mb-4">
-               <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded flex items-center justify-center text-blue-600 font-bold">
+               <div className="w-10 h-10 bg-cyan-100 dark:bg-cyan-900/30 rounded flex items-center justify-center text-cyan-600 font-bold">
                  {order.customer_name?.charAt(0)}
                </div>
                <div className="flex-1 min-w-0">
@@ -446,7 +444,7 @@ const OrderList = () => {
             <div className="space-y-1.5 mb-4 text-xs text-gray-600 dark:text-gray-400">
                <div className="flex justify-between">
                   <span>{t('paidAmount')}</span>
-                  <span className="text-blue-600 font-medium">{formatCurrency(order.payment)}</span>
+                  <span className="text-cyan-600 font-medium">{formatCurrency(order.payment)}</span>
                </div>
                <div className="flex justify-between">
                   <span>{t('balance')}</span>
@@ -490,7 +488,7 @@ const OrderList = () => {
         <div className="mb-8 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
           <div>
             <motion.h1 initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="text-2xl font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-3">
-              <div className="p-3 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-xl shadow-sm">
+              <div className="p-3 bg-gradient-to-r from-cyan-500 to-indigo-500 rounded-xl shadow-sm">
                 <LuShoppingBag className="text-xl text-white" />
               </div>
               {t('orderList')}
@@ -511,7 +509,7 @@ const OrderList = () => {
         {/* Statistics Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
           <StatCard title={t('totalSales')} value={formatCurrency(stats.totalSales)} icon={<LuDollarSign className="text-2xl" />} color="green" />
-          <StatCard title={t('totalPaid')} value={formatCurrency(stats.totalPaid)} icon={<LuCreditCard className="text-2xl" />} color="blue" />
+          <StatCard title={t('totalPaid')} value={formatCurrency(stats.totalPaid)} icon={<LuCreditCard className="text-2xl" />} color="cyan" />
           <StatCard title={t('totalBalance')} value={formatCurrency(stats.totalBalance)} icon={<LuClipboardList className="text-2xl" />} color="orange" />
           <StatCard title={t('totalOrders')} value={stats.orderCount.toLocaleString()} icon={<LuPackage className="text-2xl" />} color="purple" />
         </div>
@@ -527,7 +525,7 @@ const OrderList = () => {
                   placeholder={t('searchOrdersPlaceholder')}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-500 transition-colors"
                 />
               </div>
             </div>
@@ -535,13 +533,13 @@ const OrderList = () => {
               <div className="flex items-center gap-2 p-1 bg-gray-100 dark:bg-gray-700 rounded-md border border-gray-300 dark:border-gray-600 transition-colors">
                 <button
                   onClick={() => { setViewMode('list'); localStorage.setItem("orderViewMode", "list"); }}
-                  className={`flex-1 px-3 py-2 rounded-md flex items-center justify-center gap-2 transition-all ${viewMode === 'list' ? 'bg-white dark:bg-gray-600 shadow-sm text-blue-600 dark:text-blue-400 font-semibold' : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'}`}
+                  className={`flex-1 px-3 py-2 rounded-md flex items-center justify-center gap-2 transition-all ${viewMode === 'list' ? 'bg-white dark:bg-gray-600 shadow-sm text-cyan-600 dark:text-cyan-400 font-semibold' : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'}`}
                 >
                   <LuList /> <span>{t('table')}</span>
                 </button>
                 <button
                   onClick={() => { setViewMode('grid'); localStorage.setItem("orderViewMode", "grid"); }}
-                  className={`flex-1 px-3 py-2 rounded-md flex items-center justify-center gap-2 transition-all ${viewMode === 'grid' ? 'bg-white dark:bg-gray-600 shadow-sm text-blue-600 dark:text-blue-400 font-semibold' : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'}`}
+                  className={`flex-1 px-3 py-2 rounded-md flex items-center justify-center gap-2 transition-all ${viewMode === 'grid' ? 'bg-white dark:bg-gray-600 shadow-sm text-cyan-600 dark:text-cyan-400 font-semibold' : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'}`}
                 >
                   <LuPackage /> <span>{t('grid')}</span>
                 </button>
@@ -553,13 +551,13 @@ const OrderList = () => {
         {/* Content */}
         {queryLoading ? (
           <div className="flex flex-col items-center justify-center py-16">
-            <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-4"></div>
+            <div className="w-12 h-12 border-4 border-cyan-200 border-t-cyan-600 rounded-full animate-spin mb-4"></div>
             <p className="text-gray-600 dark:text-gray-400">{t('loadingOrders')}...</p>
           </div>
         ) : (orderData?.data || []).length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800/50">
-            <div className="w-20 h-20 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mb-4">
-              <LuShoppingBag className="w-10 h-10 text-blue-400" />
+            <div className="w-20 h-20 bg-cyan-100 dark:bg-cyan-900/30 rounded-full flex items-center justify-center mb-4">
+              <LuShoppingBag className="w-10 h-10 text-cyan-400" />
             </div>
             <h3 className="text-xl font-semibold text-gray-700 dark:text-white mb-2">{t('noOrdersFound')}</h3>
             <p className="text-gray-500 dark:text-gray-400 text-center max-w-md mb-6">{t('getStartedByCreatingFirstOrder')}</p>
@@ -594,7 +592,7 @@ const OrderList = () => {
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-1">{t('amount')} <LuDollarSign size={14} /></label>
-                <input type="number" value={paymentAmount} onChange={(e) => setPaymentAmount(parseFloat(e.target.value) || 0)} className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-900 text-gray-900 dark:text-white" step="0.01" min="0" />
+                <input type="number" value={paymentAmount} onChange={(e) => setPaymentAmount(parseFloat(e.target.value) || 0)} className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-500 bg-white dark:bg-gray-900 text-gray-900 dark:text-white" step="0.01" min="0" />
               </div>
               <div className="flex justify-end gap-3 pt-4">
                 <button onClick={() => setShowPaymentModal(false)} className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">{t('cancel')}</button>

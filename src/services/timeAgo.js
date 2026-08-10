@@ -1,6 +1,6 @@
 // id="zkn2zt"
 import dayjs from "dayjs";
-import i18n from "../i18n";
+import i18n from "../localizations/i18n";
 
 function timeAgo(date) {
     const t = i18n.t.bind(i18n);

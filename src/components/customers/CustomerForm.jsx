@@ -9,7 +9,7 @@ import {
   useCreateCustomerMutation,
   useGetAllCustomerQuery, 
   useUpdateCustomerMutation,
-} from "../../../app/Features/customersSlice";
+} from "@/features/customers/customersSlice";
 import api from "../../services/api";
 import AlertBox from "../../services/AlertBox";
 import Input from "../../utils/Input";
@@ -17,11 +17,12 @@ import RichSearch from "../../utils/RichSearch";
 import Button from "../../utils/Button";
 import { useNotify } from "../../utils/NotificationProvider";
 import { motion } from "framer-motion";
+import { getToken } from '@/utils/tokenStore';
 const MENU_ID = 15;
 const CustomerForm = () => {
   const { t } = useTranslation();
   const notify = useNotify();
-  const token = localStorage.getItem("token");
+  const token = getToken();
   const { id } = useParams();
   const navigate = useNavigate();
   const { setLoading, loading } = useOutletsContext();
@@ -329,7 +330,7 @@ const CustomerForm = () => {
                         >
                             <div className="bg-gray-100 p-4 border dark:bg-transparent dark:border-gray-500 border-gray-200">
                                 <h3 className="text-md font-semibold mb-4 flex items-center gap-2 dark:text-white">
-                                    <FaUser className="text-blue-500" />
+                                    <FaUser className="text-cyan-500" />
                                     {t('basicInformation')}
                                 </h3>
 
@@ -372,7 +373,7 @@ const CustomerForm = () => {
                                                 onChange={handleLocationChange}
                                                 placeholder="lat, lng"
                                             />
-                                            <button type="button" onClick={getCurrentLocation} className="p-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 rounded-lg hover:bg-blue-200 transition-colors">
+                                            <button type="button" onClick={getCurrentLocation} className="p-2 bg-cyan-100 dark:bg-cyan-900/30 text-cyan-600 rounded-lg hover:bg-cyan-200 transition-colors">
                                                 <FaMapMarkerAlt />
                                             </button>
                                         </div>
@@ -480,7 +481,7 @@ const CustomerForm = () => {
                                     <div>
                                         <div className="flex items-center justify-between mb-4">
                                             <h3 className="text-md font-semibold dark:text-white flex items-center gap-2">
-                                                <IoMdCloudUpload className="text-blue-500" />
+                                                <IoMdCloudUpload className="text-cyan-500" />
                                                 {t('customerImage')}
                                             </h3>
                                             {viewImage && (
@@ -492,13 +493,13 @@ const CustomerForm = () => {
                                         
                                         <label htmlFor="image-upload" className="block cursor-pointer">
                                             <div className={`w-full flex justify-center items-center p-4 border-2 border-dashed rounded-sm transition-all duration-200 ${
-                                                viewImage ? 'border-blue-300 dark:border-blue-500/50 bg-blue-50/30' : 'border-gray-300 dark:border-gray-600 hover:border-blue-400'
+                                                viewImage ? 'border-cyan-300 dark:border-cyan-500/50 bg-cyan-50/30' : 'border-gray-300 dark:border-gray-600 hover:border-cyan-400'
                                             }`}>
                                                 {viewImage ? (
                                                     <img src={viewImage} alt="Preview" className="max-h-48 rounded-sm object-contain mx-auto" />
                                                 ) : (
                                                     <div className="text-center py-4">
-                                                        <IoMdCloudUpload className="text-4xl text-blue-400 mx-auto mb-2" />
+                                                        <IoMdCloudUpload className="text-4xl text-cyan-400 mx-auto mb-2" />
                                                         <p className="text-gray-500 dark:text-gray-400 text-sm">{t('clickToUpload')}</p>
                                                     </div>
                                                 )}
@@ -510,7 +511,7 @@ const CustomerForm = () => {
                                     {/* Location Preview */}
                                     <div className="pt-4 lg:border-t border-gray-200 dark:border-gray-600">
                                         <h3 className="text-md font-semibold mb-4 flex items-center gap-2 dark:text-white">
-                                            <FaMapMarkedAlt className="text-blue-500" />
+                                            <FaMapMarkedAlt className="text-cyan-500" />
                                             {t('locationPreview')}
                                         </h3>
                                         

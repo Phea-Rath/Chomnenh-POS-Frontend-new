@@ -11,10 +11,11 @@ import {
     LinkOutlined
 } from '@ant-design/icons';
 import * as XLSX from 'xlsx';
-import apiService from '../../app/apiService';
+import apiService from '@/app/apiService';
 import api from '../services/api';
 import { LuFolderUp } from "react-icons/lu";
 import baseUrl from '../services/baseUrl';
+import { getToken } from '@/utils/tokenStore';
 const { Text, Title } = Typography;
 const importOptions = [
     {
@@ -65,7 +66,7 @@ const ImportTools = ({
     targetFields = [],
     apiPath: initialApiPath = '',
     onSuccess,
-    token = localStorage.getItem('token'),
+    token = getToken(),
     transformData,
     title = "Import Data"
 }) => {

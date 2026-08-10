@@ -13,12 +13,13 @@ import { PiShoppingCartBold } from "react-icons/pi";
 import { RiStore3Line } from "react-icons/ri";
 import { Link, useLocation, useNavigate } from "react-router";
 import { useOutletsContext } from "./Management";
-import { useGetAllMenuQuery } from "../../app/Features/menusSlice";
+import { useGetAllMenuQuery } from "@/features/auth/menusSlice";
 import {
   useGetAllPermissionQuery,
   useGetPermissionByIdQuery,
-} from "../../app/Features/permissionSlice";
-import { useGetExchangeRateByIdQuery } from "../../app/Features/exchangeRatesSlice";
+} from "@/features/auth/permissionSlice";
+import { useGetExchangeRateByIdQuery } from "@/features/system/exchangeRatesSlice";
+import { getToken } from '@/utils/tokenStore';
 const iconComponents = {
   AiFillLike: AiFillLike,
   BsInboxesFill: BsInboxesFill,
@@ -37,7 +38,7 @@ const iconComponents = {
 };
 const Footer = () => {
   const navigetor = useNavigate();
-  const token = localStorage.getItem("token");
+  const token = getToken();
   const userId = localStorage.getItem("userId");
   const proId = localStorage.getItem("profileId");
   const paths = useLocation();

@@ -24,6 +24,7 @@ import {
   LuChevronRight,
   LuChevronsLeft,
   LuChevronsRight,
+  LuClipboardList,
   LuRefreshCw,
   LuRotateCcw,
 } from "react-icons/lu";
@@ -45,9 +46,9 @@ import {
   useDeleteOrderMutation,
   useGetOrderInvoiceQuery,
   useUncancelOrderMutation,
-} from "../../../app/Features/ordersSlice";
-import { useGetAllUserQuery } from "../../../app/Features/usersSlice";
-import { useGetAllCustomerQuery } from "../../../app/Features/customersSlice";
+} from "@/features/sales/ordersSlice";
+import { useGetAllUserQuery } from "@/features/auth/usersSlice";
+import { useGetAllCustomerQuery } from "@/features/customers/customersSlice";
 import RefreshButton from "../../utils/RefreshButton";
 import Button from "../../utils/Button";
 import ActionButton from "../../utils/ActionButton";
@@ -55,6 +56,7 @@ import { IoWarning } from "react-icons/io5";
 import timeAgo from "../../services/timeAgo";
 import PaymentModel from "../../utils/PaymentModal";
 import { MdApproval } from "react-icons/md";
+import { getToken } from '@/utils/tokenStore';
 
 dayjs.extend(relativeTime);
 const MENU_ID = 54;
@@ -81,7 +83,7 @@ const itemForSearchOptions = itemForOptions.map((option) => ({
 const OrderInvoiceList = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const token = localStorage.getItem("token");
+  const token = getToken();
   const { setLoading, loading: contextLoading } = useOutletsContext();
 
   const [searchTerm, setSearchTerm] = useState("");
@@ -329,7 +331,7 @@ const OrderInvoiceList = () => {
         )}
       {dayjs(order.due_date).format('YYYY-MM-DD') >
         dayjs().format('YYYY-MM-DD') && order.balance > 0 &&(
-         <pre><span className="inline-flex items-center rounded-full bg-blue-100 px-2 py-1 text-[10px] font-medium text-blue-800 dark:bg-blue-900/30 dark:text-blue-400"> {order.due_date ? timeAgo(order.due_date) : "-"}</span></pre>
+         <pre><span className="inline-flex items-center rounded-full bg-cyan-100 px-2 py-1 text-[10px] font-medium text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-400"> {order.due_date ? timeAgo(order.due_date) : "-"}</span></pre>
       
         )}
        
@@ -337,7 +339,7 @@ const OrderInvoiceList = () => {
           <span className="inline-flex items-center rounded-full bg-orange-100 px-2 py-1 text-[10px] font-medium text-orange-800 dark:bg-orange-900/30 dark:text-orange-400">{t("unpaid")}</span>
         )
       } */}
-      {/* <span className="inline-flex items-center rounded-full bg-blue-100 px-2 py-1 text-[10px] font-medium text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">{t("invoice")}</span> */}
+      {/* <span className="inline-flex items-center rounded-full bg-cyan-100 px-2 py-1 text-[10px] font-medium text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-400">{t("invoice")}</span> */}
     </div>;
   };
 
@@ -349,7 +351,7 @@ const OrderInvoiceList = () => {
     return <span className={`inline-flex items-center rounded-full px-2 py-1 text-[10px] font-bold uppercase ${colors}`}>{status || "unpaid"}</span>;
   };
 
-  const StatCard = ({ title, value, icon, color = "blue" }) => (
+  const StatCard = ({ title, value, icon, color = "cyan" }) => (
     <div className={`rounded-lg border border-gray-200 bg-gradient-to-br from-white to-${color}-50 p-4 dark:border-gray-700 dark:from-gray-800 dark:to-${color}-900/10`}>
       <div className="flex items-center justify-between">
         <div>
@@ -375,7 +377,7 @@ const OrderInvoiceList = () => {
           <select
             value={pagination.pageSize}
             onChange={(e) => setPagination((prev) => ({ ...prev, pageSize: Number(e.target.value), current: 1 }))}
-            className="rounded-md border border-gray-300 bg-white px-2 py-1 text-sm text-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+            className="rounded-md border border-gray-300 bg-white px-2 py-1 text-sm text-gray-900 focus:outline-none focus:ring-1 focus:ring-cyan-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
           >
             {pagination.pageSizeOptions.map((size) => (
               <option key={size} value={size}>{size}</option>
@@ -497,7 +499,7 @@ const OrderInvoiceList = () => {
             {invoices.map((order) => (
               <tr key={order.order_id} className={`border-b border-gray-200 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-700/50 ${order.is_cancelled ? "bg-red-50 dark:bg-red-900/10" : ""}`}>
                 <td className="p-3">
-                  <div className="font-mono font-semibold text-blue-600 dark:text-blue-400">{order.order_no}</div>
+                  <div className="font-mono font-semibold text-cyan-600 dark:text-cyan-400">{order.order_no}</div>
                   <div className="text-[10px] uppercase text-gray-400">{order.sale_type || "invoice"}</div>
                 </td>
                 <td className="p-3">
@@ -537,14 +539,14 @@ const OrderInvoiceList = () => {
           <div className="p-4">
             <div className="mb-3 flex items-start justify-between gap-3">
               <div>
-                <div className="font-mono font-semibold text-blue-600 dark:text-blue-400">{order.order_no}</div>
+                <div className="font-mono font-semibold text-cyan-600 dark:text-cyan-400">{order.order_no}</div>
                 <div className="text-[10px] uppercase text-gray-400">{order.reference_no || "No reference"}</div>
               </div>
               {getStatusBadge(order)}
             </div>
 
             <div className="mb-4 flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded bg-blue-100 font-bold text-blue-600 dark:bg-blue-900/30 dark:text-blue-400">
+              <div className="flex h-10 w-10 items-center justify-center rounded bg-cyan-100 font-bold text-cyan-600 dark:bg-cyan-900/30 dark:text-cyan-400">
                 {order.customer_name?.charAt(0) || "C"}
               </div>
               <div className="min-w-0 flex-1">
@@ -567,7 +569,7 @@ const OrderInvoiceList = () => {
             <div className="mb-4 space-y-1.5 text-xs text-gray-600 dark:text-gray-400">
               <div className="flex justify-between">
                 <span>{t("paidAmount")}</span>
-                <span className="font-medium text-blue-600">{formatCurrency(order.payment)}</span>
+                <span className="font-medium text-cyan-600">{formatCurrency(order.payment)}</span>
               </div>
               <div className="flex justify-between">
                 <span>Delivery</span>
@@ -639,7 +641,7 @@ const OrderInvoiceList = () => {
         <div className="mb-6 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
           <StatCard title="Total Invoices" value={stats.orderCount.toLocaleString()} icon={<FaFileAlt className="text-2xl" />} color="teal" />
           <StatCard title={t("totalSales")} value={formatCurrency(stats.totalSales)} icon={<FaDollarSign className="text-2xl" />} color="green" />
-          <StatCard title={t("totalPaid")} value={formatCurrency(stats.totalPaid)} icon={<FaCreditCard className="text-2xl" />} color="blue" />
+          <StatCard title={t("totalPaid")} value={formatCurrency(stats.totalPaid)} icon={<FaCreditCard className="text-2xl" />} color="cyan" />
           <StatCard title={t("totalBalance")} value={formatCurrency(stats.totalBalance)} icon={<FaShoppingBag className="text-2xl" />} color="orange" />
         </div>
 
@@ -653,7 +655,7 @@ const OrderInvoiceList = () => {
                   placeholder="Search invoices..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full border border-gray-400 bg-white py-2 pl-10 pr-4 text-gray-900 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-900 dark:text-white"
+                  className="w-full border border-gray-400 bg-white py-2 pl-10 pr-4 text-gray-900 transition-colors focus:outline-none focus:ring-2 focus:ring-cyan-500 dark:border-gray-600 dark:bg-gray-900 dark:text-white"
                 />
               </div>
             </div>
@@ -736,7 +738,7 @@ const OrderInvoiceList = () => {
                     setViewMode("list");
                     localStorage.setItem("orderInvoiceViewMode", "list");
                   }}
-                  className={`flex-1 rounded-md px-3 py-2 transition-all ${viewMode === "list" ? "bg-white font-semibold text-blue-600 shadow-sm dark:bg-gray-600 dark:text-blue-400" : "text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200"}`}
+                  className={`flex-1 rounded-md px-3 py-2 transition-all ${viewMode === "list" ? "bg-white font-semibold text-cyan-600 shadow-sm dark:bg-gray-600 dark:text-cyan-400" : "text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200"}`}
                 >
                   <span className="flex items-center justify-center gap-2">
                     <FaList /> {t("table")}
@@ -747,7 +749,7 @@ const OrderInvoiceList = () => {
                     setViewMode("grid");
                     localStorage.setItem("orderInvoiceViewMode", "grid");
                   }}
-                  className={`flex-1 rounded-md px-3 py-2 transition-all ${viewMode === "grid" ? "bg-white font-semibold text-blue-600 shadow-sm dark:bg-gray-600 dark:text-blue-400" : "text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200"}`}
+                  className={`flex-1 rounded-md px-3 py-2 transition-all ${viewMode === "grid" ? "bg-white font-semibold text-cyan-600 shadow-sm dark:bg-gray-600 dark:text-cyan-400" : "text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200"}`}
                 >
                   <span className="flex items-center justify-center gap-2">
                     <FaTh /> {t("grid")}
@@ -760,7 +762,7 @@ const OrderInvoiceList = () => {
 
         {queryLoading ? (
           <div className="flex flex-col items-center justify-center py-16">
-            <div className="mb-4 h-12 w-12 animate-spin rounded-full border-4 border-blue-200 border-t-blue-600"></div>
+            <div className="mb-4 h-12 w-12 animate-spin rounded-full border-4 border-cyan-200 border-t-cyan-600"></div>
             <p className="text-gray-600 dark:text-gray-400">Loading invoices...</p>
           </div>
         ) : invoices.length === 0 ? (
@@ -806,7 +808,7 @@ const OrderInvoiceList = () => {
                   type="number"
                   value={paymentAmount}
                   onChange={(e) => setPaymentAmount(parseFloat(e.target.value) || 0)}
-                  className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-900 dark:text-white"
+                  className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-cyan-500 dark:border-gray-600 dark:bg-gray-900 dark:text-white"
                   step="0.01"
                   min="0"
                 />

@@ -2,13 +2,14 @@ import React, { useEffect, useRef, useState } from 'react';
 import { IoIosSearch, IoIosGrid, IoIosList } from 'react-icons/io';
 import { FaPlus, FaEdit, FaTrash, FaBalanceScale, FaUser, FaWeight, FaRulerCombined } from 'react-icons/fa';
 import { useOutletsContext } from '../../layouts/Management';
-import { useDeleteScaleMutation, useGetAllScalesQuery } from '../../../app/Features/scalesSlice';
+import { useDeleteScaleMutation, useGetAllScalesQuery } from "@/features/products/scalesSlice";
 import { toast } from 'react-toastify';
-import CreateScales from '../../views/scales/CreateScales';
-import UpdateScales from '../../views/scales/UpdateScales';
+import CreateScales from './CreateScales';
+import UpdateScales from './UpdateScales';
 import AlertBox from '../../services/AlertBox';
 import { useTranslation } from 'react-i18next';
 import { definePermission } from '../../services/serviceFunction';
+import { getToken } from '@/utils/tokenStore';
 const MENU_ID = 11;
 const Scales = () => {
   const { t } = useTranslation();
@@ -22,7 +23,7 @@ const Scales = () => {
   const { setLoading, loading } = useOutletsContext();
   const addModalRef = useRef(null);
   const updateModalRef = useRef(null);
-  const token = localStorage.getItem('token');
+  const token = getToken();
   const { data, isLoading, refetch } = useGetAllScalesQuery(token);
   const [deleteScale] = useDeleteScaleMutation();
 
@@ -53,13 +54,10 @@ const Scales = () => {
     setAlertBox(false);
     setLoading(true);
     try {
-      const res = await deleteScale({ id, token });
-      if (res.data.status === 200) {
-        refetch();
-        toast.success(res.data.message || t('unitUpdatedSuccess'));
-      }
+      const res = await deleteScale({ id, token }).unwrap();
+      toast.success(res?.message || t('unitUpdatedSuccess'));
     } catch (error) {
-      toast.error(error?.message || t('failedToDeleteScale'));
+      toast.error(error?.data?.message || error?.message || t('failedToDeleteScale'));
     } finally {
       setLoading(false);
     }
@@ -84,7 +82,7 @@ const Scales = () => {
     const type = getScaleType(scaleName);
     return {
       weight: 'orange',
-      volume: 'blue',
+      volume: 'cyan',
       other: 'green',
     }[type];
   };
@@ -136,7 +134,7 @@ const Scales = () => {
   const Badge = ({ children, color = 'gray' }) => {
     const colors = {
       orange: 'bg-orange-50 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400',
-      blue: 'bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400',
+      cyan: 'bg-cyan-50 text-cyan-600 dark:bg-cyan-900/30 dark:text-cyan-400',
       green: 'bg-green-50 text-green-600 dark:bg-green-900/30 dark:text-green-400',
       gray: 'bg-gray-50 text-gray-600 dark:bg-gray-700 dark:text-gray-300',
     };

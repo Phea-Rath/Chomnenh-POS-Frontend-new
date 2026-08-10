@@ -6,7 +6,7 @@ import {
     useGetAllDeliverQuery,
     useGetDeliverByIdQuery,
     useUpdateDeliverMutation,
-} from "../../../app/Features/deliversSlice";
+} from "@/features/sales/deliversSlice";
 import { IoMdCloudUpload } from "react-icons/io";
 import api from "../../services/api";
 import { useTranslation } from "react-i18next";
@@ -15,12 +15,13 @@ import { motion } from "framer-motion";
 import { useNotify } from "../../utils/NotificationProvider";
 import AlertBox from "../../services/AlertBox";
 import Button from "../../utils/Button";
+import { getToken } from '@/utils/tokenStore';
 
 const DeliverForm = () => {
     const { t } = useTranslation();
     const notify = useNotify();
     const { darkMode } = useOutletsContext();
-    const token = localStorage.getItem("token");
+    const token = getToken();
     const { id } = useParams();
     const [viewImage, setViewImage] = useState();
     const isUpdate = id ?? 0;
@@ -32,6 +33,8 @@ const DeliverForm = () => {
     const [loading, setLoading] = useState(false);
     const [errors, setErrors] = useState({});
     const [fieldErrors, setFieldErrors] = useState({});
+    const [createDeliver] = useCreateDeliverMutation();
+    const [updateDeliver] = useUpdateDeliverMutation();
     const { refetch } = useGetAllDeliverQuery(token);
     const { data, refetch: reShow } = useGetDeliverByIdQuery({ id, token });
     const navigate = useNavigate();
@@ -148,18 +151,10 @@ const DeliverForm = () => {
             }
 
             if (isUpdate != 0) {
-                await api.post(`/delivers/${id}`, formData, {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                });
+                await updateDeliver({ id, itemData: formData, token }).unwrap();
                 notify.success(t('success'), t('deliverUpdatedSuccess'));
             } else {
-                await api.post("delivers", formData, {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                });
+                await createDeliver({ itemData: formData, token }).unwrap();
                 notify.success(t('success'), t('deliverCreatedSuccess'));
             }
 
@@ -204,7 +199,7 @@ const DeliverForm = () => {
 
     // Helper function to get input classes with error styling
     const getInputClass = (fieldName) => {
-        const baseClass = "w-full px-4 py-3 border rounded-sm outline-none transition-all focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500";
+        const baseClass = "w-full px-4 py-3 border rounded-sm outline-none transition-all focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500";
         const darkClass = darkMode 
             ? "bg-transparent border-gray-400 text-white placeholder-gray-400" 
             : "bg-transparent border-gray-200 text-gray-900";
@@ -266,7 +261,7 @@ const DeliverForm = () => {
                         >
                             <div className="bg-gray-100 p-4 border dark:bg-transparent dark:border-gray-500 border-gray-200">
                                 <h3 className="text-md font-semibold mb-4 flex items-center gap-2 dark:text-white">
-                                    <FaTruck className="text-blue-500" />
+                                    <FaTruck className="text-cyan-500" />
                                     {t('basicInformation')}
                                 </h3>
 
@@ -286,13 +281,13 @@ const DeliverForm = () => {
                                         
                                         <label htmlFor="image-upload" className="block cursor-pointer">
                                             <div className={`w-full flex justify-center items-center p-4 border-2 border-dashed rounded-sm transition-all duration-200 ${
-                                                viewImage ? 'border-blue-300 dark:border-blue-500/50 bg-blue-50/30' : 'border-gray-300 dark:border-gray-600 hover:border-blue-400'
+                                                viewImage ? 'border-cyan-300 dark:border-cyan-500/50 bg-cyan-50/30' : 'border-gray-300 dark:border-gray-600 hover:border-cyan-400'
                                             }`}>
                                                 {viewImage ? (
                                                     <img src={viewImage} alt="Preview" className="max-h-48 rounded-sm object-contain mx-auto" />
                                                 ) : (
                                                     <div className="text-center py-4">
-                                                        <IoMdCloudUpload className="text-4xl text-blue-400 mx-auto mb-2" />
+                                                        <IoMdCloudUpload className="text-4xl text-cyan-400 mx-auto mb-2" />
                                                         <p className="text-gray-500 dark:text-gray-400 text-sm">{t('clickToUpload')}</p>
                                                     </div>
                                                 )}

@@ -16,11 +16,12 @@ import {
 import { CiBoxList } from "react-icons/ci";
 import { motion } from "framer-motion";
 import ExportExcel from "../../services/ExportExcel";
-import { useGetAllCategoriesQuery } from "../../../app/Features/categoriesSlice";
+import { useGetAllCategoriesQuery } from "@/features/products/categoriesSlice";
 import dayjs from "dayjs";
 import api from "../../services/api";
 import { useTranslation } from "react-i18next";
 import RefreshButton from "../../utils/RefreshButton";
+import { getToken } from '@/utils/tokenStore';
 
 // Helper functions (unchanged)
 var __rest = (this && this.__rest) || function (s, e) {
@@ -71,7 +72,7 @@ const getRandomuserParams = (params) => {
 
 const StockTransactions = () => {
   const { t } = useTranslation();
-  const token = localStorage.getItem("token");
+  const token = getToken();
   const [data, setData] = useState([]);
   const [itemData, setItemData] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -145,7 +146,7 @@ const StockTransactions = () => {
     try {
       const res = await api.get(`/stock_tracking?${params.toString()}`, {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          Authorization: `Bearer ${getToken()}`,
           "Content-Type": "application/json",
           Accept: "application/json",
         },
@@ -244,8 +245,8 @@ const StockTransactions = () => {
     const [error, setError] = useState(false);
     if (!src || error) {
       return (
-        <div className={`${className} bg-gradient-to-br from-blue-100 to-blue-50 dark:from-blue-900/30 dark:to-blue-800/20 border border-blue-200 dark:border-blue-800 flex items-center justify-center`}>
-          <span className="text-lg font-bold text-blue-600 dark:text-blue-400">
+        <div className={`${className} bg-gradient-to-br from-cyan-100 to-cyan-50 dark:from-cyan-900/30 dark:to-cyan-800/20 border border-cyan-200 dark:border-cyan-800 flex items-center justify-center`}>
+          <span className="text-lg font-bold text-cyan-600 dark:text-cyan-400">
             {alt?.charAt(0) || 'P'}
           </span>
         </div>
@@ -316,7 +317,7 @@ const StockTransactions = () => {
                         <div className="font-semibold text-gray-900 dark:text-white text-sm mb-1">{item.item_name}</div>
                         <div className="text-xs text-gray-500 dark:text-gray-400 font-mono mb-2">{item.item_code}</div>
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="px-2 py-0.5 bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 rounded-full text-xs">{item.category_name}</span>
+                          <span className="px-2 py-0.5 bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-300 rounded-full text-xs">{item.category_name}</span>
                           <span className="px-2 py-0.5 bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300 rounded-full text-xs">{item.brand_name}</span>
                           {item.barcode && <span className="text-xs text-gray-500 dark:text-gray-400">Barcode: {item.barcode}</span>}
                         </div>
@@ -352,7 +353,7 @@ const StockTransactions = () => {
                 })
               )}
             </tbody>
-            <tfoot className="bg-gradient-to-r from-gray-50 to-blue-50 dark:from-gray-700 dark:to-blue-900/20 border-t border-gray-200 dark:border-gray-600">
+            <tfoot className="bg-gradient-to-r from-gray-50 to-cyan-50 dark:from-gray-700 dark:to-cyan-900/20 border-t border-gray-200 dark:border-gray-600">
               <tr>
                 <td colSpan="3" className="p-3 text-right"><strong className="text-gray-700 dark:text-gray-200 text-sm">{t("transactionSummary")}</strong></td>
                 <td className="p-3 text-center"><span className="font-semibold text-green-600 dark:text-green-400">{totalIn}</span></td>
@@ -361,7 +362,7 @@ const StockTransactions = () => {
                 <td className="p-3 text-center"><span className="font-semibold text-yellow-600 dark:text-yellow-400">{totalWaste}</span></td>
                 <td className="p-3 text-center"><span className="font-semibold text-cyan-600 dark:text-cyan-400">{totalReturn}</span></td>
                 <td className="p-3 text-center">
-                  <span className="font-semibold text-blue-600 dark:text-blue-400">{totalQuantity}</span>
+                  <span className="font-semibold text-cyan-600 dark:text-cyan-400">{totalQuantity}</span>
                   <div className="text-xs text-gray-500 dark:text-gray-400">{t("totalQuantity")}</div>
                 </td>
               </tr>
@@ -376,7 +377,7 @@ const StockTransactions = () => {
             <select
               value={tableParams.pagination.pageSize}
               onChange={handlePageSizeChange}
-              className="border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 rounded-md px-2 py-1 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors"
+              className="border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 rounded-md px-2 py-1 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-cyan-500 transition-colors"
             >
               {[10, 12, 25, 50, 100].map(size => (
                 <option key={size} value={size}>{size}</option>
@@ -468,7 +469,7 @@ const StockTransactions = () => {
           </div>
 
           <div className="flex items-center justify-between mb-3">
-            <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 rounded-full text-xs font-semibold">{item.category_name}</span>
+            <span className="px-2 py-1 bg-cyan-100 dark:bg-cyan-900/30 text-cyan-800 dark:text-cyan-300 rounded-full text-xs font-semibold">{item.category_name}</span>
             <span className="text-xs text-gray-600 dark:text-gray-400 font-medium truncate">{item.brand_name}</span>
           </div>
 
@@ -485,7 +486,7 @@ const StockTransactions = () => {
             </div>
             <div className="flex justify-between">
               <span className="text-gray-500 dark:text-gray-400">{t("quantityCount")}:</span>
-              <span className="font-bold text-blue-600 dark:text-blue-400">{item.quantity}</span>
+              <span className="font-bold text-cyan-600 dark:text-cyan-400">{item.quantity}</span>
             </div>
           </div>
 
@@ -536,7 +537,7 @@ const StockTransactions = () => {
         <div className="mb-6 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
-              <div className="p-2 bg-blue-600 rounded-lg">
+              <div className="p-2 bg-cyan-600 rounded-lg">
                 <LuListChecks className="text-white text-xl" />
               </div>
               {t("stockTransactions")}
@@ -550,7 +551,7 @@ const StockTransactions = () => {
             <ExportExcel
               data={itemData}
               title={"Stock_Transactions_Report"}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 transition-colors"
+              className="flex items-center gap-2 px-4 py-2 bg-cyan-600 text-white rounded-md text-sm font-medium hover:bg-cyan-700 transition-colors"
             >
               <LuDownload />
               {t("export")}
@@ -559,7 +560,7 @@ const StockTransactions = () => {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
-          <StatCard title={t("totalTransactions")} value={stats.totalTransactions} icon={<LuListChecks />} color="blue" />
+          <StatCard title={t("totalTransactions")} value={stats.totalTransactions} icon={<LuListChecks />} color="cyan" />
           <StatCard title={t("totalStockIn")} value={stats.totalStockIn} icon={<LuPackagePlus />} color="green" />
           <StatCard title={t("totalStockOut")} value={stats.totalStockOut} icon={<LuPackageMinus />} color="red" />
           <StatCard title={t("totalSales")} value={stats.totalSales} icon={<LuShoppingCart />} color="purple" />
@@ -573,14 +574,14 @@ const StockTransactions = () => {
               <div className="flex bg-gray-100 dark:bg-gray-700 text-sm rounded-lg p-1 border border-gray-300 dark:border-gray-600 transition-colors">
                 <button
                   onClick={() => setViewMode("table")}
-                  className={`px-4 py-2 rounded-md transition-all duration-300 flex items-center space-x-2 ${viewMode === "table" ? "bg-white dark:bg-gray-600 shadow-md text-blue-600 dark:text-blue-400 font-semibold" : "text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"}`}
+                  className={`px-4 py-2 rounded-md transition-all duration-300 flex items-center space-x-2 ${viewMode === "table" ? "bg-white dark:bg-gray-600 shadow-md text-cyan-600 dark:text-cyan-400 font-semibold" : "text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"}`}
                 >
                   <CiBoxList className="text-lg" />
                   <span>{t("table")}</span>
                 </button>
                 <button
                   onClick={() => setViewMode("grid")}
-                  className={`px-4 py-2 rounded-md transition-all duration-300 flex items-center space-x-2 ${viewMode === "grid" ? "bg-white dark:bg-gray-600 shadow-md text-blue-600 dark:text-blue-400 font-semibold" : "text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"}`}
+                  className={`px-4 py-2 rounded-md transition-all duration-300 flex items-center space-x-2 ${viewMode === "grid" ? "bg-white dark:bg-gray-600 shadow-md text-cyan-600 dark:text-cyan-400 font-semibold" : "text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"}`}
                 >
                   <LuGrid2X2 className="text-lg" />
                   <span>{t("grid")}</span>
@@ -591,7 +592,7 @@ const StockTransactions = () => {
                 <select
                   value={gridColumns}
                   onChange={(e) => setGridColumns(parseInt(e.target.value))}
-                  className="border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 rounded-md px-3 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors"
+                  className="border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 rounded-md px-3 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-cyan-500 transition-colors"
                 >
                   <option value={2}>2 {t("columns")}</option>
                   <option value={3}>3 {t("columns")}</option>
@@ -608,7 +609,7 @@ const StockTransactions = () => {
                     placeholder={t("searchOrdersPlaceholder")}
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-colors"
                   />
                 </div>
               </div>
@@ -618,7 +619,7 @@ const StockTransactions = () => {
               <select
                 value={selectedCategory || ""}
                 onChange={(e) => setSelectedCategory(e.target.value || null)}
-                className="border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 rounded-md px-3 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors"
+                className="border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 rounded-md px-3 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-cyan-500 transition-colors"
               >
                 <option value="">{t("allCategories")}</option>
                 {categories?.data?.map((cat, idx) => (
@@ -629,7 +630,7 @@ const StockTransactions = () => {
               <select
                 value={selectedTransaction || ""}
                 onChange={(e) => setSelectedTransaction(e.target.value || null)}
-                className="border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 rounded-md px-3 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors"
+                className="border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 rounded-md px-3 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-cyan-500 transition-colors"
               >
                 <option value="">{t("allTransactions")}</option>
                 <option value="stock-in">{t("stockIn")}</option>
@@ -644,7 +645,7 @@ const StockTransactions = () => {
                   type="date"
                   value={startDate ? dayjs(startDate).format('YYYY-MM-DD') : ''}
                   onChange={(e) => setStartDate(e.target.value ? dayjs(e.target.value) : null)}
-                  className="border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 rounded-md px-3 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors"
+                  className="border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 rounded-md px-3 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-cyan-500 transition-colors"
                   placeholder={t("startDate")}
                 />
                 <span className="text-gray-500 dark:text-gray-400">-</span>
@@ -652,7 +653,7 @@ const StockTransactions = () => {
                   type="date"
                   value={endDate ? dayjs(endDate).format('YYYY-MM-DD') : ''}
                   onChange={(e) => setEndDate(e.target.value ? dayjs(e.target.value) : null)}
-                  className="border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 rounded-md px-3 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors"
+                  className="border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 rounded-md px-3 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-cyan-500 transition-colors"
                   placeholder={t("endDate")}
                 />
               </div>
@@ -683,14 +684,13 @@ const StockTransactions = () => {
 
 const StatCard = ({ title, value, icon, color }) => {
   const colorClasses = {
-    blue: "from-blue-500 to-blue-600 text-blue-500",
+    cyan: "from-cyan-500 to-cyan-600 text-cyan-500",
     green: "from-green-500 to-green-600 text-green-500",
     red: "from-red-500 to-red-600 text-red-500",
     purple: "from-purple-500 to-purple-600 text-purple-500",
     yellow: "from-yellow-500 to-yellow-600 text-yellow-500",
-    cyan: "from-cyan-500 to-cyan-600 text-cyan-500",
   };
-  const bgColor = colorClasses[color] || colorClasses.blue;
+  const bgColor = colorClasses[color] || colorClasses.cyan;
 
   return (
     <div className={`border border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-gradient-to-br ${bgColor.split(' ')[0]} ${bgColor.split(' ')[1]} bg-opacity-10 dark:bg-opacity-20 shadow-sm transition-all`}>

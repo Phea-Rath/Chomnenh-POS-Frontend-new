@@ -1,10 +1,11 @@
 /* eslint-disable react/prop-types */
 import { useEffect, useRef, useState } from "react";
-import { useGetPermissionByIdQuery } from "../../../app/Features/permissionSlice";
-import { useGetAllMenuQuery, useGetMenuByIdQuery } from "../../../app/Features/menusSlice";
+import { useGetPermissionByIdQuery } from "@/features/auth/permissionSlice";
+import { useGetAllMenuQuery, useGetMenuByIdQuery } from "@/features/auth/menusSlice";
+import { getToken } from '@/utils/tokenStore';
 
 const OtpInput = ({ length = 4, onOtpSubmit = () => { } }) => {
-  const token = localStorage.getItem('token');
+  const token = getToken();
   const userId = localStorage.getItem('userId');
   const { data: menuData } = useGetPermissionByIdQuery({ id: userId, token });
   // useGetMenuByIdQuery({ id: userId, token });

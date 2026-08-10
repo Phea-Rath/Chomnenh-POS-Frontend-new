@@ -13,7 +13,7 @@ const ErrorPage = () => {
         <div className="h-screen w-screen overflow-hidden bg-slate-50 dark:bg-gray-900 flex flex-col items-center justify-center p-6 text-center fixed inset-0 z-[9999]">
             {/* Background Decorative Elements */}
             <div className="absolute inset-0 pointer-events-none overflow-hidden">
-                <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-500/5 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/2" />
+                <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-cyan-500/5 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/2" />
                 <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-indigo-500/5 rounded-full blur-[120px] translate-y-1/2 -translate-x-1/2" />
             </div>
 
@@ -58,7 +58,7 @@ const ErrorPage = () => {
                     >
                         <button
                             onClick={() => navigate('/home')}
-                            className="inline-flex items-center gap-3 bg-blue-600 text-white px-10 py-5 rounded-[2rem] font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-xl shadow-blue-500/20 hover:scale-105 active:scale-95 group"
+                            className="inline-flex items-center gap-3 bg-cyan-600 text-white px-10 py-5 rounded-[2rem] font-black uppercase tracking-widest hover:bg-cyan-700 transition-all shadow-xl shadow-cyan-500/20 hover:scale-105 active:scale-95 group"
                         >
                             <HiHome className="text-2xl transition-transform group-hover:-translate-y-0.5" />
                             <span>{'Back to Home'}</span>

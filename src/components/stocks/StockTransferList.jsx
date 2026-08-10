@@ -28,12 +28,14 @@ import { saveAs } from "file-saver";
 import * as XLSX from 'xlsx';
 import { FaEdit, FaEye, FaTrash } from "react-icons/fa";
 import api from "../../services/api";
+import { useDeleteStockMutation } from "@/features/stocks/stocksSlice";
 import { useTranslation } from "react-i18next";
 import RefreshButton from "../../utils/RefreshButton";
 import ExportExcel from "../../services/ExportExcel";
 import Button from "../../utils/Button";
 import RichSearch from "../../utils/RichSearch";
 import { DatePicker } from "antd";
+import { getToken } from '@/utils/tokenStore';
 
 // Helper for debouncing
 const useDebounce = (value, delay) => {
@@ -47,6 +49,7 @@ const useDebounce = (value, delay) => {
 const MENNU_ID = 23;
 const StockTransferList = () => {
   const { t } = useTranslation();
+  const [deleteStock] = useDeleteStockMutation();
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [tableParams, setTableParams] = useState({
@@ -123,7 +126,7 @@ const StockTransferList = () => {
     });
     try {
       const res = await api.get(`/stock_transfer?${params.toString()}`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        headers: { Authorization: `Bearer ${getToken()}` },
       });
       if (res.status === 200 && res.data) {
         setData(res.data.data);
@@ -222,15 +225,11 @@ const StockTransferList = () => {
   const handleDelete = async (id) => {
     if (!window.confirm(t('confirmDeleteTransfer'))) return;
     try {
-      const res = await api.delete(`stock_masters/${id}`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-      });
-      if (res.data.status === 200) {
-        toast.success(t('transferDeleted'));
-        fetchData();
-      }
+      await deleteStock({ id, token: getToken() }).unwrap();
+      toast.success(t('transferDeleted'));
+      fetchData();
     } catch (error) {
-      toast.error(t('deleteFailed'));
+      toast.error(error?.data?.message || error?.message || t('deleteFailed'));
     }
   };
 
@@ -268,9 +267,9 @@ const StockTransferList = () => {
   };
 
   // Helper components
-  const Badge = ({ children, color = 'blue' }) => {
+  const Badge = ({ children, color = 'cyan' }) => {
     const colors = {
-      blue: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
+      cyan: 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-300',
       red: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
       green: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
       gray: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
@@ -278,14 +277,14 @@ const StockTransferList = () => {
     return <span className={`px-2 py-1 rounded-full text-xs font-medium ${colors[color]} transition-colors`}>{children}</span>;
   };
 
-  const StatCard = ({ title, value, icon, color = 'blue' }) => (
-    <div className={`border border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-gradient-to-br from-${color}-50 to-${color}-100 dark:from-blue-500/20 dark:to-gray-500/20 transition-all`}>
+  const StatCard = ({ title, value, icon, color = 'cyan' }) => (
+    <div className={`border border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-gradient-to-br from-${color}-50 to-${color}-100 dark:from-cyan-500/20 dark:to-gray-500/20 transition-all`}>
       <div className="flex items-center justify-between">
         <div>
           <p className="text-gray-600 dark:text-gray-200 text-sm font-medium">{title}</p>
           <p className="text-2xl font-bold text-gray-900 dark:text-white">{value}</p>
         </div>
-        <div className={`p-3 bg-white dark:bg-gradient-to-br from-${color}-50 to-${color}-100 dark:from-blue-500/20 dark:to-gray-500/20 rounded-full text-${color}-600 dark:text-${color}-400 `}>{icon}</div>
+        <div className={`p-3 bg-white dark:bg-gradient-to-br from-${color}-50 to-${color}-100 dark:from-cyan-500/20 dark:to-gray-500/20 rounded-full text-${color}-600 dark:text-${color}-400 `}>{icon}</div>
       </div>
     </div>
   );
@@ -395,11 +394,11 @@ const StockTransferList = () => {
                       </td>
                     )}
                     <td className="p-3 text-center">
-                      <span className="text-lg font-bold text-blue-600 dark:text-blue-400">{item.quantity}</span>
+                      <span className="text-lg font-bold text-cyan-600 dark:text-cyan-400">{item.quantity}</span>
                     </td>
                     <td className="p-3 text-center">
                       <div className="flex justify-center gap-2">
-                        <Link to={`detail/${item.stock_id}`} className="p-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors">
+                        <Link to={`detail/${item.stock_id}`} className="p-2 bg-cyan-100 dark:bg-cyan-900/30 text-cyan-600 dark:text-cyan-400 rounded-lg hover:bg-cyan-200 dark:hover:bg-cyan-900/50 transition-colors">
                           <FaEye size={14} />
                         </Link>
                         <Link to={`update/${item.stock_id}`} className="p-2 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-lg hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors">
@@ -437,7 +436,7 @@ const StockTransferList = () => {
               <div className="flex justify-between items-start">
                 <div>
                   <div className="flex items-center gap-2 mb-2">
-                    <Badge color="blue">{item.stock_no}</Badge>
+                    <Badge color="cyan">{item.stock_no}</Badge>
                     <span className="text-xs text-gray-500 dark:text-gray-400">#{start + idx + 1}</span>
                   </div>
                   <h3 className="font-bold text-gray-800 dark:text-white text-lg">{item.item_name || t('transfer')}</h3>
@@ -450,7 +449,7 @@ const StockTransferList = () => {
                   </div>
                 </div>
                 <div className="text-right">
-                  <span className="text-2xl font-bold text-blue-600 dark:text-blue-400">{item.quantity}</span>
+                  <span className="text-2xl font-bold text-cyan-600 dark:text-cyan-400">{item.quantity}</span>
                   <div className="text-xs text-gray-500 dark:text-gray-400">{t('unitsCount')}</div>
                 </div>
               </div>
@@ -460,7 +459,7 @@ const StockTransferList = () => {
                   {dayjs(item.created_at).format('MMM DD, YYYY HH:mm')}
                 </div>
                 <div className="flex gap-2">
-                  <Link to={`detail/${item.stock_id}`} className="p-1.5 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded transition-colors hover:bg-blue-200 dark:hover:bg-blue-900/50">
+                  <Link to={`detail/${item.stock_id}`} className="p-1.5 bg-cyan-100 dark:bg-cyan-900/30 text-cyan-600 dark:text-cyan-400 rounded transition-colors hover:bg-cyan-200 dark:hover:bg-cyan-900/50">
                     <FaEye size={14} />
                   </Link>
                   <Link to={`update/${item.stock_id}`} className="p-1.5 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded transition-colors hover:bg-green-200 dark:hover:bg-green-900/50">
@@ -506,7 +505,7 @@ const StockTransferList = () => {
                   placeholder={t('searchTransfers')}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-500 transition-colors"
                 />
               </div>
             </div>
@@ -515,7 +514,7 @@ const StockTransferList = () => {
               <select
                 value={selectedWarehouse}
                 onChange={(e) => setSelectedWarehouse(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-500 transition-colors"
               >
                 <option value="all">{t('allWarehouses')}</option>
                 {warehouses.map(w => (
@@ -550,7 +549,7 @@ const StockTransferList = () => {
               </button>
               <button
                 onClick={() => setMobileFiltersOpen(false)}
-                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                className="flex-1 px-4 py-2 bg-cyan-600 text-white rounded-md hover:bg-cyan-700 transition-colors"
               >
                 {t('apply')}
               </button>
@@ -582,7 +581,7 @@ const StockTransferList = () => {
         {/* Header */}
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 gap-4">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-600 rounded-lg shadow-blue-200 shadow-lg dark:shadow-blue-800/50">
+            <div className="p-2 bg-cyan-600 rounded-lg shadow-cyan-200 shadow-lg dark:shadow-cyan-800/50">
               <LuTruck className="text-white text-2xl" />
             </div>
             <div>
@@ -597,7 +596,7 @@ const StockTransferList = () => {
             {/* <button
               onClick={exportToExcel}
               disabled={exportLoading}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2 transition-colors"
+              className="px-4 py-2 bg-cyan-600 text-white rounded-md hover:bg-cyan-700 disabled:opacity-50 flex items-center gap-2 transition-colors"
             >
               <LuDownload /> {!isMobile && (exportLoading ? t('exporting') : t('export'))}
             </button> */}
@@ -611,7 +610,7 @@ const StockTransferList = () => {
 
         {/* Statistics Cards */}
         <div className="grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-4 mb-6">
-          <StatCard title={t('total')} value={stats.totalTransfers} icon={<LuTruck />} color="blue" />
+          <StatCard title={t('total')} value={stats.totalTransfers} icon={<LuTruck />} color="cyan" />
           <StatCard title={t('net')} value={stats.netTransfer} icon={<LuArrowRightLeft />} color="cyan" />
           <StatCard title={t('warehouses')} value={stats.uniqueWarehouses} icon={<LuWarehouse />} color="orange" />
         </div>
@@ -629,14 +628,14 @@ const StockTransferList = () => {
                       placeholder={t('searchTransfers')}
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-400 text-gray-900 dark:text-white rounded-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                      className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-400 text-gray-900 dark:text-white rounded-sm focus:outline-none focus:ring-2 focus:ring-cyan-500 transition-colors"
                     />
                   </div>
                 </div>
                 {/* <select
                   value={selectedWarehouse}
                   onChange={(e) => setSelectedWarehouse(e.target.value)}
-                  className="px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                  className="px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-500 transition-colors"
                 >
                   <option value="all">{t('allWarehouses')}</option>
                   {warehouses.map(w => (
@@ -716,13 +715,13 @@ const StockTransferList = () => {
               <div className="flex border border-gray-300 dark:border-gray-400 rounded-sm overflow-hidden transition-colors">
                 <button
                   onClick={() => setViewMode('table')}
-                  className={`p-3 transition-colors ${viewMode === 'table' ? 'bg-blue-600 text-white' : ' text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+                  className={`p-3 transition-colors ${viewMode === 'table' ? 'bg-cyan-600 text-white' : ' text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
                 >
                   <LuList />
                 </button>
                 <button
                   onClick={() => setViewMode('grid')}
-                  className={`p-3 transition-colors ${viewMode === 'grid' ? 'bg-blue-600 text-white' : ' text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+                  className={`p-3 transition-colors ${viewMode === 'grid' ? 'bg-cyan-600 text-white' : ' text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
                 >
                   <LuGrid3X3 />
                 </button>
@@ -744,7 +743,7 @@ const StockTransferList = () => {
                 placeholder={t('search')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-500 transition-colors"
               />
             </div>
             <button
@@ -765,7 +764,7 @@ const StockTransferList = () => {
         {/* Content */}
         {loading ? (
           <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-600 mx-auto mb-4"></div>
             <p className="text-gray-600 dark:text-gray-400">{t('loading')}...</p>
           </div>
         ) : filteredData.length === 0 ? (

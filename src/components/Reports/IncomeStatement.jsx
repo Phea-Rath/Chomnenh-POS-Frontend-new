@@ -1,6 +1,6 @@
 import React, { useState, useRef, useMemo } from 'react';
-import { useGetIncomeStatementQuery } from '../../../app/Features/reportsSlice';
-import { useGetUserLoginQuery } from '../../../app/Features/usersSlice';
+import { useGetIncomeStatementQuery } from "@/features/dashboard/reportsSlice";
+import { useGetUserLoginQuery } from "@/features/auth/usersSlice";
 import { useReportText } from './reportText';
 import { DatePicker, Spin } from 'antd';
 import dayjs from 'dayjs';
@@ -8,11 +8,12 @@ import { FiPrinter, FiDownload, FiFilter, FiAlertTriangle, FiDollarSign, FiTrend
 import { useReactToPrint } from 'react-to-print';
 import * as XLSX from 'xlsx';
 import { useOutletsContext } from '../../layouts/Management';
+import { getToken } from '@/utils/tokenStore';
 
 const IncomeStatement = () => {
     const { rt } = useReportText();
     const { darkMode } = useOutletsContext();
-    const token = localStorage.getItem('token');
+    const token = getToken();
     
     const { data: userLogin } = useGetUserLoginQuery(token);
     const profile = userLogin?.data;
@@ -136,7 +137,7 @@ const IncomeStatement = () => {
                         <button
                             onClick={() => refetch()}
                             disabled={isFetching}
-                            className="flex items-center justify-center gap-2 bg-blue-600 text-white px-5 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed h-10"
+                            className="flex items-center justify-center gap-2 bg-cyan-600 text-white px-5 py-2 rounded-md hover:bg-cyan-700 disabled:opacity-50 disabled:cursor-not-allowed h-10"
                         >
                             <FiFilter size={16} />
                             {isFetching ? rt('Loading...') : rt('Get Report')}
@@ -177,7 +178,7 @@ const IncomeStatement = () => {
                             </div>
                         </div>
                         <div className="text-right">
-                            <h1 className="text-xl font-bold text-blue-600">{rt("Income Statement")}</h1>
+                            <h1 className="text-xl font-bold text-cyan-600">{rt("Income Statement")}</h1>
                             <p className="text-xs text-slate-500">{new Date().toLocaleString()}</p>
                         </div>
                     </div>
@@ -190,9 +191,9 @@ const IncomeStatement = () => {
                     {reportData && !isLoading && (
                         <>
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6 stats-grid">
-                                <div className="bg-primary rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 p-4 border-l-4 border-blue-500 stats-card">
+                                <div className="bg-primary rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 p-4 border-l-4 border-cyan-500 stats-card">
                                     <p className="text-slate-500 dark:text-slate-400 text-[10px] uppercase font-semibold">{rt("Total Revenue")}</p>
-                                    <p className="text-lg font-bold mt-1 text-blue-600">{formatUSD(reportData.revenue)}</p>
+                                    <p className="text-lg font-bold mt-1 text-cyan-600">{formatUSD(reportData.revenue)}</p>
                                     <p className="text-slate-400 text-[9px] mt-1">{rt("Gross Sales Receipts")}</p>
                                 </div>
                                 <div className="bg-primary rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 p-4 border-l-4 border-amber-500 stats-card">
@@ -223,7 +224,7 @@ const IncomeStatement = () => {
                                     <div className="space-y-4">
                                         <div className="flex justify-between items-center py-2">
                                             <div className="flex items-center gap-3">
-                                                <div className="w-8 h-8 rounded-full bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center text-blue-600">
+                                                <div className="w-8 h-8 rounded-full bg-cyan-50 dark:bg-cyan-900/20 flex items-center justify-center text-cyan-600">
                                                     <FiDollarSign size={14} />
                                                 </div>
                                                 <span className="text-xs font-medium text-slate-600 dark:text-slate-300">{rt("Sales Revenue")}</span>
@@ -349,7 +350,7 @@ const IncomeStatement = () => {
 
                 {isLoading && (
                     <div className="bg-primary rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 p-12 text-center">
-                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-600 mx-auto mb-4"></div>
                         <p className="text-slate-600 dark:text-slate-400">{rt("Generating report...")}</p>
                     </div>
                 )}

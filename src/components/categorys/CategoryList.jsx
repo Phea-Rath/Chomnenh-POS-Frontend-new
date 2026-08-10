@@ -2,13 +2,14 @@ import React, { useEffect, useState } from 'react';
 import { IoIosSearch, IoIosGrid, IoIosList } from 'react-icons/io';
 import { FaPlus, FaEdit, FaTrash, FaFolder, FaUser } from 'react-icons/fa';
 import { useOutletsContext } from '../../layouts/Management';
-import { useDeleteCategoryMutation, useGetAllCategoriesQuery } from '../../../app/Features/categoriesSlice';
+import { useDeleteCategoryMutation, useGetAllCategoriesQuery } from "@/features/products/categoriesSlice";
 import { toast } from 'react-toastify';
-import CreateCategory from '../../views/categorys/CreateCategory';
-import UpdateCategory from '../../views/categorys/UpdateCategory';
+import CreateCategory from './CreateCategory';
+import UpdateCategory from './UpdateCategory';
 import AlertBox from '../../services/AlertBox';
 import { useTranslation } from 'react-i18next';
 import { definePermission } from '../../services/serviceFunction';
+import { getToken } from '@/utils/tokenStore';
 const MENU_ID = 9;
 const CategoryList = () => {
   const { t } = useTranslation();
@@ -22,7 +23,7 @@ const CategoryList = () => {
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isUpdateOpen, setIsUpdateOpen] = useState(false);
   const { setLoading, loading } = useOutletsContext();
-  const token = localStorage.getItem('token');
+  const token = getToken();
   const { data, isLoading, refetch } = useGetAllCategoriesQuery(token);
   const [deleteCategory] = useDeleteCategoryMutation();
 
@@ -53,11 +54,10 @@ const CategoryList = () => {
     setAlertBox(false);
     setLoading(true);
     try {
-      await deleteCategory({ id, token });
-      refetch();
+      await deleteCategory({ id, token }).unwrap();
       toast.success(t('categoryDeletedSuccessfully'));
     } catch (error) {
-      toast.error(error?.message || t('failedToDeleteCategory'));
+      toast.error(error?.data?.message || error?.message || t('failedToDeleteCategory'));
     } finally {
       setLoading(false);
     }

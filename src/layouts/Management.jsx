@@ -6,22 +6,43 @@ import Footer from './Footer'
 import Loading from '../services/Loading';
 import AlertMessage from '../services/AlertMessage';
 import Sidebar from './Sidebar';
-import { useGetAllOrderOnlineQuery, useGetAllWasteQuery } from '../../app/Features/notificationSlice';
+import { useGetAllOrderOnlineQuery, useGetAllWasteQuery } from "@/features/system/notificationSlice";
 import { toast, ToastContainer } from 'react-toastify';
-import echo from '../echo';
-import { useGetAllUserQuery, useGetUserLoginQuery } from '../../app/Features/usersSlice';
-import { useGetAllSaleQuery } from '../../app/Features/salesSlice';
-import { useGetAllItemsQuery } from '../../app/Features/itemsSlice';
-import { useGetAllPermissionQuery, useGetPermissionByIdQuery } from '../../app/Features/permissionSlice';
-import { useGetAllOrderQuery, useGetOrderByUserQuery } from '../../app/Features/ordersSlice';
-const outletContext = createContext();
-export const useOutletsContext = () => useContext(outletContext);
+import echo from '@/websockets/echo';
+import { useGetAllUserQuery, useGetUserLoginQuery } from "@/features/auth/usersSlice";
+import { useGetAllSaleQuery } from "@/features/sales/salesSlice";
+import { useGetAllItemsQuery } from "@/features/products/itemsSlice";
+import { useGetAllPermissionQuery, useGetPermissionByIdQuery } from "@/features/auth/permissionSlice";
+import { useGetAllOrderQuery, useGetOrderByUserQuery } from "@/features/sales/ordersSlice";
+const defaultContextValue = {
+  setAlert: () => {},
+  setMessage: () => {},
+  setAlertStatus: () => {},
+  setReload: () => {},
+  reload: false,
+  open: false,
+  setOpen: () => {},
+  setLoading: () => {},
+  loading: false,
+  sidebar: false,
+  setSidebar: () => {},
+  darkMode: false,
+  setDarkMode: () => {},
+  orderCount: 0,
+  setOrderCount: () => {},
+  notification: false,
+  setNotification: () => {},
+};
+
+const outletContext = createContext(defaultContextValue);
+export const useOutletsContext = () => useContext(outletContext) || defaultContextValue;
 
 import logo from "../assets/logo-v2-1.jpg";
 import SideBarV2 from './SideBarV2';
+import { getToken } from '@/utils/tokenStore';
 
 const Management = () => {
-  const token = localStorage.getItem('token');
+  const token = getToken();
   const userId = localStorage.getItem('userId');
   const guestId = localStorage.getItem('guestId');
   const profileId = localStorage.getItem('profileId');
@@ -139,7 +160,7 @@ const Management = () => {
           <Header darkMode={darkMode} setDarkMode={setDarkMode} />
           <AlertMessage show={alert} message={renderAlertMessage(message)} status={alertStatus} className="z-[9999]" />
           <main ref={topRef} className={` h-[calc(100vh)] ${data?.data?.role_id !== 1 ? (sidebar ? "lg:w-[calc(100vw-250px)]" : "lg:w-[calc(100vw-80px)]") : ""} pt-[44px] overflow-auto m-0 w-[100vw] ${darkMode ? "!bg-gray-700 !text-white" : "!bg-gray-100 !text-black"}`}>
-            {/* <div className='absolute -z-0 top-0 right-0 w-2/5 h-full bg-gradient-to-b from-blue-50/50 to-transparent pointer-events-none' /> */}
+            {/* <div className='absolute -z-0 top-0 right-0 w-2/5 h-full bg-gradient-to-b from-cyan-50/50 to-transparent pointer-events-none' /> */}
             <Outlet />
             <div className="absolute z-[9999] bottom-5 right-5 pointer-events-none opacity-50">
               {/* <div className="flex items-center gap-3">
@@ -148,7 +169,7 @@ const Management = () => {
                 </div>
                 <div>
                   <h1 className={`font-black text-xs leading-tight tracking-tight ${darkMode ? "text-white" : "text-slate-900"}`}>
-                    CHOMNENH <span className={`${darkMode ? "text-blue-400" : "text-blue-600"}`}>POS</span>
+                    CHOMNENH <span className={`${darkMode ? "text-cyan-400" : "text-cyan-600"}`}>POS</span>
                   </h1>
                   <p className={`text-[10px] hidden lg:block uppercase font-bold tracking-[0.1em] ${darkMode ? "text-gray-400" : "text-slate-400"}`}>Management v2.0</p>
                 </div>

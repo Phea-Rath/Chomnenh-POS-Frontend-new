@@ -10,14 +10,15 @@ import {
     Legend,
     ResponsiveContainer
 } from 'recharts';
-import { useGetDebtAnalysisMutation } from '../../../app/Features/reportsSlice';
-import { useGetUserLoginQuery } from '../../../app/Features/usersSlice';
+import { useGetDebtAnalysisMutation } from "@/features/dashboard/reportsSlice";
+import { useGetUserLoginQuery } from "@/features/auth/usersSlice";
 import { toast } from 'react-toastify';
 import { useReportText } from './reportText';
 import { useReactToPrint } from 'react-to-print';
 import { DatePicker } from 'antd';
 import dayjs from 'dayjs';
 import { useOutletsContext } from '../../layouts/Management';
+import { getToken } from '@/utils/tokenStore';
 
 const EMPTY_REPORT = {
     start_date: '',
@@ -38,7 +39,7 @@ const EMPTY_REPORT = {
 const DeptAnalysis = () => {
     const { rt } = useReportText();
     const { darkMode } = useOutletsContext();
-    const token = localStorage.getItem('token');
+    const token = getToken();
     const [getDebtAnalysis] = useGetDebtAnalysisMutation();
     const { data: userLogin } = useGetUserLoginQuery(token);
     const profile = userLogin?.data;
@@ -240,7 +241,7 @@ const DeptAnalysis = () => {
                         <button
                             onClick={handleGetReport}
                             disabled={loading}
-                            className="flex items-center justify-center gap-2 bg-blue-600 text-white px-5 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed h-10"
+                            className="flex items-center justify-center gap-2 bg-cyan-600 text-white px-5 py-2 rounded-md hover:bg-cyan-700 disabled:opacity-50 disabled:cursor-not-allowed h-10"
                         >
                             <FiFilter size={16} />
                             {loading ? rt('Loading...') : rt('Get Report')}
@@ -273,7 +274,7 @@ const DeptAnalysis = () => {
                             </div>
                         </div>
                         <div className="text-right">
-                            <h1 className="text-xl font-bold text-blue-600">{rt("Debt Analysis Dashboard")}</h1>
+                            <h1 className="text-xl font-bold text-cyan-600">{rt("Debt Analysis Dashboard")}</h1>
                             <p className="text-xs text-slate-500">{new Date().toLocaleString()}</p>
                         </div>
                     </div>
@@ -420,7 +421,7 @@ const DeptAnalysis = () => {
 
                 {loading && (
                     <div className="bg-primary rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 p-12 text-center">
-                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-600 mx-auto mb-4"></div>
                         <p className="text-slate-600 dark:text-slate-400">{rt("Generating report...")}</p>
                     </div>
                 )}

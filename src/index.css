@@ -35,6 +35,8 @@
     
 @theme {
   /* --font-Kantumruy: "Kantumruy Pro"; */
+  --gold: #D5A634;
+  --main: #142c44;
   --bg-main-light: rgb(13, 26, 99);
   --bg-side-light: #1b2b50;
   --bg-dark: hsl(0 0% 90%);

@@ -72,20 +72,29 @@ const getDayName = (date, timeZone = DEFAULT_TIMEZONE) =>
     }).format(date);
 
 const getTimeParts = (date, timeZone = DEFAULT_TIMEZONE) => {
-    const formatter = new Intl.DateTimeFormat("en-GB", {
+    const formatter24 = new Intl.DateTimeFormat("en-GB", {
         timeZone,
         hour: "2-digit",
         minute: "2-digit",
         hour12: false,
     });
-    const parts = formatter.formatToParts(date);
+
+    const parts = formatter24.formatToParts(date);
     const hour = Number(parts.find((part) => part.type === "hour")?.value || 0);
     const minute = Number(parts.find((part) => part.type === "minute")?.value || 0);
+
+    const formatter12 = new Intl.DateTimeFormat("en-US", {
+        timeZone,
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
+    });
 
     return {
         hour,
         minute,
         totalMinutes: hour * 60 + minute,
+        formattedTime: formatter12.format(date), // e.g. "1:00 PM"
     };
 };
 
@@ -115,7 +124,9 @@ const getScheduleWindow = (schedule, timeZone = DEFAULT_TIMEZONE) => {
     if (!startDate || !endDate) return null;
     return {
         start: getTimeParts(startDate, timeZone).totalMinutes,
+        startTime: getTimeParts(startDate, timeZone).formattedTime,
         end: getTimeParts(endDate, timeZone).totalMinutes,
+        endTime: getTimeParts(endDate, timeZone).formattedTime
     };
 };
 
@@ -222,36 +233,106 @@ const getCurrentPosition = () =>
         );
     });
 
+    const canCheckoutAfter15Minutes = (checkInTime) => {
+    if (!checkInTime) return false;
+
+    const checkIn = toDate(checkInTime); // Firestore Timestamp -> Date
+    if (!checkIn) return false;
+
+    const FIFTEEN_MINUTES = 15 * 60 * 1000;
+
+    return Date.now() >= checkIn.getTime() + FIFTEEN_MINUTES;
+};
+
+const calculateAttendanceStatus = (actionKey, payload, timeZone = DEFAULT_TIMEZONE) => {
+    const LATE_THRESHOLD = 5; // minutes after schedule start
+    const EARLY_THRESHOLD = 5; // minutes before schedule end
+    
+    const schedule = actionKey.includes('2') ? payload.secondarySchedule : payload.primarySchedule;
+    if (!schedule) return 'present';
+    
+    const now = new Date();
+    const nowMinutes = getMinutesOfDay(now, timeZone);
+    
+    if (actionKey === 'check_in' || actionKey === 'check_in_2') {
+        const startTime = toDate(schedule.start_time);
+        if (startTime) {
+            const startMinutes = getTimeParts(startTime, timeZone).totalMinutes;
+            if (nowMinutes > startMinutes + LATE_THRESHOLD) {
+                return 'late';
+            }
+        }
+    } else if (actionKey === 'check_out' || actionKey === 'check_out_2') {
+        const endTime = toDate(schedule.end_time);
+        if (endTime) {
+            const endMinutes = getTimeParts(endTime, timeZone).totalMinutes;
+            if (nowMinutes < endMinutes - EARLY_THRESHOLD) {
+                return 'early';
+            }
+        }
+    }
+    
+    return 'present';
+};
 const resolveAttendanceActionStates = (attendanceDoc, scanState, timeZone = DEFAULT_TIMEZONE) => {
     const nowMinutes = getMinutesOfDay(new Date(), timeZone);
     const checkInTime = toDate(attendanceDoc?.check_in_time);
     const checkOutTime = toDate(attendanceDoc?.check_out_time);
     const checkInTime2 = toDate(attendanceDoc?.check_in_time_2);
     const checkOutTime2 = toDate(attendanceDoc?.check_out_time_2);
-    const makeState = (enabled, reason = "") => ({ enabled, reason });
+    const makeState = (enabled, reason = "", status='') => ({ enabled, reason, status });
 
     const resolveShiftState = (schedule, type) => {
-        if (!schedule) return makeState(false, "Shift not configured");
+        if (!schedule) return makeState(false, "សូមទោសរកមិនឃើញវេនធ្វើការរបស់អ្នកទេ", 'not_found');
         const window = getScheduleWindow(schedule, timeZone);
-        if (!window) return makeState(false, "No schedule time");
+        if (!window) return makeState(false, "សូមទោសរកមិនឃើញកាលវិភាគពេលវេលារបស់អ្នកទេក្នុងថ្ងៃនេះ", 'not_found');
         if (type === "in") {
             return nowMinutes >= window.start - CHECK_IN_WINDOW_MINUTES && nowMinutes <= window.end + CHECK_IN_WINDOW_MINUTES
-                ? makeState(true) : makeState(false, "Outside shift window");
+                ? makeState(true) : makeState(false, "វេនមន្ទាប់៖ កាលវិភាគបន្ទាប់របស់អ្នកនៅម៉ោង " +  window.startTime + ' សូមរងចាំ', 'wait');
         }
-        return nowMinutes >= window.start ? makeState(true) : makeState(false, "Too early for checkout");
+        return nowMinutes >= window.start ? makeState(true) : makeState(false, "Too early for checkout", 'early');
     };
+    
+    // Determine if late for section 1
+    const checkInState = checkInTime ? makeState(false, "Checkin រួចរាល់", 'already') : resolveShiftState(scanState?.primarySchedule, "in");
+    const isLateForSection1 = !checkInTime && !checkInState.enabled;
 
     return {
-        check_in: checkInTime ? makeState(false, "Already in") : resolveShiftState(scanState?.primarySchedule, "in"),
-        check_out: !checkInTime ? makeState(false, "Check-in first") : checkOutTime ? makeState(false, "Already out") : resolveShiftState(scanState?.primarySchedule, "out"),
-        check_in_2: scanState?.section !== "2" ? makeState(false, "No Section 2") : checkInTime2 ? makeState(false, "Already in") : resolveShiftState(scanState?.secondarySchedule, "in"),
-        check_out_2: scanState?.section !== "2" ? makeState(false, "No Section 2") : !checkInTime2 ? makeState(false, "Check-in 2 first") : checkOutTime2 ? makeState(false, "Already out") : resolveShiftState(scanState?.secondarySchedule, "out"),
+        check_in: checkInState,
+        check_out:
+    !checkInTime
+        ? makeState(false, "Check-in first", 'not_allow')
+        : checkOutTime
+        ? makeState(false, "Checkout រួចរាល់", 'already')
+        : 
+        !canCheckoutAfter15Minutes(attendanceDoc?.check_in_time)
+        ? makeState(false, "Checkout នឹងនឲអនុញ្ញាតបន្ទាប់ពី 15 នាទីទៀត​​​​​​​ សូមរងចាំ", 'wait')
+        : resolveShiftState(scanState?.primarySchedule, "out"),
+        check_in_2: scanState?.section !== "2" 
+            ? makeState(false, "No Section 2") 
+            : checkInTime2 
+            ? makeState(false, "Checkin រួចរាល់", 'already') 
+            : isLateForSection1
+            ? resolveShiftState(scanState?.secondarySchedule, "in")
+            : checkOutTime 
+            ? resolveShiftState(scanState?.secondarySchedule, "in") 
+            : makeState(false, "Check-out first", 'not_allow'),
+        check_out_2:
+    scanState?.section !== "2"
+        ? makeState(false, "No Section 2", 'not_found')
+        : !checkInTime2
+        ? makeState(false, "Check-in 2 first", 'not_allow')
+        : checkOutTime2
+        ? makeState(false, "Checkout រួចរាល់", 'already')
+        : !canCheckoutAfter15Minutes(attendanceDoc?.check_in_time_2)
+        ? makeState(false, "Checkout នឹងនឲអនុញ្ញាតបន្ទាប់ពី 15 នាទីទៀត សូមរងចាំ", 'wait')
+        : resolveShiftState(scanState?.secondarySchedule, "out"),
     };
 };
 
 const ScanAttendance = () => {
     const { t } = useTranslation();
-    const [toast, setToast] = useState({ isVisible: false, type: 'success', message: '' });
+    const [toast, setToast] = useState({ isVisible: false, type: 'success', message: '', duration: 5000 });
     const [authUser, setAuthUser] = useState(null);
     const [currentUser, setCurrentUser] = useState(null);
     const [loginForm, setLoginForm] = useState({ identifier: "", password: "" });
@@ -262,6 +343,9 @@ const ScanAttendance = () => {
     const [actionLoading, setActionLoading] = useState("");
     const [scanState, setScanState] = useState(null);
     const [lastScan, setLastScan] = useState(null);
+    const [loading, setLoading] = useState(false);
+    const [message, setMessage] = useState();
+
 
     const html5QrCodeRef = useRef(null);
     const isMountedRef = useRef(true);
@@ -291,6 +375,7 @@ const ScanAttendance = () => {
     useEffect(() => {
         isMountedRef.current = true;
         const unsubscribe = onAuthStateChanged(auth, async (user) => {
+            setLoading(true);
             if (!isMountedRef.current) return;
             if (user) {
                 const userDoc = await getDoc(doc(db, "users", user.uid));
@@ -299,8 +384,10 @@ const ScanAttendance = () => {
             } else {
                 setCurrentUser(null);
             }
+            setLoading(false);
             setAuthUser(user);
         });
+        
         return () => { isMountedRef.current = false; unsubscribe(); void stopScanner(); };
     }, []);
 
@@ -341,36 +428,53 @@ const ScanAttendance = () => {
         const normalized = normalizeId(text);
         const qr = parseQrPayload(normalized);
         const companyId = normalizeId(qr.companyId || normalized);
+
         if (!authUser?.uid) throw new Error("Not logged in");
 
+        //Current user login
         const userDoc = await getDoc(doc(db, "users", authUser.uid));
         const userData = userDoc.data();
 
+        //Filter company
         const compSnap = await getDoc(doc(db, "companies", companyId));
         const company = compSnap.data();
-        if (!company) throw new Error("Invalid Company QR");
+        
+        if (!company){ 
+            setToast({isVisible:true, type: 'failed', message:'រកមិនឃើញក្រុមហ៊ុន'});
+            throw new Error("Invalid Company QR");
+        }
 
         const tz = company.timezone || DEFAULT_TIMEZONE;
         const now = new Date();
         const day = getDayName(now, tz);
-        const schedSnap = await getDocs(query(collection(db, "schedule_details"), where("user_id", "==", authUser.uid), where("company_id", "==", companyId), where("day_name", "==", day), limit(1)));
-        const schedDetail = schedSnap.docs[0]?.data();
-        if (!schedDetail) throw new Error(`No schedule for ${day}`);
 
+        //Check scheldule in the compay
+        const schedSnap = await getDocs(query(collection(db, "schedule_details"), where("user_id", "==", authUser.uid), where("company_id", "==", companyId), where("day_name", "==", day), limit(1)));
+        const schedDetail = schedSnap.docs[0]?.data()
+        
+        
+        if (!schedDetail) {
+            setToast({isVisible:true, type: 'failed', message:`អ្នកគ្មានកាលវិភាគសម្រាប់ថ្ងៃ​ ${day}`});
+            throw new Error(`No schedule for ${day}`);
+        }
+        //Check section
         const s1 = schedDetail.section_one ? (await getDoc(doc(db, "schedules", schedDetail.section_one))).data() : null;
         const s2 = schedDetail.section_two ? (await getDoc(doc(db, "schedules", schedDetail.section_two))).data() : null;
 
         const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
         const end = new Date(start); end.setDate(end.getDate() + 1);
+
+
         const attSnap = await getDocs(query(collection(db, "attendances"), where("created_by", "==", authUser.uid), where("company_id", "==", companyId), where("created_at", ">=", Timestamp.fromDate(start)), where("created_at", "<", Timestamp.fromDate(end)), limit(1)));
         const attDoc = attSnap.docs[0];
         const attendance = attDoc ? { id: attDoc.id, ref: attDoc.ref, ...attDoc.data() } : null;
-
+        
+        
         const state = {
             scannedValue: normalized, companyId, company, userName: userData?.name || authUser.email,
             timeZone: tz, dayName: day, section: String(schedDetail.section || "1"),
             primarySchedule: s1, secondarySchedule: s2,
-            primaryScheduleId: schedDetail.section_one, secondaryScheduleId: schedDetail.section_two,
+            primaryScheduleId: schedSnap.docs[0].id,
             attendance, attendanceRef: attDoc?.ref, employeeUid: authUser.uid
         };
         return { ...state, actionStates: resolveAttendanceActionStates(attendance, state, tz) };
@@ -385,7 +489,24 @@ const ScanAttendance = () => {
             setScanState(payload);
             setLastScan(text);
             await stopScanner();
-        } catch (e) { toast.error(e.message); } finally {
+            const key = ACTIONS.find(i=>payload.actionStates[i.key].enabled == true)?.key;
+            if(!key){
+               const status = ACTIONS.map(i=>{
+                    if(payload.actionStates[i.key].enabled == false) return payload.actionStates[i.key]
+                });
+                setScanState({...payload, status});
+                let i = 0;
+                while(status) {
+                    if(status[i].status != 'already'){
+                        setToast({ isVisible: true, type: 'failed', message: status[i].reason });
+                        return;
+                    }
+                    i++;
+               };
+               
+            }
+            submitAction(payload, key);
+        } catch (e) { console.log(e.message); } finally {
             isProcessingScanRef.current = false;
             setIsProcessingScan(false);
         }
@@ -400,18 +521,19 @@ const ScanAttendance = () => {
             html5QrCodeRef.current = scanner;
             setIsScanning(true);
             await scanner.start({ facingMode: "environment" }, { fps: 15}, handleScanSuccess, () => { });
-        } catch (e) {setToast({ isVisible: true, type: 'success', message: getCameraErrorMessage(e)}); await stopScanner(); } finally {
+        } catch (e) {setToast({ isVisible: true, type: 'failed', message: getCameraErrorMessage(e)}); await stopScanner(); } finally {
             isStartingRef.current = false; setIsStarting(false);
         }
     };
 
-    const submitAction = async (key) => {
-        if (!scanState) return;
-        const state = scanState.actionStates?.[key];
+    const submitAction = async (payload, key) => {
+        const state = payload.actionStates[key];
         if (!state?.enabled) return setToast({ isVisible: true, type: 'success', message: state?.reason});
         setActionLoading(key);
+        setLoading(true);
         try {
-            const companyLocation = resolveCompanyLocationConfig(scanState.company);
+            const companyLocation = resolveCompanyLocationConfig(payload.company);
+            
             if (companyLocation.lat !== null && companyLocation.lng !== null && companyLocation.distance !== null) {
                 const coords = await getCurrentPosition();
                 const currentDistance = calculateDistanceMeters(
@@ -429,37 +551,69 @@ const ScanAttendance = () => {
             const actionTimestamp = new Date();
             const now = serverTimestamp();
             const field = { check_in: "check_in_time", check_out: "check_out_time", check_in_2: "check_in_time_2", check_out_2: "check_out_time_2" }[key];
-            if (scanState.attendanceRef) {
-                await updateDoc(scanState.attendanceRef, { [field]: now, updated_at: now });
+            const status = calculateAttendanceStatus(key, payload, payload.timeZone);
+            
+            // Map action key to status field
+            const statusFieldMap = {
+                check_in: 'status',
+                check_out: 'status_out',
+                check_in_2: 'status_in_2',
+                check_out_2: 'status_out_2'
+            };
+            const statusField = statusFieldMap[key];
+            
+            if (payload.attendanceRef) {
+                setMessage(`អបអរសាទរ អ្នកបានពិនិត្យវត្តមានដោយជោគជ័យ។`);
+                setLoading(false);
+                setToast({ isVisible: true, type: 'success', message: 'Check attendance success.' });
+                await updateDoc(payload.attendanceRef, { [field]: now, [statusField]: status, updated_at: now });
             } else {
-                await addDoc(collection(db, "attendances"), {
-                    company_id: scanState.companyId, schedule_id: scanState.primaryScheduleId,
-                    user_name: scanState.userName, status: "present",
-                    [field]: now, created_by: scanState.employeeUid, created_at: now, updated_at: now
-                });
+                setMessage(`អបអរសាទរ អ្នកបានពិនិត្យវត្តមានដោយជោគជ័យ។`);
+                setLoading(false);
+                setToast({ isVisible: true, type: 'success', message: 'Check attendance success.' });
+                const attendanceData = {
+                    company_id: payload.companyId, 
+                    schedule_detail_id: payload.primaryScheduleId,
+                    user_name: payload.userName,
+                    [field]: now, 
+                    [statusField]: status,
+                    created_by: payload.employeeUid, 
+                    created_at: now, 
+                    updated_at: now
+                };
+                // Initialize status fields for shift 2 if it exists
+                if (payload.secondarySchedule) {
+                    attendanceData.status_in_2 = null;
+                    attendanceData.status_out_2 = null;
+                }
+                await addDoc(collection(db, "attendances"), attendanceData);
             }
 
             try {
-                const companyChatId = getTelegramChatIdFromCompany(scanState.company);
+                const companyChatId = getTelegramChatIdFromCompany(payload.company);
                 await sendTelegramMessage(
                     buildAttendanceTelegramMessage({
-                        employeeName: scanState.userName,
+                        employeeName: payload.userName,
                         actionKey: key,
                         actionLabel: TELEGRAM_ACTION_LABELS[key],
+                        status,
                         timestamp: actionTimestamp,
-                        timeZone: scanState.timeZone,
+                        timeZone: payload.timeZone,
                     }),
                     companyChatId
                 );
             } catch (telegramError) {
+                setLoading(false);
                 console.error(telegramError);
                 setToast({ isVisible: true, type: 'success', message: "Attendance saved, but Telegram notification failed" });
             }
-
-            setToast({ isVisible: true, type: 'success', message: 'Check attendance success.' });
-            const next = await resolveScanPayload(scanState.scannedValue);
-            setScanState(next);
-        } catch (error) { setToast({ isVisible: true, type: 'fail', message: 'Update failed.' });; } finally { setActionLoading(""); }
+        } catch (error) { 
+            setToast({ isVisible: true, type: 'fail', message: 'ការពិនិត្យវត្តមានត្រូវបានបរាជ័យ: ' + error || error?.message || error?.response?.message || error?.response?.data?.message}); 
+            setMessage('សូម screenshot អេក្រង់នេះរួចផ្ញើទៅ​ Supporter: ' + error || error?.message || error?.response?.message || error?.response?.data?.message);
+            console.log(error || error?.message || error?.response?.message || error?.response?.data?.message);
+            
+        }
+        finally { setActionLoading(""); setLoading(false); }
     };
 
     return (
@@ -468,6 +622,7 @@ const ScanAttendance = () => {
                 isOpen={toast.isVisible}
                 type={toast.type}
                 message={toast.message}
+                duration={toast.duration || 5000}
                 onClose={() => setToast({ ...toast, isVisible: false })}
             />
             <div className="mx-auto max-w-md">
@@ -478,7 +633,7 @@ const ScanAttendance = () => {
                             <BiUserCheck size={24} />
                         </div>
                         <div>
-                            <h1 className="text-lg font-bold leading-tight">Attendance</h1>
+                            <h1 className="text-lg font-bold text-cyan-500 leading-tight">Attendance</h1>
                             <p className="text-xs text-[#8e959b]">Smart Scanner</p>
                         </div>
                     </div>
@@ -491,7 +646,15 @@ const ScanAttendance = () => {
 
                 {!authUser ? (
                     <div className="rounded-2xl bg-[#17212b] p-6 shadow-xl border border-[#232e3c]">
-                        <h2 className="mb-4 text-xl font-bold">Sign In</h2>
+                        {loading&&(
+                                <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/60 backdrop-blur-xs">
+                                    <div className="flex flex-col items-center gap-4">
+                                        <div className="h-12 w-12 animate-spin rounded-full border-4 border-[#24a1de] border-t-transparent shadow-[0_0_15px_rgba(36,161,222,0.5)]"></div>
+                                        <p className="text-xs font-black uppercase tracking-widest text-[#24a1de]">Verifying account...</p>
+                                    </div>
+                                </div>
+                        )}
+                        <h2 className="mb-4 text-xl text-cyan-500 font-bold">Sign In</h2>
                         <form onSubmit={handleLogin} className="space-y-4">
                             <input
                                 value={loginForm.identifier}
@@ -519,12 +682,12 @@ const ScanAttendance = () => {
                 ) : (
                     <div className="space-y-4">
                         {/* Profile Summary */}
-                        <div className="flex items-center justify-between rounded-2xl bg-[#17212b] p-4 border border-[#232e3c]">
-                            <div className="flex items-center gap-3">
+                        <div className="flex items-center justify-center rounded-2xl bg-[#17212b] p-4 border border-[#232e3c]">
+                            <div className="flex flex-col items-center gap-3">
                                 <div className="h-10 w-10 rounded-full bg-[#2b5278] flex items-center justify-center font-bold text-[#24a1de]">
                                     {currentUser?.name?.[0].toUpperCase() || authUser.email?.[0].toUpperCase() || "U"}
                                 </div>
-                                <div>
+                                <div className="text-center">
                                     <p className="text-sm font-bold">{currentUser?.name || authUser.email || "Employee"}</p>
                                     <p className="text-[10px] text-[#8e959b] uppercase tracking-wider">Verified Account</p>
                                 </div>
@@ -579,38 +742,44 @@ const ScanAttendance = () => {
                             <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 rounded-3xl bg-[#17212b] border border-[#232e3c] overflow-hidden shadow-2xl">
                                 <div className="p-5 border-b border-[#232e3c] flex items-center justify-between bg-gradient-to-r from-transparent to-[#24a1de]/5">
                                     <div>
-                                        <h3 className="font-bold text-lg">{scanState.userName}</h3>
+                                        <h3 className="font-bold text-cyan-500 text-lg">{scanState.userName}</h3>
                                         <p className="text-xs text-[#8e959b] flex items-center gap-1.5">
                                             <span className="h-1.5 w-1.5 rounded-full bg-[#24a1de]"></span>
                                             {scanState.company.company_name}
                                         </p>
                                     </div>
-                                    <button
-                                        onClick={() => void resolveScanPayload(scanState.scannedValue).then(setScanState)}
-                                        className="h-10 w-10 flex items-center justify-center rounded-full bg-[#242f3d] text-[#24a1de] hover:bg-[#2c394a] transition-colors"
-                                    >
-                                        <BiRefresh size={22} />
-                                    </button>
                                 </div>
 
-                                <div className="grid grid-cols-2 gap-px bg-[#232e3c]">
+                                <div className="bg-[#232e3c] grid grid-cols-1">
+                                    {loading&&<div className="absolute inset-0 z-20 flex items-center justify-center bg-black/60 backdrop-blur-md">
+                                    <div className="flex flex-col items-center gap-4">
+                                        <div className="h-12 w-12 animate-spin rounded-full border-4 border-[#24a1de] border-t-transparent shadow-[0_0_15px_rgba(36,161,222,0.5)]"></div>
+                                        <p className="text-xs font-black uppercase tracking-widest text-[#24a1de]">Verifying...</p>
+                                    </div>
+                                </div>}
                                     {ACTIONS.map(a => {
                                         const s = scanState.actionStates[a.key];
                                         return (
-                                            <button
+                                            s.enabled&&<button
                                                 key={a.key}
-                                                onClick={() => submitAction(a.key)}
+                                                // onClick={() => submitAction(a.key)}
                                                 disabled={!s.enabled || !!actionLoading}
-                                                className={`bg-[#17212b] p-5 text-left transition-all active:bg-[#242f3d] disabled:opacity-30 group`}
+                                                className={`bg-[#17212b] p-5 text-left transition-all disabled:opacity-30 group`}
                                             >
                                                 <div className="flex items-center justify-between mb-1.5">
-                                                    <span className="text-[10px] font-black uppercase tracking-widest text-[#24a1de]">{a.label}</span>
+                                                    <span className="text-2xl font-black uppercase tracking-widest text-[#24a1de]">{a.label}</span>
                                                     <BiChevronRight size={18} className="text-[#8e959b] group-hover:translate-x-1 transition-transform" />
                                                 </div>
-                                                <p className="text-[11px] font-medium text-[#8e959b] leading-snug">{s.enabled ? "Tap to record" : s.reason}</p>
+                                                <p className="text-[11px] font-medium text-[#8e959b] leading-snug">{message}</p>
                                             </button>
                                         );
                                     })}
+                                    {ACTIONS.every(i=>scanState.actionStates[i.key].enabled == false)&&<div className="bg-gray-600/50 p-2 m-2 rounded-lg text-[10px]">
+                                            {scanState?.status?.map((i, idx)=>i.status != 'not_allow'&&<h1 className="text-white" key={idx}>- {i.reason}</h1>
+
+                                            )}
+                                        </div>
+                                    }
                                 </div>
 
                                 <div className="p-5 bg-[#242f3d]/30 space-y-3">

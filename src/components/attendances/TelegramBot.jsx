@@ -10,6 +10,24 @@ const ACTION_LABELS = {
     check_out_2: "Check-out 2",
 };
 
+const escapeTelegramMarkdownV2 = (value = "") =>
+    String(value)
+        .replace(/([_\*\[\]\(\)~`>#+\-=|\{\}\.\!])/g, "\\$1");
+
+const formatAttendanceDate = (value, timeZone = "Asia/Phnom_Penh") =>
+    new Intl.DateTimeFormat("en-CA", {
+        timeZone,
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+    }).format(value);
+
+const formatAttendanceDay = (value, timeZone = "Asia/Phnom_Penh") =>
+    new Intl.DateTimeFormat("en-US", {
+        timeZone,
+        weekday: "long",
+    }).format(value);
+
 const formatAttendanceTime = (value, timeZone = "Asia/Phnom_Penh") =>
     new Intl.DateTimeFormat("en-US", {
         timeZone,
@@ -22,14 +40,24 @@ export const buildAttendanceTelegramMessage = ({
     employeeName,
     actionKey,
     actionLabel,
+    status = "UNKNOWN",
     timestamp = new Date(),
     timeZone = "Asia/Phnom_Penh",
-}) => [
-    "🔔 Attendance Update",
-    `👤 Employee: ${employeeName || "Unknown"}`,
-    `📍 Action: ${actionLabel || ACTION_LABELS[actionKey] || actionKey || "Unknown"}`,
-    `⏰ Time: ${formatAttendanceTime(timestamp, timeZone)}`,
-].join("\n");
+}) => {
+    const userName = escapeTelegramMarkdownV2(employeeName || "Unknown");
+    const label = escapeTelegramMarkdownV2(actionLabel || ACTION_LABELS[actionKey] || actionKey || "Unknown");
+    const statusText = escapeTelegramMarkdownV2(String(status).toUpperCase());
+
+    return [
+        "🔔 *Attendance Checked*",
+        `📅 Date: ${formatAttendanceDate(timestamp, timeZone)}`,
+        `🗓️ Day: ${escapeTelegramMarkdownV2(formatAttendanceDay(timestamp, timeZone))}`,
+        `👤 Employee: ${userName}`,
+        `📍 Action: ${label}`,
+        `⏰ Time: ${escapeTelegramMarkdownV2(formatAttendanceTime(timestamp, timeZone))}`,
+        `📊 Status: ${statusText}`,
+    ].join("\n");
+};
 
 const resolveTelegramChatId = (value) =>
     String(value ?? "").trim();

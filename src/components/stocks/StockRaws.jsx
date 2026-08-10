@@ -4,13 +4,14 @@ import { useTranslation } from 'react-i18next';
 import { FaPlus, FaClipboardList, FaBoxOpen, FaCubes, FaShoppingCart } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import { useOutletsContext } from '../../layouts/Management';
-import { useGetAllStockRawQuery } from '../../../app/Features/stocksSlice';
-import { useGetAllSaleQuery } from '../../../app/Features/salesSlice';
+import { useGetAllStockRawQuery, useDeleteStockRawMutation } from "@/features/stocks/stocksSlice";
+import { useGetAllSaleQuery } from "@/features/sales/salesSlice";
 import api from '../../services/api';
 import RefreshButton from '../../utils/RefreshButton';
 import ExportExcel from '../../services/ExportExcel';
 import Button from '../../utils/Button';
 import StockList from '../../utils/StockList';
+import { getToken } from '@/utils/tokenStore';
 const MENU_ID = 48;
 const getStockItems = (stock) => (Array.isArray(stock?.items) ? stock.items : []);
 
@@ -20,7 +21,7 @@ const getTotalQuantity = (stock) =>
 const StockRaws = () => {
     const { t } = useTranslation();
     const { setLoading } = useOutletsContext();
-    const token = localStorage.getItem('token');
+    const token = getToken();
 
     const [stocks, setStocks] = useState([]);
     const [id, setId] = useState(0);
@@ -30,6 +31,7 @@ const StockRaws = () => {
     const [page, setPage] = useState(1);
     const [limit, setLimit] = useState(10);
 
+    const [deleteStockRaw] = useDeleteStockRawMutation();
     const { data, isLoading, refetch } = useGetAllStockRawQuery({ limit, page, search: searchTerm, token });
     const { refetch: saleRefetch } = useGetAllSaleQuery(token);
 
@@ -46,16 +48,11 @@ const StockRaws = () => {
         setAlertBox(false);
         setLoading(true);
         try {
-            const res = await api.delete(`stock_masters_raw/${id}`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
-            if (res.data.status === 200) {
-                refetch();
-                saleRefetch();
-                toast.success(t('rawStockDeletedSuccess'));
-            }
+            await deleteStockRaw({ id, token, queryArgs: { limit, page, search: searchTerm, token } }).unwrap();
+            if (saleRefetch) saleRefetch();
+            toast.success(t('rawStockDeletedSuccess'));
         } catch (error) {
-            toast.error(error.message || t('rawStockDeleteFailed'));
+            toast.error(error?.data?.message || error?.message || t('rawStockDeleteFailed'));
         } finally {
             setLoading(false);
         }
@@ -94,8 +91,8 @@ const StockRaws = () => {
                 {
                     title: t('totalRawStockRecords'),
                     value: data?.pagination?.total || 0,
-                    icon: <FaClipboardList className="text-blue-500" />,
-                    color: 'from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 shadow-xs',
+                    icon: <FaClipboardList className="text-cyan-500" />,
+                    color: 'from-cyan-50 to-cyan-100 dark:from-cyan-900/20 dark:to-cyan-800/20 shadow-xs',
                 },
                 {
                     title: t('currentPage'),

@@ -7,7 +7,8 @@ import { motion } from "framer-motion";
 import api from "../../services/api";
 import handleDownload from "../../services/imageDowload";
 import Button from "../../utils/Button";
-import { useGetUserProfileQuery } from "../../../app/Features/usersSlice";
+import { useGetUserProfileQuery } from "@/features/auth/usersSlice";
+import { getToken } from '@/utils/tokenStore';
 
 const PurchaseReceipt = () => {
   const { id } = useParams();
@@ -15,7 +16,7 @@ const PurchaseReceipt = () => {
   const receiptType = pathname.split("/")[3];
   const isRawReceipt = receiptType === "receipt-raw";
   const navigate = useNavigate();
-  const token = localStorage.getItem("token");
+  const token = getToken();
   const proId = localStorage.getItem("profileId");
 
   const [purchase, setPurchase] = useState(null);
@@ -134,7 +135,7 @@ const PurchaseReceipt = () => {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="text-center">
-          <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-b-2 border-blue-600" />
+          <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-b-2 border-cyan-600" />
           <p className="text-gray-600">Loading receipt...</p>
         </div>
       </div>
@@ -149,7 +150,7 @@ const PurchaseReceipt = () => {
           <p className="mb-4 text-gray-600">{error}</p>
           <Button
             onClick={() => navigate(-1)}
-            className="flex items-center rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
+            className="flex items-center rounded-lg bg-cyan-600 px-4 py-2 text-white hover:bg-cyan-700"
           >
             <IoArrowBackCircle className="mr-2" size={22} />
             Back
@@ -243,7 +244,7 @@ const PurchaseReceipt = () => {
                       alt={businessInfo.name || "Business logo"}
                     />
                   ) : (
-                    <div className="flex h-16 w-16 items-center justify-center border border-gray-300 text-2xl font-bold text-blue-700">
+                    <div className="flex h-16 w-16 items-center justify-center border border-gray-300 text-2xl font-bold text-cyan-700">
                       {businessInfo?.name?.[0] || "B"}
                     </div>
                   )}
@@ -251,7 +252,7 @@ const PurchaseReceipt = () => {
                     <h2 className="text-xl font-bold leading-tight text-gray-800">
                       {businessInfo?.name || "Business Name"}
                     </h2>
-                    <p className="text-xs font-medium text-blue-600">Purchase Department</p>
+                    <p className="text-xs font-medium text-cyan-600">Purchase Department</p>
                   </div>
                 </div>
                 <div className=" max-w-[360px] text-xs text-gray-800">
@@ -401,7 +402,7 @@ const PurchaseReceipt = () => {
                       </td>
                     </tr>
                   ) : null}
-                 <div className="bg-blue-50 bottom-0 grow px-7 absolute  py-4 text-[11px] leading-snug text-gray-800">
+                 <div className="bg-cyan-50 bottom-0 grow px-7 absolute  py-4 text-[11px] leading-snug text-gray-800">
                   <p className="font-bold">Terms and conditions:</p>
                   <ol className="list-decimal pl-4">
                     <li>We reserve the right to cancel the purchase order anytime before product shipment.</li>

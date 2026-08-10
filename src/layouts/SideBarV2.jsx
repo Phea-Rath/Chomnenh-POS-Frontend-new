@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router";
-import { useGetCurrentMenusWebsiteQuery } from "../../app/Features/menusSlice";
-import { useGetUserProfileQuery } from "../../app/Features/usersSlice";
+import { useGetCurrentMenusWebsiteQuery } from "@/features/auth/menusSlice";
+import { useGetUserProfileQuery } from "@/features/auth/usersSlice";
+import { clearAllTokens } from "@/utils/tokenStore";
 import { 
   HiChevronDown, 
   HiOutlineLogout, 
@@ -26,6 +27,7 @@ import { Avatar, Badge, Spin } from "antd";
 import { useTranslation } from "react-i18next";
 import iconFallback from "../assets/stock.png";
 import { useOutletsContext } from "./Management";
+import { getToken } from '@/utils/tokenStore';
 
 const SideBarV2 = () => {
   const { t, i18n } = useTranslation();
@@ -33,7 +35,7 @@ const SideBarV2 = () => {
   const navigate = useNavigate();
   const { sidebar, setSidebar } = useOutletsContext();
   
-  const token = localStorage.getItem("token");
+  const token = getToken();
   const proId = localStorage.getItem("profileId");
 
   const { data: menuResponse, isFetching: menuLoading } = useGetCurrentMenusWebsiteQuery({ token });
@@ -128,9 +130,9 @@ const SideBarV2 = () => {
         <div
           className={`group relative flex items-center ${isExpanded ? "justify-between px-4" : "justify-center px-0"} py-2.5 my-0.5 mx-2 rounded-xl cursor-pointer transition-all duration-200 
             ${active 
-              ? "bg-blue-600 text-white shadow-blue-500/20" 
+              ? "bg-cyan-600 text-white shadow-cyan-500/20" 
               : parentActive && hasChildren
-                ? "bg-blue-900/20 text-blue-400"
+                ? "bg-cyan-900/20 text-cyan-400"
                 : "text-gray-400 hover:bg-gray-800/50 hover:text-white"
             }
             ${level > 0 && isExpanded ? "ml-6" : ""}`}
@@ -222,7 +224,7 @@ const SideBarV2 = () => {
               <Avatar
                 size={isExpanded ? 48 : 40}
                 src={user?.image}
-                className={`border-2 transition-all duration-300 group-hover:scale-105 border-blue-900 shadow-blue-900/20}`}
+                className={`border-2 transition-all duration-300 group-hover:scale-105 border-cyan-900 shadow-cyan-900/20}`}
               >
                 {user?.profile_name?.charAt(0) || "U"}
               </Avatar>
@@ -232,7 +234,7 @@ const SideBarV2 = () => {
                 <h2 className={`text-sm font-bold truncate text-white`}>
                   {user?.profile_name || "Admin"}
                 </h2>
-                <span className={`text-[9px] font-black uppercase tracking-widest text-blue-400`}>
+                <span className={`text-[9px] font-black uppercase tracking-widest text-cyan-400`}>
                   {user?.role_name || t("administrator")}
                 </span>
               </div>
@@ -265,6 +267,7 @@ const SideBarV2 = () => {
         <div className={`p-4 mt-auto border-gray-700 border-t space-y-2`}>
           <button 
               onClick={() => {
+                  clearAllTokens();
                   localStorage.clear();
                   window.location.href = "/";
               }}
@@ -282,7 +285,7 @@ const SideBarV2 = () => {
         {isMobile && (
           <button 
             onClick={() => setSidebar(!sidebar)}
-            className="absolute -right-12 top-4 p-2 bg-blue-600 text-white rounded-r-xl shadow-lg"
+            className="absolute -right-12 top-4 p-2 bg-cyan-600 text-white rounded-r-xl shadow-lg"
           >
             <HiOutlineMenuAlt2 className="w-6 h-6 rotate-180" />
           </button>

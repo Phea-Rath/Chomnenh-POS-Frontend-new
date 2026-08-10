@@ -3,6 +3,7 @@ import AlertBox from '../../services/AlertBox'
 import { useOutletsContext } from '../../layouts/Management';
 import { IoMdCloudUpload } from 'react-icons/io';
 import { toast } from 'react-toastify';
+import { getToken } from '@/utils/tokenStore';
 
 const UpdateUsers = () => {
   const [viewImage, setViewImage] = useState();
@@ -10,7 +11,7 @@ const UpdateUsers = () => {
   const { setLoading } = useOutletsContext();
   const [alertBox, setAlertBox] = useState(false);
   const [brands, setBrands] = useState({ brand_name: "", created_by: "" });
-  const token = localStorage.getItem('token');
+  const token = getToken();
   function handleSubmit() {
     setAlertBox(true);
   }

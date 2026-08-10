@@ -28,15 +28,16 @@ import Button from "../../utils/Button";
 import * as XLSX from "xlsx";
 import readFormFile from "../../services/readFormFile";
 import ImportItemInList from "../../utils/ImportItemInList";
-import { useGetAllCustomerQuery } from "../../../app/Features/customersSlice";
-import { useGetAllSaleQuery } from "../../../app/Features/salesSlice";
-import { useGetAllDeliverQuery } from "../../../app/Features/deliversSlice";
-import { useGetAllUserQuery } from "../../../app/Features/usersSlice";
-import { useGetOrderByIdQuery, useGetOrderInvoiceQuery } from "../../../app/Features/ordersSlice";
+import { useGetAllCustomerQuery } from "@/features/customers/customersSlice";
+import { useGetAllSaleQuery } from "@/features/sales/salesSlice";
+import { useGetAllDeliverQuery } from "@/features/sales/deliversSlice";
+import { useGetAllUserQuery } from "@/features/auth/usersSlice";
+import { useGetOrderByIdQuery, useGetOrderInvoiceQuery } from "@/features/sales/ordersSlice";
 import { PAYMENT_METHODS, PAYMENT_STATUS, TAX_OPTIONS } from "../../services/paymentService";
 import AlertBox from "../../services/AlertBox";
 
 import OldTemplateModal from "../../utils/OldTemplateModal";
+import { getToken } from '@/utils/tokenStore';
 
 const DEFAULT_STATUS = 0;
 const ITEM_FOR_OPTIONS = [
@@ -134,7 +135,7 @@ const OrderInvoiceForm = () => {
   const notify = useNotify();
   const { id: orderId } = useParams();
   const isEditMode = Boolean(orderId);
-  const token = localStorage.getItem("token");
+  const token = getToken();
 
   const navigator = useNavigate();
 
@@ -837,7 +838,7 @@ const OrderInvoiceForm = () => {
           item_id: Number(item.item_id),
           item_price: toNumber(item.item_price),
           quantity: Number(item.quantity),
-          item_for: item.item_for || null,
+          item_for: item.item_for || "sale",
           discount: toNumber(item.discount),
         })),
         payments: [],
@@ -1035,7 +1036,7 @@ const OrderInvoiceForm = () => {
             >
               <div className="bg-gray-100 dark:bg-transparent dark:border-gray-500 p-4 border border-gray-200">
                 <h3 className="text-md font-semibold mb-4 flex items-center gap-2 dark:text-white">
-                  <FaWarehouse className="text-blue-500" />
+                  <FaWarehouse className="text-cyan-500" />
                   {t("orderInformation")}
                 </h3>
                 
@@ -1157,7 +1158,7 @@ const OrderInvoiceForm = () => {
               <div className="border-t-0 px-4 border-x bg-gradient-to-b from-gray-50 to-gray-100 dark:bg-transparent dark:from-transparent dark:to-transparent border-gray-200 dark:border-gray-500">
                 <div className="flex items-center justify-between px-4 py-2">
                   <div className="flex items-center gap-2">
-                    <FaBox className="text-blue-500" />
+                    <FaBox className="text-cyan-500" />
                     <h2 className="text-sm font-bold text-gray-800 dark:!text-gray-100">
                       {t("orderItems")}
                     </h2>

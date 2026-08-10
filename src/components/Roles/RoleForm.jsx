@@ -3,17 +3,20 @@ import { FiArrowLeft, FiSave, FiShield, FiFileText, FiAlertCircle } from "react-
 import { Link, useNavigate, useParams } from "react-router";
 import api from "../../services/api";
 import { toast } from "react-toastify";
-import { useGetAllRoleQuery } from "../../../app/Features/rolesSlice";
+import { useGetAllRoleQuery, useCreateRoleMutation, useUpdateRoleMutation } from "@/features/auth/rolesSlice";
 import { useOutletsContext } from "../../layouts/Management";
 import { useTranslation } from "react-i18next";
 import { motion } from "framer-motion";
+import { getToken } from '@/utils/tokenStore';
 
 const RoleForm = () => {
   const { t } = useTranslation();
   const { darkMode } = useOutletsContext();
   const { id } = useParams();
   const navigate = useNavigate();
-  const token = localStorage.getItem("token");
+  const token = getToken();
+  const [createRole] = useCreateRoleMutation();
+  const [updateRole] = useUpdateRoleMutation();
   const { refetch } = useGetAllRoleQuery(token);
   const isEditMode = !!id;
 
@@ -48,16 +51,16 @@ const RoleForm = () => {
     try {
       const payload = { role_name: formData.role_name, role_description: formData.role_description || null };
       if (isEditMode) {
-        await api.put(`/roles/${id}`, payload, { headers: { Authorization: `Bearer ${token}` } });
+        await updateRole({ id, itemData: payload, token }).unwrap();
         toast.success(t("roleUpdatedSuccess"));
       } else {
-        await api.post("/roles", payload, { headers: { Authorization: `Bearer ${token}` } });
+        await createRole({ itemData: payload, token }).unwrap();
         toast.success(t("roleCreatedSuccess"));
       }
       refetch();
       navigate(-1);
     } catch (err) {
-      setError(err.response?.data?.message || `Error ${isEditMode ? "updating" : "creating"} role.`);
+      setError(err?.data?.message || err?.message || `Error ${isEditMode ? "updating" : "creating"} role.`);
     } finally { setLoading(false); }
   };
 
@@ -65,8 +68,8 @@ const RoleForm = () => {
     bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100
     placeholder-gray-400 dark:placeholder-gray-500
     border-gray-200 dark:border-gray-600
-    focus:border-blue-500 dark:focus:border-blue-400
-    focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900/30`;
+    focus:border-cyan-500 dark:focus:border-cyan-400
+    focus:ring-2 focus:ring-cyan-100 dark:focus:ring-cyan-900/30`;
 
   return (
     <div className="py-8 px-4 sm:px-6 lg:px-8 min-h-screen">
@@ -75,7 +78,7 @@ const RoleForm = () => {
         <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}
           className="mb-8">
           <Link to="/setting/roles"
-            className="inline-flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 hover:text-[#1e3a5f] dark:hover:text-blue-400 transition-colors mb-6">
+            className="inline-flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 hover:text-[#1e3a5f] dark:hover:text-cyan-400 transition-colors mb-6">
             <FiArrowLeft />{t("backToRoles")}
           </Link>
           <div className="flex items-center gap-4">
@@ -99,7 +102,7 @@ const RoleForm = () => {
             className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
 
             {/* Top accent */}
-            <div className="h-1 bg-gradient-to-r from-[#1e3a5f] to-blue-400" />
+            <div className="h-1 bg-gradient-to-r from-[#1e3a5f] to-cyan-400" />
 
             <div className="p-8 space-y-6">
               {/* Role Name */}
@@ -145,8 +148,8 @@ const RoleForm = () => {
               )}
 
               {/* Tip box */}
-              <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 rounded-xl">
-                <p className="text-sm text-blue-700 dark:text-blue-400">
+              <div className="p-4 bg-cyan-50 dark:bg-cyan-900/20 border border-cyan-100 dark:border-cyan-800 rounded-xl">
+                <p className="text-sm text-cyan-700 dark:text-cyan-400">
                   <span className="font-semibold">{t("quickTips")}: </span>
                   {isEditMode ? t("editRoleSubtitle") : t("createRoleSubtitle")}
                 </p>

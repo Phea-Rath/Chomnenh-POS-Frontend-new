@@ -14,11 +14,11 @@ import {
     useGetAllPurchaseQuery,
     useGetAllPurchaseRawQuery,
     useUncancelPurchaseMutation,
-} from "../../../app/Features/purchasesSlice";
+} from "@/features/purchases/purchasesSlice";
 import { Atom } from "react-loading-indicators";
 import { toast } from "react-toastify";
-import { useGetAllSaleQuery } from "../../../app/Features/salesSlice";
-import { useGetAllStockQuery } from "../../../app/Features/stocksSlice";
+import { useGetAllSaleQuery } from "@/features/sales/salesSlice";
+import { useGetAllStockQuery } from "@/features/stocks/stocksSlice";
 import {
     FaCalendarAlt,
     FaDollarSign,
@@ -44,7 +44,7 @@ import { LuCalendar, LuRefreshCw } from "react-icons/lu";
 import dayjs from "dayjs";
 import api from "../../services/api";
 import ExportExcel from "../../services/ExportExcel";
-import { useGetAllRawMaterialQuery } from "../../../app/Features/RawMaterialSlice";
+import { useGetAllRawMaterialQuery } from "@/features/stocks/RawMaterialSlice";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import RichSearch from "../../utils/RichSearch";
@@ -55,6 +55,7 @@ import { FaXmark } from "react-icons/fa6";
 import { MdApproval, MdPayment } from "react-icons/md";
 import { BiEdit, BiTrash } from "react-icons/bi";
 import Button from "../../utils/Button";
+import { getToken } from '@/utils/tokenStore';
 const MENU_ID = 39;
 const PurchaseRawList = () => {
     const { t } = useTranslation();
@@ -63,7 +64,7 @@ const PurchaseRawList = () => {
     const [filteredPurchases, setFilteredPurchases] = useState([]);
     const [showPaymentModal, setShowPaymentModal] = useState(false);
     const [balanceAmount, setBalanceAmount] = useState(0);
-    const token = localStorage.getItem("token");
+    const token = getToken();
     const [id, setId] = useState(0);
     const [alertBox, setAlertBox] = useState(false);
     const [alertBoxCancel, setAlertBoxCancel] = useState(false);
@@ -435,7 +436,7 @@ const PurchaseRawList = () => {
         );
     };
 
-    const StatCard = ({ title, value, icon, color = "blue" }) => {
+    const StatCard = ({ title, value, icon, color = "cyan" }) => {
         const bgColor = `bg-gradient-to-br from-${color}-50 to-${color}-100 dark:from-${color}-900/20 dark:to-${color}-800/20`;
         const textColor = `text-${color}-600 dark:text-${color}-400`;
         return (
@@ -467,8 +468,8 @@ const PurchaseRawList = () => {
                             animate={{ opacity: 1, x: 0 }}
                             className="text-2xl font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-3"
                         >
-                            <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-                                <FaShoppingCart className="text-2xl text-blue-600 dark:text-blue-400" />
+                            <div className="p-2 bg-cyan-100 dark:bg-cyan-900/30 rounded-lg">
+                                <FaShoppingCart className="text-2xl text-cyan-600 dark:text-cyan-400" />
                             </div>
                             {t('purchaseRawManagement')}
                         </motion.h1>
@@ -495,7 +496,7 @@ const PurchaseRawList = () => {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-3">
-                    <StatCard title={t('totalPurchases')} value={stats.totalPurchases} icon={<FaShoppingCart className="text-2xl" />} color="blue" />
+                    <StatCard title={t('totalPurchases')} value={stats.totalPurchases} icon={<FaShoppingCart className="text-2xl" />} color="cyan" />
                     <StatCard title={t('totalAmount')} value={`$${formatCurrency(stats.totalAmount)}`} icon={<FaDollarSign className="text-2xl" />} color="green" />
                     <StatCard title={t('totalBalance')} value={`$${formatCurrency(stats.totalBalance)}`} icon={<FaBalanceScale className="text-2xl" />} color="purple" />
                     <StatCard title={t('pendingOrders')} value={stats.pendingPurchases} icon={<FaClock className="text-2xl" />} color="orange" />
@@ -507,7 +508,7 @@ const PurchaseRawList = () => {
                             <div className="flex bg-gray-100 dark:bg-slate-800 rounded-lg p-1 border border-gray-300 dark:border-gray-600">
                                 <button
                                     onClick={() => setViewMode("list")}
-                                    className={`px-4 py-2 rounded-md transition-all duration-300 flex items-center gap-2 ${viewMode === "list" ? "bg-white dark:bg-slate-700 shadow-sm text-blue-600 dark:text-blue-400 font-semibold" : "text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
+                                    className={`px-4 py-2 rounded-md transition-all duration-300 flex items-center gap-2 ${viewMode === "list" ? "bg-white dark:bg-slate-700 shadow-sm text-cyan-600 dark:text-cyan-400 font-semibold" : "text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
                                         }`}
                                 >
                                     <IoIosList className="text-lg" />
@@ -515,7 +516,7 @@ const PurchaseRawList = () => {
                                 </button>
                                 <button
                                     onClick={() => setViewMode("grid")}
-                                    className={`px-4 py-2 rounded-md transition-all duration-300 flex items-center gap-2 ${viewMode === "grid" ? "bg-white dark:bg-slate-700 shadow-sm text-blue-600 dark:text-blue-400 font-semibold" : "text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
+                                    className={`px-4 py-2 rounded-md transition-all duration-300 flex items-center gap-2 ${viewMode === "grid" ? "bg-white dark:bg-slate-700 shadow-sm text-cyan-600 dark:text-cyan-400 font-semibold" : "text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
                                         }`}
                                 >
                                     <IoIosGrid className="text-lg" />
@@ -531,7 +532,7 @@ const PurchaseRawList = () => {
                                         placeholder={t('searchPurchasePlaceholder')}
                                         value={searchTerm}
                                         onChange={(e) => setSearchTerm(e.target.value)}
-                                        className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100"
+                                        className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-500 bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100"
                                     />
                                 </div>
                             </div>
@@ -637,7 +638,7 @@ const PurchaseRawList = () => {
                                     <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                                         {filteredPurchases.map((item) => (
                                             <tr key={item.purchase_id} className="hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors">
-                                                <td className="px-6 py-4 font-medium text-blue-600 dark:text-blue-400"><pre>{item.purchase_no}</pre></td>
+                                                <td className="px-6 py-4 font-medium text-cyan-600 dark:text-cyan-400"><pre>{item.purchase_no}</pre></td>
                                                 <td className="px-6 py-4">
                                                     <div className="flex items-center gap-2 dark:text-gray-200">
                                                         <FaUser className="text-gray-400 w-4 h-4" />
@@ -727,7 +728,7 @@ const PurchaseRawList = () => {
                                         <div className="p-6">
                                             <div className="flex justify-between items-start mb-4 border-b border-b-gray-300 dark:border-b-gray-600 pb-2">
                                                 <div>
-                                                    <h3 className="font-bold text-sm text-blue-600 dark:text-blue-400">{item.purchase_no}</h3>
+                                                    <h3 className="font-bold text-sm text-cyan-600 dark:text-cyan-400">{item.purchase_no}</h3>
                                                     <p className="text-xs text-gray-500 dark:text-gray-400"><pre className="flex items-center gap-2"><LuCalendar size={15} />{dayjs(item.purchase_date).format('MMM DD, YYYY')}</pre></p>
                                                 </div>
                                                 <Badge status={item.status} />

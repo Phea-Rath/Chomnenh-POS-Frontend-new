@@ -6,37 +6,38 @@ import { useOutletsContext } from "../../layouts/Management";
 import AlertBox from "../../services/AlertBox";
 import { PiHandFistFill, PiShoppingCartBold } from "react-icons/pi";
 import { motion } from "framer-motion";
-import { useGetAllSaleQuery } from "../../../app/Features/salesSlice";
-import { useGetAllCategoriesQuery } from "../../../app/Features/categoriesSlice";
-import { useGetAllOrderQuery } from "../../../app/Features/ordersSlice";
+import { useGetAllSaleQuery } from "@/features/sales/salesSlice";
+import { useGetAllCategoriesQuery } from "@/features/products/categoriesSlice";
+import { useGetAllOrderQuery } from "@/features/sales/ordersSlice";
 import { IoMdAddCircle } from "react-icons/io";
 import { IoMdRemoveCircle } from "react-icons/io";
 import { toast } from "react-toastify";
-import { useGetAllCustomerQuery } from "../../../app/Features/customersSlice";
-import { useGetExchangeRateByIdQuery } from "../../../app/Features/exchangeRatesSlice";
+import { useGetAllCustomerQuery } from "@/features/customers/customersSlice";
+import { useGetExchangeRateByIdQuery } from "@/features/system/exchangeRatesSlice";
 import { currencyFormat } from "../../services/serviceFunction";
 import { FaPercent, FaPalette, FaRuler, FaMapMarkerAlt, FaHistory, FaUser, FaPhone, FaCheck, FaMoon, FaSun, FaLanguage } from "react-icons/fa";
 import { GiScales, GiSugarCane } from "react-icons/gi";
 import { BiCategory } from "react-icons/bi";
 import api from "../../services/api";
-import { useGetUserLoginQuery, useGetUserProfileQuery } from "../../../app/Features/usersSlice";
+import { useGetUserLoginQuery, useGetUserProfileQuery } from "@/features/auth/usersSlice";
 import { TbShoppingCartOff } from "react-icons/tb";
 import { MdOutlineAddShoppingCart } from "react-icons/md";
 import { IoExit, IoLogOutOutline } from "react-icons/io5";
-import { useGetAllWasteQuery } from "../../../app/Features/notificationSlice";
+import { useGetAllWasteQuery } from "@/features/system/notificationSlice";
 import { useDebounce } from "use-debounce";
 import {
   BsQrCodeScan, BsBoxSeam, BsArrowUpRight, BsArrowDownLeft,
   BsTrash, BsBagPlusFill, BsLightningChargeFill
 } from "react-icons/bs";
 import { MdOutlineCategory, MdOutlineBrandingWatermark } from "react-icons/md";
-import { useGetItemByIdQuery } from "../../../app/Features/itemsSlice";
+import { useGetItemByIdQuery } from "@/features/products/itemsSlice";
 import { QRCodeCanvas } from "qrcode.react";
 import bakong from "../../assets/bakong.png";
 import * as qrService from "../../services/qrPaymentService";
 import handleDownload from "../../services/imageDowload";
-import Echo from "../../echo";
+import Echo from "@/websockets/echo";
 import { useTranslation } from "react-i18next";
+import { setGuestToken } from "@/utils/tokenStore";
 
 // const { Option } = Select;
 
@@ -63,9 +64,9 @@ const initialOrder = {
 };
 
 // Custom Badge component
-const Badge = ({ count, children, color = 'blue', className = '' }) => {
+const Badge = ({ count, children, color = 'cyan', className = '' }) => {
   const colors = {
-    blue: 'bg-blue-500 text-white',
+    cyan: 'bg-cyan-500 text-white',
     green: 'bg-green-500 text-white',
     red: 'bg-red-500 text-white',
     yellow: 'bg-yellow-500 text-white',
@@ -95,7 +96,7 @@ const Button = ({ children, onClick, variant = 'default', size = 'md', icon, dis
     default: darkMode
       ? '!border-slate-700 !bg-slate-800 !text-slate-100 hover:!bg-slate-700'
       : 'border border-gray-300 bg-white hover:bg-gray-100 text-gray-700',
-    primary: 'border border-blue-600 bg-blue-600 hover:bg-blue-700 text-white',
+    primary: 'border border-cyan-600 bg-cyan-600 hover:bg-cyan-700 text-white',
     danger: 'border border-red-600 bg-red-600 hover:bg-red-700 text-white',
     success: 'border border-green-600 bg-green-600 hover:bg-green-700 text-white',
     outline: darkMode
@@ -124,7 +125,7 @@ const Input = ({ value, onChange, placeholder, type = 'text', icon, className = 
       value={value}
       onChange={onChange}
       placeholder={placeholder}
-      className={`w-full rounded-xl border px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 ${icon ? 'pl-10' : ''} ${darkMode ? '!border-slate-700 !bg-slate-900 !text-slate-100 !placeholder-slate-500' : 'border-gray-300 bg-white text-gray-900'} ${className}`}
+      className={`w-full rounded-xl border px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-cyan-500 ${icon ? 'pl-10' : ''} ${darkMode ? '!border-slate-700 !bg-slate-900 !text-slate-100 !placeholder-slate-500' : 'border-gray-300 bg-white text-gray-900'} ${className}`}
     />
   </div>
 );
@@ -136,7 +137,7 @@ const Textarea = ({ value, onChange, placeholder, rows = 3, className = '', dark
     onChange={onChange}
     placeholder={placeholder}
     rows={rows}
-    className={`w-full rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 ${darkMode ? '!border-slate-700 !bg-slate-900 !text-slate-100 !placeholder-slate-500' : 'border border-gray-300 bg-white text-gray-900'} ${className}`}
+    className={`w-full rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-cyan-500 ${darkMode ? '!border-slate-700 !bg-slate-900 !text-slate-100 !placeholder-slate-500' : 'border border-gray-300 bg-white text-gray-900'} ${className}`}
   />
 );
 
@@ -145,7 +146,7 @@ const Select = ({ value, onChange, children, className = '', darkMode = false })
   <select
     value={value}
     onChange={onChange}
-    className={`rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 ${darkMode ? '!border-slate-700 !bg-slate-900 !text-slate-100' : 'border border-gray-300 bg-white text-gray-900'} ${className}`}
+    className={`rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-cyan-500 ${darkMode ? '!border-slate-700 !bg-slate-900 !text-slate-100' : 'border border-gray-300 bg-white text-gray-900'} ${className}`}
   >
     {children}
   </select>
@@ -155,9 +156,9 @@ const Select = ({ value, onChange, children, className = '', darkMode = false })
 const Divider = ({ className = '', darkMode = false }) => <hr className={`border-t my-4 ${darkMode ? '!border-slate-700' : 'border-gray-200'} ${className}`} />;
 
 // Custom Tag/Chip
-const Tag = ({ children, color = 'blue', className = '' }) => {
+const Tag = ({ children, color = 'cyan', className = '' }) => {
   const colors = {
-    blue: 'bg-blue-100 text-blue-800 border-blue-200',
+    cyan: 'bg-cyan-100 text-cyan-800 border-cyan-200',
     green: 'bg-green-100 text-green-800 border-green-200',
     red: 'bg-red-100 text-red-800 border-red-200',
     yellow: 'bg-yellow-100 text-yellow-800 border-yellow-200',
@@ -193,7 +194,7 @@ const Pagination = ({ current, total, pageSize, onChange, darkMode = false }) =>
         <button
           key={page}
           onClick={() => onChange(page)}
-          className={`rounded-lg px-3 py-1.5 text-sm ${current === page ? 'border border-blue-600 bg-blue-600 text-white' : darkMode ? '!border !border-slate-700 !bg-slate-900 !text-slate-200 hover:!bg-slate-800' : 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-100'}`}
+          className={`rounded-lg px-3 py-1.5 text-sm ${current === page ? 'border border-cyan-600 bg-cyan-600 text-white' : darkMode ? '!border !border-slate-700 !bg-slate-900 !text-slate-200 hover:!bg-slate-800' : 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-100'}`}
         >
           {page}
         </button>
@@ -1038,7 +1039,7 @@ const Sales = () => {
       setAlertBox(false);
 
       const orderRes = await api.post("/order_masters", payload, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('guestToken')}` },
+        headers: { Authorization: `Bearer ${getGuestToken()}` },
       });
 
       if (orderRes.data.status === 200) {
@@ -1186,7 +1187,8 @@ const Sales = () => {
         user,
       } = response.data;
 
-      localStorage.setItem("guestToken", userToken);
+      // Store guest token in memory + sessionStorage (NOT localStorage — XSS-safe)
+      setGuestToken(userToken);
       localStorage.setItem("guest", JSON.stringify(user));
       if (user?.id) {
         localStorage.setItem("guestId", user.id);
@@ -1419,7 +1421,7 @@ const Sales = () => {
           <button
             onClick={() => onFilterCategory('all')}
             className={`rounded-full px-3 py-1.5 text-xs font-medium border transition-colors ${selectedCategory === 'all'
-              ? 'bg-blue-600 text-white border-blue-600'
+              ? 'bg-cyan-600 text-white border-cyan-600'
               : darkMode ? '!bg-slate-900 !text-slate-200 !border-slate-700 hover:!bg-slate-800' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'
               }`}
           >
@@ -1430,7 +1432,7 @@ const Sales = () => {
               key={cat.category_id}
               onClick={() => onFilterCategory(cat.category_id)}
               className={`rounded-full px-3 text-xs font-medium border transition-colors ${selectedCategory === cat.category_id
-                ? 'bg-blue-600 text-white border-blue-600'
+                ? 'bg-cyan-600 text-white border-cyan-600'
                 : darkMode ? '!bg-slate-900 !text-slate-200 !border-slate-700 hover:!bg-slate-800' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'
                 }`}
             >
@@ -1495,7 +1497,7 @@ const Sales = () => {
                         </div>
                         {/* <div className="text-right">
                           <div className="text-xs text-gray-600">Wholesale</div>
-                          <div className="text-sm font-medium text-blue-600">
+                          <div className="text-sm font-medium text-cyan-600">
                             ${getItemPrice(item, 'wholesale').toFixed(2)}
                           </div>
                         </div> */}
@@ -1546,9 +1548,9 @@ const Sales = () => {
         {/* Cart Drawer */}
         <Drawer open={open} onClose={onClose} title={
           <div className="flex items-center gap-2">
-            <PiShoppingCartBold className="text-blue-500" />
+            <PiShoppingCartBold className="text-cyan-500" />
             <span>Order Summary</span>
-            {orderCount > 0 && <Badge count={orderCount} color="blue" className="ml-2" />}
+            {orderCount > 0 && <Badge count={orderCount} color="cyan" className="ml-2" />}
           </div>
         } width={350} darkMode={darkMode}>
           <div className="overflow-hidden relat">
@@ -1609,7 +1611,7 @@ const Sales = () => {
                               +
                             </button>
                           </div>
-                          <div className="font-bold text-blue-600">${item.price.toFixed(2)}</div>
+                          <div className="font-bold text-cyan-600">${item.price.toFixed(2)}</div>
                         </div>
                       </div>
                     </div>
@@ -1769,7 +1771,7 @@ const Sales = () => {
             {/* Left: Image */}
             <div className={`relative flex w-full flex-col items-center p-5 md:w-1/2 ${darkMode ? '!bg-slate-800 !border-slate-700' : 'bg-slate-50 border-r border-slate-200'}`}>
               <div className="absolute top-4 left-4">
-                <Tag color="blue">{product?.code}</Tag>
+                <Tag color="cyan">{product?.code}</Tag>
               </div>
               <img
                 src={product?.image}
@@ -1778,7 +1780,7 @@ const Sales = () => {
               />
               <div className="flex gap-2 mt-4 overflow-x-auto">
                 {product?.images?.map((img, idx) => (
-                  <img key={idx} src={img.image} className={`w-16 h-16 border-2 rounded object-cover cursor-pointer hover:border-blue-400 ${darkMode ? 'border-slate-700' : 'border-white'}`} />
+                  <img key={idx} src={img.image} className={`w-16 h-16 border-2 rounded object-cover cursor-pointer hover:border-cyan-400 ${darkMode ? 'border-slate-700' : 'border-white'}`} />
                 ))}
               </div>
             </div>
@@ -1791,7 +1793,7 @@ const Sales = () => {
                 </div>
                 <h2 className={`text-2xl font-bold ${darkMode ? '!text-slate-100' : 'text-gray-800'}`}>{product?.name}</h2>
                 <div className="flex items-center gap-4 mt-2">
-                  <span className="text-2xl font-bold text-blue-600">${product?.price}</span>
+                  <span className="text-2xl font-bold text-cyan-600">${product?.price}</span>
                   {product?.price < product?.wholesale_price && (
                     <span className={`line-through ${darkMode ? '!text-slate-500' : 'text-gray-400'}`}>${product?.wholesale_price}</span>
                   )}
@@ -1805,14 +1807,14 @@ const Sales = () => {
                 <h4 className={`text-sm font-bold uppercase ${darkMode ? '!text-slate-200' : 'text-gray-700'}`}>Product Specifications</h4>
                 <div className="grid grid-cols-2 gap-3">
                   <div className={`flex items-center gap-2 p-2 rounded border ${darkMode ? '!bg-slate-700 !border-slate-600' : 'bg-gray-50 border-gray-200'}`}>
-                    <BsQrCodeScan className="text-blue-500" />
+                    <BsQrCodeScan className="text-cyan-500" />
                     <div>
                       <p className={`text-xs ${darkMode ? '!text-slate-400' : 'text-gray-400'}`}>Barcode</p>
                       <p className={`text-sm font-medium ${darkMode ? '!text-slate-200' : ''}`}>{product?.barcode}</p>
                     </div>
                   </div>
                   <div className={`flex items-center gap-2 p-2 rounded border ${darkMode ? '!bg-slate-700 !border-slate-600' : 'bg-gray-50 border-gray-200'}`}>
-                    <GiScales className="text-blue-500" />
+                    <GiScales className="text-cyan-500" />
                     <div>
                       <p className={`text-xs ${darkMode ? '!text-slate-400' : 'text-gray-400'}`}>Scale</p>
                       <p className={`text-sm font-medium ${darkMode ? '!text-slate-200' : ''}`}>{product?.scale_name}</p>
@@ -1906,7 +1908,7 @@ const Sales = () => {
 
                 <div className="mt-4">
                   {qrStatus === "waiting" && (
-                    <div className="rounded border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-medium text-blue-700">
+                    <div className="rounded border border-cyan-200 bg-cyan-50 px-4 py-3 text-sm font-medium text-cyan-700">
                       Waiting for payment... ({Math.floor(qrCountdown / 60)}:{(qrCountdown % 60).toString().padStart(2, '0')})
                     </div>
                   )}
@@ -1950,7 +1952,7 @@ const Sales = () => {
 
             {!qrValue && (
               <div className="text-center py-8">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-600 mx-auto mb-4"></div>
                 <p className="text-gray-600">Generating QR Code...</p>
               </div>
             )}

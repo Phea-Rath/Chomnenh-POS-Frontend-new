@@ -4,15 +4,16 @@ import { PrinterOutlined, DownloadOutlined, ArrowLeftOutlined, FileTextOutlined 
 import { useReactToPrint } from 'react-to-print';
 import { useNavigate, useParams } from 'react-router';
 import handleDownload from '../../services/imageDowload';
-import { useGetProductionByIdQuery } from '../../../app/Features/productSlice';
+import { useGetProductionByIdQuery } from "@/features/products/productSlice";
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { getToken } from '@/utils/tokenStore';
 
 const ProductionDetail = () => {
     const { t } = useTranslation();
     const navigate = useNavigate();
     const componentRef = useRef();
-    const token = localStorage.getItem('token');
+    const token = getToken();
     const { id } = useParams();
     const { data } = useGetProductionByIdQuery({ id, token });
     const [production, setProduction] = useState({});
@@ -38,7 +39,7 @@ const ProductionDetail = () => {
             dataIndex: 'total_cost',
             key: 'total_cost',
             align: 'right',
-            render: (val) => <span className="font-bold font-mono text-blue-600 dark:text-blue-400">${parseFloat(val).toFixed(2)}</span>
+            render: (val) => <span className="font-bold font-mono text-cyan-600 dark:text-cyan-400">${parseFloat(val).toFixed(2)}</span>
         },
     ];
 
@@ -84,11 +85,11 @@ const ProductionDetail = () => {
             {/* Printable Content Area */}
             <div ref={componentRef} className="max-w-5xl mx-auto">
                 <Card className="shadow-sm border-none rounded-xl mb-6 overflow-hidden dark:!bg-gray-800 transition-colors">
-                    <div className="bg-blue-600 p-1 mb-6" /> {/* Brand accent line */}
+                    <div className="bg-cyan-600 p-1 mb-6" /> {/* Brand accent line */}
 
                     <div className="flex flex-col md:flex-row justify-between mb-8 px-6">
                         <div>
-                            <Tag color="blue" className="mb-2 font-bold dark:bg-blue-900/30 dark:border-blue-800">{t('completedProduction')}</Tag>
+                            <Tag color="cyan" className="mb-2 font-bold dark:bg-cyan-900/30 dark:border-cyan-800">{t('completedProduction')}</Tag>
                             <h2 className="text-3xl font-black text-gray-900 dark:text-white uppercase tracking-tight">
                                 {production?.item_name}
                             </h2>
@@ -96,7 +97,7 @@ const ProductionDetail = () => {
                         </div>
                         <div className="text-left md:text-right mt-4 md:mt-0">
                             <p className="text-gray-400 dark:text-gray-500 mb-0 uppercase text-xs font-bold tracking-widest">{t('totalProductionCost')}</p>
-                            <h1 className="text-4xl font-black text-blue-600 dark:text-blue-400">${production?.total_cost}</h1>
+                            <h1 className="text-4xl font-black text-cyan-600 dark:text-cyan-400">${production?.total_cost}</h1>
                         </div>
                     </div>
 
@@ -142,7 +143,7 @@ const ProductionDetail = () => {
                                 return (
                                     <Table.Summary.Row className="bg-gray-50 dark:bg-gray-900/50 font-bold">
                                         <Table.Summary.Cell index={0} colSpan={4} className="text-right dark:text-gray-300">{t('totalMaterialsCost')}:</Table.Summary.Cell>
-                                        <Table.Summary.Cell index={1} className="text-right text-blue-600 dark:text-blue-400 text-lg">
+                                        <Table.Summary.Cell index={1} className="text-right text-cyan-600 dark:text-cyan-400 text-lg">
                                             ${total.toFixed(2)}
                                         </Table.Summary.Cell>
                                     </Table.Summary.Row>

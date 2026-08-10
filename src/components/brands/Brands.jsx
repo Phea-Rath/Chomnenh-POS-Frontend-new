@@ -2,13 +2,14 @@ import React, { useEffect, useState } from 'react';
 import { IoIosSearch, IoIosGrid, IoIosList } from 'react-icons/io';
 import { FaPlus, FaEdit, FaTrash, FaTags, FaUser } from 'react-icons/fa';
 import { useOutletsContext } from '../../layouts/Management';
-import { useDeleteBrandMutation, useGetAllBrandQuery } from '../../../app/Features/brandsSlice';
+import { useDeleteBrandMutation, useGetAllBrandQuery } from "@/features/products/brandsSlice";
 import { toast } from 'react-toastify';
-import CreateBrands from '../../views/brands/CreateBrands';
-import UpdateBrands from '../../views/brands/UpdateBrands';
+import CreateBrands from './CreateBrands';
+import UpdateBrands from './UpdateBrands';
 import AlertBox from '../../services/AlertBox';
 import { useTranslation } from 'react-i18next';
 import { definePermission } from '../../services/serviceFunction';
+import { getToken } from '@/utils/tokenStore';
 const MENU_ID = 10;
 const Brands = () => {
   const { t } = useTranslation();
@@ -20,7 +21,7 @@ const Brands = () => {
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isUpdateOpen, setIsUpdateOpen] = useState(false);
   const { setLoading, loading } = useOutletsContext();
-  const token = localStorage.getItem('token');
+  const token = getToken();
   const [brands, setBrands] = useState([]);
   const [filteredBrands, setFilteredBrands] = useState([]);
   const { data, isLoading, refetch } = useGetAllBrandQuery(token);
@@ -53,12 +54,11 @@ const Brands = () => {
   const handleConfirm = async () => {
     try {
       setLoading(true);
-      await deleteBrand({ id, token });
-      refetch();
+      await deleteBrand({ id, token }).unwrap();
       toast.success(t('brandUpdatedSuccess'));
       setAlertBox(false);
     } catch (err) {
-      toast.error(err?.message || t('failedToDeleteBrand'));
+      toast.error(err?.data?.message || err?.message || t('failedToDeleteBrand'));
     } finally {
       setLoading(false);
     }
@@ -76,7 +76,7 @@ const Brands = () => {
     const base = 'inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 active:scale-95';
     const variants = {
       default: 'bg-gray-100 hover:bg-gray-200 text-gray-700 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-200',
-      primary: 'bg-blue-600 hover:bg-blue-700 text-white shadow-sm hover:shadow-blue-200 dark:shadow-none',
+      primary: 'bg-cyan-600 hover:bg-cyan-700 text-white shadow-sm hover:shadow-cyan-200 dark:shadow-none',
       danger: 'bg-red-50 hover:bg-red-100 text-red-600 dark:bg-red-900/30 dark:hover:bg-red-900/50 dark:text-red-400',
       success: 'bg-green-600 hover:bg-green-700 text-white shadow-sm hover:shadow-green-200 dark:shadow-none',
     };
@@ -95,20 +95,20 @@ const Brands = () => {
 
   const Input = ({ value, onChange, placeholder, icon }) => (
     <div className="relative group">
-      {icon && <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-blue-500 transition-colors">{icon}</div>}
+      {icon && <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-cyan-500 transition-colors">{icon}</div>}
       <input
         type="text"
         value={value}
         onChange={onChange}
         placeholder={placeholder}
-        className="w-full pl-11 pr-4 py-2.5 bg-gray-50 dark:bg-gray-700 border-none rounded-2xl focus:ring-2 focus:ring-blue-500 focus:bg-white dark:focus:bg-gray-600 dark:text-white transition-all text-sm outline-none shadow-sm placeholder:dark:text-gray-400"
+        className="w-full pl-11 pr-4 py-2.5 bg-gray-50 dark:bg-gray-700 border-none rounded-2xl focus:ring-2 focus:ring-cyan-500 focus:bg-white dark:focus:bg-gray-600 dark:text-white transition-all text-sm outline-none shadow-sm placeholder:dark:text-gray-400"
       />
     </div>
   );
 
-  const Badge = ({ children, color = 'blue' }) => {
+  const Badge = ({ children, color = 'cyan' }) => {
     const colors = {
-      blue: 'bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400',
+      cyan: 'bg-cyan-50 text-cyan-600 dark:bg-cyan-900/30 dark:text-cyan-400',
       gray: 'bg-gray-50 text-gray-600 dark:bg-gray-700 dark:text-gray-300',
     };
     return (
@@ -120,8 +120,8 @@ const Brands = () => {
 
   const EmptyState = ({ onCreate }) => (
     <div className="flex flex-col items-center justify-center py-20 bg-white dark:bg-gray-800 rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm transition-colors">
-      <div className="w-24 h-24 bg-blue-50 dark:bg-blue-900/30 rounded-full flex items-center justify-center mb-6">
-        <FaTags className="text-4xl text-blue-400 dark:text-blue-500" />
+      <div className="w-24 h-24 bg-cyan-50 dark:bg-cyan-900/30 rounded-full flex items-center justify-center mb-6">
+        <FaTags className="text-4xl text-cyan-400 dark:text-cyan-500" />
       </div>
       <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-2">{t('noBrandsFound')}</h3>
       <p className="text-gray-500 dark:text-gray-400 text-center max-w-sm mb-8">
@@ -168,10 +168,10 @@ const Brands = () => {
   const CategoryCard = ({ brand, index }) => (
     <div className="group bg-white dark:bg-gray-800 rounded-3xl border border-gray-100 dark:border-gray-700 p-6 hover:shadow-xl hover:shadow-gray-200/50 dark:hover:shadow-none transition-all duration-300">
       <div className="flex items-start justify-between mb-4">
-        <div className="p-3 bg-blue-50 dark:bg-blue-900/30 rounded-2xl group-hover:scale-110 transition-transform duration-300">
-          <FaTags className="text-blue-600 dark:text-blue-400 text-xl" />
+        <div className="p-3 bg-cyan-50 dark:bg-cyan-900/30 rounded-2xl group-hover:scale-110 transition-transform duration-300">
+          <FaTags className="text-cyan-600 dark:text-cyan-400 text-xl" />
         </div>
-        <Badge color="blue">#{index + 1}</Badge>
+        <Badge color="cyan">#{index + 1}</Badge>
       </div>
       
       <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-1 truncate">{brand.brand_name}</h3>
@@ -206,7 +206,7 @@ const Brands = () => {
       {/* Fallback for mobile/non-hover */}
       <div className="flex gap-2 group-hover:hidden mt-2">
          <div className="w-full h-1 bg-gray-50 dark:bg-gray-700 rounded-full overflow-hidden transition-colors">
-            <div className="w-1/3 h-full bg-blue-500"></div>
+            <div className="w-1/3 h-full bg-cyan-500"></div>
          </div>
       </div>
     </div>
@@ -233,14 +233,14 @@ const Brands = () => {
           <div className="flex p-1 bg-gray-100 dark:bg-gray-700 rounded-2xl w-full md:w-auto transition-colors">
             <button
               onClick={() => setViewMode('grid')}
-              className={`flex-1 md:flex-none px-6 py-2 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all ${viewMode === 'grid' ? 'bg-white dark:bg-gray-600 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}`}
+              className={`flex-1 md:flex-none px-6 py-2 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all ${viewMode === 'grid' ? 'bg-white dark:bg-gray-600 text-cyan-600 dark:text-cyan-400 shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}`}
             >
               <IoIosGrid size={18} />
               {t('grid')}
             </button>
             <button
               onClick={() => setViewMode('list')}
-              className={`flex-1 md:flex-none px-6 py-2 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all ${viewMode === 'list' ? 'bg-white dark:bg-gray-600 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}`}
+              className={`flex-1 md:flex-none px-6 py-2 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all ${viewMode === 'list' ? 'bg-white dark:bg-gray-600 text-cyan-600 dark:text-cyan-400 shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}`}
             >
               <IoIosList size={18} />
               {t('list')}
@@ -291,13 +291,13 @@ const Brands = () => {
               </thead>
               <tbody className="divide-y divide-gray-50 dark:divide-gray-700">
                 {filteredBrands.map((brand, index) => (
-                  <tr key={brand.brand_id} className="hover:bg-blue-50/30 dark:hover:bg-blue-900/10 transition-colors group">
+                  <tr key={brand.brand_id} className="hover:bg-cyan-50/30 dark:hover:bg-cyan-900/10 transition-colors group">
                     <td className="px-6 py-4">
                       <span className="text-sm font-bold text-gray-400 dark:text-gray-500">#{index + 1}</span>
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="p-2 bg-blue-50 dark:bg-blue-900/30 rounded-xl text-blue-600 dark:text-blue-400 transition-colors">
+                        <div className="p-2 bg-cyan-50 dark:bg-cyan-900/30 rounded-xl text-cyan-600 dark:text-cyan-400 transition-colors">
                           <FaTags size={14} />
                         </div>
                         <span className="font-bold text-gray-800 dark:text-gray-200 transition-colors">{brand.brand_name}</span>
@@ -316,7 +316,7 @@ const Brands = () => {
                         <button
                           disabled={!definePermission(MENU_ID).is_modify}
                           onClick={() => handleUpdate(brand.brand_name, brand.brand_id)}
-                          className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded-xl transition-colors"
+                          className="p-2 text-cyan-600 dark:text-cyan-400 hover:bg-cyan-100 dark:hover:bg-cyan-900/30 rounded-xl transition-colors"
                           title={definePermission(MENU_ID).is_modify?t('edit'):t('notAllowedPermission')}
                         >
                           <FaEdit size={16} />

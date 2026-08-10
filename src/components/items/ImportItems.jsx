@@ -10,24 +10,25 @@ import {
   FiMinus,
 } from "react-icons/fi";
 import * as XLSX from "xlsx";
-import { useGetAllBrandQuery } from "../../../app/Features/brandsSlice";
-import { useGetAllCategoriesQuery } from "../../../app/Features/categoriesSlice";
-import { useGetAllScalesQuery } from "../../../app/Features/scalesSlice";
-import { useGetAllSizesQuery } from "../../../app/Features/sizesSlice";
-import { useGetAllColorQuery } from "../../../app/Features/colorsSlice";
-import { useGetAllSaleQuery } from "../../../app/Features/salesSlice";
+import { useGetAllBrandQuery } from "@/features/products/brandsSlice";
+import { useGetAllCategoriesQuery } from "@/features/products/categoriesSlice";
+import { useGetAllScalesQuery } from "@/features/products/scalesSlice";
+import { useGetAllSizesQuery } from "@/features/products/sizesSlice";
+import { useGetAllColorQuery } from "@/features/products/colorsSlice";
+import { useGetAllSaleQuery } from "@/features/sales/salesSlice";
 import { RiImportLine } from "react-icons/ri";
 import { toast } from "react-toastify";
 import api from "../../services/api";
 import { Alert } from "antd";
-import { useGetAllItemsQuery } from "../../../app/Features/itemsSlice";
-import { useGetAllStockQuery } from "../../../app/Features/stocksSlice";
+import { useGetAllItemsQuery } from "@/features/products/itemsSlice";
+import { useGetAllStockQuery } from "@/features/stocks/stocksSlice";
 import { useTranslation } from "react-i18next";
+import { getToken } from '@/utils/tokenStore';
 
 const ImportItems = () => {
   const { t } = useTranslation();
   const [items, setItems] = useState([]);
-  const token = localStorage.getItem("token");
+  const token = getToken();
   const [editingId, setEditingId] = useState(null);
   const [editForm, setEditForm] = useState({
     item_name: "",
@@ -460,7 +461,7 @@ const ImportItems = () => {
         "category_name": "Beverages",
         "brand_name": "Coca-Cola",
         "scale_name": "Piece",
-        "colors": "red,blue",
+        "colors": "red,cyan",
         "attributes": JSON.stringify([
           { "name": "size", "type": "text", "value": "XL" },
           { "name": "material", "type": "select", "value": "cotton,polyester" }
@@ -601,7 +602,7 @@ const ImportItems = () => {
                 ? handleAllItemsAttributeChange(item.id, index, "name", e.target.value)
                 : handleAttributeChange(index, "name", e.target.value)
               }
-              className="flex-1 p-1 border w-20 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="flex-1 p-1 border w-20 border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
             />
             <select
               value={attr.type}
@@ -609,7 +610,7 @@ const ImportItems = () => {
                 ? handleAllItemsAttributeChange(item.id, index, "type", e.target.value)
                 : handleAttributeChange(index, "type", e.target.value)
               }
-              className="w-20 p-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-20 p-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
             >
               <option value="text">{t("Text")}</option>
               <option value="number">{t("Number")}</option>
@@ -625,7 +626,7 @@ const ImportItems = () => {
                 ? handleAllItemsAttributeChange(item.id, index, "value", e.target.value)
                 : handleAttributeChange(index, "value", e.target.value)
               }
-              className="flex-1 p-1 border w-25 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="flex-1 p-1 border w-25 border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
             />
             <button
               onClick={() => isEditAllMode
@@ -644,7 +645,7 @@ const ImportItems = () => {
             ? handleAddAttributeForItem(item.id)
             : handleAddAttribute()
           }
-          className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg transition-colors"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-cyan-50 text-cyan-700 hover:bg-cyan-100 rounded-lg transition-colors"
         >
           <FiPlus className="w-4 h-4" />
           {t("Add Attribute")}
@@ -668,7 +669,7 @@ const ImportItems = () => {
           </div>
         ))}
         {attributes.length > 2 && (
-          <span className="text-xs text-blue-600">+{attributes.length - 2} {t("more")}</span>
+          <span className="text-xs text-cyan-600">+{attributes.length - 2} {t("more")}</span>
         )}
       </div>
     );
@@ -683,10 +684,10 @@ const ImportItems = () => {
       <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 mb-8">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div
-            className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center cursor-pointer hover:border-blue-500 transition-colors bg-gray-50 hover:bg-blue-50"
+            className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center cursor-pointer hover:border-cyan-500 transition-colors bg-gray-50 hover:bg-cyan-50"
             onClick={() => fileInputRef.current.click()}
           >
-            <FiUpload className="mx-auto text-4xl text-blue-500 mb-4" />
+            <FiUpload className="mx-auto text-4xl text-cyan-500 mb-4" />
             <p className="text-lg font-medium text-gray-700 mb-2">{t("Upload Excel File")}</p>
             <p className="text-sm text-gray-500">{t(".xlsx, .xls, .csv files supported")}</p>
             <input
@@ -747,7 +748,7 @@ const ImportItems = () => {
               <>
                 <button
                   onClick={handleEditAll}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                   disabled={items.length === 0}
                 >
                   <FiEdit className="w-4 h-4" /> {t("Edit All")}
@@ -782,7 +783,7 @@ const ImportItems = () => {
               </p>
               <button
                 onClick={downloadTemplate}
-                className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition-colors font-medium"
               >
                 <FiDownload /> {t("Download Template")}
               </button>
@@ -836,7 +837,7 @@ const ImportItems = () => {
                             ? handleAllItemsInputChange(item.id, "item_name", e.target.value)
                             : setEditForm({ ...editForm, item_name: e.target.value })
                           }
-                          className="w-full p-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          className="w-full p-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
                           placeholder={t("Enter item name")}
                         />
                       ) : (
@@ -856,7 +857,7 @@ const ImportItems = () => {
                             ? handleAllItemsInputChange(item.id, "item_price", parseFloat(e.target.value) || 0)
                             : setEditForm({ ...editForm, item_price: parseFloat(e.target.value) || 0 })
                           }
-                          className="w-32 p-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          className="w-32 p-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
                         />
                       ) : (
                         <span className="font-medium">${parseFloat(item.item_price).toFixed(2)}</span>
@@ -874,7 +875,7 @@ const ImportItems = () => {
                             ? handleAllItemsInputChange(item.id, "wholesale_price", parseFloat(e.target.value) || 0)
                             : setEditForm({ ...editForm, wholesale_price: parseFloat(e.target.value) || 0 })
                           }
-                          className="w-32 p-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          className="w-32 p-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
                         />
                       ) : (
                         <span className="font-medium">${parseFloat(item.wholesale_price).toFixed(2)}</span>
@@ -890,7 +891,7 @@ const ImportItems = () => {
                             ? handleAllItemsSelectChange(item.id, "category_id", e.target.value)
                             : setEditForm({ ...editForm, category_id: e.target.value })
                           }
-                          className="w-full p-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          className="w-full p-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
                         >
                           <option value="">{t("Select Category")}</option>
                           {categories.map(cat => (
@@ -913,7 +914,7 @@ const ImportItems = () => {
                             ? handleAllItemsSelectChange(item.id, "brand_id", e.target.value)
                             : setEditForm({ ...editForm, brand_id: e.target.value })
                           }
-                          className="w-full p-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          className="w-full p-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
                         >
                           <option value="">{t("Select Brand")}</option>
                           {brands.map(brand => (
@@ -936,7 +937,7 @@ const ImportItems = () => {
                             ? handleAllItemsSelectChange(item.id, "scale_id", e.target.value)
                             : setEditForm({ ...editForm, scale_id: e.target.value })
                           }
-                          className="w-full p-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          className="w-full p-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
                         >
                           <option value="">{t("Select Scale")}</option>
                           {scales.map(scale => (
@@ -988,7 +989,7 @@ const ImportItems = () => {
                         {(isEditAllMode || editingId === item.id) && (
                           <button
                             onClick={() => imageInputRefs.current[item.id]?.click()}
-                            className="h-12 w-12 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-500 hover:bg-blue-50 flex items-center justify-center"
+                            className="h-12 w-12 border-2 border-dashed border-gray-300 rounded-lg hover:border-cyan-500 hover:bg-cyan-50 flex items-center justify-center"
                           >
                             <FiPlus className="w-5 h-5 text-gray-400" />
                           </button>
@@ -1043,7 +1044,7 @@ const ImportItems = () => {
                           <>
                             <button
                               onClick={() => handleEdit(item)}
-                              className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg"
+                              className="p-2 text-cyan-600 hover:bg-cyan-50 rounded-lg"
                               title={t("Edit")}
                             >
                               <FiEdit className="w-5 h-5" />

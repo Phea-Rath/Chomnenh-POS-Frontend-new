@@ -32,8 +32,9 @@ import api from "../../services/api";
 import { useReportText } from "./reportText";
 import { useOutletsContext } from "../../layouts/Management";
 import { useReactToPrint } from "react-to-print";
-import { useGetUserLoginQuery } from "../../../app/Features/usersSlice";
+import { useGetUserLoginQuery } from "@/features/auth/usersSlice";
 import { DatePicker } from 'antd';
+import { getToken } from '@/utils/tokenStore';
 
 const { useBreakpoint } = Grid;
 
@@ -58,7 +59,7 @@ const ProfitAnalysis = () => {
     const { rt } = useReportText();
     const { darkMode } = useOutletsContext();
     const screens = useBreakpoint();
-    const token = localStorage.getItem('token');
+    const token = getToken();
     const { data: userLogin } = useGetUserLoginQuery(token);
     const profile = userLogin?.data;
 
@@ -85,7 +86,7 @@ const ProfitAnalysis = () => {
     const fetchProfitData = async (payload) => {
         try {
             const response = await api.post("/analysis_profit", payload, {
-                headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+                headers: { Authorization: `Bearer ${getToken()}` },
             });
 
             if (response.status === 200 && response.data) {
@@ -115,7 +116,7 @@ const ProfitAnalysis = () => {
     const fetchMonthlyData = async (payload) => {
         try {
             const response = await api.post("/analysis_profit_chart", payload, {
-                headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+                headers: { Authorization: `Bearer ${getToken()}` },
             });
 
             if (response.status === 200 && response.data) {
@@ -300,7 +301,7 @@ const ProfitAnalysis = () => {
                         <button
                             onClick={handleGetReport}
                             disabled={loading}
-                            className="flex items-center justify-center gap-2 bg-blue-600 text-white px-5 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed h-10"
+                            className="flex items-center justify-center gap-2 bg-cyan-600 text-white px-5 py-2 rounded-md hover:bg-cyan-700 disabled:opacity-50 disabled:cursor-not-allowed h-10"
                         >
                             <FiFilter size={16} />
                             {loading ? rt('Loading...') : rt('Get Report')}
@@ -341,7 +342,7 @@ const ProfitAnalysis = () => {
                             </div>
                         </div>
                         <div className="text-right">
-                            <h1 className="text-xl font-bold text-blue-600">{rt("Profit Analysis")}</h1>
+                            <h1 className="text-xl font-bold text-cyan-600">{rt("Profit Analysis")}</h1>
                             <p className="text-xs text-slate-500">{new Date().toLocaleString()}</p>
                         </div>
                     </div>
@@ -355,7 +356,7 @@ const ProfitAnalysis = () => {
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6 stats-grid">
                         <div className="bg-primary rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 p-5 stats-card">
                             <p className="text-slate-500 dark:text-slate-400 text-[10px] uppercase font-semibold">{rt("Total Revenue")}</p>
-                            <p className="text-lg font-bold mt-1 text-blue-600">{formatUSD(summaryData?.order_amount)}</p>
+                            <p className="text-lg font-bold mt-1 text-cyan-600">{formatUSD(summaryData?.order_amount)}</p>
                             <p className="text-slate-400 text-[9px] mt-1">{formatKHR(summaryData?.order_amount_kh)}</p>
                         </div>
                         <div className="bg-primary rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 p-5 stats-card">
@@ -478,7 +479,7 @@ const ProfitAnalysis = () => {
 
                 {loading && (
                     <div className="bg-primary rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 p-12 text-center">
-                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-600 mx-auto mb-4"></div>
                         <p className="text-slate-600 dark:text-slate-400">{rt("Loading profit analysis data...")}</p>
                     </div>
                 )}

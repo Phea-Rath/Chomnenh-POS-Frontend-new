@@ -1,9 +1,9 @@
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { FaUserCircle, FaShieldAlt, FaSearch, FaChevronRight, FaCheckCircle, FaProjectDiagram } from 'react-icons/fa';
 import { FiShield, FiUsers, FiLock, FiUnlock, FiCommand, FiActivity } from 'react-icons/fi';
-import { useGetAllUserQuery } from '../../../app/Features/usersSlice';
-import { useGetCurrentMenusByUserWebsiteQuery } from '../../../app/Features/menusSlice';
-import { useGetPermissionByIdQuery } from '../../../app/Features/permissionSlice';
+import { useGetAllUserQuery } from "@/features/auth/usersSlice";
+import { useGetCurrentMenusByUserWebsiteQuery } from "@/features/auth/menusSlice";
+import { useGetPermissionByIdQuery } from "@/features/auth/permissionSlice";
 import { toast } from 'react-toastify';
 import api from '../../services/api';
 import { Checkbox, Select, Tag, Spin, Tooltip, Progress } from 'antd';
@@ -14,12 +14,13 @@ import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { LoadingOutlined } from '@ant-design/icons';
 import RefreshButton from '../../utils/RefreshButton';
+import { getToken } from '@/utils/tokenStore';
 
 // --- Internal Sub-components ---
 
 const GranularPermissions = ({ menu, uid, isActionLoading, onUpdate, t, smallIcon }) => {
     const fields = [
-        { id: 'is_view', label: t('view', 'View'), color: 'blue' },
+        { id: 'is_view', label: t('view', 'View'), color: 'cyan' },
         { id: 'is_modify', label: t('modify', 'Modify'), color: 'emerald' },
         { id: 'is_drop', label: t('drop', 'Drop'), color: 'rose' },
         { id: 'is_execute', label: t('execute', 'Execute'), color: 'purple' },
@@ -39,8 +40,8 @@ const GranularPermissions = ({ menu, uid, isActionLoading, onUpdate, t, smallIco
                             group flex items-center justify-center px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-tight
                             border cursor-pointer transition-all duration-200 active:scale-95
                             ${isChecked 
-                                ? 'bg-blue-600 border-blue-600 text-white shadow-sm' 
-                                : 'bg-gray-50 border-gray-200 text-gray-500 hover:border-blue-300 hover:text-blue-600 dark:bg-gray-800/40 dark:border-gray-700 dark:text-gray-400'
+                                ? 'bg-cyan-600 border-cyan-600 text-white shadow-sm' 
+                                : 'bg-gray-50 border-gray-200 text-gray-500 hover:border-cyan-300 hover:text-cyan-600 dark:bg-gray-800/40 dark:border-gray-700 dark:text-gray-400'
                             }
                             ${isLoading ? 'opacity-50 pointer-events-none' : ''}
                         `}
@@ -76,13 +77,13 @@ const UserSidebarItem = ({ employee, isActive, onClick }) => {
             className={`
                 group flex w-full items-center gap-3 border-b border-gray-50 dark:border-gray-700/50 px-5 py-4 text-left transition-all relative
                 ${isActive
-                    ? 'bg-blue-50/80 dark:bg-blue-900/20'
+                    ? 'bg-cyan-50/80 dark:bg-cyan-900/20'
                     : 'hover:bg-gray-50 dark:hover:bg-gray-700/30'
                 }
             `}
         >
             {isActive && (
-                <motion.div layoutId="active-pill" className="absolute left-0 top-0 bottom-0 w-1 bg-blue-600 dark:bg-blue-400" />
+                <motion.div layoutId="active-pill" className="absolute left-0 top-0 bottom-0 w-1 bg-cyan-600 dark:bg-cyan-400" />
             )}
             
             <div className="relative flex-shrink-0">
@@ -107,21 +108,21 @@ const UserSidebarItem = ({ employee, isActive, onClick }) => {
 
             <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-1.5 mb-0.5">
-                    <h3 className={`truncate text-sm font-bold transition-colors ${isActive ? 'text-blue-700 dark:text-blue-300' : 'text-gray-800 dark:text-gray-200'}`}>
+                    <h3 className={`truncate text-sm font-bold transition-colors ${isActive ? 'text-cyan-700 dark:text-cyan-300' : 'text-gray-800 dark:text-gray-200'}`}>
                         {employee.username}
                     </h3>
                 </div>
                 <p className="truncate text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{employee.role}</p>
             </div>
             
-            <FaChevronRight className={`h-3 w-3 transition-transform duration-200 ${isActive ? 'translate-x-1 text-blue-500' : 'text-gray-300 dark:text-gray-600 group-hover:translate-x-0.5'}`} />
+            <FaChevronRight className={`h-3 w-3 transition-transform duration-200 ${isActive ? 'translate-x-1 text-cyan-500' : 'text-gray-300 dark:text-gray-600 group-hover:translate-x-0.5'}`} />
         </button>
     );
 };
 
 const Permission = () => {
     const { t } = useTranslation();
-    const token = localStorage.getItem('token');
+    const token = getToken();
     const userId = localStorage.getItem('userId');
     const [activeActions, setActiveActions] = useState(new Set());
     const [searchTerm, setSearchTerm] = useState('');
@@ -305,7 +306,7 @@ const Permission = () => {
     };
 
     // --- Styles ---
-    const inputCls = 'w-full pl-10 pr-4 py-2 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 rounded-lg outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20 transition-all text-sm';
+    const inputCls = 'w-full pl-10 pr-4 py-2 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 rounded-lg outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/20 transition-all text-sm';
 
     return (
         <div className="min-h-screen bg-gray-50/50 dark:bg-transparent">
@@ -323,7 +324,7 @@ const Permission = () => {
                         <IoArrowBack size={20} />
                     </button>
                     <div className="flex items-center gap-3">
-                        <div className="p-2 bg-blue-600 rounded-lg text-white shadow-blue-200 dark:shadow-none shadow-md">
+                        <div className="p-2 bg-cyan-600 rounded-lg text-white shadow-cyan-200 dark:shadow-none shadow-md">
                             <FiShield size={20} />
                         </div>
                         <div>
@@ -344,7 +345,7 @@ const Permission = () => {
                 <aside className="bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col overflow-hidden">
                     <div className="p-4 border-b border-gray-100 dark:border-gray-700 space-y-4">
                         <div className="flex items-center gap-2">
-                            <FiUsers className="text-blue-600 dark:text-blue-400" />
+                            <FiUsers className="text-cyan-600 dark:text-cyan-400" />
                             <h2 className="text-sm font-bold text-gray-800 dark:text-white uppercase tracking-wider">{t('teamMembers')}</h2>
                         </div>
                         <div className="relative">
@@ -395,20 +396,20 @@ const Permission = () => {
                                         <div className="flex items-center gap-5">
                                             <div className="relative">
                                                 {selectUser.image ? (
-                                                    <img src={selectUser.image} className="h-20 w-20 rounded-2xl object-cover ring-4 ring-blue-50 dark:ring-blue-900/20" alt="" />
+                                                    <img src={selectUser.image} className="h-20 w-20 rounded-2xl object-cover ring-4 ring-cyan-50 dark:ring-cyan-900/20" alt="" />
                                                 ) : (
-                                                    <div className="h-20 w-20 rounded-2xl bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-blue-900/30 dark:to-indigo-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400">
+                                                    <div className="h-20 w-20 rounded-2xl bg-gradient-to-br from-cyan-100 to-indigo-100 dark:from-cyan-900/30 dark:to-indigo-900/30 flex items-center justify-center text-cyan-600 dark:text-cyan-400">
                                                         <FaUserCircle size={40} />
                                                     </div>
                                                 )}
-                                                <div className="absolute -bottom-2 -right-2 p-1.5 bg-blue-600 rounded-lg text-white shadow-lg">
+                                                <div className="absolute -bottom-2 -right-2 p-1.5 bg-cyan-600 rounded-lg text-white shadow-lg">
                                                     <FiShield size={14} />
                                                 </div>
                                             </div>
                                             <div>
                                                 <div className="flex items-center gap-3 mb-1">
                                                     <h2 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">{selectUser.username}</h2>
-                                                    <span className="px-2.5 py-0.5 rounded-full bg-blue-50 dark:bg-blue-900/30 text-[10px] font-black text-blue-700 dark:text-blue-300 uppercase tracking-widest border border-blue-100 dark:border-blue-800">
+                                                    <span className="px-2.5 py-0.5 rounded-full bg-cyan-50 dark:bg-cyan-900/30 text-[10px] font-black text-cyan-700 dark:text-cyan-300 uppercase tracking-widest border border-cyan-100 dark:border-cyan-800">
                                                         {selectUser.role}
                                                     </span>
                                                 </div>
@@ -421,7 +422,7 @@ const Permission = () => {
                                             <div className="flex flex-col gap-2 min-w-[140px]">
                                                 <div className="flex justify-between text-[10px] font-bold uppercase tracking-wider text-gray-400">
                                                     <span>{t('accessProgress')}</span>
-                                                    <span className="text-blue-600">{progressPct}%</span>
+                                                    <span className="text-cyan-600">{progressPct}%</span>
                                                 </div>
                                                 <Progress 
                                                     percent={progressPct} 
@@ -458,7 +459,7 @@ const Permission = () => {
                                                         {isActionLoading('all-permissions') ? (
                                                             <div className="h-6 w-11 flex items-center justify-center">{smallIcon}</div>
                                                         ) : (
-                                                            <div className="w-11 h-6 bg-gray-300 dark:bg-gray-600 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600" />
+                                                            <div className="w-11 h-6 bg-gray-300 dark:bg-gray-600 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-cyan-600" />
                                                         )}
                                                     </label>
                                                 </Tooltip>
@@ -476,7 +477,7 @@ const Permission = () => {
                                             {categorizedMenus.functional.length > 0 && (
                                                 <div className="space-y-4">
                                                     <div className="flex items-center gap-2 px-1">
-                                                        <IoGridOutline className="text-blue-500" />
+                                                        <IoGridOutline className="text-cyan-500" />
                                                         <h3 className="text-sm font-black uppercase tracking-[0.2em] text-gray-400">{t('businessUnits', 'Business Units')}</h3>
                                                     </div>
                                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -490,14 +491,14 @@ const Permission = () => {
                                                                     animate={{ opacity: 1, y: 0 }}
                                                                     transition={{ delay: idx * 0.05 }}
                                                                     className={`group rounded-3xl border-2 transition-all duration-300 shadow-sm ${isEnabled 
-                                                                        ? 'border-blue-600/10 bg-white dark:bg-blue-900/5' 
+                                                                        ? 'border-cyan-600/10 bg-white dark:bg-cyan-900/5' 
                                                                         : 'border-transparent bg-white dark:bg-gray-800 hover:border-gray-200 dark:hover:border-gray-700'}`}
                                                                 >
                                                                     {/* Parent Header */}
                                                                     <div className="p-5 border-b border-gray-50 dark:border-gray-700/50 flex items-start justify-between bg-gray-50/50 dark:bg-gray-800/50 rounded-t-3xl">
                                                                         <div className="flex-1 min-w-0">
                                                                             <div className="flex items-center gap-2.5 mb-1.5">
-                                                                                <div className={`p-2 rounded-xl transition-colors ${isEnabled ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' : 'bg-gray-200 dark:bg-gray-700 text-gray-400'}`}>
+                                                                                <div className={`p-2 rounded-xl transition-colors ${isEnabled ? 'bg-cyan-600 text-white shadow-lg shadow-cyan-200' : 'bg-gray-200 dark:bg-gray-700 text-gray-400'}`}>
                                                                                     <FiActivity size={16} />
                                                                                 </div>
                                                                                 <h4 className="font-bold text-gray-800 dark:text-gray-200 truncate">{parent.menu_name}</h4>
@@ -529,12 +530,12 @@ const Permission = () => {
                                                                                 <div 
                                                                                     key={child.menu_id}
                                                                                     className={`p-3 rounded-2xl border transition-all ${cEnabled 
-                                                                                        ? 'border-blue-200 dark:border-blue-800 bg-blue-50/30 dark:bg-blue-900/10' 
+                                                                                        ? 'border-cyan-200 dark:border-cyan-800 bg-cyan-50/30 dark:bg-cyan-900/10' 
                                                                                         : 'border-gray-100 dark:border-gray-700 bg-transparent opacity-60 grayscale'}`}
                                                                                 >
                                                                                     <div className="flex items-center justify-between mb-2">
                                                                                         <div className="flex items-center gap-2 overflow-hidden">
-                                                                                            <FiCommand size={12} className={cEnabled ? 'text-blue-500' : 'text-gray-400'} />
+                                                                                            <FiCommand size={12} className={cEnabled ? 'text-cyan-500' : 'text-gray-400'} />
                                                                                             <span className="text-xs font-bold text-gray-700 dark:text-gray-300 truncate">{child.menu_name}</span>
                                                                                         </div>
                                                                                         <Checkbox 

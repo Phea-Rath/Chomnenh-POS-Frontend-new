@@ -18,13 +18,14 @@ import api from "../../services/api";
 import { useNavigate } from "react-router";
 import { DatePicker, InputNumber, Alert } from "antd";
 import dayjs from "dayjs";
-import { useGetAllUserQuery } from "../../../app/Features/usersSlice";
+import { useGetAllUserQuery } from "@/features/auth/usersSlice";
 import { toast } from "react-toastify";
-import { useGetAllRoleQuery } from "../../../app/Features/rolesSlice";
+import { useGetAllRoleQuery } from "@/features/auth/rolesSlice";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import Button from "../../utils/Button";
 import Input from "../../utils/Input";
+import { getToken } from '@/utils/tokenStore';
 
 const RegisterForm = () => {
   const { t } = useTranslation();
@@ -46,7 +47,7 @@ const RegisterForm = () => {
     term: 1,
   });
 
-  const token = localStorage.getItem("token");
+  const token = getToken();
   const { data: roles } = useGetAllRoleQuery(token);
   const { refetch } = useGetAllUserQuery(token);
 
@@ -214,7 +215,7 @@ const RegisterForm = () => {
             <div className="">
               <div className=" bg-gray-100 p-4 border dark:bg-transparent dark:border-gray-500 border-gray-200">
                 <h3 className="text-md font-semibold mb-4 flex items-center gap-2 dark:text-white">
-                  <FaUser className="text-blue-500" />
+                  <FaUser className="text-cyan-500" />
                   {t('userInformation')}
                 </h3>
 
@@ -227,7 +228,7 @@ const RegisterForm = () => {
                     <div
                       onClick={() => document.getElementById("image-item").click()}
                       className={`relative group cursor-pointer border-2 rounded-[2px] transition-all duration-200 aspect-square flex flex-col items-center justify-center overflow-hidden
-                        ${errors.image ? 'border-red-500' : 'border-dashed border-gray-300 dark:border-gray-600 hover:border-blue-400'}`}
+                        ${errors.image ? 'border-red-500' : 'border-dashed border-gray-300 dark:border-gray-600 hover:border-cyan-400'}`}
                     >
                       {viewImage ? (
                         <>
@@ -351,7 +352,7 @@ const RegisterForm = () => {
 
               <div className="flex gap-2 justify-between bg-gray-100 dark:bg-transparent dark:border-gray-500 p-4 border border-gray-200 border-t-0">
                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-full text-blue-600 dark:text-blue-400">
+                    <div className="p-2 bg-cyan-100 dark:bg-cyan-900/30 rounded-full text-cyan-600 dark:text-cyan-400">
                       <FaInfoCircle size={20} />
                     </div>
                     <div>
@@ -379,7 +380,7 @@ const RegisterForm = () => {
             >
               <div className="mt-4 bg-gray-100 p-4 border dark:bg-transparent dark:border-gray-500 border-gray-200">
                 <h3 className="text-md font-semibold mb-4 flex items-center gap-2 dark:text-white">
-                  <FaCalendarAlt className="text-blue-500" />
+                  <FaCalendarAlt className="text-cyan-500" />
                   {t('contractPeriod')}
                 </h3>
 

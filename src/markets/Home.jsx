@@ -1,7 +1,7 @@
 import { PiArrowRight } from "react-icons/pi";
-import { useGetAllProfileQuery } from "../../app/Features/userProfileSlice";
+import { useGetAllProfileQuery } from "@/features/auth/userProfileSlice";
 import { useEffect, useReducer, useState } from "react";
-import { useGetAllItemsForMarketPlaceQuery } from "../../app/Features/itemsSlice";
+import { useGetAllItemsForMarketPlaceQuery } from "@/features/products/itemsSlice";
 import BlockProducts from "./components/BlockProducts";
 import { Link } from "react-router";
 import CommingSoon from "./components/CommingSoon";

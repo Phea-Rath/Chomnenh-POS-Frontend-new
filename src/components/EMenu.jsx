@@ -11,16 +11,17 @@ import { swallow } from 'downloadjs';
 import { toPng } from 'html-to-image';
 import download from 'downloadjs';
 import { toast } from 'react-toastify';
-import { useGetUserProfileQuery } from '../../app/Features/usersSlice';
+import { useGetUserProfileQuery } from "@/features/auth/usersSlice";
 import { convertImageToBase64 } from '../services/serviceFunction';
 import shopping from '../assets/shopping-cart.png';
 import { useTranslation } from 'react-i18next';
 import { useOutletsContext } from '../layouts/Management';
+import { getToken } from '@/utils/tokenStore';
 
 const QRCodeGenerator = () => {
   const { t } = useTranslation();
   const { darkMode } = useOutletsContext();
-  const token = localStorage.getItem('token');
+  const token = getToken();
   const id = localStorage.getItem('profileId');
   const [logoBase64, setLogoBase64] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -77,7 +78,7 @@ const QRCodeGenerator = () => {
           {/* Header Section */}
           <div className={`p-4 text-center border-b ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-slate-50 border-slate-100'}`}>
             <h1 className={`text-2xl font-black tracking-tight ${darkMode ? 'text-white' : 'text-slate-800'}`}>
-              {t('eMenu', 'E-Menu')} <span className={darkMode ? 'text-blue-400' : 'text-indigo-600'}>{t('qr', 'QR')}</span>
+              {t('eMenu', 'E-Menu')} <span className={darkMode ? 'text-cyan-400' : 'text-indigo-600'}>{t('qr', 'QR')}</span>
             </h1>
             <p className={`text-sm font-medium mt-1 ${darkMode ? 'text-gray-400' : 'text-slate-500'}`}>
               {t('smarterOrdering', 'Smarter ordering for your guests')}
@@ -140,7 +141,7 @@ const QRCodeGenerator = () => {
             <div className="grid grid-cols-2 gap-3">
               <button
                 onClick={copyURL}
-                className={`flex items-center justify-center gap-2 py-3 rounded-xl border-2 transition-all text-xs font-bold ${darkMode ? 'border-gray-700 hover:border-blue-400 hover:text-blue-400 text-gray-300' : 'border-slate-200 hover:border-indigo-600 hover:text-indigo-600 text-slate-600'}`}
+                className={`flex items-center justify-center gap-2 py-3 rounded-xl border-2 transition-all text-xs font-bold ${darkMode ? 'border-gray-700 hover:border-cyan-400 hover:text-cyan-400 text-gray-300' : 'border-slate-200 hover:border-indigo-600 hover:text-indigo-600 text-slate-600'}`}
               >
                 {copied ? <BiCheck className="text-lg text-green-500" /> : <BsLink45Deg className="text-lg" />}
                 {copied ? t('copied', 'Copied') : t('copyLink', 'Copy Link')}
@@ -148,7 +149,7 @@ const QRCodeGenerator = () => {
 
               <button
                 onClick={downloadDesign}
-                className={`flex items-center justify-center gap-2 py-3 rounded-xl border-2 transition-all text-xs font-bold ${darkMode ? 'border-gray-700 hover:border-blue-400 hover:text-blue-400 text-gray-300' : 'border-slate-200 hover:border-indigo-600 hover:text-indigo-600 text-slate-600'}`}
+                className={`flex items-center justify-center gap-2 py-3 rounded-xl border-2 transition-all text-xs font-bold ${darkMode ? 'border-gray-700 hover:border-cyan-400 hover:text-cyan-400 text-gray-300' : 'border-slate-200 hover:border-indigo-600 hover:text-indigo-600 text-slate-600'}`}
               >
                 {loading ? <BiCheck className="text-lg text-green-500" /> : <BsDownload className="text-lg" />}
                 {loading ? t('downloading', 'Downloading...') : t('download', 'Download')}

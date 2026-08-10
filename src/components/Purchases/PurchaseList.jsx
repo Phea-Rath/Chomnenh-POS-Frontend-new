@@ -11,11 +11,11 @@ import {
   useDeletePurchaseMutation,
   useGetAllPurchaseQuery,
   useUncancelPurchaseMutation,
-} from "../../../app/Features/purchasesSlice";
+} from "@/features/purchases/purchasesSlice";
 import { Atom } from "react-loading-indicators";
 import { toast } from "react-toastify";
-import { useGetAllSaleQuery } from "../../../app/Features/salesSlice";
-import { useGetAllStockQuery } from "../../../app/Features/stocksSlice";
+import { useGetAllSaleQuery } from "@/features/sales/salesSlice";
+import { useGetAllStockQuery } from "@/features/stocks/stocksSlice";
 import {
   FaCalendarAlt,
   FaDollarSign,
@@ -52,6 +52,7 @@ import PaymentModel from "../../utils/PaymentModal";
 import ActionButton from "../../utils/ActionButton";
 import Button from "../../utils/Button";
 import { MdApproval } from "react-icons/md";
+import { getToken } from '@/utils/tokenStore';
 const MENU_ID = 28;
 const Purchases = () => {
   const { t } = useTranslation();
@@ -64,7 +65,7 @@ const Purchases = () => {
   const [remark, setRemark] = useState('');
   const [balanceAmount, setBalanceAmount] = useState(0);
   const [paymentDate, setPaymentDate] = useState("");
-  const token = localStorage.getItem("token");
+  const token = getToken();
   const [id, setId] = useState(0);
   const [alertBox, setAlertBox] = useState(false);
   const [alertBoxCancel, setAlertBoxCancel] = useState(false);
@@ -199,13 +200,10 @@ const Purchases = () => {
     try {
       setAlertBox(false);
       setLoading(true);
-      const res = await deletePurchase({ id, token });
-      if (res.data.status === 200) {
-        refetch();
-        toast.success(t('orderDeletedSuccessfully'));
-      }
+      await deletePurchase({ id, token, queryArgs: queryParams }).unwrap();
+      toast.success(t('orderDeletedSuccessfully'));
     } catch (error) {
-      toast.error(error.message || t('orderDeleteFailed'));
+      toast.error(error?.data?.message || error?.message || t('orderDeleteFailed'));
     } finally {
       setLoading(false);
     }
@@ -215,13 +213,10 @@ const Purchases = () => {
     try {
       setAlertBoxCancel(false);
       setLoading(true);
-      const res = await cancelPurchase({ id, token });
-      if (res.data.status === 200) {
-        refetch();
-        toast.success(t('orderCanceledSuccessfully'));
-      }
+      await cancelPurchase({ id, token }).unwrap();
+      toast.success(t('orderCanceledSuccessfully'));
     } catch (error) {
-      toast.error(error.message || t('orderCancelFailed'));
+      toast.error(error?.data?.message || error?.message || t('orderCancelFailed'));
     } finally {
       setLoading(false);
     }
@@ -231,13 +226,10 @@ const Purchases = () => {
     try {
       setAlertBoxUncancel(false);
       setLoading(true);
-      const res = await uncancelPurchase({ id, token });
-      if (res.data.status === 200) {
-        refetch();
-        toast.success(t('orderUncanceledSuccessfully'));
-      }
+      await uncancelPurchase({ id, token }).unwrap();
+      toast.success(t('orderUncanceledSuccessfully'));
     } catch (error) {
-      toast.error(error.message || t('orderUncancelFailed'));
+      toast.error(error?.data?.message || error?.message || t('orderUncancelFailed'));
     } finally {
       setLoading(false);
     }
@@ -349,7 +341,7 @@ const Purchases = () => {
     );
   };
 
-  const StatCard = ({ title, value, icon, color = "blue" }) => {
+  const StatCard = ({ title, value, icon, color = "cyan" }) => {
     const bgColor = `bg-gradient-to-br from-${color}-50 to-${color}-100 dark:from-${color}-900/20 dark:to-${color}-800/20`;
     const textColor = `text-${color}-600 dark:text-${color}-400`;
     return (
@@ -468,13 +460,10 @@ const Purchases = () => {
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <Button
-              variant="primary"
-              onClick={refetch}
-              disabled={isLoading}
-            >
-              <LuRefreshCw className={isLoading ? 'animate-spin' : ''} />
-            </Button>
+            <RefreshButton
+              refetch={refetch}
+              isLoading={isLoading}
+            />
             
             <ExportExcel data={filteredPurchases} title="Purchase" />
 
@@ -580,7 +569,7 @@ const Purchases = () => {
         {/* Main Content Area */}
         <div className="p-4 md:p-6 border border-gray-200 dark:border-gray-500 bg-white dark:bg-gray-800">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            <StatCard title={t('totalPurchases')} value={stats.totalPurchases} icon={<FaShoppingCart className="text-2xl" />} color="blue" />
+            <StatCard title={t('totalPurchases')} value={stats.totalPurchases} icon={<FaShoppingCart className="text-2xl" />} color="cyan" />
             <StatCard title={t('totalAmount')} value={`$${formatCurrency(stats.totalAmount)}`} icon={<FaDollarSign className="text-2xl" />} color="green" />
             <StatCard title={t('totalBalance')} value={`$${formatCurrency(stats.totalBalance)}`} icon={<FaBalanceScale className="text-2xl" />} color="purple" />
             <StatCard title={t('pendingOrders')} value={stats.pendingPurchases} icon={<FaClock className="text-2xl" />} color="orange" />
@@ -605,8 +594,8 @@ const Purchases = () => {
                     </thead>
                     <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                       {filteredPurchases.map((item) => (
-                        <tr key={item.purchase_id} className="hover:bg-blue-50/40 dark:hover:bg-blue-900/10 transition-colors">
-                          <td className="px-6 py-4 font-bold text-blue-600 dark:text-blue-400 border-r border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800"><pre>{item.purchase_no}</pre></td>
+                        <tr key={item.purchase_id} className="hover:bg-cyan-50/40 dark:hover:bg-cyan-900/10 transition-colors">
+                          <td className="px-6 py-4 font-bold text-cyan-600 dark:text-cyan-400 border-r border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800"><pre>{item.purchase_no}</pre></td>
                           <td className="px-6 py-4 border-r border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800">
                             <div className="flex items-center gap-2 dark:text-gray-200">
                               <FaUser className="text-gray-400 w-4 h-4" />
@@ -670,7 +659,7 @@ const Purchases = () => {
                       <div className="p-6">
                         <div className="flex justify-between items-start mb-4 border-b border-b-gray-300 dark:border-b-gray-600 pb-2">
                           <div>
-                            <h3 className="font-bold text-sm text-blue-600 dark:text-blue-400">{item.purchase_no}</h3>
+                            <h3 className="font-bold text-sm text-cyan-600 dark:text-cyan-400">{item.purchase_no}</h3>
                             <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                               <pre className="flex items-center gap-2"><LuCalendar size={15} />{dayjs(item.purchase_date).format('MMM DD, YYYY')}</pre>
                             </div>

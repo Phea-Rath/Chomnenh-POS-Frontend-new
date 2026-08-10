@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
-import { useGetAllWasteQuery } from '../../../app/Features/notificationSlice';
+import { useGetAllWasteQuery } from "@/features/system/notificationSlice";
 import { FaExclamationTriangle, FaBoxes, FaClock, FaChevronRight } from 'react-icons/fa';
 import { Progress } from 'antd';
 import { useTranslation } from 'react-i18next';
 import moment from 'moment';
+import { getToken } from '@/utils/tokenStore';
 
 // Skeleton loader for list items
 const SkeletonItem = () => (
@@ -22,7 +23,7 @@ const SkeletonItem = () => (
 
 const Waste = () => {
     const { t } = useTranslation();
-    const token = localStorage.getItem('token');
+    const token = getToken();
     const navigate = useNavigate();
     const [data, setData] = useState([]);
     const { data: dataWaste, isLoading } = useGetAllWasteQuery(token);

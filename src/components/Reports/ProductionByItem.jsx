@@ -1,16 +1,17 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { FiDownload, FiPrinter, FiFilter, FiCalendar } from 'react-icons/fi';
-import { useGetProductionByItemReportMutation } from '../../../app/Features/reportsSlice';
+import { useGetProductionByItemReportMutation } from "@/features/dashboard/reportsSlice";
 import { toast } from 'react-toastify';
 import * as XLSX from 'xlsx';
-import { useGetAllUserQuery } from '../../../app/Features/usersSlice';
-import { useGetAllItemsQuery } from '../../../app/Features/itemsSlice';
+import { useGetAllUserQuery } from "@/features/auth/usersSlice";
+import { useGetAllItemsQuery } from "@/features/products/itemsSlice";
 import { useReactToPrint } from 'react-to-print';
 import { useReportText } from './reportText';
+import { getToken } from '@/utils/tokenStore';
 
 const ProductionByItem = () => {
     const { rt } = useReportText();
-    const token = localStorage.getItem('token');
+    const token = getToken();
     const [getProductionByItemReport] = useGetProductionByItemReportMutation();
 
     const formatDateForInput = (date) => {
@@ -161,7 +162,7 @@ const ProductionByItem = () => {
                                 name="created_by"
                                 value={formData.created_by}
                                 onChange={handleInputChange}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-500"
                             >
                                 <option value="">All Users</option>
                                 {users?.map((user) => (
@@ -178,7 +179,7 @@ const ProductionByItem = () => {
                                 name="item_id"
                                 value={formData.item_id}
                                 onChange={handleInputChange}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-500"
                             >
                                 <option value="">All Items</option>
                                 {items?.map((item) => (
@@ -198,7 +199,7 @@ const ProductionByItem = () => {
                                     name="start_date"
                                     value={formData.start_date}
                                     onChange={handleInputChange}
-                                    className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-500"
                                 />
                             </div>
                         </div>
@@ -212,7 +213,7 @@ const ProductionByItem = () => {
                                     name="end_date"
                                     value={formData.end_date}
                                     onChange={handleInputChange}
-                                    className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-500"
                                 />
                             </div>
                         </div>
@@ -222,7 +223,7 @@ const ProductionByItem = () => {
                         <button
                             onClick={handleGetReport}
                             disabled={loading}
-                            className="flex items-center gap-2 bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="flex items-center gap-2 bg-cyan-600 text-white px-6 py-2 rounded-md hover:bg-cyan-700 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             <FiFilter size={18} />
                             {loading ? rt('Loading...') : rt('Get Report')}
@@ -319,7 +320,7 @@ const ProductionByItem = () => {
 
                 {loading && (
                     <div className="bg-white rounded-lg shadow-md p-12 text-center">
-                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-600 mx-auto mb-4"></div>
                         <p className="text-gray-600">{rt("Generating report...")}</p>
                     </div>
                 )}

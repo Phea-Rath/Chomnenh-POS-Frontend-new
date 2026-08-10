@@ -6,14 +6,15 @@ import {
     FaTag, FaPalette, FaRuler, FaArrowLeft, FaUndo
 } from 'react-icons/fa';
 import { useNavigate, useParams } from 'react-router';
-import { useGetAllWasteQuery } from '../../../app/Features/notificationSlice';
+import { useGetAllWasteQuery } from "@/features/system/notificationSlice";
 import { Atom } from 'react-loading-indicators';
-import { useCreateStockMutation } from '../../../app/Features/stocksSlice';
+import { useCreateStockMutation } from "@/features/stocks/stocksSlice";
 import { useTranslation } from 'react-i18next';
+import { getToken } from '@/utils/tokenStore';
 
 const WasteItemDetail = () => {
     const { t } = useTranslation();
-    const token = localStorage.getItem('token');
+    const token = getToken();
     const { id } = useParams();
     const navigate = useNavigate();
     const { data: wasteData, refetch, isLoading } = useGetAllWasteQuery(token);

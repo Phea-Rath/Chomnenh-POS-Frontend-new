@@ -15,16 +15,17 @@ import { useOutletsContext } from "../../layouts/Management";
 import {
     useGetAllDeliverQuery,
     useDeleteDeliverMutation
-} from "../../../app/Features/deliversSlice";
+} from "@/features/sales/deliversSlice";
 import { useTranslation } from "react-i18next";
 import Button from "../../utils/Button";
 import RefreshButton from "../../utils/RefreshButton";
 import { motion } from "framer-motion";
+import { getToken } from '@/utils/tokenStore';
 
 const DeliverList = () => {
     const { t } = useTranslation();
     const navigate = useNavigate();
-    const token = localStorage.getItem("token");
+    const token = getToken();
     const [viewMode, setViewMode] = useState("grid"); // "grid" or "list"
     const [searchTerm, setSearchTerm] = useState("");
     const [delivers, setDelivers] = useState([]);
@@ -79,20 +80,15 @@ const DeliverList = () => {
             setLoading(true);
             setIsLoading(true);
 
-            const response = await deleteDeliver({
+            await deleteDeliver({
                 id: selectedDeliverId,
                 token
             }).unwrap();
 
-            if (response.status === 200) {
-                toast.success(t('deliverDeletedSuccess'));
-                refetch();
-            }
+            toast.success(t('deliverDeletedSuccess'));
         } catch (error) {
             toast.error(
-                error?.data?.message ||
-                error?.message ||
-                "Failed to delete deliver"
+                error?.data?.message || error?.message || t('deliverDeletedFailed')
             );
         } finally {
             setLoading(false);
@@ -178,7 +174,7 @@ const DeliverList = () => {
                                 value={searchTerm}
                                 onChange={handleSearch}
                                 placeholder={t('searchDeliversPlaceholder')}
-                                className="w-full pl-11 pr-4 py-2.5 border border-gray-200 dark:border-gray-400 rounded-sm focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none text-sm dark:text-gray-100 bg-transparent"
+                                className="w-full pl-11 pr-4 py-2.5 border border-gray-200 dark:border-gray-400 rounded-sm focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500 transition-all outline-none text-sm dark:text-gray-100 bg-transparent"
                             />
                         </div>
 
@@ -188,7 +184,7 @@ const DeliverList = () => {
                                 <button
                                     onClick={() => setViewMode("grid")}
                                     className={`p-2 rounded-sm transition-colors ${viewMode === "grid"
-                                        ? "bg-blue-500 text-white shadow-sm"
+                                        ? "bg-cyan-500 text-white shadow-sm"
                                         : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
                                         }`}
                                 >
@@ -197,7 +193,7 @@ const DeliverList = () => {
                                 <button
                                     onClick={() => setViewMode("list")}
                                     className={`p-2 rounded-sm transition-colors ${viewMode === "list"
-                                        ? "bg-blue-500 text-white shadow-sm"
+                                        ? "bg-cyan-500 text-white shadow-sm"
                                         : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
                                         }`}
                                 >
@@ -213,7 +209,7 @@ const DeliverList = () => {
                     {isFetching ? (
                         <div className="flex flex-col items-center justify-center py-16">
                             <div className="relative">
-                                <div className={`w-12 h-12 border-4 rounded-full animate-spin ${darkMode ? "border-blue-900 border-t-blue-500" : "border-blue-200 border-t-blue-600"}`}></div>
+                                <div className={`w-12 h-12 border-4 rounded-full animate-spin ${darkMode ? "border-cyan-900 border-t-cyan-500" : "border-cyan-200 border-t-cyan-600"}`}></div>
                             </div>
                             <p className="mt-4 font-medium dark:text-gray-400">{t('loadingDelivers')}</p>
                         </div>
@@ -243,8 +239,8 @@ const DeliverList = () => {
                                         {deliver.image ? (
                                             <img src={deliver.image} alt={deliver.deliver_name} className="w-full h-full object-cover" />
                                         ) : (
-                                            <div className="w-full h-full flex items-center justify-center bg-blue-50 dark:bg-blue-900/20">
-                                                <div className="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center text-white text-xl font-bold">
+                                            <div className="w-full h-full flex items-center justify-center bg-cyan-50 dark:bg-cyan-900/20">
+                                                <div className="w-16 h-16 bg-cyan-500 rounded-full flex items-center justify-center text-white text-xl font-bold">
                                                     {getInitials(deliver.deliver_name)}
                                                 </div>
                                             </div>
@@ -285,7 +281,7 @@ const DeliverList = () => {
                                                         {deliver.image ? (
                                                             <img src={deliver.image} alt={deliver.deliver_name} className="h-full w-full object-cover" />
                                                         ) : (
-                                                            <div className="h-full w-full flex items-center justify-center bg-blue-500 text-white font-bold text-xs">{getInitials(deliver.deliver_name)}</div>
+                                                            <div className="h-full w-full flex items-center justify-center bg-cyan-500 text-white font-bold text-xs">{getInitials(deliver.deliver_name)}</div>
                                                         )}
                                                     </div>
                                                     <div>

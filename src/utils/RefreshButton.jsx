@@ -17,7 +17,7 @@ const RefreshButton = ({onRefresh}) => {
         <div>
             <button 
             onClick={handleRefresh}
-            className="flex items-center gap-2 hover:cursor-pointer px-3 h-8 py-2 font-medium text-xs rounded transition-colors border border-blue-300 dark:border-gray-400 text-blue-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700">
+            className="flex items-center gap-2 hover:cursor-pointer px-3 h-8 py-2 font-medium text-xs rounded-[2px] transition-colors border border-gray-200 text-gray-400 hover:bg-[var(--main)] hover:text-white dark:border-gray-500 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white">
                 <FaSyncAlt ref={iconRef} className="text-lg" />
                 {t("refresh")}
             </button>

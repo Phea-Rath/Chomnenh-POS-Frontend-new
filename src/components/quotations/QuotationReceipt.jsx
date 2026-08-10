@@ -24,17 +24,18 @@ import {
 } from 'react-icons/fa';
 import { useNavigate, useParams } from 'react-router';
 import { useTranslation } from 'react-i18next';
-import { useGetQuoteByIdQuery } from '../../../app/Features/quoteSlice';
-import { useGetCurrentProfileQuery, useGetUserLoginQuery } from '../../../app/Features/usersSlice';
+import { useGetQuoteByIdQuery } from "@/features/sales/quoteSlice";
+import { useGetCurrentProfileQuery, useGetUserLoginQuery } from "@/features/auth/usersSlice";
 import handleDownload from '../../services/imageDowload';
 import { convertImageToBase64 } from '../../services/serviceFunction';
-import { useGetProfileByIdQuery } from '../../../app/Features/userProfileSlice';
+import { useGetProfileByIdQuery } from "@/features/auth/userProfileSlice";
+import { getToken } from '@/utils/tokenStore';
 
 const QuotationReceipt = () => {
     const { t, i18n } = useTranslation();
     const navigate = useNavigate();
     const { id } = useParams();
-    const token = localStorage.getItem('token');
+    const token = getToken();
     const proId = localStorage.getItem('profileId');
     const { data, refetch } = useGetQuoteByIdQuery({ id, token });
     const receiptRef = useRef(null);
@@ -144,7 +145,7 @@ const QuotationReceipt = () => {
                             <span className="font-medium text-gray-700 dark:text-gray-300">{t('validUntil')}:</span> {new Date(quotation?.date_term).toLocaleDateString()}
                         </div>
                     </div>
-                    <div className="font-semibold text-blue-600 dark:text-blue-400">{t('total')}: ${quotation?.grand_total}</div>
+                    <div className="font-semibold text-cyan-600 dark:text-cyan-400">{t('total')}: ${quotation?.grand_total}</div>
                 </div>
             </div>
 
@@ -159,7 +160,7 @@ const QuotationReceipt = () => {
                         <div className="flex flex-row justify-between items-center">
                             <div className="mb-4 md:mb-0">
                                 <div className="flex items-center mb-3">
-                                    <div className={`w-12 h-12 ${!logoBase64 && "bg-blue-600"} border border-gray-300 dark:border-gray-600 overflow-hidden flex items-center justify-center mr-3`}>
+                                    <div className={`w-12 h-12 ${!logoBase64 && "bg-cyan-600"} border border-gray-300 dark:border-gray-600 overflow-hidden flex items-center justify-center mr-3`}>
                                         {company ? <img src={logoBase64} alt="" className="object-contain" />
                                             : <span className="text-white text-lg font-bold">CP</span>}
                                     </div>
@@ -171,7 +172,7 @@ const QuotationReceipt = () => {
                                 </div>
                             </div>
                             <div className="text-right">
-                                <h2 className="text-xl font-bold text-blue-600 dark:text-blue-400 mb-1">{t('quotations').toUpperCase()}</h2>
+                                <h2 className="text-xl font-bold text-cyan-600 dark:text-cyan-400 mb-1">{t('quotations').toUpperCase()}</h2>
                                 <div className="text-base font-semibold text-gray-800 dark:text-gray-200">#{quotation?.quotation_number}</div>
                                 <div className="text-sm text-gray-600 dark:text-gray-400 mt-2 space-y-1">
                                     <div className="flex items-center justify-end">
@@ -292,7 +293,7 @@ const QuotationReceipt = () => {
                                     <div className="border-t border-gray-300 dark:border-gray-700 pt-2 mt-2">
                                         <div className="flex justify-between text-base font-bold">
                                             <span className="text-gray-800 dark:text-white">{t('grandTotal')}:</span>
-                                            <span className="text-blue-600 dark:text-blue-400">${quotation?.grand_total}</span>
+                                            <span className="text-cyan-600 dark:text-cyan-400">${quotation?.grand_total}</span>
                                         </div>
                                     </div>
                                 </div>

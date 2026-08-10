@@ -2,12 +2,13 @@ import React, { useEffect, useState } from 'react'
 import { IoIosSearch } from 'react-icons/io'
 import AlertBox from '../../services/AlertBox'
 import { useOutletsContext } from '../../layouts/Management'
-import CreateStockTypes from '../../views/stocks/CreateStockTypes'
-import UpdateStockTypes from '../../views/stocks/UpdateStockTypes'
+import CreateStockTypes from './CreateStockTypes'
+import UpdateStockTypes from './UpdateStockTypes'
 import { Button, Empty, Skeleton, Tag, Typography } from 'antd'
 import { motion } from "framer-motion";
-import { useGetAllStockTypesQuery, useDeleteStockTypeMutation } from '../../../app/Features/stockTypesSlice'
+import { useGetAllStockTypesQuery, useDeleteStockTypeMutation } from "@/features/stocks/stockTypesSlice"
 import { toast } from 'react-toastify'
+import { getToken } from '@/utils/tokenStore';
 
 const StockType = () => {
   const [stock_types, setStockTypes] = useState([]);
@@ -17,7 +18,7 @@ const StockType = () => {
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isUpdateOpen, setIsUpdateOpen] = useState(false);
   const { setLoading, loading, setAlert, setMessage, setAlertStatus } = useOutletsContext();
-  const token = localStorage.getItem('token');
+  const token = getToken();
   const { data, isError, isLoading, refetch } = useGetAllStockTypesQuery(token);
   const [deleteStockType, stockTypeDel] = useDeleteStockTypeMutation();
 
@@ -36,17 +37,11 @@ const StockType = () => {
     try {
       setAlertBox(false);
       setLoading(true);
-      const response = await deleteStockType({ id, token });
-      if (response.data.status === 200) {
-        refetch();
-        toast.success(response.data.message || 'Stock type deleted successfully!');
-        setAlertBox(false);
-        setLoading(false);
-      } else {
-        throw new Error(response.error.data.message || "Failed to delete stock type");
-      }
+      await deleteStockType({ id, token }).unwrap();
+      toast.success('Stock type deleted successfully!');
     } catch (error) {
-      toast.error(error?.message || error || 'An error occurred while deleting the stock type');
+      toast.error(error?.data?.message || error?.message || 'An error occurred while deleting the stock type');
+    } finally {
       setLoading(false);
       setAlertBox(false);
     }

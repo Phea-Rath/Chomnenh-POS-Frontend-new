@@ -20,14 +20,14 @@ import {
 } from "antd";
 import { PiShoppingCartBold } from "react-icons/pi";
 import { motion } from "framer-motion";
-import { useGetAllSaleQuery } from "../../../app/Features/salesSlice";
-import { useGetAllCategoriesQuery } from "../../../app/Features/categoriesSlice";
-import { useGetAllBrandQuery } from "../../../app/Features/brandsSlice";
+import { useGetAllSaleQuery } from "@/features/sales/salesSlice";
+import { useGetAllCategoriesQuery } from "@/features/products/categoriesSlice";
+import { useGetAllBrandQuery } from "@/features/products/brandsSlice";
 import {
   useGetAllOrderQuery,
   useGetPopularOrderQuery,
   useGetPersentOrderMonthlyQuery
-} from "../../../app/Features/ordersSlice";
+} from "@/features/sales/ordersSlice";
 import {
   LineChart,
   Line,
@@ -42,8 +42,8 @@ import {
   Legend
 } from "recharts";
 import { toast } from "react-toastify";
-import { useGetAllCustomerQuery } from "../../../app/Features/customersSlice";
-import { useGetExchangeRateByIdQuery } from "../../../app/Features/exchangeRatesSlice";
+import { useGetAllCustomerQuery } from "@/features/customers/customersSlice";
+import { useGetExchangeRateByIdQuery } from "@/features/system/exchangeRatesSlice";
 import { currencyFormat } from "../../services/serviceFunction";
 import { FaPercent, FaPalette, FaRuler } from "react-icons/fa";
 import { GiSugarCane } from "react-icons/gi";
@@ -51,7 +51,7 @@ import { BiCategory } from "react-icons/bi";
 import api from "../../services/api";
 import { MdOutlineAddShoppingCart, MdOutlineTableChart, MdOutlineGridView } from "react-icons/md";
 import { TbShoppingCartOff } from "react-icons/tb";
-import { useGetAllWasteQuery } from "../../../app/Features/notificationSlice";
+import { useGetAllWasteQuery } from "@/features/system/notificationSlice";
 import { useDebounce } from "use-debounce";
 import { useTranslation } from "react-i18next";
 import dayjs from "dayjs";
@@ -65,6 +65,7 @@ import Button from "../../utils/Button";
 import Input from "../../utils/Input";
 import { IoImage } from "react-icons/io5";
 import QrPaymentModal from "../../utils/QrPaymentModal";
+import { getToken } from '@/utils/tokenStore';
 
 const initialOrder = {
   order_subtotal: 0,
@@ -93,7 +94,7 @@ const initialOrder = {
 const Sales = () => {
   const { t } = useTranslation();
   const proId = localStorage.getItem("profileId");
-  const token = localStorage.getItem("token");
+  const token = getToken();
   const localOrderItems = JSON.parse(localStorage.getItem("orderItems"));
 
   const { data: exchangeRate } = useGetExchangeRateByIdQuery({
@@ -805,7 +806,7 @@ const Sales = () => {
                         </div>
                         <div className="text-right">
                           <div className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-tighter">Wholesale</div>
-                          <div className="text-xs font-bold text-blue-500 leading-none">${getItemPrice(item, "wholesale").toFixed(2)}</div>
+                          <div className="text-xs font-bold text-cyan-500 leading-none">${getItemPrice(item, "wholesale").toFixed(2)}</div>
                         </div>
                       </div>
                       <button

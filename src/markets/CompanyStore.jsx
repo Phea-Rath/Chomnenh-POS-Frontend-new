@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from "react-router";
-import { useGetAllItemsForMarketPlaceQuery } from "../../app/Features/itemsSlice";
-import { useGetProfileByIdQuery } from "../../app/Features/userProfileSlice";
+import { useGetAllItemsForMarketPlaceQuery } from "@/features/products/itemsSlice";
+import { useGetProfileByIdQuery } from "@/features/auth/userProfileSlice";
 import ProductGrid from "./pages/ProductGrid";
 import { FaPhoneAlt, FaMapMarkerAlt, FaEnvelope, FaGlobe } from "react-icons/fa";
 

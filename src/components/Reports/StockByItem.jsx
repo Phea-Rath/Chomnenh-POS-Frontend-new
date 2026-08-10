@@ -1,9 +1,9 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { FiDownload, FiPrinter, FiFilter } from 'react-icons/fi';
-import { useGetStockByItemReportMutation } from '../../../app/Features/reportsSlice';
-import { useGetAllUserQuery, useGetUserLoginQuery } from '../../../app/Features/usersSlice';
-import { useGetAllStockTypesQuery } from '../../../app/Features/stockTypesSlice';
-import { useGetAllItemsQuery } from '../../../app/Features/itemsSlice';
+import { useGetStockByItemReportMutation } from "@/features/dashboard/reportsSlice";
+import { useGetAllUserQuery, useGetUserLoginQuery } from "@/features/auth/usersSlice";
+import { useGetAllStockTypesQuery } from "@/features/stocks/stockTypesSlice";
+import { useGetAllItemsQuery } from "@/features/products/itemsSlice";
 import { toast } from 'react-toastify';
 import * as XLSX from 'xlsx';
 import { useReactToPrint } from 'react-to-print';
@@ -11,10 +11,11 @@ import { useReportText } from './reportText';
 import RichSearch from '../../utils/RichSearch';
 import { DatePicker } from 'antd';
 import dayjs from 'dayjs';
+import { getToken } from '@/utils/tokenStore';
 
 const StockByItem = () => {
     const { rt } = useReportText();
-    const token = localStorage.getItem('token');
+    const token = getToken();
     const [getStockByItem] = useGetStockByItemReportMutation();
     const { data: userLogin } = useGetUserLoginQuery(token);
     const profile = userLogin?.data;
@@ -273,7 +274,7 @@ const StockByItem = () => {
                         <button
                             onClick={handleGetReport}
                             disabled={loading}
-                            className="flex items-center justify-center gap-2 bg-blue-600 text-white px-5 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed h-10"
+                            className="flex items-center justify-center gap-2 bg-cyan-600 text-white px-5 py-2 rounded-md hover:bg-cyan-700 disabled:opacity-50 disabled:cursor-not-allowed h-10"
                         >
                             <FiFilter size={16} />
                             {loading ? rt('Loading...') : rt('Get Report')}
@@ -317,7 +318,7 @@ const StockByItem = () => {
                                     </div>
                                 </div>
                                 <div className="text-right">
-                                    <h1 className="text-xl font-bold text-blue-600">{rt("Stock Report By Item")}</h1>
+                                    <h1 className="text-xl font-bold text-cyan-600">{rt("Stock Report By Item")}</h1>
                                     <p className="text-xs text-slate-500">{new Date().toLocaleString()}</p>
                                 </div>
                             </div>
@@ -355,7 +356,7 @@ const StockByItem = () => {
                                             <td className="border border-slate-200 dark:border-slate-700 px-4 py-3 text-slate-600 dark:text-slate-400">{item.brand_name || '-'}</td>
                                             <td className="border border-slate-200 dark:border-slate-700 px-4 py-3 text-right text-slate-600 dark:text-slate-400">{formatNumber(item.stock_return)}</td>
                                             <td className="border border-slate-200 dark:border-slate-700 px-4 py-3 text-right font-medium text-emerald-600">{formatNumber(item.stock_in)}</td>
-                                            <td className="border border-slate-200 dark:border-slate-700 px-4 py-3 text-right font-medium text-blue-600">{formatNumber(item.stock_out)}</td>
+                                            <td className="border border-slate-200 dark:border-slate-700 px-4 py-3 text-right font-medium text-cyan-600">{formatNumber(item.stock_out)}</td>
                                             <td className="border border-slate-200 dark:border-slate-700 px-4 py-3 text-right font-medium text-amber-600">{formatNumber(item.stock_waste)}</td>
                                             <td className="border border-slate-200 dark:border-slate-700 px-4 py-3 text-right font-medium text-rose-600">{formatNumber(item.stock_sale)}</td>
                                         </tr>
@@ -365,7 +366,7 @@ const StockByItem = () => {
                                             <td className="border border-slate-200 dark:border-slate-700 px-4 py-3 text-right text-slate-900 dark:text-slate-100" colSpan={5}>{rt("Total")}</td>
                                             <td className="border border-slate-200 dark:border-slate-700 px-4 py-3 text-right text-slate-800 dark:text-slate-200">{formatNumber(totals.stock_return)}</td>
                                             <td className="border border-slate-200 dark:border-slate-700 px-4 py-3 text-right text-emerald-600">{formatNumber(totals.stock_in)}</td>
-                                            <td className="border border-slate-200 dark:border-slate-700 px-4 py-3 text-right text-blue-600">{formatNumber(totals.stock_out)}</td>
+                                            <td className="border border-slate-200 dark:border-slate-700 px-4 py-3 text-right text-cyan-600">{formatNumber(totals.stock_out)}</td>
                                             <td className="border border-slate-200 dark:border-slate-700 px-4 py-3 text-right text-amber-600">{formatNumber(totals.stock_waste)}</td>
                                             <td className="border border-slate-200 dark:border-slate-700 px-4 py-3 text-right text-rose-600">{formatNumber(totals.stock_sale)}</td>
                                         </tr>
@@ -401,7 +402,7 @@ const StockByItem = () => {
 
                 {loading && (
                     <div className="bg-primary rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 p-12 text-center">
-                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-600 mx-auto mb-4"></div>
                         <p className="text-slate-600 dark:text-slate-400">{rt("Generating report...")}</p>
                     </div>
                 )}

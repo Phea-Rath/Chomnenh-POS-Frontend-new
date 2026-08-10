@@ -3,24 +3,25 @@ import { IoPersonCircleOutline } from "react-icons/io5";
 import { Link } from "react-router";
 import { useOutletsContext } from "./Management";
 import { BiBell, BiMenuAltLeft, BiMenuAltRight, BiX } from "react-icons/bi";
-import { useGetUserLoginQuery } from "../../app/Features/usersSlice";
+import { useGetUserLoginQuery } from "@/features/auth/usersSlice";
 import { useEffect, useState } from "react";
 import { Badge, Space } from "antd";
 import { useTranslation } from "react-i18next";
 import api from "../services/api";
 import { GoSun } from "react-icons/go";
+import { getToken, clearAllTokens } from '@/utils/tokenStore';
 
 const Header = ({ darkMode, setDarkMode }) => {
   const { t, i18n } = useTranslation();
   const { setSidebar, notification, sidebar } = useOutletsContext();
-  const token = localStorage.getItem("token");
+  const token = getToken();
   const uId = localStorage.getItem("userId");
   const { data } = useGetUserLoginQuery(token);
   const [profile, setProfile] = useState();
 
   const handleClearTelegramSession = () => {
-    // 1. Wipe your own application's local tokens and user metadata
-      localStorage.removeItem('token');
+    // 1. Wipe in-memory & sessionStorage token store and localStorage metadata
+      clearAllTokens();
       sessionStorage.clear();
 
       // 2. Clear your local domain's cookies just to be thorough
@@ -125,9 +126,9 @@ const Header = ({ darkMode, setDarkMode }) => {
             title={sidebar ? t("hideSidebar") : t("showSidebar")}
           >
             {sidebar ? (
-              <BiMenuAltRight className={`text-2xl ${darkMode ? "text-blue-400" : "text-blue-600"}`} />
+              <BiMenuAltRight className={`text-2xl ${darkMode ? "text-cyan-400" : "text-cyan-600"}`} />
             ) : (
-              <BiMenuAltLeft className={`text-2xl ${darkMode ? "text-blue-400" : "text-blue-600"}`} />
+              <BiMenuAltLeft className={`text-2xl ${darkMode ? "text-cyan-400" : "text-cyan-600"}`} />
             )}
           </button>
 
@@ -179,7 +180,7 @@ const Header = ({ darkMode, setDarkMode }) => {
               size="small"
               className="flex items-center justify-center"
             >
-              <BiBell className={`text-xl transition-colors ${darkMode ? "text-gray-400 hover:text-blue-400" : "text-gray-600 hover:text-blue-600"}`} />
+              <BiBell className={`text-xl transition-colors ${darkMode ? "text-gray-400 hover:text-cyan-400" : "text-gray-600 hover:text-cyan-600"}`} />
             </Badge>
           </Link>}
 

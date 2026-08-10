@@ -1,4 +1,4 @@
-import { useGetAllProfileQuery } from "../../app/Features/userProfileSlice";
+import { useGetAllProfileQuery } from "@/features/auth/userProfileSlice";
 import CompanyCard from "./components/CompanyCard";
 
 const CompaniesPage = () => {

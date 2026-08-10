@@ -20,16 +20,17 @@ import { MdCancel, MdDeliveryDining, MdIncompleteCircle, MdOutlineDownload, MdPa
 import { toast } from 'react-toastify';
 import api from '../../services/api';
 import AlertBox from '../../services/AlertBox';
-import { useGetOrderByUserQuery } from '../../../app/Features/ordersSlice';
-import { useGetAllWasteQuery } from '../../../app/Features/notificationSlice';
+import { useGetOrderByUserQuery } from "@/features/sales/ordersSlice";
+import { useGetAllWasteQuery } from "@/features/system/notificationSlice";
 import { useNavigate, useParams } from 'react-router';
-import Echo from '../../echo';
+import Echo from '@/websockets/echo';
 import { GrRefresh } from 'react-icons/gr';
 import { IoArrowUndoCircle, IoArrowUndoCircleOutline } from 'react-icons/io5';
 import handleDownload from '../../services/imageDowload';
 import { FaCartShopping } from 'react-icons/fa6';
 import { useTranslation } from 'react-i18next';
 import { FaMoon, FaSun } from 'react-icons/fa';
+import { getToken, getGuestToken } from '@/utils/tokenStore';
 
 const PlainButton = ({
     children,
@@ -42,7 +43,7 @@ const PlainButton = ({
 }) => {
     const variants = {
         default: 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-100',
-        primary: 'border border-blue-600 bg-blue-600 text-white hover:bg-blue-700',
+        primary: 'border border-cyan-600 bg-cyan-600 text-white hover:bg-cyan-700',
         dark: 'border border-slate-700 bg-slate-800 text-slate-100 hover:bg-slate-700',
     };
 
@@ -89,7 +90,7 @@ const PlainModal = ({ open, onClose, onCancel, title, children, footer, width = 
 };
 
 const PlainTag = ({ children, className = '' }) => (
-    <span className={`inline-flex items-center rounded-full bg-blue-950/50 px-2 py-1 text-xs font-semibold text-blue-300 ${className}`}>
+    <span className={`inline-flex items-center rounded-full bg-cyan-950/50 px-2 py-1 text-xs font-semibold text-cyan-300 ${className}`}>
         {children}
     </span>
 );
@@ -103,7 +104,7 @@ const GuestOrderTracking = () => {
     const profileId = localStorage.getItem('profileId');
     const guest = JSON.parse(localStorage.getItem('guest'));
     const { data, refetch } = useGetOrderByUserQuery({ id: guest.id, token });
-    const { refetch: refetchWaste } = useGetAllWasteQuery(localStorage.getItem('token'));
+    const { refetch: refetchWaste } = useGetAllWasteQuery(getToken());
 
     const [orders, setOrders] = useState([]);
     const [selectedOrder, setSelectedOrder] = useState(null);
@@ -186,10 +187,10 @@ const GuestOrderTracking = () => {
         if (order.status == 1) return { text: "Pending", color: "bg-yellow-100 text-yellow-800 border-yellow-200", icon: <MdPadding /> };
         if (order.status == 3) return { text: "Package", color: "bg-indigo-100 text-indigo-800 border-indigo-200", icon: <MdWheelchairPickup /> };
         if (order.status == 4) return { text: "Pickup", color: "bg-purple-100 text-purple-800 border-purple-200", icon: <MdWheelchairPickup /> };
-        if (order.status == 5) return { text: "Delivery", color: "bg-blue-100 text-blue-800 border-blue-200", icon: <MdDeliveryDining /> };
+        if (order.status == 5) return { text: "Delivery", color: "bg-cyan-100 text-cyan-800 border-cyan-200", icon: <MdDeliveryDining /> };
         if (order.status == 6) return { text: "Completed", color: "bg-green-100 text-green-800 border-green-200", icon: <MdIncompleteCircle /> };
         // if (order.order_payment_status === 'paid') return { text: "Paid", color: "bg-green-100 text-green-800 border-green-200", icon: <FaCheckCircle /> };
-        return { text: "Pending", color: "bg-blue-100 text-blue-800 border-blue-200", icon: <FaShoppingBag /> };
+        return { text: "Pending", color: "bg-cyan-100 text-cyan-800 border-cyan-200", icon: <FaShoppingBag /> };
     };
 
     const calculateProgress = (order) => {
@@ -205,7 +206,7 @@ const GuestOrderTracking = () => {
     const confirmCancel = async () => {
         try {
             setLoading(true);
-            const gToken = localStorage.getItem('guestToken');
+            const gToken = getGuestToken();
             await api.put(`/order_cancel/${selectedOrder.order_id}`, {}, {
                 headers: { Authorization: `Bearer ${gToken}` }
             });
@@ -237,7 +238,7 @@ const GuestOrderTracking = () => {
             <PlainModal
                 title={
                     <div className="flex items-center gap-2 text-lg">
-                        <FaBoxOpen className="text-blue-500" />
+                        <FaBoxOpen className="text-cyan-500" />
                         <span>{viewingOrder?.order_no}</span>
                     </div>
                 }
@@ -296,7 +297,7 @@ const GuestOrderTracking = () => {
                                     <div className="text-right font-semibold text-slate-200">
                                         ${parseFloat(record.price).toFixed(2)}
                                     </div>
-                                    <div className="text-right font-bold text-blue-400">
+                                    <div className="text-right font-bold text-cyan-400">
                                         ${(record.price * record.quantity).toFixed(2)}
                                     </div>
                                 </div>
@@ -317,7 +318,7 @@ const GuestOrderTracking = () => {
                                 </div>
                                 <div className={`flex justify-between border-t pt-2 text-lg font-bold ${darkMode ? '!border-slate-700 !text-slate-100' : 'text-gray-800'}`}>
                                     <span>{t('totalAmount')}:</span>
-                                    <span className="text-blue-600">${viewingOrder.order_total.toFixed(2)}</span>
+                                    <span className="text-cyan-600">${viewingOrder.order_total.toFixed(2)}</span>
                                 </div>
                             </div>
                         </div>
@@ -328,7 +329,7 @@ const GuestOrderTracking = () => {
             <PlainModal
                 title={
                     <div className="flex items-center gap-2 text-lg">
-                        <FaDollarSign className="text-blue-500" />
+                        <FaDollarSign className="text-cyan-500" />
                         <span>{t('orderReceipt')}</span>
                         <PlainButton
                             icon={<MdOutlineDownload className="text-lg text-green-500" />}
@@ -455,7 +456,7 @@ const GuestOrderTracking = () => {
             <div className={`mb-4 flex items-center justify-between rounded-2xl border px-4 py-3 ${darkMode ? '!border-slate-700 !bg-slate-900' : 'border-slate-200 bg-white'}`}>
                 <h1 className={`flex items-center gap-2 text-xl font-bold ${darkMode ? '!text-slate-100' : 'text-gray-900'}`}>
                     <IoArrowUndoCircleOutline className='!text-base text-red-500 cursor-pointer' onClick={() => navigate(-1)} />
-                    <FaShoppingBag className="text-blue-600" /> {t('tracking')}
+                    <FaShoppingBag className="text-cyan-600" /> {t('tracking')}
                 </h1>
                 <div className="flex items-center gap-2">
                     <button
@@ -480,7 +481,7 @@ const GuestOrderTracking = () => {
             {/* Orders Grid */}
             {orders?.length <= 0 || !orders && <div className="mb-6 flex h-full flex-col justify-center gap-4 md:items-center">
 
-                <div className="rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 p-2">
+                <div className="rounded-xl bg-gradient-to-r from-cyan-500 to-cyan-600 p-2">
                     <FaCartShopping className="text-white text-2xl" />
                 </div>
                 <h1 className={`flex items-center gap-3 text-2xl font-bold md:text-3xl ${darkMode ? '!text-slate-100' : 'text-gray-800'}`}>
@@ -493,7 +494,7 @@ const GuestOrderTracking = () => {
 
                 <button
                     onClick={() => navigate(-1)}
-                    className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 px-5 py-2.5 font-medium text-white transition-all duration-300 hover:-translate-y-0.5 hover:from-blue-700 hover:to-blue-800"
+                    className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-cyan-600 to-cyan-700 px-5 py-2.5 font-medium text-white transition-all duration-300 hover:-translate-y-0.5 hover:from-cyan-700 hover:to-cyan-800"
                 >
                     <FaPlus className="w-5 h-5" />
                     {t('orderNow')}
@@ -521,7 +522,7 @@ const GuestOrderTracking = () => {
                                 {!order.is_cancelled && (
                                     <div className="mb-3">
                                         <div className={`h-1.5 w-full overflow-hidden rounded-full ${darkMode ? '!bg-slate-800' : 'bg-gray-100'}`}>
-                                            <div className="bg-blue-500 h-full transition-all" style={{ width: `${progress}%` }} />
+                                            <div className="bg-cyan-500 h-full transition-all" style={{ width: `${progress}%` }} />
                                         </div>
                                     </div>
                                 )}
@@ -534,7 +535,7 @@ const GuestOrderTracking = () => {
                                     <div>
                                         <p className={`text-xs font-medium ${darkMode ? '!text-slate-100' : 'text-gray-800'}`}>{order.customer_name}</p>
                                         <div className={`mt-1 flex items-center gap-2 text-sm ${darkMode ? '!text-slate-400' : 'text-gray-500'}`}>
-                                            <FaPhone className="w-3 h-3 text-blue-700" />
+                                            <FaPhone className="w-3 h-3 text-cyan-700" />
                                             <span>{order.order_tel}</span>
                                         </div>
                                     </div>
@@ -585,14 +586,14 @@ const GuestOrderTracking = () => {
                             <div className="mb-3 flex items-center justify-between">
                                 <div className={`flex justify-between border-t pt-2 text-lg font-bold ${darkMode ? '!border-slate-700 !text-slate-100' : 'text-gray-800'}`}>
                                     <span>{t('totalAmount')}:</span>
-                                    <span className="text-blue-600 ml-3">${order?.order_total.toFixed(2)}</span>
+                                    <span className="text-cyan-600 ml-3">${order?.order_total.toFixed(2)}</span>
                                 </div>
                             </div>
 
                             <div className="space-y-2">
                                 <button
                                     onClick={() => handleOpenDetails(order)}
-                                    className={`w-full rounded-xl py-2 text-sm font-medium transition ${darkMode ? '!bg-blue-950/40 !text-blue-300 hover:!bg-blue-950/60' : 'bg-blue-100 text-blue-600 hover:bg-blue-100'}`}
+                                    className={`w-full rounded-xl py-2 text-sm font-medium transition ${darkMode ? '!bg-cyan-950/40 !text-cyan-300 hover:!bg-cyan-950/60' : 'bg-cyan-100 text-cyan-600 hover:bg-cyan-100'}`}
                                 >
                                     {t('viewItemDetails')}
                                 </button>

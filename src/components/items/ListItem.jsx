@@ -3,7 +3,7 @@ import { IoIosSearch, IoIosGrid, IoIosList, IoIosImages } from "react-icons/io";
 import { useOutletsContext } from "../../layouts/Management";
 import AlertBox from "../../services/AlertBox";
 import { useDebounce } from "use-debounce";
-import { useGetAllItemsQuery } from "../../../app/Features/itemsSlice";
+import { useGetAllItemsQuery, useDeleteItemMutation } from "@/features/products/itemsSlice";
 import { useNavigate } from "react-router";
 import {
   RiEditLine,
@@ -17,8 +17,8 @@ import api from "../../services/api";
 import { useTranslation } from "react-i18next";
 import RichSearch from "../../utils/RichSearch";
 import Pagination from "../../utils/Pagination";
-import { useGetAllCategoriesQuery } from "../../../app/Features/categoriesSlice";
-import { useGetAllBrandQuery } from "../../../app/Features/brandsSlice";
+import { useGetAllCategoriesQuery } from "@/features/products/categoriesSlice";
+import { useGetAllBrandQuery } from "@/features/products/brandsSlice";
 import { motion } from "framer-motion";
 import Button from "../../utils/Button";
 import Input from "../../utils/Input";
@@ -26,12 +26,13 @@ import { FaTag, FaLayerGroup, FaBox } from "react-icons/fa";
 import RefreshButton from "../../utils/RefreshButton";
 import { LuPackage } from "react-icons/lu";
 import { definePermission } from "../../services/serviceFunction";
+import { getToken } from '@/utils/tokenStore';
 const MENU_ID = 6;
 const Tag = ({ children, color = "gray", className = "" }) => {
   const colors = {
     success: "bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800",
     error: "bg-red-100 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800",
-    blue: "bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800",
+    cyan: "bg-cyan-100 text-cyan-800 border-cyan-200 dark:bg-cyan-900/30 dark:text-cyan-400 dark:border-cyan-800",
     gray: "bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700",
   };
   return (
@@ -81,9 +82,14 @@ const GridCard = ({ item, onEdit, onDelete, onView, formatCurrency, t }) => {
         )}
         
         <div className="absolute top-2 left-2 flex flex-col gap-1 items-start">
-          <Tag color={inStock > 0 ? "success" : "error"}>
+          <Tag color={inStock > 5 ? "success" : inStock > 0 ? "cyan" : "error"}>
             {inStock > 0 ? `STK: ${inStock}` : t("Sold Out")}
           </Tag>
+          {item.scale_name && (
+            <span className="px-1.5 py-0.5 bg-slate-900/70 text-white rounded-[1px] text-[9px] font-bold uppercase">
+              {item.scale_name}
+            </span>
+          )}
         </div>
 
         {item.discount > 0 && (
@@ -97,12 +103,22 @@ const GridCard = ({ item, onEdit, onDelete, onView, formatCurrency, t }) => {
 
       <div className="p-3 flex-1 flex flex-col">
         <div className="mb-2">
-          <p className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-tighter mb-0.5">{item.category_name}</p>
+          <div className="flex justify-between items-center mb-0.5">
+            <p className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-tighter">{item.category_name}</p>
+            {item.code && <span className="text-[9px] font-mono text-slate-400">#{item.code}</span>}
+          </div>
           <h3 className="font-bold text-[13px] text-slate-800 dark:text-slate-100 line-clamp-1 group-hover:text-[#13b5ea] transition-colors">{item.name}</h3>
-          <div className="flex items-center gap-2 mt-1">
-            <span className="font-bold text-sm text-green-600">{formatCurrency(item.price_discount || item.price)}</span>
-            {item.price_discount && (
-              <span className="text-[10px] text-slate-400 line-through">{formatCurrency(item.price)}</span>
+          <div className="flex items-center justify-between gap-1 mt-1.5">
+            <div className="flex items-center gap-1.5">
+              <span className="font-bold text-xs text-green-600">{formatCurrency(item.price_discount || item.price)}</span>
+              {item.price_discount && (
+                <span className="text-[9px] text-slate-400 line-through">{formatCurrency(item.price)}</span>
+              )}
+            </div>
+            {item.wholesale_price && (
+              <span className="text-[9px] font-semibold text-cyan-500 bg-cyan-50 dark:bg-cyan-900/20 px-1 py-0.5 rounded-[1px]" title="Wholesale Rate">
+                WS: {formatCurrency(item.wholesale_price_discount || item.wholesale_price)}
+              </span>
             )}
           </div>
         </div>
@@ -113,7 +129,7 @@ const GridCard = ({ item, onEdit, onDelete, onView, formatCurrency, t }) => {
               onClick={onView} 
               disabled={!definePermission(MENU_ID).is_view}
               title={t("View")}
-              className="flex-1 py-1.5 flex justify-center bg-slate-50 text-slate-600 rounded-[2px] hover:bg-slate-100 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700 transition-colors"
+              className="flex-1 py-1.5 flex justify-center bg-slate-50 text-slate-600 rounded-[2px] hover:bg-slate-100 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700 transition-colors disabled:opacity-50"
             >
               <RiEyeLine size={14} />
             </button>
@@ -121,7 +137,7 @@ const GridCard = ({ item, onEdit, onDelete, onView, formatCurrency, t }) => {
               onClick={onEdit} 
               disabled={!definePermission(MENU_ID).is_modify}
               title={t("Edit")}
-              className="flex-1 py-1.5 flex justify-center bg-blue-50 text-blue-600 rounded-[2px] hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-400 dark:hover:bg-blue-900/40 transition-colors"
+              className="flex-1 py-1.5 flex justify-center bg-cyan-50 text-cyan-600 rounded-[2px] hover:bg-cyan-100 dark:bg-cyan-900/20 dark:text-cyan-400 dark:hover:bg-cyan-900/40 transition-colors disabled:opacity-50"
             >
               <RiEditLine size={14} />
             </button>
@@ -129,7 +145,7 @@ const GridCard = ({ item, onEdit, onDelete, onView, formatCurrency, t }) => {
               onClick={onDelete} 
               disabled={!definePermission(MENU_ID).is_drop}
               title={t("Delete")}
-              className="flex-1 py-1.5 flex justify-center bg-red-50 text-red-600 rounded-[2px] hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/40 transition-colors"
+              className="flex-1 py-1.5 flex justify-center bg-red-50 text-red-600 rounded-[2px] hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/40 transition-colors disabled:opacity-50"
             >
               <RiDeleteBinLine size={14} />
             </button>
@@ -191,7 +207,7 @@ const ListView = ({ items, navigator, onDelete, formatCurrency, t }) => (
                   <span className="font-bold text-[13px] text-green-600">{formatCurrency(item.price_discount || item.price)}</span>
                 </td>
                 <td className="px-4 py-3">
-                  <span className="font-bold text-[13px] text-blue-500">{formatCurrency(item.wholesale_price_discount || item.wholesale_price)}</span>
+                  <span className="font-bold text-[13px] text-cyan-500">{formatCurrency(item.wholesale_price_discount || item.wholesale_price)}</span>
                 </td>
                 <td className="px-4 py-3 text-right">
                   <div className="flex justify-end gap-1">
@@ -205,7 +221,7 @@ const ListView = ({ items, navigator, onDelete, formatCurrency, t }) => (
                     <button
               disabled={!definePermission(MENU_ID).is_modify}
                       onClick={() => navigator(`update/${item.id}`)}
-                      className="p-1.5 text-slate-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-all"
+                      className="p-1.5 text-slate-400 hover:text-cyan-500 hover:bg-cyan-50 dark:hover:bg-cyan-900/20 rounded transition-all"
                     >
                       <RiEditLine size={16} />
                     </button>
@@ -234,7 +250,7 @@ const ListItem = () => {
   const [alertBox, setAlertBox] = useState(false);
   const [deleteItemId, setDeleteItemId] = useState(null);
   const { setLoading, darkMode } = useOutletsContext();
-  const token = localStorage.getItem("token");
+  const token = getToken();
   const categoryContext = useGetAllCategoriesQuery(token);
   const categories = useMemo(() => categoryContext.data?.data || [], [categoryContext.data]);
   const [selectedCategory, setSelectedCategory] = useState("");
@@ -242,6 +258,7 @@ const ListItem = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(12);
   const [selectedBrand, setSelectedBrand] = useState("");
+  const [stockStatusFilter, setStockStatusFilter] = useState("all");
   const brandContext = useGetAllBrandQuery(token);
   const brands = useMemo(() => brandContext.data?.data || [], [brandContext.data]);
 
@@ -259,28 +276,59 @@ const ListItem = () => {
   const items = useMemo(() => data?.data || [], [data]);
   const totalItems = data?.pagination?.total || 0;
 
+  const stockMetrics = useMemo(() => {
+    let inStock = 0;
+    let lowStock = 0;
+    let outOfStock = 0;
+    items.forEach((item) => {
+      const qty = item?.stock?.in_stock || 0;
+      if (qty > 5) inStock++;
+      else if (qty > 0) lowStock++;
+      else outOfStock++;
+    });
+    return { inStock, lowStock, outOfStock };
+  }, [items]);
+
+  const filteredItems = useMemo(() => {
+    if (stockStatusFilter === "in_stock") {
+      return items.filter((item) => (item?.stock?.in_stock || 0) > 5);
+    }
+    if (stockStatusFilter === "low_stock") {
+      return items.filter((item) => (item?.stock?.in_stock || 0) > 0 && (item?.stock?.in_stock || 0) <= 5);
+    }
+    if (stockStatusFilter === "out_of_stock") {
+      return items.filter((item) => (item?.stock?.in_stock || 0) <= 0);
+    }
+    return items;
+  }, [items, stockStatusFilter]);
+
   useEffect(() => {
     setCurrentPage(1);
-  }, [debouncedSearch]);
+  }, [debouncedSearch, stockStatusFilter]);
 
   const handleDelete = (itemId) => {
     setDeleteItemId(itemId);
     setAlertBox(true);
   };
 
+  const [deleteItem] = useDeleteItemMutation();
+
   const handleConfirmDelete = async () => {
     setAlertBox(false);
     setLoading(true);
     try {
-      const res = await api.delete(`items/${deleteItemId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (res.data.status === 200) {
-        toast.success(t("Item deleted successfully"));
-        refetch();
-      }
+      const queryArgs = {
+        token,
+        limit: pageSize,
+        page: currentPage,
+        search: debouncedSearch,
+        category_id: selectedCategory,
+        brand_id: selectedBrand,
+      };
+      await deleteItem({ id: deleteItemId, token, queryArgs }).unwrap();
+      toast.success(t("Item deleted successfully"));
     } catch (error) {
-      toast.error(error?.response?.data?.message || error?.message || error || t("Error deleting item"));
+      toast.error(error?.data?.message || error?.response?.data?.message || error?.message || t("Error deleting item"));
     } finally {
       setLoading(false);
       setDeleteItemId(null);
@@ -395,7 +443,56 @@ const ListItem = () => {
         </div>
 
         {/* Filters Grid */}
-        <div className="grid md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div>
+            <label className="mb-2 flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+              <FaBox className="text-slate-400" />
+              {t("Filter by Stock Status") || "Filter by Stock Status"}
+            </label>
+            <div className="flex gap-1.5 overflow-x-auto pb-2 !scroll-none">
+              <button
+                onClick={() => setStockStatusFilter("all")}
+                className={`px-3 py-1.5 rounded-[2px] text-[10px] font-bold uppercase tracking-wider transition-all border ${
+                  stockStatusFilter === "all"
+                    ? "bg-[#13b5ea] text-white border-[#13b5ea] shadow-sm"
+                    : "bg-white text-slate-600 border-slate-200 hover:border-slate-300 dark:bg-slate-900/50 dark:text-slate-400 dark:border-slate-800"
+                }`}
+              >
+                {t("All")}
+              </button>
+              <button
+                onClick={() => setStockStatusFilter("in_stock")}
+                className={`px-3 py-1.5 rounded-[2px] text-[10px] font-bold uppercase tracking-wider transition-all border whitespace-nowrap ${
+                  stockStatusFilter === "in_stock"
+                    ? "bg-green-600 text-white border-green-600 shadow-sm"
+                    : "bg-white text-slate-600 border-slate-200 hover:border-slate-300 dark:bg-slate-900/50 dark:text-slate-400 dark:border-slate-800"
+                }`}
+              >
+                In Stock ({stockMetrics.inStock})
+              </button>
+              <button
+                onClick={() => setStockStatusFilter("low_stock")}
+                className={`px-3 py-1.5 rounded-[2px] text-[10px] font-bold uppercase tracking-wider transition-all border whitespace-nowrap ${
+                  stockStatusFilter === "low_stock"
+                    ? "bg-amber-500 text-white border-amber-500 shadow-sm"
+                    : "bg-white text-slate-600 border-slate-200 hover:border-slate-300 dark:bg-slate-900/50 dark:text-slate-400 dark:border-slate-800"
+                }`}
+              >
+                Low Stock ({stockMetrics.lowStock})
+              </button>
+              <button
+                onClick={() => setStockStatusFilter("out_of_stock")}
+                className={`px-3 py-1.5 rounded-[2px] text-[10px] font-bold uppercase tracking-wider transition-all border whitespace-nowrap ${
+                  stockStatusFilter === "out_of_stock"
+                    ? "bg-red-600 text-white border-red-600 shadow-sm"
+                    : "bg-white text-slate-600 border-slate-200 hover:border-slate-300 dark:bg-slate-900/50 dark:text-slate-400 dark:border-slate-800"
+                }`}
+              >
+                Out of Stock ({stockMetrics.outOfStock})
+              </button>
+            </div>
+          </div>
+
           <div>
             <label className="mb-2 flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
               <FaLayerGroup className="text-slate-400" />
@@ -470,10 +567,10 @@ const ListItem = () => {
       >
         {isLoading || isFetching ? (
           <LoadingSpinner tip={t("Syncing items from catalog...")} />
-        ) : items.length > 0 ? (
+        ) : filteredItems.length > 0 ? (
           viewMode === "grid" ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-7 3xl:grid-cols-8 gap-4">
-              {items.map((item) => (
+              {filteredItems.map((item) => (
                 <GridCard
                   key={item.id}
                   item={item}
@@ -487,7 +584,7 @@ const ListItem = () => {
             </div>
           ) : (
             <ListView
-              items={items}
+              items={filteredItems}
               navigator={navigate}
               onDelete={handleDelete}
               formatCurrency={formatCurrency}
@@ -504,8 +601,8 @@ const ListItem = () => {
         )}
 
         {/* Pagination Section */}
-        {items.length > 0 && (
-          <div className="mt-16 fixed bottom-0 translate-x-1/2 right-1/2 flex justify-center border-t border-slate-100 dark:border-slate-800 pt-8">
+        {filteredItems.length > 0 && (
+          <div className="mt-8 mb-8 flex justify-center border-t border-slate-100 dark:border-slate-800 pt-6">
             <Pagination
               current={currentPage}
               total={totalItems}

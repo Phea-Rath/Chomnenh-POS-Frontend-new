@@ -2,8 +2,9 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams } from 'react-router';
 import { FaCopy, FaDownload, FaPrint } from 'react-icons/fa';
 import { toast } from 'react-toastify';
-import { useGetExpanseByIdQuery } from '../../../app/Features/expensesSlice';
+import { useGetExpanseByIdQuery } from "@/features/expenses/expensesSlice";
 import handleDownload from '../../services/imageDowload';
+import { getToken } from '@/utils/tokenStore';
 
 const PrintExpanse = () => {
   const [data, setData] = useState({
@@ -16,7 +17,7 @@ const PrintExpanse = () => {
   });
   const receiptRef = useRef(null);
   const { id } = useParams();
-  const token = localStorage.getItem('token');
+  const token = getToken();
   const { data: expenseData } = useGetExpanseByIdQuery({ id, token });
 
   useEffect(() => {
@@ -83,7 +84,7 @@ const PrintExpanse = () => {
           </button>
           <button
             onClick={copyURL}
-            className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-white transition-colors hover:bg-blue-700"
+            className="inline-flex items-center gap-2 rounded-lg bg-cyan-600 px-4 py-2 text-white transition-colors hover:bg-cyan-700"
           >
             <FaCopy />
             Copy URL

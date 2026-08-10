@@ -21,9 +21,10 @@ import { motion } from "framer-motion";
 import ExportExcel from "../../services/ExportExcel";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
-import { useGetAllOrderTransectionQuery } from "../../../app/Features/ordersSlice";
+import { useGetAllOrderTransectionQuery } from "@/features/sales/ordersSlice";
 import { useDebounce } from "use-debounce";
 import { useTranslation } from "react-i18next";
+import { getToken } from '@/utils/tokenStore';
 
 dayjs.extend(relativeTime);
 
@@ -31,7 +32,7 @@ const RecordStockSale = () => {
   const { t } = useTranslation();
   const [data, setData] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
-  const token = localStorage.getItem("token");
+  const token = getToken();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedBrand, setSelectedBrand] = useState("all");
@@ -224,7 +225,7 @@ const RecordStockSale = () => {
       <div className="mb-6 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
-            <div className="p-2 bg-blue-600 rounded-lg">
+            <div className="p-2 bg-cyan-600 rounded-lg">
               <LuChartBar className="text-white text-xl" />
             </div>
             {t("salesAnalytics")}
@@ -254,7 +255,7 @@ const RecordStockSale = () => {
               [t("avgPrice")]: formatCurrency(item.amount_sold / (item.total_quantity_sold || 1)),
             }))}
             title={"Product_Sales_Report"}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 transition-colors"
+            className="flex items-center gap-2 px-4 py-2 bg-cyan-600 text-white rounded-md text-sm font-medium hover:bg-cyan-700 transition-colors"
           >
             <LuDownload />
             {t("export")}
@@ -268,8 +269,8 @@ const RecordStockSale = () => {
           title={t("productsTracked")}
           value={stats.totalProducts?.toLocaleString() || "0"}
           subtitle={t("activeProducts")}
-          icon={<LuPackage className="text-blue-600" />}
-          bgColor="bg-blue-50 dark:bg-blue-900/20"
+          icon={<LuPackage className="text-cyan-600" />}
+          bgColor="bg-cyan-50 dark:bg-cyan-900/20"
         />
         <StatCard
           title={t("totalRevenue")}
@@ -305,7 +306,7 @@ const RecordStockSale = () => {
                 placeholder={t("searchByNameCode")}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full text-sm pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                className="w-full text-sm pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-colors"
               />
             </div>
           </div>
@@ -314,7 +315,7 @@ const RecordStockSale = () => {
             <select
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
-              className="w-full text-sm px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none bg-white dark:bg-gray-900 text-gray-900 dark:text-white transition-colors"
+              className="w-full text-sm px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-500 appearance-none bg-white dark:bg-gray-900 text-gray-900 dark:text-white transition-colors"
             >
               <option value="all">{t("allCategories")}</option>
               {getCategories().map((cat) => (
@@ -329,7 +330,7 @@ const RecordStockSale = () => {
             <select
               value={selectedBrand}
               onChange={(e) => setSelectedBrand(e.target.value)}
-              className="w-full text-sm px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none bg-white dark:bg-gray-900 text-gray-900 dark:text-white transition-colors"
+              className="w-full text-sm px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-500 appearance-none bg-white dark:bg-gray-900 text-gray-900 dark:text-white transition-colors"
             >
               <option value="all">{t("allBrands")}</option>
               {getBrands().map((brand) => (
@@ -435,7 +436,7 @@ const RecordStockSale = () => {
                       </div>
                     </td>
                     <td className="p-3">
-                      <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 rounded-full text-xs font-medium">
+                      <span className="px-2 py-1 bg-cyan-100 dark:bg-cyan-900/30 text-cyan-800 dark:text-cyan-300 rounded-full text-xs font-medium">
                         {item.category_name}
                       </span>
                     </td>
@@ -445,7 +446,7 @@ const RecordStockSale = () => {
                       <div className="text-xs text-gray-500 dark:text-gray-400">{t("revenue")}</div>
                     </td>
                     <td className="p-3 text-center">
-                      <div className="font-semibold text-blue-600 dark:text-blue-400">
+                      <div className="font-semibold text-cyan-600 dark:text-cyan-400">
                         {Number(item.total_quantity_sold).toLocaleString()}
                       </div>
                       <div className="text-xs text-gray-500 dark:text-gray-400">{t("unitsCount")}</div>
@@ -477,7 +478,7 @@ const RecordStockSale = () => {
                 setPageSize(Number(e.target.value));
                 setCurrentPage(1);
               }}
-              className="border border-gray-300 dark:border-gray-700 rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white dark:bg-gray-900 text-gray-900 dark:text-white transition-colors"
+              className="border border-gray-300 dark:border-gray-700 rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-cyan-500 bg-white dark:bg-gray-900 text-gray-900 dark:text-white transition-colors"
             >
               {[10, 25, 50, 100].map((size) => (
                 <option key={size} value={size}>

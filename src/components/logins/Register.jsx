@@ -8,7 +8,7 @@ import { useOutletsContext } from '../../layouts/Management';
 import AlertBox from '../../services/AlertBox';
 import UpdateUsers from './UpdateUsers';
 import { Link, useNavigate } from 'react-router';
-import { useGetAllUserQuery } from '../../../app/Features/usersSlice';
+import { useGetAllUserQuery } from "@/features/auth/usersSlice";
 import { toast } from 'react-toastify';
 import { Modal } from 'antd';
 import { IoIosSearch, IoIosImages } from 'react-icons/io'
@@ -19,6 +19,7 @@ import Input from '../../utils/Input';
 import { LuArrowLeft, LuUserPlus, LuSearch, LuRefreshCw, LuTrash2, LuEye, LuShieldAlert } from 'react-icons/lu';
 import Pagination from '../../utils/Pagination';
 import RefreshButton from '../../utils/RefreshButton'
+import { getToken } from '@/utils/tokenStore';
 
 const Register = () => {
   const { t } = useTranslation();
@@ -28,7 +29,7 @@ const Register = () => {
   const [data, setData] = useState([]);
   const [user, setUser] = useState([]);
   const navigator = useNavigate();
-  const token = localStorage.getItem('token');
+  const token = getToken();
   const [id, setId] = useState(0);
   const [alertBox, setAlertBox] = useState(false);
   const [pageSize, setPageSize] = useState(10);
@@ -73,7 +74,7 @@ const Register = () => {
   const getRoleIcon = (role) => {
     switch (role?.toLowerCase()) {
       case 'admin': return <FaUserShield className="w-3.5 h-3.5 text-purple-500" />;
-      case 'manager': return <FaUserTie className="w-3.5 h-3.5 text-blue-500" />;
+      case 'manager': return <FaUserTie className="w-3.5 h-3.5 text-cyan-500" />;
       default: return <FaRegUserCircle className="w-3.5 h-3.5 text-slate-400" />;
     }
   };
@@ -81,7 +82,7 @@ const Register = () => {
   const getRoleBadge = (role) => {
     switch (role?.toLowerCase()) {
       case 'admin': return 'bg-purple-50 text-purple-700 border-purple-100 dark:bg-purple-900/20 dark:text-purple-300 dark:border-purple-800';
-      case 'manager': return 'bg-blue-50 text-blue-700 border-blue-100 dark:bg-blue-900/20 dark:text-blue-300 dark:border-blue-800';
+      case 'manager': return 'bg-cyan-50 text-cyan-700 border-cyan-100 dark:bg-cyan-900/20 dark:text-cyan-300 dark:border-cyan-800';
       case 'staff': return 'bg-green-50 text-green-700 border-green-100 dark:bg-green-900/20 dark:text-green-300 dark:border-green-800';
       default: return 'bg-slate-50 text-slate-700 border-slate-100 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700';
     }

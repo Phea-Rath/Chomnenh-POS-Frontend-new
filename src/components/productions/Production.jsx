@@ -37,7 +37,7 @@ import { useNavigate } from 'react-router';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import ExportExcel from '../../services/ExportExcel';
-import { useGetAllProductionQuery } from '../../../app/Features/productSlice';
+import { useGetAllProductionQuery, useDeleteProductionMutation } from "@/features/products/productSlice";
 import { useDebounce } from 'use-debounce';
 import api from '../../services/api';
 import { toast } from 'react-toastify';
@@ -47,13 +47,14 @@ import AlertBox from '../../services/AlertBox';
 import ActionButton from '../../utils/ActionButton';
 import Button from '../../utils/Button';
 import RefreshButton from '../../utils/RefreshButton';
+import { getToken } from '@/utils/tokenStore';
 
 dayjs.extend(relativeTime);
 const MENU_ID = 21;
 const Production = () => {
     const { t } = useTranslation();
     const navigate = useNavigate();
-    const token = localStorage.getItem('token');
+    const token = getToken();
     const [productions, setProductions] = useState([]);
     const [filteredProductions, setFilteredProductions] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -72,6 +73,7 @@ const Production = () => {
     const [expandedRows, setExpandedRows] = useState({}); // for expandable materials in table
     const [deleteConfirmId, setDeleteConfirmId] = useState(null); // for custom delete confirmation
     const [debouncedSearch] = useDebounce(searchTerm, 500);
+    const [deleteProduction] = useDeleteProductionMutation();
     const [id, setId] = useState(null);
     const [isOpen, setIsOpen] = useState(false);
     const { data, refetch, isLoading: queryLoading } = useGetAllProductionQuery({
@@ -230,15 +232,16 @@ const Production = () => {
         setDeleteConfirmId(null);
         try {
             setLoading(true);
-            const res = await api.delete(`/production/${id}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            if (res.status === 200) {
-                toast.success(t('productionRecordDeleted'));
-                refetch();
-            }
+            const queryArgs = {
+                limit: pagination.pageSize,
+                page: pagination.current,
+                search: debouncedSearch,
+                token
+            };
+            await deleteProduction({ id, token, queryArgs }).unwrap();
+            toast.success(t('productionRecordDeleted'));
         } catch (error) {
-            toast.error(t('deleteFailed'));
+            toast.error(error?.data?.message || error?.message || t('deleteFailed'));
         } finally {
             setLoading(false);
         }
@@ -333,13 +336,13 @@ const Production = () => {
             return <img src={src} alt={name} className={`w-${size / 4} h-${size / 4} rounded object-cover border border-gray-200 dark:border-gray-700`} onError={() => setError(true)} />;
         }
         return (
-            <div className={`w-${size / 4} h-${size / 4} bg-blue-100 dark:bg-blue-900/30 rounded flex items-center justify-center text-blue-600 dark:text-blue-400 font-bold text-lg`}>
+            <div className={`w-${size / 4} h-${size / 4} bg-cyan-100 dark:bg-cyan-900/30 rounded flex items-center justify-center text-cyan-600 dark:text-cyan-400 font-bold text-lg`}>
                 {name?.charAt(0) || 'P'}
             </div>
         );
     };
 
-    const StatCard = ({ title, value, subValue, icon, color = 'blue' }) => {
+    const StatCard = ({ title, value, subValue, icon, color = 'cyan' }) => {
         return (
             <div className={`border border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-gradient-to-br from-white to-${color}-50 dark:from-gray-800 dark:to-${color}-900/10 transition-all`}>
                 <div className="flex items-center justify-between">
@@ -368,7 +371,7 @@ const Production = () => {
                     <select
                         value={pagination.pageSize}
                         onChange={handlePageSizeChange}
-                        className="border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 rounded-md px-2 py-1 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors"
+                        className="border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 rounded-md px-2 py-1 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-cyan-500 transition-colors"
                     >
                         {pagination.pageSizeOptions.map(size => (
                             <option key={size} value={size}>{size}</option>
@@ -456,7 +459,7 @@ const Production = () => {
                                     <React.Fragment key={item.id}>
                                         <tr className={`border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors ${item.is_deleted === 1 ? 'bg-red-50 dark:bg-red-900/10' : ''}`}>
                                             <td className="p-3 text-center text-gray-600 dark:text-gray-400">{index}</td>
-                                            <td className="p-3 font-mono font-semibold text-blue-600 dark:text-blue-400">{item.production_no}</td>
+                                            <td className="p-3 font-mono font-semibold text-cyan-600 dark:text-cyan-400">{item.production_no}</td>
                                             <td className="p-3">
                                                 <div className="font-medium text-gray-900 dark:text-white">{formatDate(item.production_date)}</div>
                                                 <div className="text-xs text-gray-500 dark:text-gray-400">{dayjs(item.production_date).fromNow()}</div>
@@ -471,7 +474,7 @@ const Production = () => {
                                                 </div>
                                             </td>
                                             <td className="p-3 text-center">
-                                                <div className="text-lg font-bold text-blue-600 dark:text-blue-400">{item.quantity}</div>
+                                                <div className="text-lg font-bold text-cyan-600 dark:text-cyan-400">{item.quantity}</div>
                                                 <div className="text-xs text-gray-500 dark:text-gray-400">{t('unitsCount')}</div>
                                             </td>
                                             <td className="p-3 text-right">
@@ -486,7 +489,7 @@ const Production = () => {
                                                 <button
                                                     onClick={() => toggleExpandRow(item.id)}
                                                     disabled={!item.details?.length}
-                                                    className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium transition-colors ${item.details?.length ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 cursor-pointer hover:bg-blue-200' : 'bg-gray-100 text-gray-400 dark:bg-gray-700 dark:text-gray-500 cursor-not-allowed'}`}
+                                                    className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium transition-colors ${item.details?.length ? 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-300 cursor-pointer hover:bg-cyan-200' : 'bg-gray-100 text-gray-400 dark:bg-gray-700 dark:text-gray-500 cursor-not-allowed'}`}
                                                     title={item.details?.length ? t('showMaterials') : t('noMaterials')}
                                                 >
                                                     <FaClipboardList className="mr-1" />
@@ -512,7 +515,7 @@ const Production = () => {
                                                     <div className="border dark:border-gray-700 rounded-lg p-3">
                                                         <div className="flex items-center justify-between mb-2">
                                                             <h4 className="font-semibold text-gray-700 dark:text-gray-300">{t('rawMaterialsUsed')}</h4>
-                                                            <span className="px-2 py-1 bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 rounded-full text-xs">{item.details.length} {t('materials')}</span>
+                                                            <span className="px-2 py-1 bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-300 rounded-full text-xs">{item.details.length} {t('materials')}</span>
                                                         </div>
                                                         <table className="w-full text-sm">
                                                             <thead>
@@ -570,7 +573,7 @@ const Production = () => {
                         >
                             <div className="p-4">
                                 <div className="flex justify-between items-start mb-3">
-                                    <span className="font-mono font-semibold text-blue-600 dark:text-blue-400">{item.production_no}</span>
+                                    <span className="font-mono font-semibold text-cyan-600 dark:text-cyan-400">{item.production_no}</span>
                                     <Badge isDeleted={item.is_deleted} />
                                 </div>
                                 <div className="flex items-center gap-3 mb-3">
@@ -583,7 +586,7 @@ const Production = () => {
                                 </div>
                                 <div className="grid grid-cols-2 gap-2 mb-3">
                                     <div className="text-center">
-                                        <div className="text-lg font-bold text-blue-600 dark:text-blue-400">{item.quantity}</div>
+                                        <div className="text-lg font-bold text-cyan-600 dark:text-cyan-400">{item.quantity}</div>
                                         <div className="text-xs text-gray-500 dark:text-gray-400">{t('unitsCount')}</div>
                                     </div>
                                     <div className="text-center">
@@ -598,7 +601,7 @@ const Production = () => {
                                 <div className="mb-3">
                                     <div className="flex items-center justify-between text-sm mb-2">
                                         <span className="text-gray-600 dark:text-gray-400">{t('materials')}:</span>
-                                        <span className="px-2 py-0.5 bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 rounded-full text-xs">{item.details?.length || 0}</span>
+                                        <span className="px-2 py-0.5 bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-300 rounded-full text-xs">{item.details?.length || 0}</span>
                                     </div>
                                     {item.details && item.details.length > 0 && (
                                         <div className="space-y-1 max-h-24 overflow-y-auto text-xs dark:scrollbar-thin dark:scrollbar-thumb-gray-700">
@@ -659,7 +662,7 @@ const Production = () => {
                             animate={{ opacity: 1, x: 0 }}
                             className="text-2xl font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-3"
                         >
-                            <div className="p-3 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-xl shadow-sm transition-all">
+                            <div className="p-3 bg-gradient-to-r from-cyan-500 to-indigo-500 rounded-xl shadow-sm transition-all">
                                 <FaIndustry className="text-xl text-white" />
                             </div>
                             {t('productionRecords')}
@@ -683,7 +686,7 @@ const Production = () => {
                                 [t('materials')]: p.details?.length || 0,
                             }))}
                             title="Production_Records_Report"
-                            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center gap-2 transition-colors shadow-md"
+                            className="px-4 py-2 bg-cyan-600 text-white rounded-md hover:bg-cyan-700 flex items-center gap-2 transition-colors shadow-md"
                         >
                             <LuDownload />
                             {t('export')}
@@ -704,7 +707,7 @@ const Production = () => {
                         value={stats.totalProductions.toLocaleString()}
                         subValue={`${stats.totalActive} ${t('active')} • ${stats.totalDeleted} ${t('deleted')}`}
                         icon={<FaIndustry className="text-2xl" />}
-                        color="blue"
+                        color="cyan"
                     />
                     <StatCard
                         title={t('totalQuantity')}
@@ -741,7 +744,7 @@ const Production = () => {
                                     placeholder={t('searchProductionPlaceholder')}
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
-                                    className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                                    className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-500 transition-colors"
                                 />
                             </div>
                         </div>
@@ -751,14 +754,14 @@ const Production = () => {
                             <div className="flex items-center gap-2 p-1 bg-gray-100 dark:bg-gray-700 rounded-md border border-gray-300 dark:border-gray-600 transition-colors">
                                 <button
                                     onClick={() => setViewMode('table')}
-                                    className={`flex-1 px-3 py-2 rounded-md flex items-center justify-center gap-2 transition-all ${viewMode === 'table' ? 'bg-white dark:bg-gray-600 shadow-sm text-blue-600 dark:text-blue-400 font-semibold' : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'}`}
+                                    className={`flex-1 px-3 py-2 rounded-md flex items-center justify-center gap-2 transition-all ${viewMode === 'table' ? 'bg-white dark:bg-gray-600 shadow-sm text-cyan-600 dark:text-cyan-400 font-semibold' : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'}`}
                                 >
                                     <FaList />
                                     <span>{t('table')}</span>
                                 </button>
                                 <button
                                     onClick={() => setViewMode('grid')}
-                                    className={`flex-1 px-3 py-2 rounded-md flex items-center justify-center gap-2 transition-all ${viewMode === 'grid' ? 'bg-white dark:bg-gray-600 shadow-sm text-blue-600 dark:text-blue-400 font-semibold' : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'}`}
+                                    className={`flex-1 px-3 py-2 rounded-md flex items-center justify-center gap-2 transition-all ${viewMode === 'grid' ? 'bg-white dark:bg-gray-600 shadow-sm text-cyan-600 dark:text-cyan-400 font-semibold' : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'}`}
                                 >
                                     <FaTh />
                                     <span>{t('grid')}</span>
@@ -770,7 +773,7 @@ const Production = () => {
                                 type="date"
                                 value={dateRange.start ? dayjs(dateRange.start).format('YYYY-MM-DD') : ''}
                                 onChange={(e) => setDateRange(prev => ({ ...prev, start: e.target.value ? dayjs(e.target.value) : null }))}
-                                className="px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                                className="px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-500 transition-colors"
                                 placeholder={t('startDate')}
                             />
                             <span className="dark:text-gray-500">-</span>
@@ -778,7 +781,7 @@ const Production = () => {
                                 type="date"
                                 value={dateRange.end ? dayjs(dateRange.end).format('YYYY-MM-DD') : ''}
                                 onChange={(e) => setDateRange(prev => ({ ...prev, end: e.target.value ? dayjs(e.target.value) : null }))}
-                                className="px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                                className="px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-500 transition-colors"
                                 placeholder={t('endDate')}
                             />
                         </div>
@@ -788,13 +791,13 @@ const Production = () => {
                 {/* Content */}
                 {loading || queryLoading ? (
                     <div className="flex flex-col items-center justify-center py-16">
-                        <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-4"></div>
+                        <div className="w-12 h-12 border-4 border-cyan-200 border-t-cyan-600 rounded-full animate-spin mb-4"></div>
                         <p className="text-gray-600 dark:text-gray-400">{t('loadingProductionRecords')}</p>
                     </div>
                 ) : filteredProductions.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-16 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800/50 transition-colors">
-                        <div className="w-20 h-20 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mb-4">
-                            <FaIndustry className="w-10 h-10 text-blue-400" />
+                        <div className="w-20 h-20 bg-cyan-100 dark:bg-cyan-900/30 rounded-full flex items-center justify-center mb-4">
+                            <FaIndustry className="w-10 h-10 text-cyan-400" />
                         </div>
                         <h3 className="text-xl font-semibold text-gray-700 dark:text-white mb-2">{t('noProductionRecordsFound')}</h3>
                         <p className="text-gray-500 dark:text-gray-400 text-center max-w-md mb-6">

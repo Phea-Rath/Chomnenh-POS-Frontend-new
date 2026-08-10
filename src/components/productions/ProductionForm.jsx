@@ -23,15 +23,16 @@ import api from '../../services/api';
 import Input from '../../utils/Input';
 import RichSearch from '../../utils/RichSearch';
 import Button from '../../utils/Button';
-import { useGetAllItemsQuery } from '../../../app/Features/itemsSlice';
-import { useGetAllRawMaterialQuery } from '../../../app/Features/RawMaterialSlice';
-import { useGetAllProductionQuery } from '../../../app/Features/productSlice';
+import { useGetAllItemsQuery } from "@/features/products/itemsSlice";
+import { useGetAllRawMaterialQuery } from "@/features/stocks/RawMaterialSlice";
+import { useGetAllProductionQuery, useCreateProductionMutation, useUpdateProductionMutation } from "@/features/products/productSlice";
 import { MdWarning } from 'react-icons/md';
 import { BiCheckCircle } from 'react-icons/bi';
 import { LoadingOutlined } from '@ant-design/icons';
 
 import OldTemplateModal from '../../utils/OldTemplateModal';
 import ItemTable from '../../utils/ItemTable';
+import { getToken } from '@/utils/tokenStore';
 
 const defaultForm = {
   item_id: '',
@@ -53,7 +54,9 @@ const ProductionForm = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const isEditMode = Boolean(id);
-  const token = localStorage.getItem('token');
+  const token = getToken();
+  const [createProduction] = useCreateProductionMutation();
+  const [updateProduction] = useUpdateProductionMutation();
 
   const [form, setForm] = useState(defaultForm);
   const [formErrors, setFormErrors] = useState({});
@@ -673,22 +676,12 @@ const ProductionForm = () => {
       };
 
       const response = isEditMode
-        ? await api.put(`/production/${id}`, payload, {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              'Content-Type': 'application/json',
-            },
-          })
-        : await api.post('/production', payload, {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              'Content-Type': 'application/json',
-            },
-          });
+        ? await updateProduction({ id, itemData: payload, token }).unwrap()
+        : await createProduction({ itemData: payload, token }).unwrap();
 
-      if (response.status === 200) {
+      if (response?.status === 200 || response?.data?.status === 200 || response) {
         toast.success(isEditMode ? t('productionRecordUpdated') : t('productionRecordCreated'));
-        refetch();
+        if (refetch) refetch();
         navigate(-1);
       }
     } catch (error) {
@@ -710,7 +703,7 @@ const ProductionForm = () => {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="text-center">
-          <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-blue-200 border-t-blue-600" />
+          <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-cyan-200 border-t-cyan-600" />
           <p className="mt-4 text-gray-600 dark:text-gray-400">{t('loading')}...</p>
         </div>
       </div>

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useGetStockByIdQuery, useGetStockRawByIdQuery } from '../../../app/Features/stocksSlice';
+import { useGetStockByIdQuery, useGetStockRawByIdQuery } from "@/features/stocks/stocksSlice";
 import { useNavigate, useParams } from 'react-router';
 import {
   FaWarehouse,
@@ -21,13 +21,14 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Card, Badge, Tag, Tooltip, Divider } from 'antd';
 import { format } from 'date-fns';
 import { useTranslation } from 'react-i18next';
-import { useGetCurrentProfileQuery } from '../../../app/Features/usersSlice';
+import { useGetCurrentProfileQuery } from "@/features/auth/usersSlice";
+import { getToken } from '@/utils/tokenStore';
 
 const StockRawDetail = () => {
   const { t } = useTranslation();
   const { id } = useParams();
   const navigator = useNavigate();
-  const token = localStorage.getItem('token');
+  const token = getToken();
   const { data, isLoading } = useGetStockRawByIdQuery({ id, token });
   const [expandedItems, setExpandedItems] = useState({});
   const [selectedColorIndex, setSelectedColorIndex] = useState({});
@@ -114,7 +115,7 @@ const StockRawDetail = () => {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4 no-print">
         <button
           onClick={() => window.history.back()}
-          className="flex items-center text-sm font-medium text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 transition-colors"
+          className="flex items-center text-sm font-medium text-gray-500 hover:text-cyan-600 dark:text-gray-400 dark:hover:text-cyan-400 transition-colors"
         >
           <FaArrowLeft className="mr-2" />
           {t('backToStocks')}
@@ -131,7 +132,7 @@ const StockRawDetail = () => {
           </Tooltip>
           <button
             onClick={() => navigator(`/home/stock-list/update/${id}`)}
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition-all shadow-md flex items-center gap-2"
+            className="px-4 py-2 bg-cyan-600 hover:bg-cyan-700 text-white text-sm font-semibold rounded-lg transition-all shadow-md flex items-center gap-2"
           >
             <FaEdit className="w-3.5 h-3.5" />
             {t('editStock')}
@@ -212,7 +213,7 @@ const StockRawDetail = () => {
               </div>
               <div className="text-center md:text-left">
                 <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold mb-1">{t('totalValue')}</p>
-                <p className="text-lg font-bold text-blue-600 dark:text-blue-400">${totals.totalValue.toFixed(2)}</p>
+                <p className="text-lg font-bold text-cyan-600 dark:text-cyan-400">${totals.totalValue.toFixed(2)}</p>
               </div>
               <div className="text-center md:text-left">
                 <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold mb-1">{t('createdBy')}</p>
@@ -227,14 +228,14 @@ const StockRawDetail = () => {
           <div className="lg:col-span-1 space-y-6">
             <Card
               size="small"
-              title={<span className="text-sm font-bold dark:text-white flex items-center gap-2"><FaInfoCircle className="text-blue-500" /> {t('stockInformation')}</span>}
+              title={<span className="text-sm font-bold dark:text-white flex items-center gap-2"><FaInfoCircle className="text-cyan-500" /> {t('stockInformation')}</span>}
               className="shadow-sm border-gray-100 dark:!border-gray-700 dark:!bg-gray-800 !rounded-xl overflow-hidden"
               headStyle={{ borderBottom: '1px solid rgba(0,0,0,0.05)', backgroundColor: 'transparent' }}
             >
               <div className="space-y-3 p-1">
                 {[
                   { label: t('stockNumber'), value: stock.stock_no },
-                  { label: t('stockType'), value: <Tag color={stock.stock_type_name === 'stock in' ? 'green' : 'blue'} className="m-0 !text-[10px] uppercase font-bold">{stock.stock_type_name}</Tag> },
+                  { label: t('stockType'), value: <Tag color={stock.stock_type_name === 'stock in' ? 'green' : 'cyan'} className="m-0 !text-[10px] uppercase font-bold">{stock.stock_type_name}</Tag> },
                   { label: t('stockDate'), value: formatDate(stock.stock_date) },
                   { label: t('createdDate'), value: formatDateTime(stock.created_at) },
                   { label: t('status'), value: <Badge status="success" text={<span className="text-xs dark:text-gray-300">Active</span>} /> }
@@ -255,8 +256,8 @@ const StockRawDetail = () => {
             >
               <div className="space-y-4 p-1">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-blue-50 dark:bg-blue-900/30 rounded-lg">
-                    <FaWarehouse className="text-blue-600 w-3.5 h-3.5" />
+                  <div className="p-2 bg-cyan-50 dark:bg-cyan-900/30 rounded-lg">
+                    <FaWarehouse className="text-cyan-600 w-3.5 h-3.5" />
                   </div>
                   <div>
                     <p className="text-[10px] text-gray-400 uppercase font-bold">{t('fromWarehouse')}</p>
@@ -291,7 +292,7 @@ const StockRawDetail = () => {
             <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm overflow-hidden">
               <div className="p-4 border-b border-gray-50 dark:border-gray-700 flex justify-between items-center">
                 <h2 className="text-sm font-bold text-gray-800 dark:text-white flex items-center gap-2">
-                  <FaBox className="text-blue-500 w-3.5 h-3.5" />
+                  <FaBox className="text-cyan-500 w-3.5 h-3.5" />
                   {t('stockItems')} ({stock.items?.length || 0})
                 </h2>
               </div>
@@ -328,7 +329,7 @@ const StockRawDetail = () => {
                               <FaLayerGroup className="w-2.5 h-2.5" /> {item.category_name}
                             </span>
                             <span className="text-[11px] text-gray-500 dark:text-gray-400 flex items-center gap-1 font-semibold">
-                              <FaDollarSign className="w-2.5 h-2.5 text-blue-500" /> {t('cost')}: ${parseFloat(item.item_cost || 0).toFixed(2)}
+                              <FaDollarSign className="w-2.5 h-2.5 text-cyan-500" /> {t('cost')}: ${parseFloat(item.item_cost || 0).toFixed(2)}
                             </span>
                           </div>
 
@@ -352,7 +353,7 @@ const StockRawDetail = () => {
                           </div>
                           {/* <button
                             onClick={() => toggleItemExpansion(item.detail_id)}
-                            className="p-1.5 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors no-print"
+                            className="p-1.5 text-gray-400 hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors no-print"
                           >
                             {isExpanded ? <FaMinus className="w-3 h-3" /> : <FaEye className="w-3.5 h-3.5" />}
                           </button> */}
@@ -413,7 +414,7 @@ const StockRawDetail = () => {
                   </div>
                   <div className="text-right">
                     <p className="text-[9px] uppercase opacity-50 mb-0.5">{t('totalStockValue')}</p>
-                    <p className="text-sm font-bold text-blue-400">${totals.totalValue.toFixed(2)}</p>
+                    <p className="text-sm font-bold text-cyan-400">${totals.totalValue.toFixed(2)}</p>
                   </div>
                 </div>
               </div>
@@ -476,7 +477,7 @@ const StockRawDetail = () => {
             color: black !important;
             opacity: 1 !important;
           }
-          .text-blue-400, .text-blue-600, .text-blue-500 {
+          .text-cyan-400, .text-cyan-600, .text-cyan-500 {
             color: #1a56db !important;
           }
           h1, h2, h3, .font-bold {

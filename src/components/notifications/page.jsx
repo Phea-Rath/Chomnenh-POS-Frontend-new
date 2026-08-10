@@ -2,16 +2,17 @@ import React, { useEffect, useState } from 'react';
 import { Atom } from 'react-loading-indicators';
 import Waste from './waste';
 import OrderOnline from './orderOnline';
-import { useGetAllOrderOnlineQuery, useGetAllWasteQuery } from '../../../app/Features/notificationSlice';
+import { useGetAllOrderOnlineQuery, useGetAllWasteQuery } from "@/features/system/notificationSlice";
 import { useOutletsContext } from '../../layouts/Management';
 import '../../../public/sounds/notification.mp3';
-import echo from '../../echo';
+import echo from '@/websockets/echo';
 import { useNavigate } from 'react-router';
 import { useTranslation } from 'react-i18next';
+import { getToken } from '@/utils/tokenStore';
 
 const Notification = () => {
     const { t } = useTranslation();
-    const token = localStorage.getItem('token');
+    const token = getToken();
     const navigator = useNavigate();
     const [activeKey, setActiveKey] = useState('1');
     const { notification, setNotification } = useOutletsContext();
@@ -26,7 +27,7 @@ const Notification = () => {
 
     // Tabs configuration
     const tabs = [
-        { key: '1', label: t('onlineOrders'), count: dataOrderOnline?.data?.length || 0, color: 'blue' },
+        { key: '1', label: t('onlineOrders'), count: dataOrderOnline?.data?.length || 0, color: 'cyan' },
         { key: '2', label: t('wasteItems'), count: dataWaste?.data?.length || 0, color: 'red' },
     ];
 
@@ -64,12 +65,12 @@ const Notification = () => {
                         <div className="flex items-center justify-between">
                             <div>
                                 <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">{t('onlineOrders')}</p>
-                                <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                                <p className="text-2xl font-bold text-cyan-600 dark:text-cyan-400">
                                     {dataOrderOnline?.data?.length || 0}
                                 </p>
                             </div>
-                            <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center">
-                                <svg className="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <div className="w-10 h-10 bg-cyan-100 dark:bg-cyan-900/30 rounded-full flex items-center justify-center">
+                                <svg className="w-5 h-5 text-cyan-600 dark:text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
                                 </svg>
                             </div>
@@ -101,13 +102,13 @@ const Notification = () => {
                                 key={tab.key}
                                 onClick={() => setActiveKey(tab.key)}
                                 className={`px-6 py-3 text-sm font-medium flex items-center gap-2 transition-colors relative ${activeKey === tab.key
-                                    ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400'
+                                    ? 'text-cyan-600 dark:text-cyan-400 border-b-2 border-cyan-600 dark:border-cyan-400'
                                     : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/50'
                                     }`}
                             >
                                 <span>{tab.label}</span>
                                 {tab.count > 0 && (
-                                    <span className={`inline-flex items-center justify-center px-2 py-0.5 text-xs font-medium rounded-full ${tab.color === 'blue' ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300' : 'bg-red-100 dark:bg-red-900/40 text-red-800 dark:text-red-300'
+                                    <span className={`inline-flex items-center justify-center px-2 py-0.5 text-xs font-medium rounded-full ${tab.color === 'cyan' ? 'bg-cyan-100 dark:bg-cyan-900/40 text-cyan-800 dark:text-cyan-300' : 'bg-red-100 dark:bg-red-900/40 text-red-800 dark:text-red-300'
                                         }`}>
                                         {tab.count}
                                     </span>

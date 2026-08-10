@@ -3,7 +3,7 @@ import { Cell, Legend, Pie, PieChart, ResponsiveContainer, Sector } from 'rechar
 import { stockChartContext } from './Analysis';
 import { useTranslation } from 'react-i18next';
 
-const COLORS = ['#3B82F6', '#10B981', '#EF4444', '#8B5CF6', '#F59E0B'];
+const COLORS = ['#30AFFF', '#10B981', '#EF4444', '#8B5CF6', '#F59E0B'];
 
 const RenderActiveShape = (props) => {
     const { t } = useTranslation();

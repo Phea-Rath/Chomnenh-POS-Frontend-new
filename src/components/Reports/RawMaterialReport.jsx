@@ -4,10 +4,10 @@ import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as ChartTooltip, Legend, ResponsiveContainer,
     PieChart, Pie, Cell
 } from 'recharts';
-import { useGetRawMaterialReportMutation } from '../../../app/Features/reportsSlice';
+import { useGetRawMaterialReportMutation } from "@/features/dashboard/reportsSlice";
 import { toast } from 'react-toastify';
-import { useGetAllRawMaterialQuery } from '../../../app/Features/RawMaterialSlice';
-import { useGetAllUserQuery, useGetUserLoginQuery } from '../../../app/Features/usersSlice';
+import { useGetAllRawMaterialQuery } from "@/features/stocks/RawMaterialSlice";
+import { useGetAllUserQuery, useGetUserLoginQuery } from "@/features/auth/usersSlice";
 import { useReportText } from './reportText';
 import { useOutletsContext } from '../../layouts/Management';
 import { useReactToPrint } from 'react-to-print';
@@ -15,6 +15,7 @@ import RichSearch from '../../utils/RichSearch';
 import { DatePicker } from 'antd';
 import dayjs from 'dayjs';
 import * as XLSX from 'xlsx';
+import { getToken } from '@/utils/tokenStore';
 
 const EMPTY_REPORT_DATA = {
     quantity: '0',
@@ -42,7 +43,7 @@ const EMPTY_REPORT_DATA = {
 const RawMaterialReport = () => {
     const { rt } = useReportText();
     const { darkMode } = useOutletsContext();
-    const token = localStorage.getItem('token');
+    const token = getToken();
     const [getRawMaterialReport] = useGetRawMaterialReportMutation();
     const { data: userLogin } = useGetUserLoginQuery(token);
     const profile = userLogin?.data;
@@ -271,7 +272,7 @@ const RawMaterialReport = () => {
                         <button
                             onClick={handleGetReport}
                             disabled={loading}
-                            className="flex items-center justify-center gap-2 bg-blue-600 text-white px-5 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed h-10"
+                            className="flex items-center justify-center gap-2 bg-cyan-600 text-white px-5 py-2 rounded-md hover:bg-cyan-700 disabled:opacity-50 disabled:cursor-not-allowed h-10"
                         >
                             <FiFilter size={16} />
                             {loading ? rt('Loading...') : rt('Get Report')}
@@ -313,7 +314,7 @@ const RawMaterialReport = () => {
                             </div>
                         </div>
                         <div className="text-right">
-                            <h1 className="text-xl font-bold text-blue-600">{rt("Raw Material Stock Report")}</h1>
+                            <h1 className="text-xl font-bold text-cyan-600">{rt("Raw Material Stock Report")}</h1>
                             <p className="text-xs text-slate-500">{new Date().toLocaleString()}</p>
                         </div>
                     </div>
@@ -329,7 +330,7 @@ const RawMaterialReport = () => {
                     <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8 stats-grid">
                         {[
                             { label: "Total Purchase Cost", value: reportData.cost_in, khValue: reportData.cost_in_kh, color: "text-emerald-600" },
-                            { label: "Total Used Cost", value: reportData.cost_used, khValue: reportData.cost_used_kh, color: "text-blue-600" },
+                            { label: "Total Used Cost", value: reportData.cost_used, khValue: reportData.cost_used_kh, color: "text-cyan-600" },
                             { label: "Total Return Cost", value: reportData.cost_return, khValue: reportData.cost_return_kh, color: "text-indigo-600" },
                             { label: "Total Waste Cost", value: reportData.cost_waste, khValue: reportData.cost_waste_kh, color: "text-rose-600" },
                             { label: "Total Out Cost", value: reportData.cost_out, khValue: reportData.cost_out_kh, color: "text-amber-600" },
@@ -420,7 +421,7 @@ const RawMaterialReport = () => {
 
                 {loading && (
                     <div className="bg-primary rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 p-12 text-center">
-                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-600 mx-auto mb-4"></div>
                         <p className="text-slate-600 dark:text-slate-400">{rt("Generating report...")}</p>
                     </div>
                 )}

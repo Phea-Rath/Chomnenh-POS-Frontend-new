@@ -24,9 +24,9 @@ import { useDebounce } from "use-debounce";
 
 import api from "../../services/api";
 import { useOutletsContext } from "../../layouts/Management";
-import { useGetAllSaleQuery } from "../../../app/Features/salesSlice";
-import { useGetAllCustomerQuery } from "../../../app/Features/customersSlice";
-import { useGetAllQuoteQuery, useGetQuoteByIdQuery } from "../../../app/Features/quoteSlice";
+import { useGetAllSaleQuery } from "@/features/sales/salesSlice";
+import { useGetAllCustomerQuery } from "@/features/customers/customersSlice";
+import { useGetAllQuoteQuery, useGetQuoteByIdQuery, useCreateQuoteMutation, useUpdateQuoteMutation } from "@/features/sales/quoteSlice";
 import { totalPirceQuanDiscount } from "../../services/serviceFunction";
 
 import RichSearch from "../../utils/RichSearch";
@@ -36,13 +36,14 @@ import AlertBox from "../../services/AlertBox";
 
 import OldTemplateModal from "../../utils/OldTemplateModal";
 import ItemTable from "../../utils/ItemTable";
+import { getToken } from '@/utils/tokenStore';
 const MENU_ID = 18;
 const QuotationForm = () => {
     const { t } = useTranslation();
     const { id } = useParams();
     const isEditMode = Boolean(id);
     const navigate = useNavigate();
-    const token = localStorage.getItem("token");
+    const token = getToken();
     const { setLoading } = useOutletsContext();
     const [saving, setSaving] = useState(false);
     const [search, setSearch] = useState("");
@@ -99,6 +100,9 @@ const QuotationForm = () => {
         { id: id , token },
         { skip: !isEditMode }
     );
+
+    const [createQuote] = useCreateQuoteMutation();
+    const [updateQuote] = useUpdateQuoteMutation();
 
     const [form, setForm] = useState({
         customer_id: 0,
@@ -254,19 +258,18 @@ const QuotationForm = () => {
             };
 
             const response = isEditMode
-                ? await api.put(`/quotations/${id}`, payload, { headers: { Authorization: `Bearer ${token}` } })
-                : await api.post(`/quotations`, payload, { headers: { Authorization: `Bearer ${token}` } });
+                ? await updateQuote({ id, itemData: payload, token }).unwrap()
+                : await createQuote({ itemData: payload, token }).unwrap();
 
-                console.log(response);
-                
-            if (response.data.status == 200) {
+            if (response?.status == 200 || response?.data?.status == 200 || response) {
                 toast.success(isEditMode ? t('quotationRecordUpdated') : t('quotationRecordCreated'));
                 refetch();
-                if (isEditMode) refetchQuote();
-                navigate(`/home/quotations/receipt/${response.data?.id ?? id}`);
+                if (isEditMode && refetchQuote) refetchQuote();
+                const targetId = response?.id || response?.data?.id || id;
+                navigate(`/home/quotations/receipt/${targetId}`);
             }
         } catch (error) {
-            toast.error(error?.response?.data?.message || t('failedToSaveQuotation'));
+            toast.error(error?.data?.message || error?.response?.data?.message || t('failedToSaveQuotation'));
         } finally {
             setSaving(false);
         }
@@ -432,7 +435,7 @@ const QuotationForm = () => {
         return (
             <div className="flex min-h-screen items-center justify-center">
                 <div className="text-center">
-                    <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-blue-200 border-t-[#13b5ea]" />
+                    <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-cyan-200 border-t-[#13b5ea]" />
                     <p className="mt-4 text-gray-600 dark:text-gray-400">{t('loading')}...</p>
                 </div>
             </div>
@@ -515,7 +518,7 @@ const QuotationForm = () => {
                             {isEditMode && (
                                 <span className={`px-3 py-1 text-xs font-bold uppercase rounded-[2px] ${form.status === 'approved' ? 'bg-green-50 text-green-700 border border-green-200' :
                                         form.status === 'draft' ? 'bg-slate-50 text-slate-700 border border-slate-200' :
-                                            'bg-blue-50 text-blue-700 border border-blue-200'
+                                            'bg-cyan-50 text-cyan-700 border border-cyan-200'
                                     }`}>
                                     {t(form.status)}
                                 </span>

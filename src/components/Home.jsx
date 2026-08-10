@@ -12,12 +12,13 @@ import {
   HiOutlineCubeTransparent
 } from "react-icons/hi";
 import { useTranslation } from "react-i18next";
-import { useGetUserLoginQuery, useGetUserProfileQuery } from "../../app/Features/usersSlice";
+import { useGetUserLoginQuery, useGetUserProfileQuery } from "@/features/auth/usersSlice";
 import { useOutletsContext } from "../layouts/Management";
+import { getToken } from '@/utils/tokenStore';
 
 const Home = () => {
   const { t, i18n } = useTranslation();
-  const token = localStorage.getItem("token");
+  const token = getToken();
   const proId = localStorage.getItem("profileId");
 
   const { data: profileResponse } = useGetUserLoginQuery(token );
@@ -36,7 +37,7 @@ const Home = () => {
     <motion.div variants={itemVariants}>
       <Link to={to} className="block group">
         <div className={`h-full p-6 rounded-[2rem] border transition-all duration-300 
-          dark:bg-gray-800/40 dark:border-gray-700 dark:hover:bg-gray-800 dark:hover:border-blue-500/50 bg-white border-gray-100 hover:shadow-xl hover:shadow-blue-500/5 hover:border-blue-200`}>
+          dark:bg-gray-800/40 dark:border-gray-700 dark:hover:bg-gray-800 dark:hover:border-cyan-500/50 bg-white border-gray-100 hover:shadow-xl hover:shadow-cyan-500/5 hover:border-cyan-200`}>
           <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-4 transition-transform duration-500 group-hover:scale-110 group-hover:rotate-6 ${color}`}>
             <Icon className="w-8 h-8" />
           </div>
@@ -62,7 +63,7 @@ const Home = () => {
         {/* Welcome Section */}
         <motion.div variants={itemVariants} className="relative overflow-hidden rounded-lg h-50 p-8">
           <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl" />
-          <div className="absolute bottom-0 left-0 w-32 h-32 bg-blue-400/20 rounded-full translate-y-1/2 -translate-x-1/2 blur-2xl" />
+          <div className="absolute bottom-0 left-0 w-32 h-32 bg-cyan-400/20 rounded-full translate-y-1/2 -translate-x-1/2 blur-2xl" />
           
           <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-8">
             <div className="space-y-4 max-w-2xl">
@@ -71,9 +72,9 @@ const Home = () => {
               </span> */}
               <h1 className="text-4xl font-Kantumruy font-black dark:text-white text-gray-700 leading-tight">
                 {isKhmer ? "រីករាយដែលបានជួបអ្នកវិញ" : "Welcome back"}, <br />
-                <span className="text-blue-900 dark:text-blue-200">{user?.username || "Admin"}</span>!
+                <span className="text-cyan-900 dark:text-cyan-200">{user?.username || "Admin"}</span>!
               </h1>
-              <p className="dark:text-blue-50 text-gray-600 text-md font-medium opacity-90">
+              <p className="dark:text-cyan-50 text-gray-600 text-md font-medium opacity-90">
                 {isKhmer 
                   ? "គ្រប់គ្រងអាជីវកម្មរបស់អ្នកដោយភាពងាយស្រួល និងប្រសិទ្ធភាពខ្ពស់ជាមួយ Chomnenh POS។" 
                   : "Effortlessly manage your store's operations, track inventory, and analyze sales performance in real-time."}
@@ -83,7 +84,7 @@ const Home = () => {
                <div
                 className="w-20 h-20 bg-white/10 backdrop-blur-md rounded-[2.5rem] border border-white/20 flex items-center justify-center"
                >
-                  <HiOutlineLightningBolt className="w-24 h-24 text-blue-200" />
+                  <HiOutlineLightningBolt className="w-24 h-24 text-cyan-200" />
                </div>
             </div>
           </div>
@@ -92,7 +93,7 @@ const Home = () => {
         {/* Quick Actions */}
         <div className="space-y-6">
           <div className="flex items-center gap-3">
-            <div className="w-1.5 h-6 bg-blue-600 rounded-full" />
+            <div className="w-1.5 h-6 bg-cyan-600 rounded-full" />
             <h2 className={`text-xl font-black uppercase tracking-[0.2em] dark:text-white text-gray-900`}>
               {t("quickActions")}
             </h2>
@@ -125,7 +126,7 @@ const Home = () => {
               icon={HiOutlineClipboardList} 
               title={isKhmer ? "ការកំណត់" : "System Config"}
               desc={isKhmer ? "គ្រប់គ្រងការកំណត់ទូទៅ" : "Manage roles, permissions, and system preferences."}
-              color="bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400"
+              color="bg-cyan-100 text-cyan-600 dark:bg-cyan-900/40 dark:text-cyan-400"
             />
           </div>
         </div>
@@ -147,8 +148,8 @@ const Home = () => {
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className={`p-4 rounded-2xl flex items-start gap-4 dark:bg-gray-800 bg-blue-50/50`}>
-                    <div className="p-2 rounded-xl bg-blue-100 text-blue-600">
+                  <div className={`p-4 rounded-2xl flex items-start gap-4 dark:bg-gray-800 bg-cyan-50/50`}>
+                    <div className="p-2 rounded-xl bg-cyan-100 text-cyan-600">
                       <HiOutlineSparkles className="w-5 h-5" />
                     </div>
                     <div>
@@ -175,8 +176,8 @@ const Home = () => {
                   </div>
                 </div>
               </div>
-              <div className={`w-full md:w-64 rounded-3xl overflow-hidden flex flex-col items-center justify-center p-6 text-center border-2 border-dashed dark:border-gray-700 dark:bg-gray-900/50 border-blue-100 bg-blue-50/30`}>
-                <HiOutlineShieldCheck className="w-12 h-12 text-blue-500 mb-4" />
+              <div className={`w-full md:w-64 rounded-3xl overflow-hidden flex flex-col items-center justify-center p-6 text-center border-2 border-dashed dark:border-gray-700 dark:bg-gray-900/50 border-cyan-100 bg-cyan-50/30`}>
+                <HiOutlineShieldCheck className="w-12 h-12 text-cyan-500 mb-4" />
                 <h4 className={`font-black text-sm uppercase tracking-wider mb-2 dark:text-white text-gray-900`}>
                   {isKhmer ? "សុវត្ថិភាពខ្ពស់" : "Secure System"}
                 </h4>
@@ -196,13 +197,13 @@ const Home = () => {
               <h3 className="text-xl font-black uppercase tracking-[0.1em]">
                 {isKhmer ? "គន្លឹះរហ័ស" : "Pro Tip"}
               </h3>
-              <p className="text-sm text-blue-100 font-medium">
+              <p className="text-sm text-cyan-100 font-medium">
                 {isKhmer 
                   ? "ប្រើប្រាស់មុខងារស្កេនបាកូដ ដើម្បីបង្កើនល្បឿននៃការលក់ និងការគ្រប់គ្រងស្តុក។" 
                   : "Use the built-in barcode scanner to accelerate your checkout process and inventory audits."}
               </p>
             </div>
-            <Link to="/orders" className="relative z-10 mt-6 inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest bg-white text-blue-600 px-6 py-3 rounded-2xl hover:bg-blue-50 transition-colors self-start">
+            <Link to="/orders" className="relative z-10 mt-6 inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest bg-white text-cyan-600 px-6 py-3 rounded-2xl hover:bg-cyan-50 transition-colors self-start">
                {isKhmer ? "សាកល្បងឥឡូវនេះ" : "Try POS Now"}
             </Link>
           </div>

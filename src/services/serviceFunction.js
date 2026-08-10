@@ -1,4 +1,6 @@
 import api from "./api";
+import apiClient from "@/api/client";
+import { getToken } from '@/utils/tokenStore';
 
 function currencyFormat(num) {
   if (num === null || num === undefined || isNaN(num)) return "0.00";
@@ -31,7 +33,7 @@ const convertImageToBase64 = async (image) => {
   const filename = image.split('/').pop();
   const res = await api.get(`/image-base64/${filename}`, {
     headers: {
-      Authorization: `Bearer ${localStorage.getItem('token')}`
+      Authorization: `Bearer ${getToken()}`
     }
   });
   // console.log(res?.data);

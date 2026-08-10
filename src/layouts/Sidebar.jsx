@@ -3,12 +3,13 @@ import { Drawer, Avatar, Badge } from "antd";
 import { useNavigate, useLocation, Link } from "react-router";
 import { HiCog } from "react-icons/hi";
 import { useOutletsContext } from "./Management";
-import { useGetUserProfileQuery } from "../../app/Features/usersSlice";
-import { useGetMenuSidebarQuery } from "../../app/Features/permissionSlice";
+import { useGetUserProfileQuery } from "@/features/auth/usersSlice";
+import { useGetMenuSidebarQuery } from "@/features/auth/permissionSlice";
 import { useTranslation } from "react-i18next";
 import logo from "../assets/logo.jpg";
 import orderInvoice from "../assets/order-invoice.png";
 import icon from "../assets/stock.png"
+import { getToken } from '@/utils/tokenStore';
 
 const Sidebar = ({ darkMode }) => {
   const { setSidebar, sidebar } = useOutletsContext();
@@ -17,7 +18,7 @@ const Sidebar = ({ darkMode }) => {
   const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' ? window.matchMedia("(max-width: 1023px)").matches : false);
   const navigate = useNavigate();
   const location = useLocation();
-  const token = localStorage.getItem("token");
+  const token = getToken();
   const proId = localStorage.getItem("profileId");
   const collapsed = !sidebar;
   const sidebarWidth = collapsed && !isMobile ? "w-20" : "w-[250px]";

@@ -2,12 +2,13 @@ import React, { useEffect, useState } from 'react';
 import { Bar, Doughnut, Pie } from 'react-chartjs-2';
 import { DatePicker, Progress, Radio, Card, Select } from 'antd';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, ArcElement, Title, Tooltip, Legend } from 'chart.js';
-import { useGetAllDashboardStockQuery, useGetDashboardStockByDateMutation } from '../../../app/Features/dashboardsSlice';
-import { useGetAllUserQuery } from '../../../app/Features/usersSlice';
+import { useGetAllDashboardStockQuery, useGetDashboardStockByDateMutation } from "@/features/dashboard/dashboardsSlice";
+import { useGetAllUserQuery } from "@/features/auth/usersSlice";
 import BarChartStock from './BarChartStock';
 import PieChartStock from './PieChartStock';
 import dayjs from 'dayjs';
 import { useTranslation } from 'react-i18next';
+import { getToken } from '@/utils/tokenStore';
 
 const { RangePicker } = DatePicker;
 
@@ -25,7 +26,7 @@ export const stockChartContext = React.createContext();
 
 const Analysis = () => {
   const { t } = useTranslation();
-  const token = localStorage.getItem('token');
+  const token = getToken();
   const [apiData, setApiData] = useState({});
   const { data, refetch } = useGetAllDashboardStockQuery(token);
   const { data: usersData } = useGetAllUserQuery(token);
@@ -55,13 +56,13 @@ const Analysis = () => {
       value: apiData?.data?.stock_return || 0,
       range: ((apiData?.data?.stock_return ?? 0) / (apiData?.data?.stock_total ?? 1)) * 100,
       icon: (
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-blue-600 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-cyan-600 dark:text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
         </svg>
       ),
-      bgColor: "bg-blue-50 dark:bg-blue-900/30",
-      borderColor: "border-l-blue-500",
-      textColor: "text-blue-600 dark:text-blue-400"
+      bgColor: "bg-cyan-50 dark:bg-cyan-900/30",
+      borderColor: "border-l-cyan-500",
+      textColor: "text-cyan-600 dark:text-cyan-400"
     },
     {
       title: t("stockIn"),
@@ -315,8 +316,8 @@ const Analysis = () => {
                   <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-1">{t("stockMovementAnalysis")}</h2>
                   <p className="text-gray-600 dark:text-gray-400 text-sm">{t("stockMovementSubtitle")}</p>
                 </div>
-                <div className="px-3 py-1 bg-blue-50 dark:bg-blue-900/40 rounded-full mt-2 sm:mt-0">
-                  <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
+                <div className="px-3 py-1 bg-cyan-50 dark:bg-cyan-900/40 rounded-full mt-2 sm:mt-0">
+                  <span className="text-sm font-medium text-cyan-700 dark:text-cyan-300">
                     {dateFilter === 'option1'
                       ? `${t("year")} ${selectedYear}`
                       : dateFilter === 'option2'
@@ -375,13 +376,13 @@ const Analysis = () => {
 
             <Card className="shadow-sm border-0 dark:!bg-gray-800  dark:!border-gray-700">
               <div className="text-center">
-                <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-50 dark:bg-blue-900/30 rounded-lg mb-3">
-                  <svg className="w-6 h-6 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="inline-flex items-center justify-center w-12 h-12 bg-cyan-50 dark:bg-cyan-900/30 rounded-lg mb-3">
+                  <svg className="w-6 h-6 text-cyan-600 dark:text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
                   </svg>
                 </div>
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">{t("turnoverRate")}</h3>
-                <p className="text-2xl font-bold text-blue-600 dark:text-blue-400 mb-2">2.4x</p>
+                <p className="text-2xl font-bold text-cyan-600 dark:text-cyan-400 mb-2">2.4x</p>
                 <p className="text-sm text-gray-500 dark:text-gray-400">{t("annualInventoryTurnover")}</p>
               </div>
             </Card>

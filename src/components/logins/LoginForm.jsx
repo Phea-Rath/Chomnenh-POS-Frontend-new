@@ -6,6 +6,7 @@ import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import logo from "../../assets/logo-v2.jpg";
 import TelegramLogin from "./TelegramLogin";
+import { setToken } from "@/utils/tokenStore";
 
 const LoginForm = () => {
   const [showOtpInput, setShowOtpInput] = useState(false);
@@ -29,9 +30,13 @@ const LoginForm = () => {
         api.get("/menu-setting", { headers: authHeaders }),
       ]);
 
+    // Store token in memory (+ sessionStorage as tab-scoped refresh backup)
+    // Token is NOT written to localStorage — XSS cannot steal it from there
+    setToken(token);
+
+    // Non-sensitive session data stored in localStorage (safe to expose)
     localStorage.setItem("profileId", profileId ?? "");
     localStorage.setItem("userId", userId);
-    localStorage.setItem("token", token);
     localStorage.setItem(
       "permissions",
       JSON.stringify(permissionRes?.data?.data ?? [])

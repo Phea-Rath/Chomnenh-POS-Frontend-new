@@ -3,18 +3,19 @@ import { FaSearch, FaEdit, FaTrash, FaPlus, FaShieldAlt } from "react-icons/fa";
 import { FiArrowLeft, FiShield } from "react-icons/fi";
 import { Link } from "react-router";
 import api from "../../services/api";
-import { useGetAllRoleQuery } from "../../../app/Features/rolesSlice";
+import { useGetAllRoleQuery, useDeleteRoleMutation } from "@/features/auth/rolesSlice";
 import { useOutletsContext } from "../../layouts/Management";
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "react-toastify";
-import { useGetAllUserQuery } from "../../../app/Features/usersSlice";
+import { useGetAllUserQuery } from "@/features/auth/usersSlice";
 import MultiProfiles from "../../services/MultiProfiles";
+import { getToken } from '@/utils/tokenStore';
 
 const RoleList = () => {
   const { t } = useTranslation();
   const { darkMode } = useOutletsContext();
-  const token = localStorage.getItem("token");
+  const token = getToken();
   const [roles, setRoles] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredRoles, setFilteredRoles] = useState([]);
@@ -32,6 +33,7 @@ const RoleList = () => {
 
   const rolesWithUsers = ({ data, role_id }) => data?.filter((u) => u.role_id == role_id).map((u) => ({ img: u.image, id: u.id }));
 
+  const [deleteRole] = useDeleteRoleMutation();
   const { data, isLoading } = useGetAllRoleQuery(token);
 
   useEffect(() => {
@@ -51,12 +53,10 @@ const RoleList = () => {
 
   const handleDelete = async () => {
     try {
-      await api.delete(`/roles/${deleteId}`, { headers: { Authorization: `Bearer ${token}` } });
-      setRoles(roles.filter((r) => r.role_id !== deleteId));
-      setFilteredRoles(filteredRoles.filter((r) => r.role_id !== deleteId));
+      await deleteRole({ id: deleteId, token }).unwrap();
       toast.success(t("roleDeletedSuccess"));
     } catch (err) {
-      toast.error(err.response?.data?.message || "Error deleting role.");
+      toast.error(err?.data?.message || err?.message || "Error deleting role.");
     } finally { setShowConfirm(false); setDeleteId(null); }
   };
 
@@ -65,7 +65,7 @@ const RoleList = () => {
   const currentRoles = filteredRoles.slice(indexOfFirst, indexOfLast);
   const totalPages = Math.ceil(filteredRoles.length / itemsPerPage);
 
-  const roleColors = ["bg-blue-500", "bg-purple-500", "bg-emerald-500", "bg-orange-500", "bg-rose-500", "bg-indigo-500"];
+  const roleColors = ["bg-cyan-500", "bg-purple-500", "bg-emerald-500", "bg-orange-500", "bg-rose-500", "bg-indigo-500"];
   const getRoleColor = (i) => roleColors[i % roleColors.length];
 
 
@@ -134,12 +134,12 @@ const RoleList = () => {
                 placeholder={t("searchRolesPlaceholder")}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-9 pr-4 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 rounded-xl outline-none focus:border-blue-500 dark:focus:border-blue-400 focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900/30 transition-all text-sm"
+                className="w-full pl-9 pr-4 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 rounded-xl outline-none focus:border-cyan-500 dark:focus:border-cyan-400 focus:ring-2 focus:ring-cyan-100 dark:focus:ring-cyan-900/30 transition-all text-sm"
               />
             </div>
-            <div className="flex items-center gap-2 px-4 py-2 bg-[#1e3a5f]/10 dark:bg-blue-900/20 rounded-xl">
-              <FiShield className="text-[#1e3a5f] dark:text-blue-400" />
-              <span className="text-sm font-semibold text-[#1e3a5f] dark:text-blue-400">{filteredRoles.length} {t("totalRoles")}</span>
+            <div className="flex items-center gap-2 px-4 py-2 bg-[#1e3a5f]/10 dark:bg-cyan-900/20 rounded-xl">
+              <FiShield className="text-[#1e3a5f] dark:text-cyan-400" />
+              <span className="text-sm font-semibold text-[#1e3a5f] dark:text-cyan-400">{filteredRoles.length} {t("totalRoles")}</span>
             </div>
           </div>
         </motion.div>
@@ -147,7 +147,7 @@ const RoleList = () => {
         {/* Role Cards Grid */}
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-20">
-            <div className="w-10 h-10 border-4 border-blue-200 border-t-[#1e3a5f] rounded-full animate-spin" />
+            <div className="w-10 h-10 border-4 border-cyan-200 border-t-[#1e3a5f] rounded-full animate-spin" />
             <p className="mt-4 text-sm text-gray-500 dark:text-gray-400">{t("loadingUsers")}</p>
           </div>
         ) : filteredRoles.length === 0 ? (
@@ -186,7 +186,7 @@ const RoleList = () => {
                     </div>
                     <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       <Link to={`edit/${role.role_id}`}
-                        className="p-2 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors" title={t("editRole")}>
+                        className="p-2 text-cyan-500 hover:bg-cyan-50 dark:hover:bg-cyan-900/30 rounded-lg transition-colors" title={t("editRole")}>
                         <FaEdit className="text-sm" />
                       </Link>
                       <button onClick={() => confirmDelete(role.role_id)}
@@ -233,7 +233,7 @@ const RoleList = () => {
         {/* Back */}
         <div className="flex justify-start mt-8">
           <Link to="/dashboard"
-            className="inline-flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 hover:text-[#1e3a5f] dark:hover:text-blue-400 transition-colors">
+            className="inline-flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 hover:text-[#1e3a5f] dark:hover:text-cyan-400 transition-colors">
             <FiArrowLeft />{t("backToDashboard")}
           </Link>
         </div>

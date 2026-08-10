@@ -13,7 +13,7 @@ import { Empty, Skeleton, Typography, Tag } from "antd";
 import {
   useDeleteExpanseMutation,
   useGetAllExpansesQuery,
-} from "../../../app/Features/expensesSlice";
+} from "@/features/expenses/expensesSlice";
 import { toast } from "react-toastify";
 import ExportExcel from "../../services/ExportExcel";
 import { useTranslation } from "react-i18next";
@@ -22,6 +22,7 @@ import Button from "../../utils/Button";
 import ActionButton from "../../utils/ActionButton";
 import Input from "../../utils/Input";
 import { motion } from "framer-motion";
+import { getToken } from '@/utils/tokenStore';
 
 const MENU_ID = 19;
 
@@ -34,7 +35,7 @@ const Expanses = () => {
   const [id, setId] = useState(0);
   const [alertBox, setAlertBox] = useState(false);
   const { setLoading, darkMode } = useOutletsContext();
-  const token = localStorage.getItem("token");
+  const token = getToken();
   const { data, isLoading, refetch } = useGetAllExpansesQuery(token);
   const [deleteExpanse] = useDeleteExpanseMutation();
 
@@ -67,13 +68,10 @@ const Expanses = () => {
     try {
       setLoading(true);
       setAlertBox(false);
-      const response = await deleteExpanse({ id, token });
-      if (response.data.status === 200) {
-        refetch();
-        toast.success(t('expenseDeletedSuccess'));
-      }
+      await deleteExpanse({ id, token }).unwrap();
+      toast.success(t('expenseDeletedSuccess'));
     } catch (error) {
-      toast.error(error?.message || t('errorOccurredDeletingExpense', "An error occurred while deleting the expense"));
+      toast.error(error?.data?.message || error?.message || t('errorOccurredDeletingExpense', "An error occurred while deleting the expense"));
     } finally {
       setLoading(false);
     }
@@ -153,7 +151,7 @@ const Expanses = () => {
     return "green";
   };
 
-  const StatCard = ({ title, value, icon, color = "blue" }) => {
+  const StatCard = ({ title, value, icon, color = "cyan" }) => {
     const bgColor = `bg-gradient-to-br from-${color}-50 to-${color}-100 dark:from-${color}-900/20 dark:to-${color}-800/20`;
     const textColor = `text-${color}-600 dark:text-${color}-400`;
     return (
@@ -201,7 +199,7 @@ const Expanses = () => {
         </div>
         {expense.images?.length > 0 && (
           <div className={`flex items-center gap-2 text-sm ${darkMode ? "text-gray-300" : "text-gray-600"}`}>
-            <FaImage className="text-blue-500" />
+            <FaImage className="text-cyan-500" />
             <span>{expense.images.length} {t('attachments', 'Attachments')}</span>
           </div>
         )}
@@ -212,7 +210,7 @@ const Expanses = () => {
       </div>
 
       <div className="flex items-center justify-between mb-4">
-        <Tag color={darkMode ? "cyan" : "blue"} className="rounded-full px-3 py-1 text-xs">
+        <Tag color={darkMode ? "cyan" : "cyan"} className="rounded-full px-3 py-1 text-xs">
           {expense.created_by}
         </Tag>
       </div>
@@ -333,7 +331,7 @@ const Expanses = () => {
         {/* Main Content Area */}
         <div className="p-4 md:p-6 border border-gray-200 dark:border-gray-500 bg-white dark:bg-gray-800">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            <StatCard title={t('totalExpenses')} value={stats.totalCount} icon={<FaCalculator className="text-2xl" />} color="blue" />
+            <StatCard title={t('totalExpenses')} value={stats.totalCount} icon={<FaCalculator className="text-2xl" />} color="cyan" />
             <StatCard title={t('totalAmount')} value={formatCurrency(stats.totalAmount)} icon={<FaMoneyBillWave className="text-2xl" />} color="green" />
             <StatCard title={t('averageAmount')} value={formatCurrency(stats.averageAmount)} icon={<FaChartLine className="text-2xl" />} color="purple" />
             <StatCard title={t('attachments')} value={stats.attachmentCount} icon={<FaImage className="text-2xl" />} color="orange" />
@@ -382,14 +380,14 @@ const Expanses = () => {
                         </tr>
                       ) : (
                         filteredExpenses.map((exp, index) => (
-                          <tr key={exp.expense_id} className="hover:bg-blue-50/40 dark:hover:bg-blue-900/10 transition-colors">
+                          <tr key={exp.expense_id} className="hover:bg-cyan-50/40 dark:hover:bg-cyan-900/10 transition-colors">
                             <td className="px-6 py-4 text-gray-500 dark:text-gray-400 border-r border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800">{index + 1}</td>
-                            <td className="px-6 py-4 font-bold text-blue-600 dark:text-blue-400 border-r border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800">{exp.expense_no}</td>
+                            <td className="px-6 py-4 font-bold text-cyan-600 dark:text-cyan-400 border-r border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800">{exp.expense_no}</td>
                             <td className="px-6 py-4 border-r border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 dark:text-gray-200">{exp.expense_supplier || "-"}</td>
                             <td className="px-6 py-4 border-r border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 dark:text-gray-200">
                               <div className="flex items-center gap-2">
                                 {exp.expense_by}
-                                {exp.images?.length > 0 && <FaImage className="text-blue-500" title={t('hasAttachments')} />}
+                                {exp.images?.length > 0 && <FaImage className="text-cyan-500" title={t('hasAttachments')} />}
                               </div>
                             </td>
                             <td className="px-6 py-4 border-r border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 dark:text-gray-200">{exp.purchased_by || "-"}</td>
@@ -397,7 +395,7 @@ const Expanses = () => {
                             <td className="px-6 py-4 border-r border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 dark:text-gray-200 truncate max-w-[150px]" title={exp.expense_other}>{exp.expense_other || t('noRemarks')}</td>
                             <td className="px-6 py-4 text-right font-bold text-green-600 border-r border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800">{formatCurrency(exp.amount)}</td>
                             <td className="px-6 py-4 border-r border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800">
-                              <Tag color={darkMode ? "cyan" : "blue"} className="rounded-full px-3 py-1 text-xs">{exp.created_by}</Tag>
+                              <Tag color={darkMode ? "cyan" : "cyan"} className="rounded-full px-3 py-1 text-xs">{exp.created_by}</Tag>
                             </td>
                             <td className="px-6 py-4 bg-white dark:bg-gray-800">
                               <ActionButtons item={exp} />

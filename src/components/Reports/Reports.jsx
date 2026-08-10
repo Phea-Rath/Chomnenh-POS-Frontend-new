@@ -1,13 +1,14 @@
 import { Link } from "react-router"
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react"
-import { useGetMenuReportQuery } from "../../../app/Features/permissionSlice";
+import { useGetMenuReportQuery } from "@/features/auth/permissionSlice";
 import { useTranslation } from "react-i18next";
 import incomeIcon from '../../assets/income.png'
 import { useOutletsContext } from "../../layouts/Management";
+import { getToken } from '@/utils/tokenStore';
 
 const colors = [
-  { iconBg: "bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400" },
+  { iconBg: "bg-cyan-100 text-cyan-600 dark:bg-cyan-900/40 dark:text-cyan-400" },
   { iconBg: "bg-indigo-100 text-indigo-600 dark:bg-indigo-900/40 dark:text-indigo-400" },
   { iconBg: "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/40 dark:text-emerald-400" },
   { iconBg: "bg-orange-100 text-orange-600 dark:bg-orange-900/40 dark:text-orange-400" },
@@ -30,7 +31,7 @@ const flattenMenus = (menus = []) =>
 const Reports = () => {
   const { t } = useTranslation();
   const { darkMode } = useOutletsContext();
-  const token = localStorage.getItem('token');
+  const token = getToken();
   const [menu, setMenu] = useState([]);
   const { data } = useGetMenuReportQuery(token);
 
@@ -80,7 +81,7 @@ const Reports = () => {
       >
         <header className="space-y-4">
           <div className="flex items-center gap-3">
-            <div className="w-1.5 h-6 bg-blue-600 rounded-full" />
+            <div className="w-1.5 h-6 bg-cyan-600 rounded-full" />
             <h1 className={`text-xl font-black uppercase tracking-[0.2em] ${darkMode ? "text-white" : "text-gray-900"}`}>
               {t("reportsDashboard")}
             </h1>
@@ -97,7 +98,7 @@ const Reports = () => {
               <motion.div key={index} variants={itemVariants}>
                 <Link to={perm?.menu_path} className="block group h-full">
                   <div className={`h-full p-6 rounded-[2rem] border transition-all duration-300 
-                    ${darkMode ? "bg-gray-800/40 border-gray-700 hover:bg-gray-800 hover:border-blue-500/50" : "bg-white border-gray-100 hover:shadow-xl hover:shadow-blue-500/5 hover:border-blue-200"}`}>
+                    ${darkMode ? "bg-gray-800/40 border-gray-700 hover:bg-gray-800 hover:border-cyan-500/50" : "bg-white border-gray-100 hover:shadow-xl hover:shadow-cyan-500/5 hover:border-cyan-200"}`}>
                     <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-4 transition-transform duration-500 group-hover:scale-110 group-hover:rotate-6 ${color.iconBg}`}>
                       {perm.menu_icon ? (
                         <>

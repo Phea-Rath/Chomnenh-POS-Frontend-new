@@ -4,7 +4,7 @@ import { useNavigate, useSearchParams } from 'react-router';
 import { FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 import ProductGrid from './ProductGrid';
 import ProductFilter from './ProductFilter';
-import { useGetAllItemsForMarketPlaceQuery } from '../../../app/Features/itemsSlice';
+import { useGetAllItemsForMarketPlaceQuery } from "@/features/products/itemsSlice";
 
 const DealsPage = () => {
     const navigate = useNavigate();

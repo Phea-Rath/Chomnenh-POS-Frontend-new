@@ -5,8 +5,9 @@ import { useReactToPrint } from "react-to-print";
 import { useLocation, useNavigate, useParams } from "react-router";
 import { useTranslation } from "react-i18next";
 import handleDownload from "../../services/imageDowload";
-import { useGetStockByIdQuery, useGetStockRawByIdQuery } from "../../../app/Features/stocksSlice";
+import { useGetStockByIdQuery, useGetStockRawByIdQuery } from "@/features/stocks/stocksSlice";
 import Button from "../../utils/Button";
+import { getToken } from '@/utils/tokenStore';
 
 const EMPTY_ROWS = 8;
 
@@ -17,7 +18,7 @@ const StockInvoice = () => {
   console.log(pathname);
   
   const { id } = useParams();
-  const token = localStorage.getItem("token");
+  const token = getToken();
   const invoiceRef = useRef(null);
   
   const { data: stockResponse, isFetching: isStockFetching } = useGetStockByIdQuery({ id, token }, { skip: !id ||  pathname != `/stock-invoice/${id}` });

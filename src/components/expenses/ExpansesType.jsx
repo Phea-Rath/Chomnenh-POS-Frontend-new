@@ -1,14 +1,15 @@
 import React, { useEffect, useState } from 'react'
 import { IoIosSearch, IoIosGrid, IoIosList } from 'react-icons/io'
 import { MdCategory, MdPerson } from 'react-icons/md'
-import CreateExpanseTypes from '../../views/expenses/CreateExpanseTypes'
+import CreateExpanseTypes from './CreateExpanseTypes'
 import AlertBox from '../../services/AlertBox';
 import { useOutletsContext } from '../../layouts/Management';
-import UpdateExpanseType from '../../views/expenses/UpdateExpanseTypes';
+import UpdateExpanseType from './UpdateExpanseTypes';
 import { Button, Empty, Skeleton, Typography, Tag } from 'antd';
-import { useDeleteExpanseTypeMutation, useGetAllExpanseTypesQuery } from '../../../app/Features/expenseTypesSlice';
+import { useDeleteExpanseTypeMutation, useGetAllExpanseTypesQuery } from "@/features/expenses/expenseTypesSlice";
 import { toast } from 'react-toastify';
 import { useTranslation } from 'react-i18next';
+import { getToken } from '@/utils/tokenStore';
 
 const ExpansesType = () => {
   const { t } = useTranslation();
@@ -20,7 +21,7 @@ const ExpansesType = () => {
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isUpdateOpen, setIsUpdateOpen] = useState(false);
   const { setLoading, darkMode } = useOutletsContext();
-  const token = localStorage.getItem('token');
+  const token = getToken();
   const { data, isLoading, refetch } = useGetAllExpanseTypesQuery(token);
   const [deleteExpanseType] = useDeleteExpanseTypeMutation();
 
@@ -41,18 +42,12 @@ const ExpansesType = () => {
     try {
       setLoading(true);
       setAlertBox(false);
-      const response = await deleteExpanseType({ id, token });
-      if (response.data.status === 200) {
-        refetch();
-        toast.success(t('expenseTypeDeletedSuccess'));
-        setLoading(false);
-      } else {
-        toast.error(t('failedToDeleteExpenseType'));
-      }
+      await deleteExpanseType({ id, token }).unwrap();
+      toast.success(t('expenseTypeDeletedSuccess'));
     } catch (error) {
-      toast.error(error?.message || error || 'An error occurred while deleting the expense type');
+      toast.error(error?.data?.message || error?.message || 'An error occurred while deleting the expense type');
+    } finally {
       setLoading(false);
-      setAlertBox(false);
     }
   }
 
@@ -73,8 +68,8 @@ const ExpansesType = () => {
   const ExpenseTypeCard = ({ expenseType }) => (
     <div className={`${darkMode ? "bg-gray-800 border-gray-700 shadow-none" : "bg-white border-gray-200 shadow-sm"} rounded-xl border p-6 hover:shadow-md transition-all duration-200`}>
       <div className="flex items-start gap-3 mb-4">
-        <div className={`p-3 ${darkMode ? "bg-blue-900/30" : "bg-blue-100"} rounded-lg`}>
-          <MdCategory className={`${darkMode ? "text-blue-400" : "text-blue-600"} text-xl`} />
+        <div className={`p-3 ${darkMode ? "bg-cyan-900/30" : "bg-cyan-100"} rounded-lg`}>
+          <MdCategory className={`${darkMode ? "text-cyan-400" : "text-cyan-600"} text-xl`} />
         </div>
         <div className="flex-1">
           <h3 className={`font-semibold ${darkMode ? "text-white" : "text-gray-900"} text-lg mb-1 truncate`}>
@@ -169,7 +164,7 @@ const ExpansesType = () => {
                 <button
                   onClick={() => setViewMode('table')}
                   className={`p-2 rounded-md transition-colors duration-200 ${viewMode === 'table'
-                    ? (darkMode ? 'bg-blue-900/40 text-blue-400' : 'bg-blue-100 text-blue-600')
+                    ? (darkMode ? 'bg-cyan-900/40 text-cyan-400' : 'bg-cyan-100 text-cyan-600')
                     : (darkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700')
                     }`}
                 >
@@ -178,7 +173,7 @@ const ExpansesType = () => {
                 <button
                   onClick={() => setViewMode('grid')}
                   className={`p-2 rounded-md transition-colors duration-200 ${viewMode === 'grid'
-                    ? (darkMode ? 'bg-blue-900/40 text-blue-400' : 'bg-blue-100 text-blue-600')
+                    ? (darkMode ? 'bg-cyan-900/40 text-cyan-400' : 'bg-cyan-100 text-cyan-600')
                     : (darkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700')
                     }`}
                 >
@@ -187,7 +182,7 @@ const ExpansesType = () => {
               </div>
 
               <button
-                className="btn btn-primary bg-blue-600 hover:bg-blue-700 text-white border-none px-6 py-3 rounded-lg font-semibold transition-colors duration-200 flex items-center gap-2 shadow-md hover:shadow-lg"
+                className="btn btn-primary bg-cyan-600 hover:bg-cyan-700 text-white border-none px-6 py-3 rounded-lg font-semibold transition-colors duration-200 flex items-center gap-2 shadow-md hover:shadow-lg"
                 onClick={() => setIsAddOpen(true)}
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -204,7 +199,7 @@ const ExpansesType = () => {
               <input
                 onChange={onSearch}
                 type="text"
-                className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200 ${
+                className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-colors duration-200 ${
                   darkMode 
                   ? "bg-gray-700 border-gray-600 text-white placeholder-gray-400" 
                   : "bg-gray-50 border-gray-300 text-gray-900"
@@ -240,7 +235,7 @@ const ExpansesType = () => {
                           <Button
                             type="primary"
                             size="large"
-                            className="mt-4 bg-blue-600 hover:bg-blue-700 border-none h-11 px-6 rounded-lg font-semibold"
+                            className="mt-4 bg-cyan-600 hover:bg-cyan-700 border-none h-11 px-6 rounded-lg font-semibold"
                             onClick={() => setIsAddOpen(true)}
                           >
                             {t('createFirstType')}
@@ -254,7 +249,7 @@ const ExpansesType = () => {
                         <td className={`px-6 py-4 whitespace-nowrap text-sm font-medium ${darkMode ? "text-gray-200" : "text-gray-900"}`}>{index + 1}</td>
                         <td className={`px-6 py-4 whitespace-nowrap text-sm font-semibold ${darkMode ? "text-gray-100" : "text-gray-900"}`}>{expense_type_name}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm">
-                          <Tag color={darkMode ? "cyan" : "blue"} className="rounded-full px-3 py-1 text-xs">{created_by}</Tag>
+                          <Tag color={darkMode ? "cyan" : "cyan"} className="rounded-full px-3 py-1 text-xs">{created_by}</Tag>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                           <div className="flex items-center gap-2">
@@ -308,7 +303,7 @@ const ExpansesType = () => {
                   <Button
                     type="primary"
                     size="large"
-                    className="mt-4 bg-blue-600 hover:bg-blue-700 border-none h-11 px-6 rounded-lg font-semibold"
+                    className="mt-4 bg-cyan-600 hover:bg-cyan-700 border-none h-11 px-6 rounded-lg font-semibold"
                     onClick={() => setIsAddOpen(true)}
                   >
                     {t('createFirstType')}

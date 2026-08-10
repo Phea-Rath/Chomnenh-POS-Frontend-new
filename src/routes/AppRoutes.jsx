@@ -1,0 +1,696 @@
+import React from 'react';
+import { createBrowserRouter, Navigate, RouterProvider } from "react-router";
+import Management from "@/layouts/Management";
+import Home from "@/components/Home";
+import ListItem from "@/components/items/ListItem";
+import CategoryList from "@/components/categorys/CategoryList";
+import Brands from "@/components/brands/Brands";
+import Scales from "@/components/scales/Scales";
+import Werehouses from "@/components/stocks/Werehouses";
+import StockType from "@/components/stocks/StockType";
+import Expanses from "@/components/expenses/Expanses";
+import ExpansesType from "@/components/expenses/ExpansesType";
+import Sales from "@/components/orders/Sales";
+import OrderList from "@/components/orders/OrderList";
+import AddInStock from "@/components/stocks/AddInStock";
+import Stocks from "@/components/stocks/Stocks";
+import StockTransfer from "@/components/stocks/StockTransfer";
+import StockTransferList from "@/components/stocks/StockTransferList";
+import RecordStock from "@/components/stocks/RecordStock";
+import RecordStockSales from "@/components/stocks/RecordStockSales";
+import Analysis from "@/components/dashboard/Analysis";
+import PrintExpanse from "@/components/expenses/PrintExpanse";
+import LoginForm from "@/components/logins/LoginForm";
+import Register from "@/components/logins/Register";
+import Settings from "@/components/settings/Settings";
+import CreateExpanses from "@/components/expenses/CreateExpanses";
+import UpdateOrders from "@/components/orders/UpdateOrders";
+import EMenu from "@/components/EMenu";
+import RegisterForm from "@/components/logins/RegisterForm";
+import StockDetail from "@/components/stocks/StockDetails";
+import UserProfile from "@/components/logins/UserProfile";
+import UserDetails from "@/components/logins/UserDetails";
+import ItemDetails from "@/components/items/ItemDetails";
+import CreateItems from "@/components/items/CreateItems";
+import OrderReceipt from "@/components/orders/OrderReceipt";
+import Notification from "@/components/notifications/page";
+import SaleOnline from "@/components/orders/SaleOnline";
+import WasteItemDetail from "@/components/notifications/WasteItemDetail";
+import Permission from "@/components/settings/Permission";
+import ImportItems from "@/components/items/ImportItems";
+import Menus from "@/components/settings/Menus";
+import Reports from "@/components/Reports/Reports";
+import SaleReportByCustomer from "@/components/Reports/SaleReportByCustomer";
+import SaleReportByItem from "@/components/Reports/SaleReportByItem";
+import Purchases from "@/components/Purchases/PurchaseList";
+import CreatePurchase from "@/components/Purchases/CreatePurchase";
+import PurchaseDetails from "@/components/Purchases/PurchaseDetails";
+import SupplierList from "@/components/Suppliers/SupplierList";
+import SupplierForm from "@/components/Suppliers/SupplierForm";
+import PurchaseReceipt from "@/components/Purchases/PurchaseReceipt";
+import PurchaseReport from "@/components/Reports/PurchaseReport";
+import PurchaseReportByItem from "@/components/Reports/PurchaseByItem";
+import ExpenseReportByUser from "@/components/Reports/ExpanseReport";
+import ExchangeRateForm from "@/components/ExchangeRate";
+import Dashboard from "@/components/dashboard/Dashboard";
+import CustomerList from "@/components/customers/CustomerList";
+import CustomerForm from "@/components/customers/CustomerForm";
+import CustomerDetail from "@/components/customers/CustomerDetail";
+import SupplierDetail from "@/components/Suppliers/SupplierDetail";
+import RoleList from "@/components/Roles/RoleList";
+import RoleForm from "@/components/Roles/RoleForm";
+import OrderInvoice from "@/components/orders/OrderInvoice";
+import Main from "@/markets/Main";
+import ErrorPage from "@/components/ErrorPage";
+import QuotationForm from "@/components/quotations/QuotationForm";
+import QuotationList from "@/components/quotations/QuotationList";
+import QuotationDetail from "@/components/quotations/QuotationDetail";
+import QuotationReceipt from "@/components/quotations/QuotationReceipt";
+import StockTransferDetail from "@/components/stocks/StockTransferDetail";
+import GuestOrderTracking from "@/components/orders/GuestOrderTracking";
+import DeliverForm from "@/components/delivers/DeliverForm";
+import DeliverList from "@/components/delivers/DeliverList";
+import OrderTracking from "@/components/orders/OrderTracking";
+import ForgotPassword from "@/components/logins/ForgotPassword";
+import RawMaterials from "@/components/RawMaterials/RawMaterialPage";
+import RawMaterialForm from "@/components/RawMaterials/RawMaterialForm";
+import ProductionForm from "@/components/productions/ProductionForm";
+import Production from "@/components/productions/Production";
+import ProductionDetail from "@/components/productions/ProductionDetail";
+import RawMaterialDetail from "@/components/RawMaterials/RawMaterialDetail";
+import { useGetAllOrderQuery, useGetOrderByUserQuery } from "@/features/sales/ordersSlice";
+import { useGetAllItemsQuery } from "@/features/products/itemsSlice";
+import { useGetAllSaleQuery } from "@/features/sales/salesSlice";
+import { useGetAllOrderOnlineQuery, useGetAllWasteQuery } from "@/features/system/notificationSlice";
+import Echo from "@/websockets/echo";
+import { toast } from "react-toastify";
+import { useEffect, useState } from "react";
+import RawMaterialReport from "@/components/Reports/RawMaterialReport";
+import ProfitAnalysis from "@/components/Reports/AnalysisProfit";
+import ProductionByRaw from "@/components/Reports/ProductionByRaw";
+import ProductionReport from "@/components/Reports/ProductionReport";
+import StockReport from "@/components/Reports/StockReport";
+import StockByItem from "@/components/Reports/StockByItem";
+import PurchaseRawList from "@/components/Purchases/PurchaseRawList";
+import ProductionByItem from "@/components/Reports/ProductionByItem";
+import ARReport from "@/components/Reports/ARReport";
+import APReport from "@/components/Reports/APReport";
+import DeptAnalysis from "@/components/Reports/DeptAnalysis";
+import Inventories from "@/components/Inventories";
+import StockByRaw from "@/components/Reports/StockByRaw";
+import StockRaws from "@/components/stocks/StockRaws";
+import StockRawForm from "@/components/stocks/StockRawForm";
+import StockByWarehouse from "@/components/stocks/StockByWarehouse";
+import ScanAttendance from "@/components/attendances/ScanAttendance";
+import StockRawDetail from "@/components/stocks/StockRawDetails";
+import ProductDetail from "@/markets/pages/ProductDetail";
+import ProductListing from "@/markets/pages/DealsPage";
+import BlockProducts from "@/markets/components/BlockProducts";
+import HomePage from "@/markets/Home";
+import DealsPage from "@/markets/pages/DealsPage";
+import CompaniesPage from "@/markets/CompaniesPage";
+import CompanyStore from "@/markets/CompanyStore";
+import ShoppingCart from "@/markets/ShoppingCart";
+import WhiteBoard from "@/utils/WhiteBoard";
+import ImportTools from "@/utils/ImportTools";
+import OrderInvoiceForm from "@/components/orders/OrderInvoiceForm";
+import OrderInvoiceList from "@/components/orders/OrderInvoiceList";
+import StockInvoice from "@/components/stocks/StockInvoice";
+import IncomeStatement from "@/components/Reports/IncomeStatement";
+import TopSeller from "@/components/top/TopSeller";
+import TopItemsAndRawMaterials from "@/components/top/TopItemsAndRawMaterials";
+import OrderDetail from "@/components/orders/OrderDetail";
+import StockByWarehouseView from "@/components/stocks/StockByWarehouseView";
+
+
+import ProtectedRoute from './ProtectedRoute';
+
+export const router = createBrowserRouter([
+  {
+    path: "/",
+    element: <LoginForm />,
+    errorElement: <ErrorPage />,
+  },
+  {
+    path: "/forgot-password",
+    element: <ForgotPassword />,
+    errorElement: <ErrorPage />,
+  },
+  {
+    path: "",
+    element: (
+      <ProtectedRoute>
+        <Management />
+      </ProtectedRoute>
+    ),
+    errorElement: <ErrorPage />,
+    children: [
+      {
+        path: "/home",
+        element: <Home />,
+      },
+      {
+        path: "/dashboard",
+        index: 1,
+        element: <Dashboard />,
+      },
+      {
+        path: "exchange_rate",
+        element: <ExchangeRateForm />,
+      },
+      {
+        path: "/inventories/list",
+        element: <ListItem />,
+      },
+      {
+        path: "/inventories/list/create",
+        element: <CreateItems />,
+      },
+      {
+        path: "/inventories/list/update/:id",
+        element: <CreateItems />,
+      },
+      {
+        path: "/inventories/list/detail/:id",
+        element: <ItemDetails />,
+      },
+      {
+        path: "/inventories/list/import",
+        element: <ImportItems />,
+      },
+      {
+        path: "/inventories/category",
+        element: <CategoryList />,
+      },
+      {
+        path: "/inventories/brand",
+        element: <Brands />,
+      },
+      {
+        path: "/inventories/scale",
+        element: <Scales />,
+      },
+      {
+        path: "/inventories/werehouse",
+        element: <Werehouses />,
+      },
+      {
+        path: "/inventories/product-in-warehouse/:warehouse_id",
+        element: <StockByWarehouse />,
+      },
+      {
+        path: "/inventories/product-in-warehouse",
+        element: <StockByWarehouse />,
+      },
+      {
+        path: "/stock-type",
+        element: <StockType />,
+      },
+      //customers
+      {
+        path: "/home/customers",
+        element: <CustomerList />,
+      },
+      {
+        path: "/home/customers/create",
+        element: <CustomerForm />,
+      },
+      {
+        path: "/home/customers/edit/:id",
+        element: <CustomerForm />,
+      },
+      {
+        path: "/home/customers/detail/:id",
+        element: <CustomerDetail />,
+      },
+      {
+        path: "/home/expenses",
+        element: <Expanses />,
+      },
+      {
+        path: "/home/expenses/create",
+        element: <CreateExpanses />,
+      },
+      {
+        path: "/home/expenses/update/:id",
+        element: <CreateExpanses />,
+      },
+      {
+        path: "/setting/expense-type",
+        element: <ExpansesType />,
+      },
+      {
+        path: "/inventories",
+        element: <Inventories />,
+      },
+      {
+        path: "/setting",
+        element: <Settings />,
+      },
+      {
+        path: "/orders",
+        element: <Sales />,
+      },
+      {
+        path: "/home/order-tracking",
+        element: <OrderTracking />,
+      },
+      {
+        path: "/home/order-tracking/view/:id",
+        element: <OrderDetail />,
+      },
+      {
+        path: "/order-list/edit/:id",
+        element: <UpdateOrders />,
+      },
+      {
+        path: "/order-list/detail/:id",
+        element: <OrderDetail />,
+      },
+      {
+        path: "/order-list",
+        element: <OrderList />,
+      },
+      {
+        path: "/inventories/stock-list",
+        element: <Stocks />,
+      },
+      {
+        path: "/inventories/stock-raws",
+        element: <StockRaws />,
+      },
+      {
+        path: "/inventories/stock-raws/update/:id",
+        element: <StockRawForm />,
+      },
+      {
+        path: "/inventories/stock-raws/detail/:id",
+        element: <StockRawDetail />,
+      },
+      {
+        path: "/inventories/stock-raws/add",
+        element: <StockRawForm />,
+      },
+      {
+        path: "/inventories/stock-list/add",
+        element: <AddInStock />,
+      },
+      {
+        path: "/inventories/stock-list/detail/:id",
+        element: <StockDetail />,
+      },
+      {
+        path: "/inventories/stock-list/update/:id",
+        element: <AddInStock />,
+      },
+      {
+        path: "/inventories/stock-transfer-list",
+        element: <StockTransferList />,
+      },
+      {
+        path: "/inventories/stock-transfer-list/detail/:id",
+        element: <StockTransferDetail />,
+      },
+      {
+        path: "/inventories/stock-transfer-list/update/:id",
+        element: <StockTransfer />,
+      },
+      {
+        path: "/transfer-stock",
+        element: <StockTransfer />,
+      },
+      {
+        path: "/home/record-stock",
+        element: <RecordStock />,
+      },
+      {
+        path: "/home/record-stock-sale",
+        element: <RecordStockSales />,
+      },
+      {
+        path: "/home/analyze-stock",
+        element: <Analysis />,
+      },
+      {
+        path: "/e-menu",
+        element: <EMenu />,
+      },
+      {
+        path: "/notification",
+        element: <Notification />,
+      },
+      {
+        path: "/detail-waste/:id",
+        element: <WasteItemDetail />,
+      },
+      {
+        path: "/setting/users",
+        element: <Register />,
+      },
+      {
+        path: "/user_detail/:id",
+        element: <UserDetails />,
+      },
+      {
+        path: "/profile/:id",
+        element: <UserProfile />,
+      },
+      {
+        path: "/register",
+        element: <RegisterForm />,
+      },
+      {
+        path: "/setting/permission",
+        element: <Permission />,
+      },
+      {
+        path: "/setting/menus",
+        element: <Menus />,
+      },
+      {
+        path: "/report",
+        element: <Reports />,
+      },
+      {
+        path: "/report/sales",
+        element: <SaleReportByCustomer />,
+      },
+      {
+        path: "/report/sales_item",
+        element: <SaleReportByItem />,
+      },
+      {
+        path: "/report/purchases",
+        element: <PurchaseReport />,
+      },
+      {
+        path: "/report/purchase-item",
+        element: <PurchaseReportByItem />,
+      },
+      {
+        path: "/report/production",
+        element: <ProductionReport />,
+      },
+      {
+        path: "/report/production-raw",
+        element: <ProductionByRaw />,
+      },
+      {
+        path: "/report/production-item",
+        element: <ProductionByItem />,
+      },
+      {
+        path: "/report/expenses",
+        element: <ExpenseReportByUser />,
+      },
+      {
+        path: "/report/income-statement",
+        element: <IncomeStatement />,
+      },
+      {
+        path: "/report/raw-materials",
+        element: <RawMaterialReport />,
+      },
+      {
+        path: "/report/analysis-profit",
+        element: <ProfitAnalysis />,
+      },
+      {
+        path: "/report/stocks",
+        element: <StockReport />,
+      },
+      {
+        path: "/report/stock-by-item",
+        element: <StockByItem />,
+      },
+      {
+        path: "/report/stock-by-raw",
+        element: <StockByRaw />,
+      },
+      {
+        path: "/report/ar",
+        element: <ARReport />,
+      },
+      {
+        path: "/report/ap",
+        element: <APReport />,
+      },
+      {
+        path: "/report/dept-analysis",
+        element: <DeptAnalysis />,
+      },
+      {
+        path: "/inventories/purchases",
+        element: <Purchases />,
+      },
+      {
+        path: "/inventories/purchase-raw",
+        element: <PurchaseRawList />,
+      },
+      {
+        path: "/inventories/purchases/add",
+        element: <CreatePurchase />,
+      },
+      {
+        path: "/inventories/purchase-raw/add",
+        element: <CreatePurchase />,
+      },
+      {
+        path: "/inventories/purchases/update/:id",
+        element: <CreatePurchase />,
+      },
+      {
+        path: "/inventories/purchase-raw/update/:id",
+        element: <CreatePurchase />,
+      },
+      {
+        path: "/inventories/purchases/receipt/:id",
+        element: <PurchaseReceipt />,
+      },
+      {
+        path: "/inventories/purchases/detail/:id",
+        element: <PurchaseDetails />,
+      },
+      {
+        path: "/inventories/purchase-raw/receipt-raw/:id",
+        element: <PurchaseReceipt />,
+      },
+      {
+        path: "/inventories/purchase-raw/detail-raw/:id",
+        element: <PurchaseDetails />,
+      },
+
+      {
+        path: "/inventories/suppliers",
+        element: <SupplierList />,
+      },
+      {
+        path: "/inventories/suppliers/create",
+        element: <SupplierForm />,
+      },
+      {
+        path: "/inventories/suppliers/edit/:id",
+        element: <SupplierForm />,
+      },
+      {
+        path: "/inventories/suppliers/detail/:id",
+        element: <SupplierDetail />,
+      },
+      //roles
+      {
+        path: "/setting/roles",
+        element: <RoleList />,
+      },
+      {
+        path: "/setting/roles/create",
+        element: <RoleForm />,
+      },
+      {
+        path: "/setting/roles/edit/:id",
+        element: <RoleForm />,
+      },
+      {
+        path: "/home/quotations/create",
+        element: <QuotationForm />,
+      },
+      {
+        path: "/home/quotations/edit/:id",
+        element: <QuotationForm />,
+      },
+      {
+        path: "/home/quotations",
+        element: <QuotationList />,
+      },
+      {
+        path: "/home/quotations/detail/:id",
+        element: <QuotationDetail />,
+      },
+      {
+        path: "/home/quotations/receipt/:id",
+        element: <QuotationReceipt />,
+      },
+      {
+        path: "/home/delivers/create",
+        element: <DeliverForm />,
+      },
+      {
+        path: "/home/delivers/edit/:id",
+        element: <DeliverForm />,
+      },
+      {
+        path: "/home/delivers",
+        element: <DeliverList />,
+      },
+      {
+        path: "/inventories/raw-materials",
+        element: <RawMaterials />,
+      },
+      {
+        path: "/inventories/raw-materials/create",
+        element: <RawMaterialForm />,
+      },
+
+      {
+        path: "/inventories/raw-materials/edit/:id",
+        element: <RawMaterialForm />,
+      },
+      {
+        path: "/inventories/raw-materials/view/:id",
+        element: <RawMaterialDetail />,
+      },
+      {
+        path: "/inventories/production",
+        element: <Production />,
+      },
+      {
+        path: "/inventories/production/create/",
+        element: <ProductionForm />,
+      },
+      {
+        path: "/inventories/production/edit/:id",
+        element: <ProductionForm />,
+      },
+      {
+        path: "/inventories/production/view/:id",
+        element: <ProductionDetail />,
+      },
+      {
+        path: "/wholesale",
+        element: <OrderInvoiceList />
+      },
+      {
+        path: "/wholesale/create",
+        element: <OrderInvoiceForm />
+      },
+      {
+        path: "/wholesale/update/:id",
+        element: <OrderInvoiceForm />
+      },
+      {
+        path: "/wholesale/detail/:id",
+        element: <OrderDetail />
+      },
+      {
+        path: 'import-tool',
+        element: <ImportTools />
+      },
+      {
+        path: 'top-seller',
+        element: <TopSeller />
+      },
+      {
+        path: 'top-items',
+        element: <TopItemsAndRawMaterials />
+      },
+      {
+        path: 'inventories/product-in-warehouse/view',
+        element: <StockByWarehouseView />,
+      },
+      {
+        path: 'inventories/product-in-warehouse/view/:type/:item_id',
+        element: <StockByWarehouseView />,
+      },
+      {
+        path: 'inventories/product-in-warehouse/view/:type',
+        element: <StockByWarehouseView />,
+      }
+    ],
+  },
+  {
+    path: "/expense-print/:id",
+    element: <PrintExpanse />,
+  },
+  {
+    path: "/:token/order-now/:id",
+    element: <SaleOnline />,
+  },
+  {
+    path: "/:token/order-now/:id/order-tracking",
+    element: <GuestOrderTracking />,
+  },
+  {
+    path: "/market",
+    element: <Main />,
+    children: [
+      {
+        path: "",
+        element: <HomePage />,
+      },
+      {
+        path: "product_detail/:id",
+        element: <ProductDetail />,
+      },
+      {
+        path: 'deals',
+        element: <DealsPage />
+      },
+      {
+        path: 'companies',
+        element: <CompaniesPage />
+      },
+      {
+        path: 'companies/:proId',
+        element: <CompanyStore />
+      },
+      {
+        path: 'shopping-cart',
+        element: <ShoppingCart />
+      }
+
+    ]
+  },
+
+  {
+    path: "/scan-attendance",
+    element: <ScanAttendance />,
+  },
+  {
+    path: "/white-board",
+    element: <WhiteBoard />,
+  },
+  {
+    path: "/stock-invoice/:id",
+    element: <StockInvoice />,
+  },
+  {
+    path: "/stock-raw-invoice/:id",
+    element: <StockInvoice />,
+  },
+
+  {
+    path: "/invoice/:id",
+    element: <OrderInvoice />,
+  },
+  
+      {
+        path: "/receipt/:id",
+        element: <OrderReceipt />,
+      },
+      {
+        path: "/retail",
+        element: <Sales />,
+      },
+]
+);
+
+export default router;

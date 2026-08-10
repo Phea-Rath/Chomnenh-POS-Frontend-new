@@ -23,14 +23,15 @@ import AlertBox from '../../services/AlertBox';
 import Input from '../../utils/Input';
 import RichSearch from '../../utils/RichSearch';
 import Button from '../../utils/Button';
-import { useGetAllRawMaterialQuery, useGetRawMaterialByIdQuery } from '../../../app/Features/RawMaterialSlice';
+import { useGetAllRawMaterialQuery, useGetRawMaterialByIdQuery } from "@/features/stocks/RawMaterialSlice";
+import { getToken } from '@/utils/tokenStore';
 
 const RawMaterialForm = () => {
     const { t } = useTranslation();
     const navigate = useNavigate();
     const { id } = useParams();
     const isEditMode = Boolean(id);
-    const token = localStorage.getItem('token');
+    const token = getToken();
     const { setLoading, loading } = useOutletsContext();
 
     // State management
@@ -216,7 +217,7 @@ const RawMaterialForm = () => {
         return (
             <div className="flex items-center justify-center min-h-screen">
                 <div className="text-center">
-                    <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-blue-200 border-t-[#13b5ea]" />
+                    <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-cyan-200 border-t-[#13b5ea]" />
                     <p className="mt-4 text-gray-600 dark:text-gray-400">{t('loading')}...</p>
                 </div>
             </div>
@@ -464,13 +465,13 @@ const RawMaterialForm = () => {
                                 </div>
 
                                 {material.primary_unit && material.secondary_unit && Number(material.conversion_value) > 0 && (
-                                    <div className="mt-8 rounded-[2px] border border-blue-100 dark:border-blue-900/30 bg-blue-50/50 dark:bg-blue-900/10 p-4">
+                                    <div className="mt-8 rounded-[2px] border border-cyan-100 dark:border-cyan-900/30 bg-cyan-50/50 dark:bg-cyan-900/10 p-4">
                                         <div className="flex items-center justify-center gap-4 text-sm font-bold text-[#13b5ea]">
-                                            <span className="bg-white dark:bg-slate-800 px-3 py-1 rounded-[2px] border border-blue-100 dark:border-blue-900/30 shadow-sm">
+                                            <span className="bg-white dark:bg-slate-800 px-3 py-1 rounded-[2px] border border-cyan-100 dark:border-cyan-900/30 shadow-sm">
                                                 1 {unitOptions.find(u => u.value === material.primary_unit)?.label}
                                             </span>
-                                            <LuScale size={20} className="text-blue-200 dark:text-blue-800" />
-                                            <span className="bg-white dark:bg-slate-800 px-3 py-1 rounded-[2px] border border-blue-100 dark:border-blue-900/30 shadow-sm">
+                                            <LuScale size={20} className="text-cyan-200 dark:text-cyan-800" />
+                                            <span className="bg-white dark:bg-slate-800 px-3 py-1 rounded-[2px] border border-cyan-100 dark:border-cyan-900/30 shadow-sm">
                                                 {material.conversion_value} {unitOptions.find(u => u.value === material.secondary_unit)?.label}
                                             </span>
                                         </div>

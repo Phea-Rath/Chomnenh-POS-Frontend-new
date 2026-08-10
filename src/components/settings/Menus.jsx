@@ -6,14 +6,15 @@ import { toast } from 'react-toastify';
 // Services & Redux
 import api from '../../services/api';
 import { useOutletsContext } from '../../layouts/Management';
-import { useGetCurrentMenusWebsiteQuery } from '../../../app/Features/menusSlice';
-import { useGetAllPermissionQuery } from '../../../app/Features/permissionSlice';
+import { useGetCurrentMenusWebsiteQuery } from "@/features/auth/menusSlice";
+import { useGetAllPermissionQuery } from "@/features/auth/permissionSlice";
 
 // Components
 import AlertBox from '../../services/AlertBox';
-import CreateMenus from '../../views/menus/CreateMenus';
-import UpdateMenus from '../../views/menus/UpdateMenus';
-import { MENU_TYPE_LABELS } from '../../views/menus/menuFormConfig';
+import CreateMenus from '../menus/CreateMenus';
+import UpdateMenus from '../menus/UpdateMenus';
+import { MENU_TYPE_LABELS } from '../menus/menuFormConfig';
+import { getToken } from '@/utils/tokenStore';
 
 const Menus = () => {
     const [data, setData] = useState([]);
@@ -22,7 +23,7 @@ const Menus = () => {
     const [selectedId, setSelectedId] = useState(0);
     const [editData, setEditData] = useState({});
 
-    const token = localStorage.getItem('token');
+    const token = getToken();
     const { setLoading, darkMode } = useOutletsContext();
     const { data: response, refetch, isLoading: loadings } = useGetCurrentMenusWebsiteQuery({ token });
     const { refetch: permRefetch } = useGetAllPermissionQuery(token);
@@ -127,12 +128,12 @@ const Menus = () => {
                             <input
                                 onChange={onSearch}
                                 type="text"
-                                className={`w-full border rounded-lg py-2 pl-10 pr-4 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all ${darkMode ? 'bg-slate-800 border-slate-600 text-slate-200 placeholder-slate-500' : 'bg-slate-50 border-slate-200'}`}
+                                className={`w-full border rounded-lg py-2 pl-10 pr-4 text-sm outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all ${darkMode ? 'bg-slate-800 border-slate-600 text-slate-200 placeholder-slate-500' : 'bg-slate-50 border-slate-200'}`}
                                 placeholder="Search by name..."
                             />
                         </div>
                         <button
-                            className="flex items-center justify-center gap-2 bg-blue-600 text-white px-5 py-2 rounded-md hover:bg-blue-700 h-10 transition-colors shadow-sm text-sm font-medium"
+                            className="flex items-center justify-center gap-2 bg-cyan-600 text-white px-5 py-2 rounded-md hover:bg-cyan-700 h-10 transition-colors shadow-sm text-sm font-medium"
                             onClick={() => addModalRef.current?.showModal()}
                         >
                             <HiOutlinePlus className="text-lg" />
@@ -157,7 +158,7 @@ const Menus = () => {
                                 {loadings ? (
                                     <tr>
                                         <td colSpan={5} className={`py-10 text-center text-sm ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>
-                                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-600 mx-auto"></div>
                                         </td>
                                     </tr>
                                 ) : filteredMenu?.length === 0 ? (
@@ -205,20 +206,20 @@ const Menus = () => {
                                         </td>
                                         <td className="px-6 py-4">
                                             <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider
-                                                ${Number(item.menu_type) === 1 ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/30' :
+                                                ${Number(item.menu_type) === 1 ? 'bg-cyan-50 text-cyan-600 dark:bg-cyan-900/30' :
                                                     Number(item.menu_type) === 2 ? 'bg-purple-50 text-purple-600 dark:bg-purple-900/30' :
                                                         Number(item.menu_type) === 4 ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30' : 'bg-slate-100 text-slate-600 dark:bg-slate-700'}`}>
                                                 {MENU_TYPE_LABELS[Number(item.menu_type)] || 'Untyped'}
                                             </span>
                                         </td>
                                         <td className="px-6 py-4">
-                                            <code className={`text-xs px-2 py-1 rounded border border-slate-100 dark:border-slate-700 ${darkMode ? 'bg-slate-900 text-blue-400' : 'bg-slate-50 text-blue-600'}`}>{item.menu_path}</code>
+                                            <code className={`text-xs px-2 py-1 rounded border border-slate-100 dark:border-slate-700 ${darkMode ? 'bg-slate-900 text-cyan-400' : 'bg-slate-50 text-cyan-600'}`}>{item.menu_path}</code>
                                         </td>
                                         <td className="px-6 py-4 text-right">
                                             <div className="flex justify-end gap-2">
                                                 <button
                                                     onClick={() => openUpdate(item)}
-                                                    className={`p-2 rounded-lg transition-colors ${darkMode ? 'hover:bg-slate-700 text-slate-400 hover:text-blue-400' : 'hover:bg-slate-100 text-slate-400 hover:text-blue-600'}`}
+                                                    className={`p-2 rounded-lg transition-colors ${darkMode ? 'hover:bg-slate-700 text-slate-400 hover:text-cyan-400' : 'hover:bg-slate-100 text-slate-400 hover:text-cyan-600'}`}
                                                     title="Edit"
                                                 >
                                                     <HiOutlinePencilAlt size={18} />

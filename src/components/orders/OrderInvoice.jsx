@@ -5,19 +5,20 @@ import { useReactToPrint } from "react-to-print";
 import { useLocation, useNavigate, useParams } from "react-router";
 import { motion } from "framer-motion";
 import handleDownload from "../../services/imageDowload";
-import { useGetOrderByIdQuery } from "../../../app/Features/ordersSlice";
+import { useGetOrderByIdQuery } from "@/features/sales/ordersSlice";
 import { useTranslation } from "react-i18next";
 import timeAgo from "../../services/timeAgo";
 import Button from "../../utils/Button";
 import { currencyFormat } from "../../services/serviceFunction";
-import { useGetProfileByIdQuery, useGetProfileByUserQuery } from "../../../app/Features/userProfileSlice";
+import { useGetProfileByIdQuery, useGetProfileByUserQuery } from "@/features/auth/userProfileSlice";
+import { getToken } from '@/utils/tokenStore';
 
 const OrderInvoice = () => {
   const { t } = useTranslation();
   const path = useLocation().pathname;
   const navigator = useNavigate();
   const { id } = useParams();
-  const token = localStorage.getItem("token");
+  const token = getToken();
   const proId = localStorage.getItem("profileId");
   const invoiceRef = useRef(null);
   const [data, setData] = useState({});
@@ -82,7 +83,7 @@ const OrderInvoice = () => {
     return (
       <div className="flex min-h-screen items-center justify-center bg-transparent px-4 py-8">
         <div className="text-center">
-          <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-b-2 border-blue-600" />
+          <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-b-2 border-cyan-600" />
           <p className="text-gray-600">{t("loadingInvoice")}</p>
         </div>
       </div>
@@ -94,7 +95,7 @@ const OrderInvoice = () => {
       <div className="mx-auto max-w-5xl">
         <button
           onClick={() => navigator(-1)}
-          className="mb-4 flex items-center text-blue-600 hover:text-blue-800 print:hidden"
+          className="mb-4 flex items-center text-cyan-600 hover:text-cyan-800 print:hidden"
         >
           <IoArrowBackCircle className="mr-2" size={24} />
           {t("back")}
@@ -103,7 +104,7 @@ const OrderInvoice = () => {
         <div className="mb-6 flex flex-wrap justify-end gap-3 print:hidden">
           <Button
             onClick={handlePrint}
-            className="flex items-center rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
+            className="flex items-center rounded-lg bg-cyan-600 px-4 py-2 text-white hover:bg-cyan-700"
           >
             <FaPrint className="mr-2" /> {t("print")}
           </Button>
@@ -137,7 +138,7 @@ const OrderInvoice = () => {
             className="mx-auto overflow-hidden border border-gray-200 px-6 py-8 bg-white print:rounded-none print:border-0 print:shadow-none sm:px-10"
           >
             <div className="mx-auto max-w-4xl">
-              <div className="border-b-2 border-blue-800 flex justify-between pb-2 text-center">
+              <div className="border-b-2 border-cyan-800 flex justify-between pb-2 text-center">
                 <div>
                   {profileData?.data?.image ? (
                     <img
@@ -149,7 +150,7 @@ const OrderInvoice = () => {
                 </div>
                 
                 <div>
-                  <h2 className="mt-6 text-3xl font-bold tracking-[0.08em] text-blue-500 uppercase">{t("invoice")}</h2>
+                  <h2 className="mt-6 text-3xl font-bold tracking-[0.08em] text-cyan-500 uppercase">{t("invoice")}</h2>
                 </div>
               </div>
               <div className="flex justify-between py-2">
@@ -160,7 +161,7 @@ const OrderInvoice = () => {
                     <p>{t("status")}: <span className={`${data?.order_payment_status == "paid"? "text-green-600": "text-orange-600"}`}>{data?.order_payment_status}</span></p>
                   </div>
                 </div>
-                <ul className="text-xs text-blue-600">
+                <ul className="text-xs text-cyan-600">
                   <li><span>{t('date')}</span>: {formatDate(data?.order_date)}</li>
                   <li><span>{t('dueDate')}</span>: {formatDate(data?.due_date)}</li>
                   <li><span>{t('creditTerm')}</span>: {data?.due_date? timeAgo(data?.due_date): "N/A"}</li>
@@ -172,7 +173,7 @@ const OrderInvoice = () => {
                   <div className="px-2 font-semibold">
                     <h1>MAINLING INFO</h1>
                   </div>
-                  <ul className="border-l-2 border-blue-800 px-2 leading-4.5">
+                  <ul className="border-l-2 border-cyan-800 px-2 leading-4.5">
                     <li className="font-semibold">{profileData?.data?.profile_name || t("company")}</li>
                     <li>{profileData?.data?.address || t("address")}</li>
                     <li>{profileData?.data?.telephone || "N/A"}</li>
@@ -182,7 +183,7 @@ const OrderInvoice = () => {
                   <div className="px-2 font-semibold">
                     <h1>BILL TO</h1>
                   </div>
-                  <ul className="border-l-2 border-blue-800 px-2  leading-4.5">
+                  <ul className="border-l-2 border-cyan-800 px-2  leading-4.5">
                     <li>{t('name')}: <span className="font-semibold">{customerName}</span></li>
                     <li><span>{t('store')}</span>: {'N/A'}</li>
                     <li><span>{t('address')}</span>: {customerAddress}</li>
@@ -199,7 +200,7 @@ const OrderInvoice = () => {
                     <li>{t("deliveryDate").toLocaleUpperCase()}</li>
                     <li>{t("deliverFee").toLocaleUpperCase()}</li>
                   </ul>
-                  <hr className="my-1 text-blue-700"/>
+                  <hr className="my-1 text-cyan-700"/>
                   <ul className="grid grid-cols-4">
                     <li>{t("mrms").toLocaleUpperCase()}: <span>{sellerName}</span></li>
                     <li>{deliverName}</li>
@@ -209,14 +210,14 @@ const OrderInvoice = () => {
                 </div>
 
                 <table className="w-full table-auto mt-3 text-xs text-gray-800 border-collapse border border-gray-400">
-                  <thead className=" bg-blue-50">
-                    <th className="border !border-blue-800 p-1 py-3">{t('no').toLocaleUpperCase()}</th>
-                    <th className="border !border-blue-800 p-1 py-3">{t('description').toLocaleUpperCase()}</th>
-                    <th className="border !border-blue-800 p-1 py-3">{t('code').toLocaleUpperCase()}</th>
-                    <th className="border !border-blue-800 p-1 py-3">{t('qty').toLocaleUpperCase()}</th>
-                    <th className="border !border-blue-800 p-1 py-3">{t('unitPrice').toLocaleUpperCase()}</th>
-                    <th className="border !border-blue-800 p-1 py-3">{t('discount').toLocaleUpperCase()}</th>
-                    <th className="border !border-blue-800 p-1 py-3">{t('amount').toLocaleUpperCase()}</th>
+                  <thead className=" bg-cyan-50">
+                    <th className="border !border-cyan-800 p-1 py-3">{t('no').toLocaleUpperCase()}</th>
+                    <th className="border !border-cyan-800 p-1 py-3">{t('description').toLocaleUpperCase()}</th>
+                    <th className="border !border-cyan-800 p-1 py-3">{t('code').toLocaleUpperCase()}</th>
+                    <th className="border !border-cyan-800 p-1 py-3">{t('qty').toLocaleUpperCase()}</th>
+                    <th className="border !border-cyan-800 p-1 py-3">{t('unitPrice').toLocaleUpperCase()}</th>
+                    <th className="border !border-cyan-800 p-1 py-3">{t('discount').toLocaleUpperCase()}</th>
+                    <th className="border !border-cyan-800 p-1 py-3">{t('amount').toLocaleUpperCase()}</th>
                   </thead>
                   <tbody>
                     {itemRows.map((item, index) => {
@@ -227,48 +228,48 @@ const OrderInvoice = () => {
 
                       return (
                         <tr key={item.id || index} className="border-b border-gray-100 align-top">
-                          <td className="border !border-x-blue-800 !border-y-gray-300 p-1 py-2 text-center">{index + 1}</td>
-                          <td className="border !border-x-blue-800 !border-y-gray-300 p-1 py-2">
+                          <td className="border !border-x-cyan-800 !border-y-gray-300 p-1 py-2 text-center">{index + 1}</td>
+                          <td className="border !border-x-cyan-800 !border-y-gray-300 p-1 py-2">
                             {item.item_name}
                             
                           </td>
-                          <td className="border !border-x-blue-800 !border-y-gray-300 p-1 py-2">{item.item_code}</td>
-                          <td className="border !border-x-blue-800 !border-y-gray-300 p-1 py-2 text-center">
+                          <td className="border !border-x-cyan-800 !border-y-gray-300 p-1 py-2">{item.item_code}</td>
+                          <td className="border !border-x-cyan-800 !border-y-gray-300 p-1 py-2 text-center">
                             {qty} {item.scale_name || ""}
                           </td>
-                          <td className="border !border-x-blue-800 !border-y-gray-300 p-1 py-2 text-end">{money(price)}$</td>
-                          <td className="border !border-x-blue-800 !border-y-gray-300 p-1 py-2 text-end">{item.discount}</td>
-                          <td className="border !border-x-blue-800 !border-y-gray-300 p-1 py-2 text-end">{money(rowTotal)}$ </td>
+                          <td className="border !border-x-cyan-800 !border-y-gray-300 p-1 py-2 text-end">{money(price)}$</td>
+                          <td className="border !border-x-cyan-800 !border-y-gray-300 p-1 py-2 text-end">{item.discount}</td>
+                          <td className="border !border-x-cyan-800 !border-y-gray-300 p-1 py-2 text-end">{money(rowTotal)}$ </td>
                         </tr>
                       );
                     })}
-                    <tr className="bg-blue-50">
-                      <td colSpan={6} className="border !border-blue-800 text-end p-1 py-2 font-semibold">SUBTOTAL AMOUNT</td>
-                      <td className="p-1 text-end !border-blue-800 font-semibold border">{money(totals.subtotal)} $</td>
+                    <tr className="bg-cyan-50">
+                      <td colSpan={6} className="border !border-cyan-800 text-end p-1 py-2 font-semibold">SUBTOTAL AMOUNT</td>
+                      <td className="p-1 text-end !border-cyan-800 font-semibold border">{money(totals.subtotal)} $</td>
                     </tr>
-                    <tr className="bg-blue-50">
-                      <td colSpan={6} className="border !border-blue-800 text-end p-1 py-2 font-semibold">DISCOUNT TOTAL</td>
-                      <td className="p-1 text-end text-red-600 font-semibold !border-blue-800 border">-{money(totals.discount)} $</td>
+                    <tr className="bg-cyan-50">
+                      <td colSpan={6} className="border !border-cyan-800 text-end p-1 py-2 font-semibold">DISCOUNT TOTAL</td>
+                      <td className="p-1 text-end text-red-600 font-semibold !border-cyan-800 border">-{money(totals.discount)} $</td>
                     </tr>
-                    <tr className="bg-blue-50">
-                      <td colSpan={6} className="border !border-blue-800 text-end p-1 py-2 font-semibold">PAID</td>
-                      <td className="p-1 text-green-600 font-semibold text-end !border-blue-800 border">{money(totals.paid)} $</td>
+                    <tr className="bg-cyan-50">
+                      <td colSpan={6} className="border !border-cyan-800 text-end p-1 py-2 font-semibold">PAID</td>
+                      <td className="p-1 text-green-600 font-semibold text-end !border-cyan-800 border">{money(totals.paid)} $</td>
                     </tr>
-                    <tr className="bg-blue-50">
-                      <td colSpan={6} className="border !border-blue-800 text-end p-1 py-2 font-semibold">TOTAL AMOUNT($)</td>
-                      <td className="p-1 text-end !border-blue-800 font-semibold border">{money(totals.total)} $</td>
+                    <tr className="bg-cyan-50">
+                      <td colSpan={6} className="border !border-cyan-800 text-end p-1 py-2 font-semibold">TOTAL AMOUNT($)</td>
+                      <td className="p-1 text-end !border-cyan-800 font-semibold border">{money(totals.total)} $</td>
                     </tr>
-                    <tr className="bg-blue-50">
-                      <td colSpan={6} className="border !border-blue-800 text-end p-1 py-2 font-semibold">TOTAL AMOUNT(៛)</td>
-                      <td className="p-1 text-end !border-blue-800 font-semibold border">{money(totals.total * exchangeRate)} ៛</td>
+                    <tr className="bg-cyan-50">
+                      <td colSpan={6} className="border !border-cyan-800 text-end p-1 py-2 font-semibold">TOTAL AMOUNT(៛)</td>
+                      <td className="p-1 text-end !border-cyan-800 font-semibold border">{money(totals.total * exchangeRate)} ៛</td>
                     </tr>
-                    <tr className="bg-blue-50">
-                      <td colSpan={6} className="border !border-blue-800 text-end p-1 py-2 font-semibold">BALANCE($)</td>
-                      <td className="p-1 text-red-600 font-semibold text-end !border-blue-800 border">{money(totals.balance)} $</td>
+                    <tr className="bg-cyan-50">
+                      <td colSpan={6} className="border !border-cyan-800 text-end p-1 py-2 font-semibold">BALANCE($)</td>
+                      <td className="p-1 text-red-600 font-semibold text-end !border-cyan-800 border">{money(totals.balance)} $</td>
                     </tr>
-                    <tr className="bg-blue-50">
-                      <td colSpan={6} className="border !border-blue-800 text-end p-1 py-2 font-semibold">BALANCE(៛)</td>
-                      <td className="p-1 text-red-600 font-semibold text-end !border-blue-800 border">{money(totals.balance * exchangeRate)} ៛</td>
+                    <tr className="bg-cyan-50">
+                      <td colSpan={6} className="border !border-cyan-800 text-end p-1 py-2 font-semibold">BALANCE(៛)</td>
+                      <td className="p-1 text-red-600 font-semibold text-end !border-cyan-800 border">{money(totals.balance * exchangeRate)} ៛</td>
                     </tr>
                     
                   </tbody>

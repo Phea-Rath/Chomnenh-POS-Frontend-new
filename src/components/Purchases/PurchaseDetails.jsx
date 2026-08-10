@@ -1,6 +1,6 @@
 import React, { useRef, useMemo } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router';
-import { useGetUserLoginQuery } from '../../../app/Features/usersSlice';
+import { useGetUserLoginQuery } from "@/features/auth/usersSlice";
 import { useReportText } from '../Reports/reportText';
 import { Spin, Tag, Card, Row, Col, Table } from 'antd';
 import dayjs from 'dayjs';
@@ -24,7 +24,8 @@ import { useReactToPrint } from 'react-to-print';
 import * as XLSX from 'xlsx';
 import { useOutletsContext } from '../../layouts/Management';
 import { motion } from 'framer-motion';
-import { useGetPurchaseByIdQuery, useGetPurchaseRawByIdQuery } from '../../../app/Features/purchasesSlice';
+import { useGetPurchaseByIdQuery, useGetPurchaseRawByIdQuery } from "@/features/purchases/purchasesSlice";
+import { getToken } from '@/utils/tokenStore';
 
 const PurchaseDetails = () => {
     const { id } = useParams();
@@ -32,7 +33,7 @@ const PurchaseDetails = () => {
     const navigate = useNavigate();
     const { rt } = useReportText();
     const { darkMode } = useOutletsContext();
-    const token = localStorage.getItem('token');
+    const token = getToken();
     
     const isRaw = pathname.includes('purchase-raw') || pathname.includes('detail-raw');
     
@@ -126,7 +127,7 @@ const PurchaseDetails = () => {
                 <h2 className="text-xl font-bold text-slate-600">{rt("Purchase not found")}</h2>
                 <button 
                     onClick={() => navigate(-1)}
-                    className="mt-4 flex items-center gap-2 mx-auto text-blue-600 hover:underline"
+                    className="mt-4 flex items-center gap-2 mx-auto text-cyan-600 hover:underline"
                 >
                     <FiArrowLeft /> {rt("Back")}
                 </button>
@@ -184,12 +185,12 @@ const PurchaseDetails = () => {
                     <div>
                         <button 
                             onClick={() => navigate(-1)}
-                            className="flex items-center gap-2 text-slate-500 hover:text-blue-600 transition-colors mb-2"
+                            className="flex items-center gap-2 text-slate-500 hover:text-cyan-600 transition-colors mb-2"
                         >
                             <FiArrowLeft /> {rt("Back")}
                         </button>
                         <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
-                            {rt("Purchase Detail")} <span className="text-blue-600">#{purchase.purchase_no}</span>
+                            {rt("Purchase Detail")} <span className="text-cyan-600">#{purchase.purchase_no}</span>
                         </h1>
                     </div>
                     <div className="flex flex-wrap gap-3">
@@ -228,7 +229,7 @@ const PurchaseDetails = () => {
                             </div>
                         </div>
                         <div className="text-right">
-                            <h1 className="text-xl font-bold text-blue-600">{rt("Purchase Detail")}</h1>
+                            <h1 className="text-xl font-bold text-cyan-600">{rt("Purchase Detail")}</h1>
                             <p className="text-[10px] text-slate-500">{new Date().toLocaleString()}</p>
                         </div>
                     </div>
@@ -237,7 +238,7 @@ const PurchaseDetails = () => {
                     <div className="bg-primary rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 p-5 mb-6">
                         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                             <div className="flex items-start gap-3">
-                                <div className="p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg text-blue-600">
+                                <div className="p-2 bg-cyan-50 dark:bg-cyan-900/20 rounded-lg text-cyan-600">
                                     <FiHash size={18} />
                                 </div>
                                 <div>
@@ -277,9 +278,9 @@ const PurchaseDetails = () => {
 
                     {/* Summary Stats Cards */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6 stats-grid">
-                        <div className="bg-primary rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 p-5 border-l-4 border-blue-500 stats-card">
+                        <div className="bg-primary rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 p-5 border-l-4 border-cyan-500 stats-card">
                             <p className="text-slate-500 dark:text-slate-400 text-[10px] uppercase font-semibold">{rt("Grand Total")}</p>
-                            <p className="text-lg font-bold mt-1 text-blue-600">{formatUSD(purchase.grand_total || purchase.total_amount)}</p>
+                            <p className="text-lg font-bold mt-1 text-cyan-600">{formatUSD(purchase.grand_total || purchase.total_amount)}</p>
                             <p className="text-slate-400 text-[9px] mt-1">{formatKHR(purchase.grand_total_khr || (purchase.grand_total || purchase.total_amount) * (purchase.exchange_rate || 1))}</p>
                         </div>
                         <div className="bg-primary rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 p-5 border-l-4 border-emerald-500 stats-card">
@@ -306,7 +307,7 @@ const PurchaseDetails = () => {
                         <div className="lg:col-span-2">
                             <div className="bg-primary rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden h-full">
                                 <div className="p-4 border-b border-slate-100 dark:border-slate-700 flex items-center gap-2">
-                                    <FiPackage className="text-blue-600" />
+                                    <FiPackage className="text-cyan-600" />
                                     <h3 className="text-sm font-bold text-slate-800 dark:text-white uppercase tracking-wider">{rt("Purchase Items")}</h3>
                                 </div>
                                 <div className="overflow-x-auto">
@@ -355,7 +356,7 @@ const PurchaseDetails = () => {
                                                     <td className="px-4 py-3 text-right text-slate-900 dark:text-white">{formatUSD(purchase.shippings.fee)}</td>
                                                 </tr>
                                             )}
-                                            <tr className="bg-blue-600 text-white">
+                                            <tr className="bg-cyan-600 text-white">
                                                 <td colSpan="4" className="px-4 py-4 text-right uppercase tracking-widest text-xs">{rt("Grand Total")}</td>
                                                 <td className="px-4 py-4 text-right text-lg font-black">{formatUSD(purchase.grand_total || purchase.total_amount)}</td>
                                             </tr>
@@ -405,7 +406,7 @@ const PurchaseDetails = () => {
                             {purchase.shippings && (
                                 <div className="bg-primary rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 p-5">
                                     <div className="flex items-center gap-2 mb-4 border-b border-slate-50 dark:border-slate-800 pb-3">
-                                        <FiTruck className="text-blue-600" />
+                                        <FiTruck className="text-cyan-600" />
                                         <h3 className="text-[11px] font-bold text-slate-800 dark:text-white uppercase tracking-wider">{rt("Shipping Info")}</h3>
                                     </div>
                                     <div className="space-y-3">
@@ -419,7 +420,7 @@ const PurchaseDetails = () => {
                                         </div>
                                         <div className="flex justify-between items-center text-xs">
                                             <span className="text-slate-500">{rt("Tracking No")}</span>
-                                            <span className="font-bold text-blue-600 underline cursor-pointer">{purchase.shippings.tracking_number || 'N/A'}</span>
+                                            <span className="font-bold text-cyan-600 underline cursor-pointer">{purchase.shippings.tracking_number || 'N/A'}</span>
                                         </div>
                                         <div className="flex justify-between items-center text-xs pt-2 border-t border-slate-50 dark:border-slate-800">
                                             <span className="text-slate-500">{rt("Shipping Fee")}</span>
@@ -449,7 +450,7 @@ const PurchaseDetails = () => {
                                     {purchase.quote_no !== 0 && (
                                         <div className="flex justify-between">
                                             <span className="text-slate-500">{rt("Quotation No")}</span>
-                                            <span className="font-medium text-blue-600">{purchase.quote_no}</span>
+                                            <span className="font-medium text-cyan-600">{purchase.quote_no}</span>
                                         </div>
                                     )}
                                 </div>

@@ -1,19 +1,20 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { FiDownload, FiPrinter, FiFilter } from 'react-icons/fi';
-import { useGetPurchaseReportMutation } from '../../../app/Features/reportsSlice';
+import { useGetPurchaseReportMutation } from "@/features/dashboard/reportsSlice";
 import { toast } from 'react-toastify';
 import * as XLSX from 'xlsx';
-import { useGetAllUserQuery, useGetUserLoginQuery } from '../../../app/Features/usersSlice';
-import { useGetAllSupplierQuery } from '../../../app/Features/suppliesSlice';
+import { useGetAllUserQuery, useGetUserLoginQuery } from "@/features/auth/usersSlice";
+import { useGetAllSupplierQuery } from "@/features/purchases/suppliesSlice";
 import { useReactToPrint } from 'react-to-print';
 import { useReportText } from './reportText';
 import RichSearch from '../../utils/RichSearch';
 import { DatePicker } from 'antd';
 import dayjs from 'dayjs';
+import { getToken } from '@/utils/tokenStore';
 
 const PurchaseReportByUser = () => {
     const { rt } = useReportText();
-    const token = localStorage.getItem('token');
+    const token = getToken();
     const [getPurchaseByUser] = useGetPurchaseReportMutation();
     const { data: userLogin } = useGetUserLoginQuery(token);
     const profile = userLogin?.data;
@@ -229,7 +230,7 @@ const PurchaseReportByUser = () => {
                         <button
                             onClick={handleGetReport}
                             disabled={loading}
-                            className="flex items-center justify-center gap-2 bg-blue-600 text-white px-5 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed h-10"
+                            className="flex items-center justify-center gap-2 bg-cyan-600 text-white px-5 py-2 rounded-md hover:bg-cyan-700 disabled:opacity-50 disabled:cursor-not-allowed h-10"
                         >
                             <FiFilter size={16} />
                             {loading ? rt('Loading...') : rt('Get Report')}
@@ -273,7 +274,7 @@ const PurchaseReportByUser = () => {
                                     </div>
                                 </div>
                                 <div className="text-right">
-                                    <h1 className="text-xl font-bold text-blue-600">{rt("Purchase Report")}</h1>
+                                    <h1 className="text-xl font-bold text-cyan-600">{rt("Purchase Report")}</h1>
                                     <p className="text-xs text-slate-500">{new Date().toLocaleString()}</p>
                                 </div>
                             </div>
@@ -311,7 +312,7 @@ const PurchaseReportByUser = () => {
                                             <td className="border border-slate-200 dark:border-slate-700 px-4 py-3 text-right text-slate-600 dark:text-slate-400">{formatCurrency(item.shipping_fee)}</td>
                                             <td className="border border-slate-200 dark:border-slate-700 px-4 py-3 text-right text-slate-600 dark:text-slate-400">{formatCurrency(item.tax_amount)}</td>
                                             <td className="border border-slate-200 dark:border-slate-700 px-4 py-3 text-right font-medium text-emerald-600">{formatCurrency(item.total_amount)}</td>
-                                            <td className="border border-slate-200 dark:border-slate-700 px-4 py-3 text-right text-blue-500">{formatCurrency(item.total_paid)}</td>
+                                            <td className="border border-slate-200 dark:border-slate-700 px-4 py-3 text-right text-cyan-500">{formatCurrency(item.total_paid)}</td>
                                             <td className="border border-slate-200 dark:border-slate-700 px-4 py-3 text-right font-medium text-rose-600">{formatCurrency(item.balance)}</td>
                                         </tr>
                                     ))}
@@ -321,7 +322,7 @@ const PurchaseReportByUser = () => {
                                             <td className="border border-slate-200 dark:border-slate-700 px-4 py-3 text-right text-slate-800 dark:text-slate-200">{formatCurrency(totals.shipping_fee)}</td>
                                             <td className="border border-slate-200 dark:border-slate-700 px-4 py-3 text-right text-slate-800 dark:text-slate-200">{formatCurrency(totals.tax_amount)}</td>
                                             <td className="border border-slate-200 dark:border-slate-700 px-4 py-3 text-right text-emerald-600">{formatCurrency(totals.total_amount)}</td>
-                                            <td className="border border-slate-200 dark:border-slate-700 px-4 py-3 text-right text-blue-600">{formatCurrency(totals.total_paid)}</td>
+                                            <td className="border border-slate-200 dark:border-slate-700 px-4 py-3 text-right text-cyan-600">{formatCurrency(totals.total_paid)}</td>
                                             <td className="border border-slate-200 dark:border-slate-700 px-4 py-3 text-right text-rose-600">{formatCurrency(totals.balance)}</td>
                                         </tr>
                                     )}
@@ -356,7 +357,7 @@ const PurchaseReportByUser = () => {
 
                 {loading && (
                     <div className="bg-primary rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 p-12 text-center">
-                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-600 mx-auto mb-4"></div>
                         <p className="text-slate-600 dark:text-slate-400">{rt("Generating report...")}</p>
                     </div>
                 )}

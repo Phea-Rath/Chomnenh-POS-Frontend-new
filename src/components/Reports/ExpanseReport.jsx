@@ -1,19 +1,20 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { FiDownload, FiPrinter, FiFilter } from 'react-icons/fi';
-import { useGetExpanseReportMutation } from '../../../app/Features/reportsSlice';
-import { useGetAllUserQuery, useGetUserLoginQuery } from '../../../app/Features/usersSlice';
+import { useGetExpanseReportMutation } from "@/features/dashboard/reportsSlice";
+import { useGetAllUserQuery, useGetUserLoginQuery } from "@/features/auth/usersSlice";
 import { toast } from 'react-toastify';
 import * as XLSX from 'xlsx';
 import { useReactToPrint } from 'react-to-print';
-import { useGetAllExpanseTypesQuery } from '../../../app/Features/expenseTypesSlice';
+import { useGetAllExpanseTypesQuery } from "@/features/expenses/expenseTypesSlice";
 import { useReportText } from './reportText';
 import RichSearch from '../../utils/RichSearch';
 import { DatePicker } from 'antd';
 import dayjs from 'dayjs';
+import { getToken } from '@/utils/tokenStore';
 
 const ExpenseReportByUser = () => {
     const { rt } = useReportText();
-    const token = localStorage.getItem('token');
+    const token = getToken();
     const [getExpense] = useGetExpanseReportMutation();
     const { data: userLogin } = useGetUserLoginQuery(token);
     const profile = userLogin?.data;
@@ -225,7 +226,7 @@ const ExpenseReportByUser = () => {
                         <button
                             onClick={handleGetReport}
                             disabled={loading}
-                            className="flex items-center justify-center gap-2 bg-blue-600 text-white px-5 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed h-10"
+                            className="flex items-center justify-center gap-2 bg-cyan-600 text-white px-5 py-2 rounded-md hover:bg-cyan-700 disabled:opacity-50 disabled:cursor-not-allowed h-10"
                         >
                             <FiFilter size={16} />
                             {loading ? rt('Loading...') : rt('Get Report')}
@@ -269,7 +270,7 @@ const ExpenseReportByUser = () => {
                                     </div>
                                 </div>
                                 <div className="text-right">
-                                    <h1 className="text-xl font-bold text-blue-600">{rt("Expense Report")}</h1>
+                                    <h1 className="text-xl font-bold text-cyan-600">{rt("Expense Report")}</h1>
                                     <p className="text-xs text-slate-500">{new Date().toLocaleString()}</p>
                                 </div>
                             </div>
@@ -346,7 +347,7 @@ const ExpenseReportByUser = () => {
 
                 {loading && (
                     <div className="bg-primary rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 p-12 text-center">
-                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-600 mx-auto mb-4"></div>
                         <p className="text-slate-600 dark:text-slate-400">{rt("Generating report...")}</p>
                     </div>
                 )}

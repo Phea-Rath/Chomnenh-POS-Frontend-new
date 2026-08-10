@@ -1,20 +1,21 @@
 import React, { useRef, useState, useEffect } from "react";
 import { FaPrint, FaDownload } from "react-icons/fa";
 import { useReactToPrint } from "react-to-print";
-import { useGetOrderByIdQuery } from "../../../app/Features/ordersSlice";
+import { useGetOrderByIdQuery } from "@/features/sales/ordersSlice";
 import { useNavigate, useParams } from "react-router";
 import { Spin } from "antd";
 import { IoArrowBackCircle } from "react-icons/io5";
-import { useGetUserProfileQuery } from "../../../app/Features/usersSlice";
+import { useGetUserProfileQuery } from "@/features/auth/usersSlice";
 import handleDownload from "../../services/imageDowload";
 import { convertImageToBase64 } from "../../services/serviceFunction";
 import { useTranslation } from "react-i18next";
+import { getToken } from '@/utils/tokenStore';
 
 const OrderReceipt = () => {
   const { t } = useTranslation();
   const { id } = useParams();
   const navigator = useNavigate();
-  const token = localStorage.getItem("token");
+  const token = getToken();
   const profileId = Number(localStorage.getItem("profileId"));
   const receiptRef = useRef();
   const [logoLoaded, setLogoLoaded] = useState(false);
@@ -81,7 +82,7 @@ const OrderReceipt = () => {
       <div className="flex justify-between items-center mb-4 no-print max-w-xl mx-auto">
         <button
           onClick={() => navigator(-1)}
-          className="flex items-center text-blue-600 hover:text-blue-800"
+          className="flex items-center text-cyan-600 hover:text-cyan-800"
         >
           <IoArrowBackCircle className="mr-2" size={24} />
           {t("back")}
@@ -103,7 +104,7 @@ const OrderReceipt = () => {
           </button>
           <button
             onClick={handlePrint}
-            className="flex items-center bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded text-sm"
+            className="flex items-center bg-cyan-500 hover:bg-cyan-600 text-white px-4 py-2 rounded text-sm"
           >
             <FaPrint className="mr-2" />
             {t("print")}
